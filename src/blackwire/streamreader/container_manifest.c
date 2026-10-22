@@ -66,6 +66,8 @@ done:
 }
 const struct bw_container_file *bw_container_manifest_file(struct bw_container_manifest *p,uint32_t id) {
     if (!p || !p->files || id>=p->count || p->failed) return NULL;
-    if (p->source->session!=p->session || bw_container_validate(p->source)) {p->failed=1;return NULL;}
+    if (p->source->session!=p->session) {p->failed=1;return NULL;}
+    int current=bw_container_validate(p->source);
+    if (current) {if(current!=BW_CONTAINER_CANCELED)p->failed=1;return NULL;}
     return &p->files[id];
 }

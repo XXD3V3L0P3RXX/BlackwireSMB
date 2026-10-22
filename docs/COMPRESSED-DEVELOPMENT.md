@@ -1,6 +1,6 @@
 # Compressed streaming development
 
-The published `v0.1.0-preview.1` remains the working folder-only preview. This development branch adds a compressed source to the existing preparation and early-reader workflow. GTA V and Resident Evil 7 reached visible gameplay from the supplied compressed images on the test console. A recurring system-dialog crash still prevents release qualification; shorter loading times have not been established by a controlled console comparison.
+The published `v0.1.0-preview.1` remains the working folder-only preview. This development branch adds a compressed source to the existing preparation and early-reader workflow. GTA V and Resident Evil 7 reached visible gameplay from the supplied compressed images on the test console. After identifying an unrelated background Game Compressor process consuming a CPU core and stopping it, the same reader completed four clean initial launches. Full gameplay, dashboard launches and shorter loading times still require controlled console qualification.
 
 ## Formats
 
@@ -80,3 +80,38 @@ Hardware testing confirmed that priority 700 is not a complete fix. One RE7 laun
 GTA's 24 local startup files (174,907,527 bytes), including its executable and trophy data, were downloaded read-only from the prepared compressed copy and fully SHA-256 compared with the independent unpacked folder. Every file matched. The failing dialog's crash record lists 122 loaded modules and contains no Blackwire or Ampr reader module. These checks narrow the investigation; they do not establish that every streamed read or system interaction is correct.
 
 The diagnostic resident leaves the PS5 browser closed when loaded. Tests send the ordinary Play request from the PC; the Media shortcut can still open the PS5 page explicitly. Existing prepared copies can receive the trial reader through the normal upgrade from the exact read-back development-2 reader size and hash. Unknown predecessors remain refused.
+
+## Background compressor comparison
+
+The priority-only trial reproduced GTA's common-dialog watchdog failure four times. A read-only process/CPU capture then identified the separately running `game-compressor.elf` using about 96% of one CPU core while idle and about 62% during a failing launch. Its thread name resembled a system discovery service, so the process executable and PID were checked before attributing that load. Its status endpoint was unavailable; a running compression job could not be ruled out from that endpoint.
+
+With the console owner's authorization, only that payload was stopped through Payload Manager. No Blackwire binary, prepared reader, watchdog, Sony process, autoload entry or console setting changed during the comparison. Both prepared readers were read back and matched development 3's SHA-256, `3b91a0b41203ce15afe40937dfe4e2b13c289f6fdfeedf11076e4c86eb7b6033`.
+
+| Unchanged reader, compressor stopped | Observation | Dialog initialization | Watchdog failures | Reader failure markers |
+| --- | ---: | ---: | ---: | ---: |
+| GTA launch 1 | 120 seconds | 3.96 seconds | 0 | 0 |
+| GTA launch 2 | 120 seconds | 0.70 seconds | 0 | 0 |
+| RE7 launch 1 | 150 seconds | 5.20 seconds | 0 | 0 |
+| RE7 launch 2 | 150 seconds | 5.26 seconds | 0 | 0 |
+
+Video showed GTA's Continue prompt and RE7's Start Game screen. These are dialog initialization measurements, not time to drive or enter gameplay. The result supports background CPU contention as a contributor; it does not prove a sole cause, qualify later loading transitions or test the cancellation repair below. The unwanted compressor remains stopped.
+
+## Canceled compressed reads
+
+An independent Claude CLI review found that request cancellation was being interpreted as a permanent container-generation failure. A modeled-SMB regression reproduced this: an uncached read canceled after a positive transport reply returned `-ECANCELED`, but the next request on the same immutable source returned `-EIO`.
+
+The development source now distinguishes explicit request cancellation from a changed source or a real transport/decoder failure. An interrupted lazy open releases its own partial handle and decoder workspace on the same worker; an admitted session can serve the next request without reconnecting. Canceled reads never publish a valid completion witness. Genuine transport failures still destroy the connection before retained destinations are freed, and failed cleanup remains permanent.
+
+A follow-up review caught an overlapping error value and a late-cancellation precedence error in the first draft. Both were reproduced before correction. Cancellation now has a distinct result value; manifest mismatches and genuine decode/unsupported-format failures retain their original failure behavior even if cancellation arrives at the final check. Refusal tests require the next request to make no further SMB calls.
+
+The corrected source passed these host checks:
+
+- Ten synthetic format cases, including four supported layouts, six corrupt/mismatched/unsupported refusals, cancellation during lazy admission and payload reads, final-fence cancellation, and simultaneous real errors. Address and undefined-behavior sanitizers remained clean.
+- GTA: 171 streamed files, 513 compared ranges and seven cancellation/recovery cases against the independent unpacked original.
+- RE7: 49 streamed files, 144 compared ranges and the same seven cancellation/recovery cases.
+- The ordinary folder-reader and home-launch handshake suite, retaining its strict source fences and 64 MiB payload cache.
+- Strict native SDK compilation of the four affected reader/container units.
+
+PFS metadata caching invalidates a page before filling it and marks it valid only after a complete callback. Namespace validation is committed only after a complete walk; traversal scratch is discarded on failure. The repair retains those rules, signing, immutable-generation checks, cache sizes, worker affinity and priority.
+
+These checks do not establish a linked or installed repair. The console comparison above used development 3 without this source change. The repaired reader still needs a separate development build and hardware qualification; the public folder-only release remains unchanged.

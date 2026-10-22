@@ -17,7 +17,9 @@ static int is_pfs(const uint8_t *p) { return le64(p)==2 && le64(p+8)==20130315; 
 static int raw(void *context,uint64_t at,void *out,size_t size) {
     struct bw_container *p=context;
     if (at>p->image_size || size>p->image_size-at || size>BW_PFSC_MAX_READ) return -1;
-    return p->ops.pread(p->source,at,out,size);
+    int result=p->ops.pread(p->source,at,out,size);
+    if (result==BW_CONTAINER_CANCELED) p->interrupted=1;
+    return result;
 }
 static int inner(void *context,uint64_t at,void *out,size_t size) {
     struct bw_container *p=context;
@@ -28,15 +30,31 @@ static int inner(void *context,uint64_t at,void *out,size_t size) {
     return result;
 }
 static int finish(struct bw_container *p,int result) {
-    if (p->ops.generation(p->source)) { p->failed=1;return BW_CONTAINER_STALE; }
-    if (p->decoder_error) { p->failed=1;return p->decoder_error==BW_PFSC_CODEC?BW_CONTAINER_CODEC:BW_PFS_IO; }
-    if (result==BW_PFS_IO || result==BW_PFS_FORMAT) p->failed=1;
+    int fence=p->ops.generation(p->source);
+    if (fence && fence!=BW_CONTAINER_CANCELED) { p->failed=1;return BW_CONTAINER_STALE; }
+    /* PFSC reports callback failures as IO. Only an explicit canceled read
+     * may undo that transient IO result. Genuine IO/codec/format failures
+     * stay fatal even if cancellation also arrives at the final fence. */
+    if (p->decoder_error) {
+        if (p->decoder_error!=BW_PFSC_IO || !p->interrupted) {
+            p->failed=1;return p->decoder_error==BW_PFSC_CODEC?BW_CONTAINER_CODEC:BW_PFS_IO;
+        }
+        p->decoder_error=0;
+    }
+    if (result && !(result==BW_PFS_IO && p->interrupted)) {
+        if (result==BW_PFS_FORMAT || result==BW_PFS_IO) p->failed=1;
+        return result;
+    }
+    if (p->interrupted || fence==BW_CONTAINER_CANCELED) { p->interrupted=0;return BW_CONTAINER_CANCELED; }
     return result;
 }
 static int begin(struct bw_container *p) {
     if (!p || !p->ready) return BW_PFS_ARGUMENT;
-    if (p->failed || p->ops.generation(p->source)) { p->failed=1;return BW_CONTAINER_STALE; }
-    return 0;
+    if (p->failed) return BW_CONTAINER_STALE;
+    int fence=p->ops.generation(p->source);
+    if (fence==BW_CONTAINER_CANCELED) return fence;
+    if (fence) { p->failed=1;return BW_CONTAINER_STALE; }
+    p->interrupted=0;return 0;
 }
 struct pick { uint32_t count;struct bw_pfs_inode first; };
 static int pick_file(void *context,const char *path,const struct bw_pfs_inode *node) {
@@ -51,7 +69,9 @@ int bw_container_open(struct bw_container *p,const struct bw_container_ops *ops,
     if (!ops || !ops->pread || !ops->generation || size<sizeof head || size>BW_PFS_MAX_VOLUME) return BW_PFS_ARGUMENT;
     if (assign_session(p)) return BW_PFS_LIMIT;
     p->ops=*ops;p->source=source;p->image_size=size;
-    if (p->ops.generation(source)) { p->failed=1;return BW_CONTAINER_STALE; }
+    int fence=p->ops.generation(source);
+    if (fence==BW_CONTAINER_CANCELED) return fence;
+    if (fence) { p->failed=1;return BW_CONTAINER_STALE; }
     if (raw(p,0,head,sizeof head)) return finish(p,BW_PFS_IO);
     if (le32(head)==0x43534650u) {
         p->inner_size=le64(head+40);p->has_pfsc=1;
@@ -118,6 +138,7 @@ int bw_container_file_read(const struct bw_container_file *file,uint64_t at,void
     return finish(p,bw_pfs_read_file(p->filesystem,file->inode,at,out,size));
 }
 const char *bw_container_error(int error) {
+    if (error==BW_CONTAINER_CANCELED) return "compressed read operation canceled";
     if (error==BW_CONTAINER_STALE) return "compressed source generation changed or previously failed";
     if (error==BW_CONTAINER_CODEC) return "compressed block checksum, length or zlib stream failed";
     return bw_pfs_error(error);

@@ -50,12 +50,14 @@ def main():
         struct.pack_into('<H', invalid_mode, 0x1c, 0x10)
         exfat = bytearray(65536)
         exfat[3:11] = b'EXFAT   '
-        refused = {'checksum-failure': damaged, 'nonmonotonic-table': invalid_table, 'unsupported-signed-pfs': invalid_mode,
+        mismatch, _ = make_pfs({**contents, 'packs/first.pak': contents['packs/first.pak'] + b'mismatch'})
+        refused = {'manifest-mismatch': mismatch, 'checksum-failure': damaged, 'nonmonotonic-table': invalid_table, 'unsupported-signed-pfs': invalid_mode,
                    'unsupported-exfat': pfsc(exfat), 'truncated-header': packed[:32]}
         for label, body in {**variants, **refused}.items():
             image = temp / (label + '.ffpfsc')
             image.write_bytes(body)
-            result = subprocess.run([str(exe), str(admitted), str(image), str(folder), *(['refuse'] if label in refused else [])],
+            mode = 'refuse-codec-cancel' if label == 'checksum-failure' else 'refuse-late-cancel' if label.startswith('unsupported-') else 'refuse'
+            result = subprocess.run([str(exe), str(admitted), str(image), str(folder), *([mode] if label in refused else [])],
                                     capture_output=True, text=True)
             if result.returncode:
                 raise RuntimeError(label + ': ' + result.stdout + result.stderr)

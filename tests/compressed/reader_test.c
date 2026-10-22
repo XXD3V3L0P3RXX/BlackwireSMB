@@ -5,6 +5,7 @@
 #include "reader/preload/source.h"
 #include "library/reader_selection.h"
 #include "streamreader/container_source.h"
+#include "streamreader/container_manifest.h"
 #include "streamreader/container_smb.h"
 #include "streamreader/manifest.h"
 #include <time.h>
@@ -19,8 +20,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-static unsigned checks,files,ranges,contexts,destroys,preads,nstats,hstats,pending_drained;
-static int canceled,changed,fail_read,fail_named,fail_held,fail_close;
+static unsigned checks,files,ranges,contexts,destroys,preads,nstats,hstats,pending_drained,cancellation_cases;
+static int canceled,changed,fail_read,fail_named,fail_held,fail_close,cancel_during_read,cancel_after_stat,cancel_on_io_error;
 static const char *live_image;
 struct smb2fh {int fd;};
 struct smb2_context {struct smb2fh *fh;uint8_t *pending;};
@@ -42,7 +43,8 @@ int smb2_connect_share(struct smb2_context *c,const char *server,const char *sha
     CHECK(c&&!strcmp(server,"192.0.2.1")&&!strcmp(share,"fixture")&&!strcmp(user,"fixture"));return 0;}
 int smb2_stat(struct smb2_context *c,const char *path,struct smb2_stat_64 *out){
     CHECK(c&&!strcmp(path,"fixture.ffpfsc"));struct stat st;nstats++;if(fail_named){fail_named=0;c->pending=(uint8_t *)out;return -EIO;}
-    if(stat(live_image,&st))return -EIO;stat_convert(&st,out);return 0;}
+    if(stat(live_image,&st))return -EIO;stat_convert(&st,out);
+    if(cancel_after_stat&&!--cancel_after_stat)canceled=1;return 0;}
 int smb2_fstat(struct smb2_context *c,struct smb2fh *fh,struct smb2_stat_64 *out){
     CHECK(c&&fh==c->fh);struct stat st;hstats++;if(fail_held){fail_held=0;c->pending=(uint8_t *)out;return -EIO;}
     if(fstat(fh->fd,&st))return -EIO;stat_convert(&st,out);return 0;}
@@ -53,8 +55,10 @@ int smb2_close(struct smb2_context *c,struct smb2fh *fh){CHECK(c&&fh==c->fh);int
 uint32_t smb2_get_max_read_size(struct smb2_context *c){CHECK(c);return 262144;}
 int smb2_pread(struct smb2_context *c,struct smb2fh *fh,uint8_t *out,uint32_t count,uint64_t at){
     CHECK(c&&fh==c->fh&&out&&count&&count<=262144);preads++;
-    if(fail_read){fail_read=0;c->pending=out;return -EIO;}
-    if(count>8191)count=8191;ssize_t got=pread(fh->fd,out,count,(off_t)at);return got<0?-errno:(int)got;
+    if(fail_read){fail_read=0;c->pending=out;if(cancel_on_io_error){cancel_on_io_error=0;canceled=1;}return -EIO;}
+    if(count>8191)count=8191;ssize_t got=pread(fh->fd,out,count,(off_t)at);
+    if(got>0&&cancel_during_read){cancel_during_read=0;canceled=1;}
+    return got<0?-errno:(int)got;
 }
 int smb2_get_nterror(struct smb2_context *c){CHECK(c);return 0;}
 static int guard(void *opaque){CHECK(opaque==&canceled);return canceled;}
@@ -68,13 +72,20 @@ static int collect(void *opaque,const char *path,const struct bw_pfs_inode *node
     p->items[p->count++]=(struct original){strdup(path),node->logical_size};p->path_bytes+=strlen(path)+1;return 0;}
 static int raw(void *opaque,uint64_t at,void *out,size_t size){return exact(*(int *)opaque,at,out,size);}
 static int unchanged(void *opaque){(void)opaque;return 0;}
+/* Model cancellation first observed at the final generation check, after
+ * a complete local callback. A simultaneous real decode error must win. */
+struct final_cancel {int fd;unsigned fences;};
+static int final_raw(void *opaque,uint64_t at,void *out,size_t size){
+    struct final_cancel *p=opaque;return exact(p->fd,at,out,size);}
+static int final_generation(void *opaque){
+    struct final_cancel *p=opaque;return ++p->fences>1?BW_CONTAINER_CANCELED:0;}
 static void put32(uint8_t *p,uint32_t n){for(unsigned i=0;i<4;i++)p[i]=(uint8_t)(n>>(8*i));}
 static void put64(uint8_t *p,uint64_t n){for(unsigned i=0;i<8;i++)p[i]=(uint8_t)(n>>(8*i));}
 static struct bp_source *open_source(const void *map,size_t map_size,const char *selection,size_t selection_size){
     static const char share[]="server=192.0.2.1\nshare=fixture\nuser=fixture\npassword=\n";
     struct bp_source *p=NULL;CHECK(!bp_source_open(&p,map,map_size,selection,selection_size,share,sizeof share-1,guard,&canceled));unsigned before=preads+nstats+hstats;CHECK(bp_source_worker_priority(p,384)==700);CHECK(before==preads+nstats+hstats);return p;}
 int main(int argc,char **argv){
-    CHECK(argc==4||argc==5);int refused=argc==5&&!strcmp(argv[4],"refuse");live_image=argv[2];
+    CHECK(argc==4||argc==5);int refused=argc==5;live_image=argv[2];
     int fd=open(argv[1],O_RDONLY|O_NOFOLLOW);CHECK(fd>=0);struct stat st,live;CHECK(!fstat(fd,&st)&&!stat(live_image,&live));
     struct bw_container *image=calloc(1,sizeof *image);CHECK(image);struct bw_container_ops ops={raw,unchanged};
     CHECK(!bw_container_open(image,&ops,&fd,(uint64_t)st.st_size));struct table table={0};CHECK(!bw_container_walk(image,collect,&table,NULL));
@@ -100,8 +111,45 @@ int main(int argc,char **argv){
     struct bp_source *source=open_source(map,map_size,selection,selection_size);struct bw_manifest manifest;CHECK(!bw_manifest_open(&manifest,map,map_size));
     uint8_t *left=malloc(BW_PFSC_MAX_READ),*right=malloc(BW_PFSC_MAX_READ);CHECK(left&&right);
     if(refused){
-        CHECK(stream_id!=UINT32_MAX);CHECK(bp_source_read(source,stream_id,0,left,1)<0);CHECK(!bp_source_close(source));
+        CHECK(stream_id!=UINT32_MAX);CHECK(bp_source_read(source,stream_id,0,left,1)==-EIO);
+        struct bp_source_progress failure;bp_source_progress(source,&failure);
+        CHECK(failure.poisoned&&failure.first_poison.valid);
+        unsigned prior_reads=preads,prior_named=nstats,prior_held=hstats;
+        CHECK(bp_source_read(source,stream_id,0,left,1)==-EIO);
+        CHECK(preads==prior_reads&&nstats==prior_named&&hstats==prior_held);
+        CHECK(!bp_source_close(source));
+        if(strcmp(argv[4],"refuse")){
+            struct final_cancel probe={open(live_image,O_RDONLY|O_NOFOLLOW),0};CHECK(probe.fd>=0);
+            struct bw_container_ops final_ops={final_raw,final_generation};
+            image=calloc(1,sizeof *image);CHECK(image);
+            int decoded=bw_container_open(image,&final_ops,&probe,(uint64_t)live.st_size);
+            int expected=!strcmp(argv[4],"refuse-codec-cancel")?BW_CONTAINER_CODEC:BW_PFS_UNSUPPORTED;
+            fprintf(stderr,"final cancellation precedence: decoded=%d expected=%d\n",decoded,expected);
+            CHECK(decoded==expected&&probe.fences>1);
+            if(expected==BW_CONTAINER_CODEC)CHECK(image->failed);
+            CHECK(!close(probe.fd));free(image);
+        }
     }else{
+        /* A canceled AIO request must not kill the immutable source session.
+         * Interrupt an uncached multi-block read after a positive SMB reply,
+         * then verify the next request on that SAME connection against the
+         * independent original file. No reconnect or re-admission may hide it. */
+        CHECK(stream_id!=UINT32_MAX);CHECK(bp_source_read(source,stream_id,0,left,8)==8);
+        unsigned cancel_contexts=contexts,cancel_destroys=destroys;
+        cancel_during_read=1;struct bp_read_witness cancel_witness={0};
+        int64_t canceled_result=bp_source_read_observed(source,stream_id,131072,left,131072,&cancel_witness);
+        CHECK(canceled_result==-ECANCELED&&!cancel_witness.valid&&canceled&&!cancel_during_read);
+        canceled=0;
+        int64_t retried_result=bp_source_read(source,stream_id,131072,left,131072);
+        fprintf(stderr,"cancellation recovery: canceled=%" PRId64 " next=%" PRId64 "\n",canceled_result,retried_result);
+        CHECK(retried_result==131072&&contexts==cancel_contexts&&destroys==cancel_destroys);
+        struct bw_manifest_record cancel_row;CHECK(!bw_manifest_get(&manifest,stream_id,&cancel_row));
+        char cancel_path[4096];int cancel_path_size=snprintf(cancel_path,sizeof cancel_path,"%s/%s",argv[3],cancel_row.path);
+        CHECK(cancel_path_size>0&&(size_t)cancel_path_size<sizeof cancel_path);
+        int cancel_original=open(cancel_path,O_RDONLY|O_NOFOLLOW);CHECK(cancel_original>=0);
+        CHECK(!exact(cancel_original,131072,right,131072)&&!memcmp(left,right,131072));CHECK(!close(cancel_original));
+        struct bp_source_performance cancel_perf;bp_source_performance(source,&cancel_perf);
+        CHECK(cancel_perf.canceled_reads==1&&cancel_perf.failed_reads==1);cancellation_cases++;
         for(uint32_t i=0;i<manifest.count;i++){
             struct bw_manifest_record row;CHECK(!bw_manifest_get(&manifest,i,&row));if(row.flags!=BW_MANIFEST_STREAM)continue;
             char path[4096],app[2048];int n=snprintf(path,sizeof path,"%s/%s",argv[3],row.path);CHECK(n>0&&(size_t)n<sizeof path);
@@ -117,6 +165,11 @@ int main(int argc,char **argv){
         CHECK(stream_id!=UINT32_MAX);CHECK(bp_source_read(source,stream_id,0,left,8)==8);
         unsigned before=preads,ns=nstats,hs=hstats;CHECK(bp_source_read(source,stream_id,0,left,8)==8);
         CHECK(preads==before&&nstats==ns+2&&hstats==hs+2); /* Cached reads retain strict image fences. */
+        cancel_contexts=contexts;cancel_destroys=destroys;cancel_after_stat=2;
+        CHECK(bp_source_read_observed(source,stream_id,0,left,8,&cancel_witness)==-ECANCELED);
+        CHECK(canceled&&!cancel_after_stat&&!cancel_witness.valid);
+        canceled=0;CHECK(bp_source_read(source,stream_id,0,left,8)==8);
+        CHECK(contexts==cancel_contexts&&destroys==cancel_destroys);cancellation_cases++;
         canceled=1;CHECK(bp_source_read(source,stream_id,0,left,8)==-ECANCELED);canceled=0;
         changed=1;CHECK(bp_source_read(source,stream_id,0,left,8)==-EIO);changed=0;CHECK(!bp_source_close(source));
         source=open_source(map,map_size,selection,selection_size);fail_read=1;
@@ -130,8 +183,49 @@ int main(int argc,char **argv){
             free(owned);
         }
         CHECK(pending_drained==4);
+        /* Cancel before lazy decoder admission and during its first payload.
+         * The same SMB context must recover; incomplete handles must close. */
+        for(unsigned point=0;point<2;point++){
+            source=open_source(map,map_size,selection,selection_size);
+            cancel_contexts=contexts;cancel_destroys=destroys;
+            cancel_after_stat=point==0;cancel_during_read=point==1;
+            CHECK(bp_source_read_observed(source,stream_id,0,left,8,&cancel_witness)==-ECANCELED);
+            CHECK(!cancel_witness.valid&&canceled&&!cancel_after_stat&&!cancel_during_read);
+            CHECK(contexts==cancel_contexts&&destroys==cancel_destroys);
+            canceled=0;CHECK(bp_source_read(source,stream_id,131072,left,131072)==131072);
+            CHECK(contexts==cancel_contexts&&destroys==cancel_destroys);
+            cancel_original=open(cancel_path,O_RDONLY|O_NOFOLLOW);CHECK(cancel_original>=0);
+            CHECK(!exact(cancel_original,131072,right,131072)&&!memcmp(left,right,131072));CHECK(!close(cancel_original));
+            CHECK(!bp_source_close(source));cancellation_cases++;
+        }
+        /* A simultaneous real transport failure remains permanent and drains
+         * the pending decoder destination before that workspace can be freed. */
+        source=open_source(map,map_size,selection,selection_size);
+        CHECK(bp_source_read(source,stream_id,0,left,8)==8);
+        unsigned drained_before=pending_drained;
+        fail_read=cancel_on_io_error=1;
+        CHECK(bp_source_read_observed(source,stream_id,131072,left,131072,&cancel_witness)==-EIO);
+        CHECK(!cancel_witness.valid&&canceled&&!cancel_on_io_error&&pending_drained==drained_before+1);
+        canceled=0;before=preads;CHECK(bp_source_read(source,stream_id,0,left,8)==-EIO&&preads==before);
+        CHECK(!bp_source_close(source));cancellation_cases++;
+        /* Source replacement is still fatal when cancellation arrives on its
+         * entry stat; clearing the request flag cannot revive stale cached data. */
+        source=open_source(map,map_size,selection,selection_size);
+        CHECK(bp_source_read(source,stream_id,0,left,8)==8);
+        changed=cancel_after_stat=1;
+        CHECK(bp_source_read(source,stream_id,131072,left,131072)==-EIO&&canceled&&!cancel_after_stat);
+        canceled=changed=0;before=preads;CHECK(bp_source_read(source,stream_id,0,left,8)==-EIO&&preads==before);
+        CHECK(!bp_source_close(source));cancellation_cases++;
+        /* Failed cleanup of a canceled first-open is a real transport error;
+         * the retained session must not be reused after that uncertainty. */
+        source=open_source(map,map_size,selection,selection_size);
+        cancel_during_read=fail_close=1;
+        CHECK(bp_source_read_observed(source,stream_id,0,left,8,&cancel_witness)==-EIO);
+        CHECK(canceled&&!cancel_during_read&&!fail_close&&!cancel_witness.valid);
+        canceled=0;before=preads;CHECK(bp_source_read(source,stream_id,0,left,8)==-EIO&&preads==before);
+        CHECK(!bp_source_close(source));cancellation_cases++;
     }
     CHECK(contexts==destroys);
-    printf("{\"passed\":true,\"checks\":%u,\"filesCompared\":%u,\"rangesCompared\":%u,\"transportModelOnly\":true,\"strictCachedImageFences\":true,\"contextsDestroyed\":%u,\"pendingDestinationsDrained\":%u}\n",checks,files,ranges,destroys,pending_drained);
+    printf("{\"passed\":true,\"checks\":%u,\"filesCompared\":%u,\"rangesCompared\":%u,\"transportModelOnly\":true,\"strictCachedImageFences\":true,\"contextsDestroyed\":%u,\"pendingDestinationsDrained\":%u,\"cancellationRecoveryCases\":%u}\n",checks,files,ranges,destroys,pending_drained,cancellation_cases);
     for(uint32_t i=0;i<table.count;i++)free(table.items[i].path);free(table.items);free(map);free(left);free(right);return 0;
 }

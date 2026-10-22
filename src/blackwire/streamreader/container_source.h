@@ -4,13 +4,17 @@
 #include "pfsc_range.h"
 
 struct bw_container_ops {
+    /* Exact, bounded reads. BW_CONTAINER_CANCELED explicitly interrupts the
+     * current operation; every other nonzero result is a real read failure. */
     int (*pread)(void *,uint64_t,void *,size_t);
     /* Zero only when the held and named source still match the admitted
-     * immutable generation. Called before and after every public operation. */
+     * immutable generation. BW_CONTAINER_CANCELED cancels this operation
+     * without changing that generation. Any other failure is permanent.
+     * Called before and after every public operation. */
     int (*generation)(void *);
 };
 enum bw_container_kind { BW_CONTAINER_NONE, BW_CONTAINER_PFS, BW_CONTAINER_PFSC_PFS, BW_CONTAINER_WRAPPED_PFS };
-enum { BW_CONTAINER_STALE=-32, BW_CONTAINER_CODEC=-33 };
+enum { BW_CONTAINER_STALE=-32, BW_CONTAINER_CODEC=-33, BW_CONTAINER_CANCELED=-35 };
 struct bw_container {
     struct bw_container_ops ops;
     void *source;
@@ -18,7 +22,7 @@ struct bw_container {
     uint64_t session;
     struct bw_pfs outer,inner,*filesystem;
     struct bw_pfsc pfsc;
-    int kind,ready,failed,has_pfsc,decoder_error;
+    int kind,ready,failed,has_pfsc,decoder_error,interrupted;
 };
 /* Keep this object at a stable address; no copying, concurrent calls or
  * callback re-entry. No retained allocation: workspace is fixed. PFS traversal

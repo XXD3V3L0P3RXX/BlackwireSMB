@@ -130,13 +130,18 @@ static int remote_path(struct bp_source *p,uint32_t id,char out[2048],struct bw_
  * handle. Remote generation checks bracket the entire logical read, including
  * cache hits. Decoder callbacks check cancellation in RAM between bounded
  * payload calls; they do not multiply SMB stat requests for each PFSC block. */
-static int image_current(void *opaque){return current(opaque);}
+static int image_current(void *opaque){
+    struct bp_source *p=opaque;
+    if(!p||p->failed||!p->ready||!p->smb||!p->current)return -1;
+    return p->current(p->opaque)?BW_CONTAINER_CANCELED:0;
+}
 static int image_payload(void *opaque,uint64_t at,void *output,size_t size){
     struct bp_source *p=opaque;struct bp_handle *h=&p->handles[0];
-    if(current(p)||!h->fh||size>BW_PFSC_MAX_READ||at>h->admitted.smb2_size||size>h->admitted.smb2_size-at)return -1;
+    int state=image_current(p);if(state)return state;
+    if(!h->fh||size>BW_PFSC_MAX_READ||at>h->admitted.smb2_size||size>h->admitted.smb2_size-at)return -1;
     uint32_t maximum=smb2_get_max_read_size(p->smb);if(!maximum)return poison(p,BP_SOURCE_MAX_READ);
     for(size_t done=0;done<size;){
-        if(current(p))return -1;
+        state=image_current(p);if(state)return state;
         uint32_t want=(uint32_t)(size-done);if(want>maximum)want=maximum;
         if(want>p->performance.largest_pread_request)p->performance.largest_pread_request=want;
         progress_begin(p,BP_SOURCE_PREAD);struct bp_stamp stamp=perf_begin(p,&p->performance.pread);
@@ -146,7 +151,7 @@ static int image_payload(void *opaque,uint64_t at,void *output,size_t size){
         if((uint64_t)got>UINT64_MAX-p->network)return poison(p,BP_SOURCE_COUNTER);
         p->network+=(uint64_t)got;done+=(size_t)got;
     }
-    return current(p);
+    return image_current(p);
 }
 static int image_fence(struct bp_source *p,int final){
     struct bp_handle *h=&p->handles[0];struct smb2_stat_64 named,held;
@@ -157,6 +162,15 @@ static int image_fence(struct bp_source *p,int final){
     if(!stat_same(&named,&held)||!stat_same(&h->admitted,&held))return poison(p,final?BP_SOURCE_FINAL_IDENTITY:BP_SOURCE_ENTRY_IDENTITY);
     return current(p);
 }
+/* A canceled first read may leave lazy admission incomplete. Release only
+ * its owned handle/workspace on this same worker; keep the source connection
+ * and immutable admission so a subsequent job can initialize it afresh. */
+static struct bp_handle *image_open_canceled(struct bp_source *p){
+    struct bp_handle *h=&p->handles[0];struct smb2fh *held=h->fh;h->fh=NULL;
+    bw_container_manifest_destroy(&p->image_files);free(p->image);p->image=NULL;
+    if(held&&close_file(p,held,BP_SOURCE_DISCONNECT_CLOSE))poison(p,BP_SOURCE_DISCONNECT_CLOSE);
+    return NULL;
+}
 static struct bp_handle *image_remote(struct bp_source *p,uint32_t id){
     struct bp_handle *h=&p->handles[0];
     if(!p->image){
@@ -164,12 +178,14 @@ static struct bp_handle *image_remote(struct bp_source *p,uint32_t id){
         if(h->admitted.smb2_type!=SMB2_TYPE_FILE||h->admitted.smb2_size<48||h->admitted.smb2_size>BW_PFS_MAX_VOLUME||h->admitted.smb2_mtime!=p->image_mtime)
             return poison(p,BP_SOURCE_ENTRY_METADATA),NULL;
         h->fh=open_file(p,p->binding.source);if(!h->fh)return poison(p,BP_SOURCE_OPEN),NULL;
-        if(image_fence(p,0))return NULL;
+        if(image_fence(p,0))return image_current(p)==BW_CONTAINER_CANCELED?image_open_canceled(p):NULL;
         p->image=calloc(1,sizeof *p->image);if(!p->image)return poison(p,BP_SOURCE_CONTAINER),NULL;
         struct bw_container_ops ops={image_payload,image_current};
-        if(bw_container_open(p->image,&ops,p,h->admitted.smb2_size)||
-           bw_container_manifest_bind(&p->image_files,p->image,&p->map)||image_fence(p,1))
-            return poison(p,BP_SOURCE_CONTAINER),NULL;
+        int result=bw_container_open(p->image,&ops,p,h->admitted.smb2_size);
+        if(!result)result=bw_container_manifest_bind(&p->image_files,p->image,&p->map);
+        if(result==BW_CONTAINER_CANCELED&&!p->failed)return image_open_canceled(p);
+        if(result)return poison(p,BP_SOURCE_CONTAINER),NULL;
+        if(image_fence(p,1))return image_current(p)==BW_CONTAINER_CANCELED?image_open_canceled(p):NULL;
     }else if(image_fence(p,0))return NULL;
     h->id=id;return h;
 }
@@ -257,8 +273,9 @@ static int load(void *opaque,uint32_t id,uint64_t block,uint8_t *dest,size_t cap
     if(p->selected.source_kind==BW_PROVIDER_CONTAINER){
         if(id>=p->image_files.count||!p->image_files.files)return poison(p,BP_SOURCE_CONTAINER);
         int decoded=bw_container_file_read(&p->image_files.files[id],at,p->scratch,run);
-        if(current(p))return -1;
-        if(decoded||scope_current(scope,id))return poison(p,BP_SOURCE_CONTAINER);
+        if(decoded==BW_CONTAINER_CANCELED)return -1;
+        if(decoded)return poison(p,BP_SOURCE_CONTAINER);
+        if(scope_current(scope,id))return -1;
         scope->staged_at=at;scope->staged_size=run;
         count(&p->performance.coalesced_runs,1);count(&p->performance.coalesced_blocks,blocks);
         memcpy(dest,p->scratch,n);*out_size=n;return 0;
