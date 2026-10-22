@@ -686,12 +686,15 @@ static int valid_library(const struct bw_native_library *p){
             if(item->container_error||item->container_kind<BW_CONTAINER_PFS||item->container_kind>BW_CONTAINER_WRAPPED_PFS||
                !item->logical_boot_size||item->logical_boot_size>UINT64_C(2147483648)||item->image.smb2_type!=SMB2_TYPE_FILE||
                item->container_bytes<48||item->container_bytes>BW_PFS_MAX_VOLUME||item->image.smb2_size!=item->container_bytes||memcmp(generation,item->image_sha256,32)||
-               memcmp(&item->boot,&empty,sizeof empty)||memcmp(&item->param,&empty,sizeof empty)||item->cover)return 0;
+               memcmp(&item->boot,&empty,sizeof empty)||memcmp(&item->param,&empty,sizeof empty)||memcmp(&item->icon,&empty,sizeof empty)||
+               item->logical_icon_size>BW_SOURCE_SMALL_FILE_LIMIT||item->cover!=(item->logical_icon_size!=0))return 0;
         }
         if(p->covers){
             const struct bw_native_cover *cover=&p->covers[i];
             if((!cover->bytes)!=(!cover->size)||cover->size>BW_SOURCE_SMALL_FILE_LIMIT||cover->size>BW_NATIVE_COVER_LIMIT-covers||
-                (cover->size&&(!item->cover||item->state!=BW_CATALOG_FOLDER||cover->size!=item->icon.size)))return 0;
+                (cover->size&&(!item->cover||
+                 (item->state==BW_CATALOG_FOLDER?cover->size!=item->icon.size:
+                  item->state!=BW_CATALOG_CONTAINER_READY||cover->size!=item->logical_icon_size))))return 0;
             covers+=cover->size;
         }
     }
@@ -699,7 +702,7 @@ static int valid_library(const struct bw_native_library *p){
 }
 /* The caller holds the backend lock for this validated catalog generation.
  * Artwork may be shared by exact title ID; source/reader capabilities and
- * the folder-only cache metadata remain independent of this lookup. */
+ * the source generation and reader capabilities remain independent of this lookup. */
 static const struct bw_native_cover *cached_cover(const struct bw_native_library *p,size_t item){
     if(!p->covers||item>=p->catalog.count||item>=p->cover_count)return NULL;
     const struct bw_catalog_item *selected=&p->catalog.items[item];
@@ -722,6 +725,13 @@ static int discover_one(void *opaque,struct bw_share_config *share,struct bw_nat
     if(out->catalog.count){out->covers=calloc(out->catalog.count,sizeof *out->covers);if(!out->covers){result=-1;goto done;}out->cover_count=out->catalog.count;}
     for(size_t i=0;i<out->catalog.count;i++){
         struct bw_catalog_item *item=&out->catalog.items[i];memcpy(item->source_share,share_name,sizeof item->source_share);
+        if(item->state==BW_CATALOG_CONTAINER_READY){
+            void *bytes=NULL;size_t size=0;
+            int found=bw_source_catalog_container_cover(&source,item,cover_limit-out->cover_bytes,&bytes,&size);
+            if(found<0){free(bytes);result=-1;break;}
+            if(!found){out->covers[i]=(struct bw_native_cover){bytes,size};out->cover_bytes+=size;}
+            continue;
+        }
         if(!item->cover||!item->icon.size||item->icon.size>cover_limit-out->cover_bytes)continue;
         char path[1280];int n=snprintf(path,sizeof path,"%s/sce_sys/icon0.png",item->source);if(n<0||(size_t)n>=sizeof path){result=-1;break;}
         void *bytes=NULL;size_t size=0;struct bw_source_info info;

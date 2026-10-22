@@ -1,6 +1,6 @@
 # Two shared folders
 
-The development build `blackwire-two-sources-dev.6` can scan two SMB shares on
+The development build `blackwire-two-sources-dev.7` can scan two SMB shares on
 the same PC, using the same sign-in details. The second share is optional.
 
 For separate extracted and compressed libraries, use this layout:
@@ -24,6 +24,15 @@ relative path and preparation identity. Equal game titles or relative paths in
 different shares are separate entries; preparation and removal act on the
 selected copy. Details shows the share name. A game started from the PS5 Games
 tab is matched to its exact registered prepared copy.
+
+Compressed games read their own `sce_sys/icon0.png` from the validated image;
+they do not need an extracted copy for artwork. Reads retain the image generation
+checks, per-image 4 MiB limit and combined 16 MiB artwork-cache budget. Missing
+or oversized artwork uses the existing placeholder.
+
+Normal Finish setup recognizes the exact readers installed by compressed
+development 5 and two-source development 6. Their bytes and sizes are pinned;
+unknown or altered libraries remain refused. Existing startup files are kept.
 
 Keeping compressed games in one folder and extracted games in the other is a
 useful arrangement. Moving a PC source changes its identity; this feature does

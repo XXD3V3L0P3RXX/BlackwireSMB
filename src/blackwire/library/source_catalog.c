@@ -52,7 +52,7 @@ static int listed_image(const struct bw_source_info *listed,const struct smb2_st
 static int fail(struct bw_source_catalog *p,const char *error){if(!p->error)p->error=error;return -1;}
 struct candidate {char source[1024],name[241];struct bw_source_info info;unsigned depth;};
 struct scan {struct bw_source_smb *source;struct bw_source_catalog *catalog;struct candidate *pending;size_t count,capacity;const char *relative;unsigned depth;};
-struct logical_metadata {struct bw_source_smb *source;struct bw_pfs_inode boot,param;size_t path_bytes;uint32_t files;int error;};
+struct logical_metadata {struct bw_source_smb *source;struct bw_pfs_inode boot,param,icon;size_t path_bytes;uint32_t files;int error;};
 static int logical(void *opaque,const char *path,const struct bw_pfs_inode *node){
     struct logical_metadata *p=opaque;
     if(live(p->source)){p->error=BW_CONTAINER_STALE;return -1;}
@@ -63,6 +63,7 @@ static int logical(void *opaque,const char *path,const struct bw_pfs_inode *node
     p->files++;p->path_bytes+=n;
     if(!strcmp(path,"eboot.bin"))p->boot=*node;
     if(!strcmp(path,"sce_sys/param.json"))p->param=*node;
+    if(!strcmp(path,"sce_sys/icon0.png"))p->icon=*node;
     return 0;
 }
 static int inspect_image(struct scan *scan,const struct candidate *candidate,struct bw_catalog_item *item){
@@ -90,6 +91,9 @@ static int inspect_image(struct scan *scan,const struct candidate *candidate,str
     if(live(source)){bad=fail(scan->catalog,"catalog_image_scan_expired");goto done;}
     result=bw_container_validate(&image->container);if(result)goto done;
     item->logical_boot_size=metadata.boot.logical_size;item->state=BW_CATALOG_CONTAINER_READY;
+    if(metadata.icon.id&&metadata.icon.logical_size&&metadata.icon.logical_size<=BW_SOURCE_SMALL_FILE_LIMIT){
+        item->logical_icon_size=metadata.icon.logical_size;item->cover=1;
+    }
 done:
     item->container_error=result;
     uint64_t requests=image->read_calls+2*image->generation_checks+(image->smb?3u:0u);
@@ -102,6 +106,32 @@ done:
     if(result==BW_PFS_IO||result==BW_CONTAINER_STALE)bad=fail(scan->catalog,"catalog_image_generation_or_io_failed");
     if(result){memset(item->title_id,0,sizeof item->title_id);memset(item->title,0,sizeof item->title);item->logical_boot_size=0;}
     free(json);free(image);return bad;
+}
+int bw_source_catalog_container_cover(struct bw_source_smb *source,const struct bw_catalog_item *item,size_t limit,void **out,size_t *size){
+    if(out)*out=NULL;if(size)*size=0;
+    if(!source||!item||!out||!size||item->state!=BW_CATALOG_CONTAINER_READY)return -1;
+    if(!item->cover||!item->logical_icon_size||item->logical_icon_size>BW_SOURCE_SMALL_FILE_LIMIT||item->logical_icon_size>limit)return 1;
+    struct bw_container_smb *image=calloc(1,sizeof *image);void *bytes=NULL;int result=-1;
+    if(!image)goto done;
+    if(live(source)||bw_container_smb_open_owned(image,&source->smb,item->source)||
+       !bw_source_catalog_image_same(&item->image,&image->admitted)||image->container.kind!=item->container_kind)goto done;
+    struct bw_container_file icon={0};
+    if(bw_container_file_open(&image->container,"sce_sys/icon0.png",&icon)||icon.size!=item->logical_icon_size)goto done;
+    bytes=malloc((size_t)icon.size);if(!bytes)goto done;
+    if(live(source)||bw_container_file_read(&icon,0,bytes,(size_t)icon.size)||
+       live(source)||bw_container_validate(&image->container))goto done;
+    result=0;
+done:
+    if(image){
+        uint64_t requests=image->read_calls+2*image->generation_checks+(image->smb?3u:0u);
+        if(image->read_bytes>UINT64_MAX-source->content_bytes||requests>UINT32_MAX-source->requests)result=-1;
+        else{source->content_bytes+=image->read_bytes;source->requests+=(uint32_t)requests;}
+        if(image->handle&&bw_container_smb_close(image))result=-1;
+        if(image->last_transport_error)result=-1;
+    }
+    if(result){free(bytes);if(!source->error)source->error="catalog_image_cover_generation_or_io_failed";}
+    else{*out=bytes;*size=(size_t)item->logical_icon_size;}
+    free(image);return result;
 }
 static int component(const char *name){size_t n=strlen(name);return n&&n<=240&&!strchr(name,'/')&&!bw_manifest_validate_path(name,n);}
 static int image(const char *name){

@@ -333,8 +333,14 @@ static const struct pb_pin pu_compressed_dev2={"libSceAmpr.sprx",828416,
 /* Exact development 3 reader read back from both prepared test copies. */
 static const struct pb_pin pu_compressed_dev3={"libSceAmpr.sprx",828736,
     "3b91a0b41203ce15afe40937dfe4e2b13c289f6fdfeedf11076e4c86eb7b6033"};
+/* Exact development 5 reader read back from the prepared compressed games. */
+static const struct pb_pin pu_compressed_dev5={"libSceAmpr.sprx",829328,
+    "135148e2de73b5b54d6f18dbfb95c1f2cd2d7d7e3e6dac60b756e844e6cbc684"};
+/* Exact SDK-qualified two-source reader, for copies prepared by dev.6. */
+static const struct pb_pin pu_two_sources_dev6={"libSceAmpr.sprx",831168,
+    "c9d069b520c367c971e52432a053d7105a7019cb19ee97185120bffb6190e025"};
 static int pu_previous_match(uint64_t size,const uint8_t actual[32]){
-    const struct pb_pin *known[]={&pu_previous,&pu_public07,&pu_public09,&pu_public10a,&pu_live10a,&pu_reference348,&pu_home7944,&pu_home_diag7c,&pu_standalone_preview1,&pu_compressed_dev2,&pu_compressed_dev3};uint8_t expected[32];
+    const struct pb_pin *known[]={&pu_previous,&pu_public07,&pu_public09,&pu_public10a,&pu_live10a,&pu_reference348,&pu_home7944,&pu_home_diag7c,&pu_standalone_preview1,&pu_compressed_dev2,&pu_compressed_dev3,&pu_compressed_dev5,&pu_two_sources_dev6};uint8_t expected[32];
     for(unsigned i=0;i<sizeof known/sizeof known[0];i++)
         if(size==known[i]->size&&!pb_hex(known[i]->hex,expected)&&!memcmp(actual,expected,32))return 1;
     return 0;
