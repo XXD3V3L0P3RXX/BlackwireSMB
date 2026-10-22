@@ -33,10 +33,17 @@ def main():
    if len(f)>=2:(needed if f[-2]=='U' else defined).add(f[-1])
  names=sorted(n for n in needed-defined if n.startswith('bw_'))
  declarations='\n'.join(p.read_text() for d in (LIB,STREAM) for p in d.glob('*.h'))
- stub=['#include "native_backend.h"','#include "native_prepared_target.h"','#include "native_derived_context.h"','#include "native_batch_context.h"','#include "source_directory.h"','#include "container_source.h"','#include "startup_runtime_control.h"','#include <stdlib.h>']
+ stub=['#include "native_backend.h"','#include "native_prepared_target.h"','#include "native_derived_context.h"','#include "native_batch_context.h"','#include "source_directory.h"','#include "container_source.h"','#include "startup_runtime_control.h"','#include <smb2/smb2.h>','#include <smb2/libsmb2.h>','#include <stdlib.h>']
  for name in names:
   found=re.findall(r'((?:int|void|const\s+struct\s+\w+\s*\*|struct\s+\w+\s*\*)\s*'+re.escape(name)+r'\s*\([^;{}]*\))\s*;',declarations)
   if not found:raise ValueError('Missing explicit unexercised declaration: '+name)
+  stub.append(found[0]+' { abort(); }')
+ # Function-address comparisons retain native preparation in this fixture.
+ # No network operation is part of the injected removal test: abort if used.
+ smb_headers=(ROOT/'vendor/libsmb2/include/smb2/libsmb2.h').read_text()
+ for name in sorted(n for n in needed-defined if n.startswith('smb2_')):
+  found=re.findall(r'((?:int|void|struct\s+\w+\s*\*)\s*'+re.escape(name)+r'\s*\([^;{}]*\))\s*;',smb_headers)
+  if len(found)!=1:raise ValueError('Missing exact unexercised SMB declaration: '+name)
   stub.append(found[0]+' { abort(); }')
  p=out/'unsupported.c';p.write_text('\n'.join(stub)+'\n');obj=out/'unsupported.o';run('unsupported-abort-stubs',[*host,'-Wno-unused-parameter','-Wno-c2x-extensions','-c',p,'-o',obj]);objects.append(obj)
  binary=out/'host-game-removal-backend';run('host-link',['clang-18','-fsanitize=address,undefined','-fno-sanitize-recover=all',*objects,'-Wl,--gc-sections','-pthread','-lm','-o',binary]);observed=json.loads(run('actual-async-routes',[binary]))

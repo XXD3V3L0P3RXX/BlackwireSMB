@@ -12,16 +12,22 @@ static int removal_field(void *opaque,const char *key,size_t kn,const void *body
     if(kn==4&&!memcmp(key,"name",4))bit=1;
     else if(kn==17&&!memcmp(key,"libraryGeneration",17))bit=2;
     else if(kn==16&&!memcmp(key,"settingsRevision",16))bit=4;
-    else if(kn==16&&!memcmp(key,"confirmedTitleId",16)&&!p->restore)bit=8;else return -1;
+    else if(kn==16&&!memcmp(key,"confirmedTitleId",16)&&!p->restore)bit=8;
+    else if(kn==13&&!memcmp(key,"sourceBinding",13))bit=16;else return -1;
     if(p->seen&bit)return -1;p->seen|=bit;
     if(bit==1)return bw_document_string(body,size,p->out->selected.source,sizeof p->out->selected.source);
     if(bit==8)return bw_document_string(body,size,p->out->confirmed_title,sizeof p->out->confirmed_title);
+    if(bit==16)return bw_document_string(body,size,p->out->selected.source_binding,sizeof p->out->selected.source_binding);
     if(removal_number(body,size,bit==2?UINT64_C(9007199254740991):UINT32_MAX,&n))return -1;
     if(bit==2)p->out->selected.library_generation=n;else p->out->selected.settings_revision=(uint32_t)n;return 0;
 }
 int bw_native_removal_request_parse(const void *body,size_t size,unsigned restore,struct bw_native_removal_request *out){
     if(!out)return -1;memset(out,0,sizeof *out);if(!body||!size||size>4096||restore>1)return -1;
-    struct removal_parser parser={out,0,restore};int bad=bw_document_fields(body,size,removal_field,&parser)||parser.seen!=(restore?7u:15u)||bw_manifest_validate_path(out->selected.source,strlen(out->selected.source));
+    struct removal_parser parser={out,0,restore};int bad=bw_document_fields(body,size,removal_field,&parser)||(parser.seen&15u)!=(restore?7u:15u)||bw_manifest_validate_path(out->selected.source,strlen(out->selected.source));
+    if(parser.seen&16u){const char *b=out->selected.source_binding;
+        if(strlen(b)!=74||memcmp(b,"PPSA",4)||b[9]!='_'||strspn(b+10,"0123456789abcdef")!=64)bad=1;
+        for(unsigned i=4;i<9;i++)if(b[i]<'0'||b[i]>'9')bad=1;
+    }
     if(!restore){if(strnlen(out->confirmed_title,10)!=9||memcmp(out->confirmed_title,"PPSA",4))bad=1;for(unsigned i=4;i<9;i++)if(out->confirmed_title[i]<'0'||out->confirmed_title[i]>'9')bad=1;}
     if(bad){bw_native_sensitive_clear(out,sizeof *out);return -1;}return 0;
 }

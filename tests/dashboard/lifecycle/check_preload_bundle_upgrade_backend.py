@@ -45,8 +45,30 @@ def main():
         obj=out/(str(index)+'-'+path.stem+'.o');dep=obj.with_suffix('.d');deps.append(dep)
         # Only the upgrade function is a transport spy. Keep the actual
         # presentation-only workspace observer, with exact no-follow checks.
-        extra=['-Dbw_preload_bundle_upgrade_checked=fixture_unused_upgrade'] if path.name=='preload_bundle.c' else []
+        extra=['-Dbw_preload_bundle_upgrade_checked=fixture_unused_upgrade','-Dbw_preload_bundle_upgrade_controlled=fixture_unused_controlled_upgrade'] if path.name=='preload_bundle.c' else []
         run('compile-'+path.stem,[args.cc,*flags,*extra,'-MD','-MF',dep,'-c',path,'-o',obj]);objects.append(obj)
+    # Backend function-address comparisons retain unreachable production
+    # preparation paths. Keep the injected test independent of SMB/reader
+    # installation, and fail immediately if such a path is ever executed.
+    defined,needed=set(),set()
+    for obj in objects:
+        for line in run('symbols-'+obj.stem,['nm','-g',obj]).splitlines():
+            fields=line.split()
+            if len(fields)>=2:(needed if fields[-2]=='U' else defined).add(fields[-1])
+    includes=('native_backend.h','native_prepared_target.h','native_derived_context.h','native_batch_context.h',
+              'source_directory.h','container_source.h','startup_runtime_control.h','preload_bundle.h','native_removal_request.h')
+    stub=['#include "'+name+'"' for name in includes]
+    stub+=['#include <smb2/smb2.h>','#include <smb2/libsmb2.h>','#include <stdlib.h>']
+    declarations='\n'.join(path.read_text() for directory in (LIB,STREAM) for path in directory.glob('*.h'))
+    declarations+='\n'+(ROOT/'vendor/libsmb2/include/smb2/libsmb2.h').read_text()
+    for name in sorted(n for n in needed-defined if n.startswith(('bw_','smb2_'))):
+        if name=='bw_preload_embedded_image':
+            stub.append('const struct bw_preload_image bw_preload_embedded_image={0};');continue
+        found=re.findall(r'((?:int|void|const\s+struct\s+\w+\s*\*|struct\s+\w+\s*\*)\s*'+re.escape(name)+r'\s*\([^;{}]*\))\s*;',declarations)
+        if not found:raise ValueError('Missing explicit unexercised declaration: '+name)
+        stub.append(found[0]+' { abort(); }')
+    unsupported=out/'unsupported.c';unsupported.write_text('\n'.join(stub)+'\n')
+    obj=out/'unsupported.o';run('unsupported-abort-stubs',[args.cc,*flags,'-Wno-unused-parameter','-Wno-c2x-extensions','-c',unsupported,'-o',obj]);objects.append(obj)
     binary=out/'host-upgrade-backend'
     run('host-link',[args.cc,'-fsanitize=address,undefined','-fno-sanitize-recover=all',*objects,
         *['-Wl,--wrap='+n for n in ('open','dup','close','fclose','fgets','clock_gettime')],'-Wl,--gc-sections','-pthread','-lm','-o',binary])

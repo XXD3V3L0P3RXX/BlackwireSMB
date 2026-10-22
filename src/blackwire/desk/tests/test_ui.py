@@ -410,8 +410,30 @@ const binding='PPSA99999_'+'a'.repeat(64);
 const s={backend:'native',library:{phase:'ready',generation:7},setup:{configured:true,revision:3},settings:{server:'pc',share:'Games'},games:[{name:'Collection/Café & Game',titleId:'PPSA99999',sourceBinding:binding,canStart:true}],jobs:[],stream:{}};
 const f=ui.dashboardLaunch('#stream=Collection%2FCaf%C3%A9%20%26%20Game&binding='+encodeURIComponent(binding));
 const a=f.step(s);assert.strictEqual(a.route,'/api/start');assert.strictEqual(a.body.name,'Collection/Café & Game');
-assert.strictEqual(JSON.stringify(a.body),JSON.stringify({name:'Collection/Café & Game',libraryGeneration:7,settingsRevision:3}));
+assert.strictEqual(JSON.stringify(a.body),JSON.stringify({name:'Collection/Café & Game',libraryGeneration:7,settingsRevision:3,sourceBinding:binding}));
 assert.strictEqual(f.step(s),null);f.accepted({ok:true,runId:'11111111111111111111111111111111'});assert.strictEqual(f.step(s),null);
+''')
+
+    def test_two_shares_keep_one_account_and_can_remove_the_optional_share(self):
+        self.behavior('''
+const s={backend:'native',setup:{editable:true,hasSavedCredentials:true,revision:3},settings:{server:'pc',share:'CompressedGames',share2:'FolderGames',user:'project-fixture'}};
+const fields={server:'pc',share:'CompressedGames',share2:' FolderGames ',user:'project-fixture',keep:true};
+const body=ui.setupBody(s,fields);assert.strictEqual(body.share2,'FolderGames');assert(body.keepCredentials);assert(!Object.hasOwn(body,'smbPassword'));
+assert.strictEqual(ui.setupBody(s,{...fields,share2:''}).share2,'');
+assert.throws(()=>ui.setupBody(s,{...fields,share2:'compressedgames'}),/two different/);
+assert(!Object.hasOwn(ui.setupBody(s,{server:'pc',share:'CompressedGames',user:'project-fixture',keep:true}),'share2'));
+''')
+
+    def test_same_relative_path_in_two_shares_uses_the_selected_binding(self):
+        self.behavior('''
+const a='PPSA90001_'+'a'.repeat(64),b='PPSA90001_'+'b'.repeat(64),c=catalogFixture();
+c.items=[c.items[0],{...c.items[0],id:'pc:PPSA90001:'+'b'.repeat(64)}];
+const s={backend:'native',dashboard:c,library:{phase:'ready',generation:7},setup:{configured:true,revision:3},settings:{server:'pc',share:'CompressedGames',share2:'FolderGames'},jobs:[],stream:{},games:[
+ {name:'PC/Game',titleId:'PPSA90001',sourceBinding:a,sourceShare:'CompressedGames',sourceKind:'container',canStart:true,dashboardLaunchReady:true},
+ {name:'PC/Game',titleId:'PPSA90001',sourceBinding:b,sourceShare:'FolderGames',sourceKind:'folder',canStart:true,dashboardLaunchReady:false}]};
+const rows=ui.libraryGames(s);assert.strictEqual(rows[0].sourceShare,'CompressedGames');assert.strictEqual(rows[0].sourceKind,'container');assert.strictEqual(rows[1].sourceShare,'FolderGames');assert.strictEqual(rows[1].sourceKind,'folder');assert.strictEqual(rows[1].dashboardLaunchReady,false);
+const launch=ui.dashboardLaunch('#stream=PC%2FGame&binding='+b),request=launch.step(s);assert.strictEqual(request.route,'/api/start');assert.strictEqual(request.body.sourceBinding,b);assert.strictEqual(launch.step(s),null);
+const ambiguous=ui.dashboardLaunch('#stream=PC%2FGame');assert.strictEqual(ambiguous.step(s),null);assert(ambiguous.error);
 ''')
 
     def test_bound_dashboard_entry_rejects_stale_or_missing_binding_before_mutation(self):

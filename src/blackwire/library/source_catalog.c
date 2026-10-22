@@ -1,4 +1,14 @@
 #include "source_catalog.h"
+#include <string.h>
+
+int bw_source_catalog_binding(struct bw_provider_binding *out,const struct bw_share_config *configured,const struct bw_catalog_item *item) {
+    if (!out) return -1;memset(out,0,sizeof *out);
+    if (!configured || !item || !memchr(item->source_share,0,sizeof item->source_share)) return -1;
+    struct bw_share_config connection={0};
+    int result=bw_share_select(&connection,configured,item->source_share) ||
+        bw_provider_binding_init(out,&connection,item->source,item->title_id,bw_source_catalog_kind(item));
+    bw_share_clear(&connection);return result?-1:0;
+}
 #include "source_param.h"
 #include "../streamreader/copy_sha256.h"
 #include <stdarg.h>

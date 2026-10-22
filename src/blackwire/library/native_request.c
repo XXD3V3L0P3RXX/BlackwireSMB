@@ -53,6 +53,7 @@ int bw_native_setup_request_parse(const void *bytes,size_t size,struct bw_native
         unsigned bit=0;char *target=NULL;size_t capacity=0;
         if(!strcmp(key,"server")){bit=1;target=out->values.server;capacity=sizeof out->values.server;}
         else if(!strcmp(key,"share")){bit=2;target=out->values.share;capacity=sizeof out->values.share;}
+        else if(!strcmp(key,"share2")){bit=64;target=out->values.share2;capacity=sizeof out->values.share2;out->share2_present=1;}
         else if(!strcmp(key,"smbUser")){bit=4;target=out->values.user;capacity=sizeof out->values.user;}
         else if(!strcmp(key,"smbPassword")){bit=8;target=out->values.password;capacity=sizeof out->values.password;}
         else if(!strcmp(key,"revision"))bit=16;else if(!strcmp(key,"keepCredentials"))bit=32;else goto bad;
@@ -65,7 +66,7 @@ int bw_native_setup_request_parse(const void *bytes,size_t size,struct bw_native
         space(&p);if(p.at==size)goto bad;unsigned c=p.bytes[p.at++];if(c=='}')break;if(c!=',')goto bad;space(&p);
     }
     space(&p);
-    if(p.at!=size||(seen&51)!=51||!out->revision||!*out->values.server||!*out->values.share||strpbrk(out->values.server,"/\\")||strpbrk(out->values.share,"/\\:")||
+    if(p.at!=size||(seen&51)!=51||!out->revision||!*out->values.server||!*out->values.share||strpbrk(out->values.server,"/\\")||strpbrk(out->values.share,"/\\:")||strpbrk(out->values.share2,"/\\:")||
         (out->keep_credentials?(seen&12)!=0:(seen&12)!=12))goto bad;
     return 0;
 bad:
@@ -76,9 +77,14 @@ int bw_native_send_request_parse(const void *bytes,size_t size,struct bw_native_
     struct parser p={bytes,size,0};unsigned seen=0;space(&p);if(p.at==size||p.bytes[p.at++]!='{')goto bad;
     for(;;){
         space(&p);char key[32];if(string(&p,key,sizeof key))goto bad;space(&p);if(p.at==size||p.bytes[p.at++]!=':')goto bad;space(&p);unsigned bit=0;
-        if(!strcmp(key,"name"))bit=1;else if(!strcmp(key,"libraryGeneration"))bit=2;else if(!strcmp(key,"settingsRevision"))bit=4;else goto bad;
+        if(!strcmp(key,"name"))bit=1;else if(!strcmp(key,"libraryGeneration"))bit=2;else if(!strcmp(key,"settingsRevision"))bit=4;else if(!strcmp(key,"sourceBinding"))bit=8;else goto bad;
         if(seen&bit)goto bad;seen|=bit;
         if(bit==1){if(string(&p,out->source,sizeof out->source))goto bad;}
+        else if(bit==8){
+            if(string(&p,out->source_binding,sizeof out->source_binding)||strlen(out->source_binding)!=74||memcmp(out->source_binding,"PPSA",4)||out->source_binding[9]!='_')goto bad;
+            for(unsigned i=4;i<9;i++)if(out->source_binding[i]<'0'||out->source_binding[i]>'9')goto bad;
+            if(strspn(out->source_binding+10,"0123456789abcdef")!=64)goto bad;
+        }
         else if(bit==4){if(number(&p,&out->settings_revision))goto bad;}
         else{
             if(p.at==size||p.bytes[p.at]<'0'||p.bytes[p.at]>'9')goto bad;size_t start=p.at;uint64_t value=0;
@@ -87,7 +93,7 @@ int bw_native_send_request_parse(const void *bytes,size_t size,struct bw_native_
         }
         space(&p);if(p.at==size)goto bad;unsigned c=p.bytes[p.at++];if(c=='}')break;if(c!=',')goto bad;
     }
-    space(&p);if(p.at!=size||seen!=7||!out->library_generation||!out->settings_revision||bw_manifest_validate_path(out->source,strlen(out->source)))goto bad;
+    space(&p);if(p.at!=size||(seen&7)!=7||!out->library_generation||!out->settings_revision||bw_manifest_validate_path(out->source,strlen(out->source)))goto bad;
     return 0;
 bad:
     bw_native_sensitive_clear(out,sizeof *out);return -1;

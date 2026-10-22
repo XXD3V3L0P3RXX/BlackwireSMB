@@ -104,12 +104,15 @@ static int home_select(struct home_worker *h,struct bw_share_config *config){
          * registration/root before counting, not title alone. This bounded
          * metadata selection does not grant LOCAL/source or map-SHA admission;
          * the retained owner below independently proves those once. */
-        if(bw_provider_binding_init(&identity,config,item.source,title,bw_source_catalog_kind(&item))||
+        if(bw_source_catalog_binding(&identity,config,&item)||
            bw_native_launch_selection(backend_data_root,&identity,&candidate,h->selected.run,&registered)||
            bw_native_registration_verify(backend_data_root,"/user/app","/system_data/priv/mms/app.db",&registered))continue;
         selected=i;chosen=identity;prepared=candidate;candidates++;
     }
     if(candidates!=1||home_lease(h))return -1;
+    struct bw_provider_binding resolved={0};
+    if(bw_provider_binding_select(&resolved,config,chosen.binding.source,chosen.binding.title,chosen.kind,chosen.binding.game)||
+        memcmp(&resolved,&chosen,sizeof chosen))return -1;
     pthread_mutex_lock(&p->lock);
     int bad=p->settings_revision!=h->revision||p->generation!=h->generation||p->play_epoch!=h->epoch||!p->active||!p->home.active;
     if(!bad){h->selected.identity=chosen;h->selected.prepared=prepared;p->playing.item=selected;p->playing.selection=h->selected;p->playing.pid=h->birth.pid;h->resolved=1;}

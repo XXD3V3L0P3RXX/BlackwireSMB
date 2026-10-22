@@ -81,12 +81,12 @@ int bw_native_reader_run(const struct bw_native_reader_request *r){
     memcpy(r->released->run,selection.run,33);r->released->runtime_released=!!(release_flags&1);r->released->io_released=!!(release_flags&2);r->released->private_released=!!(release_flags&4);
     if(unqualified_close)owner.playing.changed=1;return fail_reader?-1:0;
 }
-int bw_preload_bundle_upgrade_checked(const struct bw_preload_bundle_upgrade_request *upgrade,struct bw_preload_bundle_result *r){
+int bw_preload_bundle_upgrade_controlled(const struct bw_preload_bundle_upgrade_request *upgrade,const struct bw_preload_bundle_control *control,struct bw_preload_bundle_result *r){
     CHECK(upgrade&&upgrade->data_root&&upgrade->game&&upgrade->prepared_run&&upgrade->launch_run&&upgrade->prepared_record_sha256);const struct bw_preload_bundle_request *q=&upgrade->bundle;
-    CHECK(q&&r&&live&&!register_calls&&!begin_calls);if(q->current(q->opaque))return -2;bundle_calls++;
+    CHECK(q&&control&&control->checkpoint&&r&&live&&!register_calls&&!begin_calls);if(q->current(q->opaque)||control->checkpoint(control->opaque))return -2;bundle_calls++;
     for(unsigned i=0;i<cache_repeats;i++)if(q->current(q->opaque))return -2;
     if(cache_fault==1)cache_pending=1;
-    if(fail_bundle){r->stage="bundle_fixture_exact_bytes_refused";r->reason="bundle_fixture_named_identity_differs";}return fail_bundle==2?-1:fail_bundle?-2:0;
+    if(fail_bundle){r->stage="bundle_fixture_exact_bytes_refused";r->reason="bundle_fixture_named_identity_differs";r->release_unknown=fail_bundle==1;}return fail_bundle==2?-1:fail_bundle?-2:0;
 }
 int bw_nrl_begin(const struct bw_nrl_request *q,struct bw_nrl_owner **out,struct bw_nrc_result *r){
     CHECK(q&&q->selection&&live&&bundle_calls==1&&!register_calls&&!q->current(q->opaque,BW_NRL_REGISTER));CHECK(!((struct play_observer *)q->opaque)->context.control_log&&!cache_live);begin_calls++;
@@ -137,7 +137,7 @@ static void reset(void){
     last_error[0]=0;
     CHECK(!cache_live);memset(cache_owned,0,sizeof cache_owned);cache_calls=cache_lines=cache_queries=cache_repeats=cache_testing=cache_fault=cache_pending=cache_closed_calls=0;cache_shift=0;backend_game_log=cache_log_path;
 }
-static int execute(void){cache_testing=1;int r=play(NULL,&owner.playing.selection,play_current,&owner,observe,&owner);cache_testing=0;CHECK(!cache_live&&!live&&!retained_registration&&!pthread_mutex_destroy(&owner.lock));cases++;return r;}
+static int execute(void){cache_testing=1;int r=play(NULL,&owner.playing.selection,play_current,&owner,observe,&owner);cache_testing=0;if(r)fprintf(stderr,"routing diagnostic: result=%d opened=%u bundle=%u begin=%u register=%u reader=%u error=%s\n",r,opened,bundle_calls,begin_calls,register_calls,reader_calls,last_error);CHECK(!cache_live&&!live&&!retained_registration&&!pthread_mutex_destroy(&owner.lock));cases++;return r;}
 static int fixture_settings(void *p,struct bw_share_config *c,struct bw_setup_generation *g){CHECK(p==&owner);memset(c,0,sizeof *c);*g=owner.settings_generation;return BW_SETUP_VALID;}
 static int fixture_close(void *p,const char *run){(void)p;(void)run;CHECK(0);return -1;}
 static int fixture_prepare(void *p,struct bw_share_config *c,const struct bw_native_prepare_selection *s,int (*g)(void *),void *o,bw_source_observer_fn fn,void *fo,struct bw_native_prepared *out){(void)p;(void)c;(void)s;(void)g;(void)o;(void)fn;(void)fo;(void)out;CHECK(0);return -1;}

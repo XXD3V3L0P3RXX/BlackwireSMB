@@ -9,6 +9,33 @@
 
 static void clear(void *data,size_t size) { volatile unsigned char *p=data;while (size--) *p++=0; }
 void bw_share_clear(struct bw_share_config *p) { if (p) clear(p,sizeof *p); }
+static int share_same(const char *a,const char *b) {
+    while (*a && *b) {
+        unsigned x=(unsigned char)*a++,y=(unsigned char)*b++;
+        if (x>='A' && x<='Z') x+=32;if (y>='A' && y<='Z') y+=32;
+        if (x!=y) return 0;
+    }
+    return !*a && !*b;
+}
+int bw_share_select(struct bw_share_config *out,const struct bw_share_config *configured,const char *share) {
+    if (!out || !configured) return -1;
+    struct bw_share_config selected={0};int result=-1;
+    if (!memchr(configured->server,0,sizeof configured->server) ||
+        !memchr(configured->share,0,sizeof configured->share) ||
+        !memchr(configured->share2,0,sizeof configured->share2) ||
+        !memchr(configured->user,0,sizeof configured->user) ||
+        !memchr(configured->password,0,sizeof configured->password) ||
+        !*configured->server || !*configured->share ||
+        strpbrk(configured->server,"/\\") || strpbrk(configured->share,"/\\:") ||
+        strpbrk(configured->share2,"/\\:") ||
+        (*configured->share2 && share_same(configured->share,configured->share2))) goto done;
+    const char *chosen=share && *share?share:configured->share;
+    if (strcmp(chosen,configured->share) && (!*configured->share2 || strcmp(chosen,configured->share2))) goto done;
+    selected=*configured;memset(selected.share,0,sizeof selected.share);
+    memcpy(selected.share,chosen,strlen(chosen)+1);memset(selected.share2,0,sizeof selected.share2);result=0;
+done:
+    bw_share_clear(out);if (!result) *out=selected;bw_share_clear(&selected);return result;
+}
 static int copy(char *out,size_t capacity,const char *value,size_t length) {
     if (length>=capacity) return -1;
     for (size_t i=0;i<length;i++) if ((unsigned char)value[i]<32 || value[i]==127) return -1;
@@ -29,6 +56,7 @@ int bw_share_parse(struct bw_share_config *out,const char *data,size_t size) {
         if (key<length) {
             if (key==6 && !memcmp(line,"server",6)) { target=out->server;capacity=sizeof out->server;bit=1; }
             if (key==5 && !memcmp(line,"share",5)) { target=out->share;capacity=sizeof out->share;bit=2; }
+            if (key==6 && !memcmp(line,"share2",6)) { target=out->share2;capacity=sizeof out->share2;bit=32; }
             if (key==4 && !memcmp(line,"user",4)) { target=out->user;capacity=sizeof out->user;bit=4; }
             if (key==8 && !memcmp(line,"password",8)) { target=out->password;capacity=sizeof out->password;bit=8; }
             if (key==4 && !memcmp(line,"path",4)) {
@@ -43,7 +71,8 @@ int bw_share_parse(struct bw_share_config *out,const char *data,size_t size) {
         at=end<size?end+1:end;
     }
     if ((seen&7)!=7 || !*out->server || !*out->share ||
-        strpbrk(out->server,"/\\\r\n") || strpbrk(out->share,"/\\:")) goto bad;
+        strpbrk(out->server,"/\\\r\n") || strpbrk(out->share,"/\\:") ||
+        strpbrk(out->share2,"/\\:") || (*out->share2 && share_same(out->share,out->share2))) goto bad;
     return 0;
 bad:
     bw_share_clear(out);return -1;

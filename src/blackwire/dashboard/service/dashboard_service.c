@@ -433,6 +433,10 @@ static int dispatch(void *opaque,const struct bd_item *item,enum bd_action actio
     int bad=native_state(s,&state,&raw)||!same_token(state.token,s->action_token);
     bw_native_response_clear(&raw);if(bad)return 0;
     struct bw_json j={.maximum=4096};bw_json_text(&j,"{\"name\":");bw_json_string(&j,item->source);
+    char binding[75];static const char digits[]="0123456789abcdef";
+    memcpy(binding,item->title_id,9);binding[9]='_';
+    for(unsigned i=0;i<32;i++){binding[10+2*i]=digits[item->source_fingerprint[i]>>4];binding[11+2*i]=digits[item->source_fingerprint[i]&15];}binding[74]=0;
+    bw_json_text(&j,",\"sourceBinding\":");bw_json_string(&j,binding);
     bw_json_format(&j,",\"libraryGeneration\":%llu,\"settingsRevision\":%u",(unsigned long long)item->library_generation,item->settings_revision);
     if(action==BD_UNINSTALL){if(strcmp(s->confirmed_title,item->title_id)){free(j.bytes);return 0;}bw_json_text(&j,",\"confirmedTitleId\":");bw_json_string(&j,s->confirmed_title);}
     bw_json_text(&j,"}");

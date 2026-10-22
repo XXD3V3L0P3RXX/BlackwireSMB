@@ -798,10 +798,13 @@ static void reader_preload_event(void *opaque,const char *next,const char *messa
 }
 static int reader_preload_run(void) {
   char root[1024];struct bw_share_config config={0};struct bw_setup_generation observed={0};
+  struct bw_provider_binding source_identity={0};
   int n=snprintf(root,sizeof root,"/data/blackwire/games/%s",game_name);
   if(n<0||(size_t)n>=sizeof root||(reader_selection.source_kind!=BW_PROVIDER_FOLDER&&reader_selection.source_kind!=BW_PROVIDER_CONTAINER)||
      bw_native_setup_read("/data/blackwire",&config,&observed)!=BW_SETUP_VALID||
-     !bw_native_setup_generation_equal(&reader_connection_generation,&observed)||reader_launch_current(NULL)) {
+     !bw_native_setup_generation_equal(&reader_connection_generation,&observed)||
+     bw_provider_binding_select(&source_identity,&config,reader_selection.source,reader_selection.title,
+       (enum bw_provider_kind)reader_selection.source_kind,reader_selection.game)||reader_launch_current(NULL)) {
     bw_share_clear(&config);return failure("The selected early-reader connection or canonical preparation changed.");
   }
   struct bw_preload_launch_request request={.root=root,.selection=&reader_selection,.connection=&config,
@@ -836,7 +839,7 @@ static int connect_share(void) {
   if (bw_native_setup_read("/data/blackwire",&config,&observed)!=BW_SETUP_VALID ||
       !bw_native_setup_generation_equal(&reader_connection_generation,&observed) ||
       reader_selection.source_policy!=BW_PROVIDER_POLICY_V1 ||
-      bw_provider_binding_init(&identity,&config,source_name,title_id,(enum bw_provider_kind)reader_selection.source_kind) ||
+      bw_provider_binding_select(&identity,&config,source_name,title_id,(enum bw_provider_kind)reader_selection.source_kind,reader_selection.game) ||
       strcmp(identity.binding.game,reader_selection.game)) goto done;
   char hash[65];
   for (unsigned i=0;i<32;i++) snprintf(hash+2*i,3,"%02x",identity.binding.sha256[i]);

@@ -229,6 +229,19 @@ async function check() {
   await recovering;assert.strictEqual(reconnectEntry.focused(),reconnectEntry.get('server'));assertDraft(reconnectEntry);
   reconnectEntry.get('search').focus();await reconnectEntry.poll();assert.strictEqual(reconnectEntry.focused(),reconnectEntry.get('search'));
   assert.strictEqual(reconnectEntry.get('server').focusCount,1);assert.strictEqual(reconnectEntry.postCount(),0);
+  const two=nativeState();two.settings.share2='CompressedLibrary';
+  const checkingTwo=clone(two);Object.assign(checkingTwo.setup,{editable:false,busy:true,operation:6,phase:'checking'});
+  const twoFolders=createPage([two,checkingTwo]);await settle();
+  assert.strictEqual(twoFolders.get('shareName').value,'GameLibrary');assert.strictEqual(twoFolders.get('shareName2').value,'CompressedLibrary');
+  assert.strictEqual(twoFolders.get('savedShare').textContent,'GameLibrary + CompressedLibrary');
+  twoFolders.get('shareName2').value='';twoFolders.get('shareName2').fire('input');
+  assert(twoFolders.get('keepCredentials').checked);
+  twoFolders.replies.push({ok:true,pending:true,operation:6,message:'Checking both folders.'});
+  twoFolders.get('setup').fire('submit');await settle();
+  assert.strictEqual(twoFolders.postCount(),1);
+  const twoBody=JSON.parse(twoFolders.calls.find(call=>call.url==='/api/setup').options.body);
+  assert.strictEqual(twoBody.share,'GameLibrary');assert.strictEqual(twoBody.share2,'');assert.strictEqual(twoBody.keepCredentials,true);
+  assert(!Object.hasOwn(twoBody,'smbPassword'));
   console.log('Offline setup DOM: fresh blank fields, loaded saved nonsecret fields and fixed password marker, retained drafts over polls/reconnect/status refresh, stale token, wrong backend, busy recovery and one-shot save passed.');
 }
 if(require.main===module)check().catch(error=>{console.error(error);process.exitCode=1;});

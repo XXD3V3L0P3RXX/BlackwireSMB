@@ -19,6 +19,9 @@ struct bw_catalog_item {
     int container_kind,container_error;
     enum bw_catalog_state state;
     unsigned cover;
+    /* Empty in legacy single-share fixtures; discovery pins the actual
+     * configured share so equal relative paths remain distinct sources. */
+    char source_share[128];
 };
 struct bw_source_catalog {
     struct bw_catalog_item *items;
@@ -40,6 +43,7 @@ int bw_source_catalog_json(const struct bw_source_catalog *,char **,size_t *);
 int bw_source_catalog_image_same(const struct smb2_stat_64 *,const struct smb2_stat_64 *);
 void bw_source_catalog_image_hash(const struct smb2_stat_64 *,uint8_t[32]);
 int bw_source_catalog_available(const struct bw_catalog_item *);
+int bw_source_catalog_binding(struct bw_provider_binding *,const struct bw_share_config *,const struct bw_catalog_item *);
 enum bw_provider_kind bw_source_catalog_kind(const struct bw_catalog_item *);
 uint64_t bw_source_catalog_boot_bytes(const struct bw_catalog_item *);
 const char *bw_source_catalog_status(const struct bw_catalog_item *);

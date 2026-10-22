@@ -10,6 +10,7 @@ static int spawn_fail,registered_mask,app_unknown,dead_history,full_idle_refuse,
 static struct bw_native_backend owner;
 static struct bw_stop_identity birth={.pid=500,.start_sec=1700000000,.start_usec=123456,.role="eboot.bin"};
 static struct bw_catalog_item catalog[2];static struct bw_native_prepared prepared[2];
+static unsigned two_shares;static char registered_game[75];
 #define C(x) do{checks++;if(!(x)){fprintf(stderr,"case %u line %u: %s\n",cases,__LINE__,#x);exit(1);}}while(0)
 static int play(void *a,const struct bw_native_play_selection *b,int(*c)(void*),void*d,void(*e)(void*,const struct bw_reader_event*),void*f){(void)a;(void)b;(void)c;(void)d;(void)e;(void)f;return -1;}
 static int process(void *v,int32_t pid,struct bw_stop_identity *out){(void)v;queries++;if(pid!=birth.pid)return dead_history?0:-1;*out=birth;return 1;}
@@ -24,13 +25,14 @@ int bw_home_identity_uid(pid_t pid,uid_t *out){C(pid==birth.pid);*out=1234;retur
 int bw_startup_idle_ps5(void *v){struct bw_startup_idle_request*r=v;C(r&&r->current&&!r->current(r->opaque));full_idles++;return full_idle_refuse?-1:0;}
 static int fake_idle(void *v){(void)v;legacy_idles++;return legacy_idle_refuse?-1:0;}
 static int fake_nonce(void *v,char out[33]){(void)v;nonce_count++;memset(out,"cdef123456789ab"[nonce_count%14],32);out[32]=0;return 0;}
-static int fake_settings(void *v,struct bw_share_config *c,struct bw_setup_generation *g){(void)v;settings_calls++;memset(c,0,sizeof *c);strcpy(c->server,"192.0.2.20");strcpy(c->share,"OwnedBackups");strcpy(c->user,"project-fixture");strcpy(c->password,"fixture-value");*g=owner.settings_generation;return BW_SETUP_VALID;}
+static int fake_settings(void *v,struct bw_share_config *c,struct bw_setup_generation *g){(void)v;settings_calls++;memset(c,0,sizeof *c);strcpy(c->server,"192.0.2.20");strcpy(c->share,"OwnedBackups");if(two_shares)strcpy(c->share2,"SecondShare");strcpy(c->user,"project-fixture");strcpy(c->password,"fixture-value");*g=owner.settings_generation;return BW_SETUP_VALID;}
 int bw_native_setup_generation_equal(const struct bw_setup_generation *a,const struct bw_setup_generation *b){return !memcmp(a,b,sizeof *a);}
 int bw_native_launch_selection(const char *base,const struct bw_provider_binding *id,const struct bw_native_prepared *expected,const char *run,struct bw_reader_selection *out){
     C(!strcmp(base,backend_data_root)&&expected->state==BW_PREPARED_VALID);metadata_calls++;memset(out,0,sizeof *out);strcpy(out->source,id->binding.source);strcpy(out->game,id->binding.game);strcpy(out->title,id->binding.title);strcpy(out->run,run);return 0;
 }
 int bw_native_registration_verify(const char *base,const char *apps,const char *db,const struct bw_reader_selection *selected){
     C(!strcmp(base,backend_data_root)&&!strcmp(apps,"/user/app")&&!strcmp(db,"/system_data/priv/mms/app.db"));registration_calls++;
+    if(*registered_game)return strcmp(selected->game,registered_game)?-1:0;
     return (!strcmp(selected->source,"First")?(registered_mask&1):(registered_mask&2))?0:-1;
 }
 int bw_source_catalog_available(const struct bw_catalog_item *item){return item->state==BW_CATALOG_FOLDER||item->state==BW_CATALOG_CONTAINER_READY;}
@@ -44,6 +46,7 @@ static void reset(void){
     owner.settings_enabled=1;owner.settings_status=BW_SETUP_VALID;owner.settings_revision=3;owner.generation=5;owner.play_epoch=7;
     owner.settings_generation.present=1;memset(owner.settings_generation.sha256,0x12,32);
     queries=queued=nonce_count=settings_calls=metadata_calls=registration_calls=0;spawn_fail=app_unknown=dead_history=full_idle_refuse=legacy_idle_refuse=0;full_idles=legacy_idles=0;registered_mask=2;
+    two_shares=0;memset(registered_game,0,sizeof registered_game);
 }
 static void done(void){free(owner.home.retained);owner.home.retained=NULL;owner.joinable=0;C(!pthread_mutex_destroy(&owner.lock));C(!pthread_mutex_destroy(&owner.dispatch_lock));}
 static struct bw_home_claim claim(void){struct bw_home_claim c={.pid=birth.pid,.deadline_us=(uint64_t)((now()+10)*1000000)};memset(c.nonce,'a',32);memset(c.map_sha256,0x12,32);return c;}
@@ -86,6 +89,11 @@ static void selection_tests(void){
     h=selection_fixture();owner.settings_revision++;C(home_select(&h,&config)&&!metadata_calls&&!registration_calls);bw_share_clear(&config);done();
     h=selection_fixture();catalog[1].state=BW_CATALOG_CONTAINER_READY;
     C(!home_select(&h,&config)&&h.resolved&&owner.playing.item==1&&h.selected.identity.kind==BW_PROVIDER_CONTAINER);bw_share_clear(&config);done();
+    h=selection_fixture();two_shares=1;strcpy(catalog[1].source,"First");strcpy(catalog[1].source_share,"SecondShare");
+    struct bw_share_config both={0};struct bw_setup_generation settings={0};struct bw_provider_binding exact={0};
+    C(fake_settings(NULL,&both,&settings)==BW_SETUP_VALID);C(!bw_source_catalog_binding(&exact,&both,catalog+1));strcpy(registered_game,exact.binding.game);
+    C(!home_select(&h,&config)&&owner.playing.item==1&&h.resolved);C(!strcmp(config.share,"SecondShare")&&!*config.share2);
+    C(!strcmp(h.selected.identity.binding.game,registered_game)&&!strcmp(h.selected.identity.binding.source,"First"));bw_share_clear(&both);bw_share_clear(&config);done();
 }
 int main(void){queue_tests();selection_tests();cleanup_tests();printf("{\"passed\":true,\"cases\":%u,\"checks\":%u,\"actualQueueLeaseAndSelection\":true,\"SonyWorkerReceiptAndRegistrationBoundariesModeled\":true}\n",cases,checks);return 0;}
 

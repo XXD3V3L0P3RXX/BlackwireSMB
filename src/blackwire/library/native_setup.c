@@ -15,10 +15,10 @@ static int same(const struct stat *a,const struct stat *b){
         a->st_mtim.tv_sec==b->st_mtim.tv_sec&&a->st_mtim.tv_nsec==b->st_mtim.tv_nsec&&a->st_ctim.tv_sec==b->st_ctim.tv_sec&&a->st_ctim.tv_nsec==b->st_ctim.tv_nsec;
 }
 int bw_native_setup_config_valid(const struct bw_share_config *p){
-    if(!p)return 0;const char *values[]={p->server,p->share,p->user,p->password};const size_t limits[]={sizeof p->server,sizeof p->share,sizeof p->user,sizeof p->password};
-    for(unsigned i=0;i<4;i++){size_t n=strnlen(values[i],limits[i]);if(n==limits[i]||!bw_json_utf8(values[i]))return 0;
+    if(!p)return 0;const char *values[]={p->server,p->share,p->user,p->password,p->share2};const size_t limits[]={sizeof p->server,sizeof p->share,sizeof p->user,sizeof p->password,sizeof p->share2};
+    for(unsigned i=0;i<5;i++){size_t n=strnlen(values[i],limits[i]);if(n==limits[i]||!bw_json_utf8(values[i]))return 0;
         for(size_t j=0;j<n;j++)if((unsigned char)values[i][j]<32||values[i][j]==127)return 0;}
-    return *p->server&&*p->share&&!strpbrk(p->server,"/\\")&&!strpbrk(p->share,"/\\:");
+    struct bw_share_config selected={0};int valid=!bw_share_select(&selected,p,NULL);bw_share_clear(&selected);return valid;
 }
 static int root_open(const char *base,struct prepare_v2 *anchor){
     memset(anchor,0,sizeof *anchor);if(!base||v2_copy(anchor->root,sizeof anchor->root,base))return -1;
@@ -85,7 +85,7 @@ int bw_native_setup_store(const char *base,const struct bw_share_config *next,co
     for(unsigned i=0;i<32;i++)if(!((nonce[i]>='0'&&nonce[i]<='9')||(nonce[i]>='a'&&nonce[i]<='f')))return BW_SETUP_SAVE_UNSAFE;
     char encoded[1024],before[4096]={0},checked[4096]={0},temp[96];struct bw_share_config prior={0},after={0};struct bw_setup_generation current={0},again={0};struct prepare_v2 anchor;
     int root=-1,lock=-1,backup=-1,fd=-1,final=-1,result=BW_SETUP_SAVE_IO;
-    int n=snprintf(encoded,sizeof encoded,"server=%s\nshare=%s\nuser=%s\npassword=%s\npath=\n",next->server,next->share,next->user,next->password);
+    int n=snprintf(encoded,sizeof encoded,"server=%s\nshare=%s\nuser=%s\npassword=%s\npath=\n%s%s%s",next->server,next->share,next->user,next->password,*next->share2?"share2=":"",next->share2,*next->share2?"\n":"");
     if(n<0||(size_t)n>=sizeof encoded)goto done;root=root_open(base,&anchor);if(root<0){result=BW_SETUP_SAVE_UNSAFE;goto done;}
     int status=read_at(root,&anchor,&prior,&current,before);
     if(status<0){result=BW_SETUP_SAVE_UNSAFE;goto done;}if(!bw_native_setup_generation_equal(expected,&current)){result=BW_SETUP_SAVE_STALE;goto done;}

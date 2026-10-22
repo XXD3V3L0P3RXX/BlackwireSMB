@@ -33,6 +33,7 @@ static void *home_worker(void*);
 static int text(struct bw_native_response*,int,const char*);
 '''
 parts=[function(back,n) for n in ['static double now(','static int nonce_valid(','static int registration_waiting(','static int revalidation_required(','static int removed_at(','static const char *reader_update_reason(']]
+parts += [function((S/'library/source_catalog.c').read_text(),'int bw_source_catalog_binding(')]
 parts += [function(home,n) for n in ['static int home_lease(','static int home_app_current(','static int home_consumer_uid(','static int home_cleanup_lease(','static int home_idle_after_exit(','static int home_settings(','static int home_select(','static void home_consumed_retire_locked(','static int home_claim_deadline_current(','int bw_native_backend_home_claim(']]
 header=O/'backend-under-test.h';header.write_text(prefix+struct+'\n'+worker+'\n'+'\n'.join(parts))
 stub=O/'workspace.c';stub.write_text('int bw_preload_bundle_upgrade_workspace(const char*a,const char*b){(void)a;(void)b;return 0;}\n')
@@ -40,7 +41,7 @@ files=[R/'backend_test.c',S/'library/home_protocol.c',S/'library/source_param.c'
 cmd=['clang-18','-D_DEFAULT_SOURCE=1','-DBW_GTA_AUDIO_BOOTSTRAP=1','-std=c11','-O1','-g','-Wall','-Wextra','-Werror','-Wno-misleading-indentation','-Wno-unused-function','-ffunction-sections','-fdata-sections','-fsanitize=address,undefined','-fno-omit-frame-pointer','-I'+str(O),'-I'+str(S/'library'),'-I'+str(S/'streamreader'),'-I'+str(S/'streamreader/diagnostics'),'-I'+str(B/'vendor/libsmb2/include'),*map(str,files),'-Wl,--gc-sections','-pthread','-o',str(O/'backend_test')]
 p=subprocess.run(cmd,capture_output=True,text=True);(O/'compile.log').write_text(p.stdout+p.stderr);print(p.stdout+p.stderr);p.check_returncode()
 p=subprocess.run([str(O/'backend_test')],capture_output=True,text=True);(O/'test.log').write_text(p.stdout+p.stderr);print(p.stdout+p.stderr);p.check_returncode()
-proof={'passed':True,'result':json.loads(p.stdout),'inputPins':{str(x):{'bytes':x.stat().st_size,'sha256':hashlib.sha256(x.read_bytes()).hexdigest()} for x in files+[header,S/'library/native_backend.c',S/'library/native_backend_home.h']},'actualFunctionsExtractedUnchanged':True,'SonyWorkerCreationReceiptAndRegistrationBoundariesModeled':True,'consoleContacted':False};(O/'proof.json').write_text(json.dumps(proof,indent=2))
+proof={'passed':True,'result':json.loads(p.stdout),'inputPins':{str(x):{'bytes':x.stat().st_size,'sha256':hashlib.sha256(x.read_bytes()).hexdigest()} for x in files+[header,S/'library/native_backend.c',S/'library/native_backend_home.h',S/'library/source_catalog.c']},'actualFunctionsExtractedUnchanged':True,'SonyWorkerCreationReceiptAndRegistrationBoundariesModeled':True,'consoleContacted':False};(O/'proof.json').write_text(json.dumps(proof,indent=2))
 
 
 

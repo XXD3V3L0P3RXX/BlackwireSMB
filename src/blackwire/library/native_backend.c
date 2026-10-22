@@ -62,7 +62,7 @@ struct bw_native_backend {
     unsigned char home_ready[BW_CATALOG_MAX_ITEMS]; /*0 unknown,1 qualified,2 known setup failure*/
     char home_setup_game[75],home_setup_reason[256];
 #endif
-    char server[128],share[128],user[128];unsigned password_saved;struct bw_native_backend_ops ops;void *opaque;
+    char server[128],share[128],share2[128],user[128];unsigned password_saved;struct bw_native_backend_ops ops;void *opaque;
     struct bw_native_library library;struct bw_native_jobs *jobs;
     int (*settings_idle)(void *,uint32_t);void *settings_idle_owner;
     int (*preparation_idle)(void *,const char[33],const char[33],enum bw_prepare_guard_point);void *preparation_idle_owner;
@@ -247,6 +247,9 @@ static int prepare(void *opaque,struct bw_share_config *config,const struct bw_n
     struct preparation_upgrade upgrade={.lease=&lease,.provider=&provider};
     if(!selection||!current||current(guard)||observe!=bw_native_job_observe||
        preparation_lease_open(&lease,guard,selection,&source,current,observer))goto done;
+    struct bw_provider_binding resolved={0};
+    if(bw_provider_binding_select(&resolved,config,selection->identity.binding.source,selection->identity.binding.title,
+        selection->identity.kind,selection->identity.binding.game)||memcmp(&resolved,&selection->identity,sizeof resolved))goto done;
     source.smb=smb2_init_context();if(!source.smb)goto done;
     smb2_set_timeout(source.smb,10);smb2_set_sign(source.smb,1);smb2_set_security_mode(source.smb,SMB2_NEGOTIATE_SIGNING_ENABLED|SMB2_NEGOTIATE_SIGNING_REQUIRED);smb2_set_user(source.smb,config->user);smb2_set_password(source.smb,config->password);
     int connected=smb2_connect_share(source.smb,config->server,config->share,config->user);bw_share_clear(config);if(connected<0||current(guard))goto done;
@@ -623,14 +626,15 @@ done:;
 }
 static int close_game(void *opaque,const char *run){(void)opaque;return bw_native_reader_close(run);}
 #endif
-static int config_equal(const struct bw_share_config *a,const struct bw_share_config *b){return !strcmp(a->server,b->server)&&!strcmp(a->share,b->share)&&!strcmp(a->user,b->user)&&!strcmp(a->password,b->password);}
+static int config_equal(const struct bw_share_config *a,const struct bw_share_config *b){return !strcmp(a->server,b->server)&&!strcmp(a->share,b->share)&&!strcmp(a->share2,b->share2)&&!strcmp(a->user,b->user)&&!strcmp(a->password,b->password);}
 static void settings_adopt(struct bw_native_backend *p,int status,const struct bw_share_config *config,const struct bw_setup_generation *generation,int mark_stale){
     int changed=p->settings_known&&(p->settings_status!=status||!bw_native_setup_generation_equal(&p->settings_generation,generation));
     if(!p->settings_known)p->settings_revision=1;else if(changed){if(p->settings_revision<UINT32_MAX)p->settings_revision++;else p->settings_enabled=0;}
     p->settings_known=1;p->settings_status=status;p->settings_generation=*generation;
     if(status==BW_SETUP_VALID){memcpy(p->server,config->server,sizeof p->server);memcpy(p->share,config->share,sizeof p->share);
+        memcpy(p->share2,config->share2,sizeof p->share2);
         memcpy(p->user,config->user,sizeof p->user);p->password_saved=config->password[0]!=0;}
-    else{memset(p->server,0,sizeof p->server);memset(p->share,0,sizeof p->share);memset(p->user,0,sizeof p->user);p->password_saved=0;}
+    else{memset(p->server,0,sizeof p->server);memset(p->share,0,sizeof p->share);memset(p->share2,0,sizeof p->share2);memset(p->user,0,sizeof p->user);p->password_saved=0;}
     if(changed&&mark_stale&&p->generation){p->phase=BACKEND_CONFIG_CHANGED;p->stale=p->library.catalog.count>0;}
 }
 static void settings_sync(struct bw_native_backend *p){
@@ -649,6 +653,21 @@ static int source_compare(const char *a,const char *b){
     while(*a&&*b){unsigned x=(unsigned char)*a++,y=(unsigned char)*b++;if(x>='A'&&x<='Z')x+=32;if(y>='A'&&y<='Z')y+=32;if(x!=y)return x<y?-1:1;}
     return *a?1:*b?-1:0;
 }
+static int catalog_order(const struct bw_catalog_item *a,const struct bw_catalog_item *b){
+    int order=source_compare(a->source,b->source);return order?order:source_compare(a->source_share,b->source_share);
+}
+static size_t catalog_selected(const struct bw_native_backend *p,const struct bw_native_send_request *request){
+    struct bw_share_config config={0};memcpy(config.server,p->server,sizeof config.server);
+    memcpy(config.share,p->share,sizeof config.share);memcpy(config.share2,p->share2,sizeof config.share2);
+    size_t found=p->library.catalog.count;unsigned matches=0;
+    for(size_t i=0;i<p->library.catalog.count;i++){
+        const struct bw_catalog_item *item=p->library.catalog.items+i;struct bw_provider_binding binding={0};
+        if(strcmp(item->source,request->source))continue;
+        if(*request->source_binding&&(bw_source_catalog_binding(&binding,&config,item)||strcmp(binding.binding.game,request->source_binding)))continue;
+        found=i;matches++;
+    }
+    return matches==1?found:p->library.catalog.count;
+}
 static int valid_library(const struct bw_native_library *p){
     const struct bw_source_catalog *c=&p->catalog;
     if(c->error||c->count>BW_CATALOG_MAX_ITEMS||c->count>c->capacity||(c->count&&!c->items)||p->cover_bytes>BW_NATIVE_COVER_LIMIT||
@@ -656,9 +675,9 @@ static int valid_library(const struct bw_native_library *p){
     size_t covers=0;
     for(size_t i=0;i<c->count;i++){
         const struct bw_catalog_item *item=&c->items[i];
-        if(!memchr(item->source,0,sizeof item->source)||!memchr(item->name,0,sizeof item->name)||!memchr(item->title,0,sizeof item->title)||
+        if(!memchr(item->source,0,sizeof item->source)||!memchr(item->source_share,0,sizeof item->source_share)||strpbrk(item->source_share,"/\\:")||!bw_json_utf8(item->source_share)||!memchr(item->name,0,sizeof item->name)||!memchr(item->title,0,sizeof item->title)||
             !memchr(item->title_id,0,sizeof item->title_id)||(unsigned)item->state>BW_CATALOG_CONTAINER_READY||!item->source[0]||
-            bw_manifest_validate_path(item->source,strlen(item->source))||!bw_json_utf8(item->title)||(i&&source_compare(c->items[i-1].source,item->source)>=0))return 0;
+            bw_manifest_validate_path(item->source,strlen(item->source))||!bw_json_utf8(item->title)||(i&&catalog_order(c->items+i-1,item)>=0))return 0;
         if(bw_source_catalog_available(item)){if(strlen(item->title_id)!=9||memcmp(item->title_id,"PPSA",4))return 0;
             for(unsigned j=4;j<9;j++)if(item->title_id[j]<'0'||item->title_id[j]>'9')return 0;
         }else if(*item->title_id)return 0;
@@ -693,15 +712,17 @@ static const struct bw_native_cover *cached_cover(const struct bw_native_library
            !strcmp(selected->title_id,p->catalog.items[i].title_id))return &p->covers[i];
     return NULL;
 }
-static int discover(void *opaque,struct bw_share_config *share,struct bw_native_library *out){
+static int discover_one(void *opaque,struct bw_share_config *share,struct bw_native_library *out,size_t cover_limit){
     (void)opaque;struct bw_source_smb source={0};double start=now();if(start<0)return -1;source.deadline=start+180;
+    char share_name[128];memcpy(share_name,share->share,sizeof share_name);
     source.smb=smb2_init_context();if(!source.smb)return -1;
     smb2_set_timeout(source.smb,10);smb2_set_sign(source.smb,1);smb2_set_security_mode(source.smb,SMB2_NEGOTIATE_SIGNING_ENABLED|SMB2_NEGOTIATE_SIGNING_REQUIRED);smb2_set_user(source.smb,share->user);smb2_set_password(source.smb,share->password);
     int result=smb2_connect_share(source.smb,share->server,share->share,share->user);bw_share_clear(share);if(result<0)goto done;
     result=bw_source_catalog_scan(&source,&out->catalog);if(result)goto done;
     if(out->catalog.count){out->covers=calloc(out->catalog.count,sizeof *out->covers);if(!out->covers){result=-1;goto done;}out->cover_count=out->catalog.count;}
     for(size_t i=0;i<out->catalog.count;i++){
-        const struct bw_catalog_item *item=&out->catalog.items[i];if(!item->cover||!item->icon.size||item->icon.size>BW_NATIVE_COVER_LIMIT-out->cover_bytes)continue;
+        struct bw_catalog_item *item=&out->catalog.items[i];memcpy(item->source_share,share_name,sizeof item->source_share);
+        if(!item->cover||!item->icon.size||item->icon.size>cover_limit-out->cover_bytes)continue;
         char path[1280];int n=snprintf(path,sizeof path,"%s/sce_sys/icon0.png",item->source);if(n<0||(size_t)n>=sizeof path){result=-1;break;}
         void *bytes=NULL;size_t size=0;struct bw_source_info info;
         int found=bw_source_smb_small_file(&source,path,BW_SOURCE_SMALL_FILE_LIMIT,&bytes,&size,&info);
@@ -713,6 +734,47 @@ static int discover(void *opaque,struct bw_share_config *share,struct bw_native_
 done:
     out->requests=source.requests;out->entries=source.entries;out->content_bytes=source.content_bytes;
     if(source.smb)smb2_destroy_context(source.smb);return result;
+}
+/* Merge metadata and owned artwork together. Relative paths may repeat across
+ * shares; no title/path-only deduplication can replace their source binding. */
+static int library_merge(struct bw_native_library *out,struct bw_native_library parts[2]){
+    size_t total=parts[0].catalog.count+parts[1].catalog.count;
+    if(total>BW_CATALOG_MAX_ITEMS||parts[0].cover_bytes>BW_NATIVE_COVER_LIMIT||
+       parts[1].cover_bytes>BW_NATIVE_COVER_LIMIT-parts[0].cover_bytes||
+       parts[1].requests>UINT32_MAX-parts[0].requests||parts[1].entries>UINT32_MAX-parts[0].entries||
+       parts[1].content_bytes>UINT64_MAX-parts[0].content_bytes)return -1;
+    uint32_t *dst[]={&out->catalog.collections,&out->catalog.entries,&out->catalog.skipped,&out->catalog.unsearched};
+    uint32_t a[]={parts[0].catalog.collections,parts[0].catalog.entries,parts[0].catalog.skipped,parts[0].catalog.unsearched};
+    uint32_t b[]={parts[1].catalog.collections,parts[1].catalog.entries,parts[1].catalog.skipped,parts[1].catalog.unsearched};
+    for(unsigned i=0;i<4;i++){if(b[i]>UINT32_MAX-a[i])return -1;*dst[i]=a[i]+b[i];}
+    if(total){out->catalog.items=calloc(total,sizeof *out->catalog.items);out->covers=calloc(total,sizeof *out->covers);
+        if(!out->catalog.items||!out->covers)return -1;}
+    out->catalog.count=out->catalog.capacity=out->cover_count=total;
+    size_t index[2]={0,0};
+    for(size_t i=0;i<total;i++){
+        unsigned from;
+        if(index[0]==parts[0].catalog.count)from=1;
+        else if(index[1]==parts[1].catalog.count)from=0;
+        else{int order=catalog_order(parts[0].catalog.items+index[0],parts[1].catalog.items+index[1]);if(!order)return -1;from=order>0;}
+        struct bw_native_library *part=parts+from;size_t at=index[from]++;
+        out->catalog.items[i]=part->catalog.items[at];
+        if(part->covers){out->covers[i]=part->covers[at];memset(part->covers+at,0,sizeof *part->covers);}
+    }
+    out->cover_bytes=parts[0].cover_bytes+parts[1].cover_bytes;
+    out->requests=parts[0].requests+parts[1].requests;out->entries=parts[0].entries+parts[1].entries;
+    out->content_bytes=parts[0].content_bytes+parts[1].content_bytes;return 0;
+}
+static int discover(void *opaque,struct bw_share_config *configured,struct bw_native_library *out){
+    struct bw_native_library parts[2]={{0},{0}};struct bw_share_config connection={0};int result=-1;
+    for(unsigned i=0;i<2;i++){
+        if(i&&!*configured->share2)break;
+        if(bw_share_select(&connection,configured,i?configured->share2:NULL)||
+           discover_one(opaque,&connection,parts+i,BW_NATIVE_COVER_LIMIT-parts[0].cover_bytes)||!valid_library(parts+i))goto done;
+    }
+    result=library_merge(out,parts);
+done:
+    bw_share_clear(&connection);bw_share_clear(configured);
+    for(unsigned i=0;i<2;i++)bw_native_library_destroy(parts+i);return result;
 }
 static int settings_idle(void *opaque){
     struct bw_native_backend *p=opaque;int (*guard)(void *,uint32_t)=NULL;void *owner=NULL;uint32_t operation=0;int eligible=0;
@@ -735,7 +797,7 @@ static void *scan(void *opaque){
         int loaded=p->settings_enabled?p->ops.read_settings(p->opaque,&config,&before_generation):p->ops.load(p->opaque,&config);
         if(loaded||!valid_config(&config))goto done;
         cp_sha_bytes(&config,sizeof config,before_digest);
-        if(!p->settings_enabled){pthread_mutex_lock(&p->lock);memcpy(p->server,config.server,sizeof p->server);memcpy(p->share,config.share,sizeof p->share);pthread_mutex_unlock(&p->lock);}
+        if(!p->settings_enabled){pthread_mutex_lock(&p->lock);memcpy(p->server,config.server,sizeof p->server);memcpy(p->share,config.share,sizeof p->share);memcpy(p->share2,config.share2,sizeof p->share2);pthread_mutex_unlock(&p->lock);}
     }
     phase=BACKEND_FAILED;
     if(p->ops.discover(p->opaque,&config,&next)||!valid_library(&next)){error=SETUP_CONNECTION_ERROR;goto done;}
@@ -759,7 +821,7 @@ static void *scan(void *opaque){
         next.prepared=calloc(next.catalog.count,sizeof *next.prepared);if(!next.prepared){phase=BACKEND_FAILED;goto done;}
         for(size_t i=0;i<next.catalog.count;i++){
             const struct bw_catalog_item *item=&next.catalog.items[i];if(!bw_source_catalog_available(item))continue;struct bw_provider_binding binding;
-            if(bw_provider_binding_init(&binding,&after,item->source,item->title_id,bw_source_catalog_kind(item))||p->ops.inspect(p->opaque,&binding,&next.prepared[i]))next.prepared[i].state=BW_PREPARED_UNKNOWN;
+            if(bw_source_catalog_binding(&binding,&after,item)||p->ops.inspect(p->opaque,&binding,&next.prepared[i]))next.prepared[i].state=BW_PREPARED_UNKNOWN;
 #ifdef BW_HOME_STARTUP
             else if(p->ops.prepare==prepare&&i<BW_CATALOG_MAX_ITEMS&&next.prepared[i].state==BW_PREPARED_VALID&&
                 !home_ready_observe(p,&binding,next.prepared+i,&after_generation))observed_ready[i]=1;
@@ -932,6 +994,7 @@ static void prepared_absence_poll(struct bw_native_backend *p){
     struct bw_share_config connection={0};
     snprintf(connection.server,sizeof connection.server,"%s",p->server);
     snprintf(connection.share,sizeof connection.share,"%s",p->share);
+    snprintf(connection.share2,sizeof connection.share2,"%s",p->share2);
     unsigned changed=0;
     for(size_t i=0;i<p->library.catalog.count;i++){
         const struct bw_catalog_item *item=p->library.catalog.items+i;
@@ -939,7 +1002,7 @@ static void prepared_absence_poll(struct bw_native_backend *p){
         if(!bw_source_catalog_available(item)||
            cached->state!=BW_PREPARED_VALID||cached->prepared_policy||!nonce_valid(cached->run)||
            cached->retirement!=BW_RETIRE_NONE||removed_at(p,i)||registration_waiting(p,item->title_id)||
-           bw_provider_binding_init(&binding,&connection,item->source,item->title_id,bw_source_catalog_kind(item))||
+           bw_source_catalog_binding(&binding,&connection,item)||
            !memchr(cached->game,0,sizeof cached->game)||strcmp(cached->game,binding.binding.game)||
            (p->removing.unknown&&!strcmp(p->removing.selected.identity.binding.game,cached->game)))continue;
         length=snprintf(path,sizeof path,"%s/%s",parent,binding.binding.game);
@@ -970,12 +1033,13 @@ static int state(struct bw_native_backend *p,struct bw_native_response *out){
         (p->settings_status==BW_SETUP_MISSING||p->settings_status==BW_SETUP_INVALID)?0:p->library.catalog.count;
     if(bw_native_jobs_json(p->jobs,&jobs,&job_size)){pthread_mutex_unlock(&p->lock);return -1;}
     bw_json_text(&json,"{\"backend\":\"native\",\"settings\":{\"gamesFolder\":\"\",\"ps5Address\":\"\",\"server\":");bw_json_string(&json,p->server);
-    bw_json_text(&json,",\"share\":");bw_json_string(&json,p->share);bw_json_text(&json,",\"user\":");bw_json_string(&json,p->user);
+    bw_json_text(&json,",\"share\":");bw_json_string(&json,p->share);bw_json_text(&json,",\"share2\":");bw_json_string(&json,p->share2);bw_json_text(&json,",\"user\":");bw_json_string(&json,p->user);
     bw_json_format(&json,",\"passwordSaved\":%s},\"pc\":{\"address\":",p->password_saved?"true":"false");bw_json_string(&json,p->server);
     bw_json_format(&json,"},\"share\":{\"shared\":%s,\"name\":",p->phase==BACKEND_READY?"true":"false");bw_json_string(&json,p->share);
     bw_json_text(&json,"},\"ps5\":{\"reachable\":true,\"fileManager\":false,\"payloadManager\":false},\"blackwire\":\"running\",\"stream\":{\"phase\":");
     bw_json_string(&json,*p->playing.phase?p->playing.phase:"unverified");bw_json_text(&json,",\"message\":");bw_json_string(&json,*p->playing.message?p->playing.message:"Game session status has not been checked.");
     bw_json_text(&json,",\"game\":");bw_json_string(&json,p->playing.selection.identity.binding.source);bw_json_text(&json,",\"runId\":");bw_json_string(&json,p->playing.selection.run);
+    bw_json_text(&json,",\"sourceBinding\":");bw_json_string(&json,p->playing.selection.identity.binding.game);
     bw_json_text(&json,",\"elapsedMs\":");
     double elapsed=p->playing.timing_started?(p->playing.timing_finished?p->playing.finished:now())-p->playing.started:-1;
     if(elapsed>=0&&elapsed<=9007199254740.0)bw_json_format(&json,"%llu",(unsigned long long)(elapsed*1000.0));else bw_json_text(&json,"null");
@@ -1011,6 +1075,7 @@ static int state(struct bw_native_backend *p,struct bw_native_response *out){
     struct bw_share_config public_binding_connection={0};
     snprintf(public_binding_connection.server,sizeof public_binding_connection.server,"%s",p->server);
     snprintf(public_binding_connection.share,sizeof public_binding_connection.share,"%s",p->share);
+    snprintf(public_binding_connection.share2,sizeof public_binding_connection.share2,"%s",p->share2);
     for(size_t i=0;i<visible_count;i++){
         const struct bw_catalog_item *item=&p->library.catalog.items[i];const struct bw_native_prepared *prepared=p->library.prepared&&bw_source_catalog_available(item)?&p->library.prepared[i]:NULL;
         int owned_prepared=prepared&&prepared->state==BW_PREPARED_VALID;
@@ -1038,7 +1103,8 @@ static int state(struct bw_native_backend *p,struct bw_native_response *out){
         bw_json_text(&json,i?",{\"name\":":"{\"name\":");bw_json_string(&json,item->source);bw_json_text(&json,",\"source\":");bw_json_string(&json,item->source);
         struct bw_provider_binding public_binding={0};
         bw_json_text(&json,",\"sourceBinding\":");bw_json_string(&json,bw_source_catalog_available(item)&&
-            !bw_provider_binding_init(&public_binding,&public_binding_connection,item->source,item->title_id,bw_source_catalog_kind(item))?public_binding.binding.game:"");
+            !bw_source_catalog_binding(&public_binding,&public_binding_connection,item)?public_binding.binding.game:"");
+        bw_json_text(&json,",\"sourceShare\":");bw_json_string(&json,*item->source_share?item->source_share:p->share);
         bw_json_text(&json,",\"title\":");bw_json_string(&json,*item->title?item->title:item->name);bw_json_text(&json,",\"titleId\":");bw_json_string(&json,item->title_id);
         bw_json_text(&json,",\"sourceKind\":");bw_json_string(&json,bw_source_catalog_kind(item)==BW_PROVIDER_CONTAINER?"container":"folder");
         bw_json_format(&json,",\"sourcePolicy\":%u,\"formatValidated\":%s",bw_source_catalog_available(item)?BW_PROVIDER_POLICY_V1:0,item->state==BW_CATALOG_CONTAINER_READY?"true":"false");
@@ -1194,7 +1260,7 @@ static int send_owned(struct bw_native_backend *p,const char *authority,const vo
     if(p->active){reply="{\"error\":\"Wait for the current operation to finish\"}";goto done;}
     if(p->control_release_unknown){reply="{\"error\":\"A previous operation has an unconfirmed release. Resolve its status before Send.\"}";goto done;}
     if(p->phase!=BACKEND_READY||p->stale||p->setup_blocked||p->preparation_blocked||p->settings_status!=BW_SETUP_VALID||request.library_generation!=p->generation||request.settings_revision!=p->settings_revision)goto done;
-    size_t item=0;for(;item<p->library.catalog.count;item++)if(!strcmp(request.source,p->library.catalog.items[item].source))break;
+    size_t item=catalog_selected(p,&request);
     if(item==p->library.catalog.count||!bw_source_catalog_available(&p->library.catalog.items[item])){status=400;reply="{\"error\":\"Choose an available preserved source\"}";goto done;}
     if(registration_waiting(p,p->library.catalog.items[item].title_id)){reply="{\"error\":\"Registration cleanup is pending or needs attention; Send will not repeat it\"}";goto done;}
     if(removed_at(p,item)){reply="{\"error\":\"Restore this removed source before preparing it again\"}";goto done;}
@@ -1214,7 +1280,7 @@ static int send_owned(struct bw_native_backend *p,const char *authority,const vo
     if(p->joinable){if(pthread_join(p->worker,NULL)){status=503;goto done;}p->joinable=0;}
     if(!p->library.prepared){p->library.prepared=calloc(p->library.catalog.count,sizeof *p->library.prepared);if(!p->library.prepared){status=503;goto done;}}
     struct bw_native_prepare_selection selection={0};const struct bw_catalog_item *selected=&p->library.catalog.items[item];
-    if(bw_provider_binding_init(&selection.identity,&config,selected->source,selected->title_id,bw_source_catalog_kind(selected))||p->ops.nonce(p->opaque,selection.run)||!nonce_valid(selection.run)){status=503;goto done;}
+    if(bw_source_catalog_binding(&selection.identity,&config,selected)||p->ops.nonce(p->opaque,selection.run)||!nonce_valid(selection.run)){status=503;goto done;}
     selection.boot=selected->boot;selection.param=selected->param;selection.image=selected->image;selection.logical_boot_size=selected->logical_boot_size;selection.container_kind=selected->container_kind;struct bw_native_job_token job={0};
     if(bw_native_job_begin(p->jobs,selection.run,selection.identity.binding.source,&job)||bw_native_job_start(&job)){status=503;reply="{\"error\":\"A private preparation operation could not start\"}";goto done;}
     p->sending.config=config;p->sending.expected=generation;p->sending.selection=selection;p->sending.token=job;p->sending.item=item;p->preparation_changed=0;p->worker_kind=WORK_PREPARE;p->active=1;
@@ -1347,7 +1413,7 @@ static int start_play(struct bw_native_backend *p,const void *body,size_t size,c
     pthread_mutex_lock(&p->lock);settings_sync(p);
     if(p->active){reply="{\"error\":\"Close the active game or wait for the current operation\"}";goto done;}
     if(p->phase!=BACKEND_READY||p->stale||p->setup_blocked||p->settings_status!=BW_SETUP_VALID||request.library_generation!=p->generation||request.settings_revision!=p->settings_revision)goto done;
-    size_t item=0;for(;item<p->library.catalog.count;item++)if(!strcmp(p->library.catalog.items[item].source,request.source))break;
+    size_t item=catalog_selected(p,&request);
     if(item==p->library.catalog.count||!bw_source_catalog_available(&p->library.catalog.items[item])){reply="{\"error\":\"Choose an available preserved source\"}";goto done;}
     if(registration_waiting(p,p->library.catalog.items[item].title_id)){reply="{\"error\":\"Registration cleanup is pending or needs attention; no launch or cleanup request was repeated\"}";goto done;}
     if(removed_at(p,item)){reply="{\"error\":\"Restore this removed source and Send files before starting it again\"}";goto done;}
@@ -1364,7 +1430,7 @@ static int start_play(struct bw_native_backend *p,const void *body,size_t size,c
     if(p->joinable){if(pthread_join(p->worker,NULL)){status=503;goto done;}p->joinable=0;}
     if(!p->library.prepared){p->library.prepared=calloc(p->library.catalog.count,sizeof *p->library.prepared);if(!p->library.prepared){status=503;goto done;}}
     struct bw_native_play_selection selection={.prepared=p->library.prepared[item],.connection=generation};
-    if(bw_provider_binding_init(&selection.identity,&config,p->library.catalog.items[item].source,p->library.catalog.items[item].title_id,bw_source_catalog_kind(&p->library.catalog.items[item]))||
+    if(bw_source_catalog_binding(&selection.identity,&config,p->library.catalog.items+item)||
        p->ops.nonce(p->opaque,selection.run)||!nonce_valid(selection.run)||!strcmp(selection.run,p->playing.selection.run)){status=503;reply="{\"error\":\"A fresh private game session could not start\"}";goto done;}
     /* The bounded failure history is never evicted to admit a new launch. */
     if(!revalidation_capacity(p,selection.identity.binding.game)){status=503;reply="{\"error\":\"Revalidate a failed startup copy before another new source can launch\"}";goto done;}
@@ -1435,6 +1501,7 @@ static int setup(struct bw_native_backend *p,const void *body,size_t size,const 
         if(loaded!=BW_SETUP_VALID||strcmp(request.values.server,old.server)){reply="{\"error\":\"Enter sign-in details when connecting to a different PC\"}";goto done;}
         memcpy(request.values.user,old.user,sizeof old.user);memcpy(request.values.password,old.password,sizeof old.password);
     }
+    if(!request.share2_present&&loaded==BW_SETUP_VALID)memcpy(request.values.share2,old.share2,sizeof old.share2);
     if(!valid_config(&request.values))goto done;
     if(p->setup_operation==UINT32_MAX){status=503;reply="{\"error\":\"Reopen Blackwire before another connection check\"}";goto done;}
     if(p->joinable){if(pthread_join(p->worker,NULL)){status=503;reply="{\"error\":\"The prior connection worker needs a fresh check\"}";goto done;}p->joinable=0;}

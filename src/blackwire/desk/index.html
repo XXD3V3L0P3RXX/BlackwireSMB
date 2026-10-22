@@ -197,11 +197,12 @@
 <div class="sheet" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="setupHeading" hidden><div class="panel">
 <details id="setupPanel" class="setup"><summary class="production-hidden">Settings</summary>
   <h3 id="setupHeading">Settings</h3>
-  <p>The PS5 reads your games from this shared folder on your PC.</p>
+  <p>The PS5 reads your games from up to two shared folders on the same PC.</p>
   <p class="conn-state" id="settingsConnection"><span class="dot" id="settingsDot"></span><span id="savedConnectionStatus">Connection status unavailable</span></p>
   <form id="setup" autocomplete="off">
     <div class="field" id="nativeServerField"><label for="server">PC address</label><input id="server" autocomplete="off" spellcheck="false" disabled></div>
     <div class="field" id="nativeShareField"><label for="shareName">Shared folder name</label><input id="shareName" autocomplete="off" spellcheck="false" disabled></div>
+    <div class="field" id="nativeShare2Field"><label for="shareName2">Second shared folder (optional)</label><input id="shareName2" autocomplete="off" spellcheck="false" disabled><small>Uses the same PC and sign-in details. Leave blank to use one folder.</small></div>
     <div class="field" id="smbUserField"><label for="smbUser" id="smbUserLabel">Windows username</label><input id="smbUser" autocomplete="off" spellcheck="false" disabled></div>
     <div class="field" id="smbPasswordField"><label for="smbPassword" id="smbPasswordLabel">Password</label>
       <div class="pw"><input id="smbPassword" type="password" autocomplete="off" disabled><button type="button" class="link" id="pwToggle" aria-pressed="false">Show</button></div>
@@ -246,7 +247,7 @@
         var configured=confirmed && (state.setup || {}).configured === true;
         var online=confirmed && library.phase === "ready" && !library.stale;
         return { native:confirmed, configured:configured, online:online,
-          folder:confirmed && settings.server && settings.share ? "\\\\" + settings.server + "\\" + settings.share : "",
+          folder:confirmed && settings.server && settings.share ? "\\\\" + settings.server + "\\" + settings.share + (settings.share2 ? " + \\\\" + settings.server + "\\" + settings.share2 : "") : "",
           label:!confirmed ? "Console status unconfirmed" : (state.setup || {}).busy ? "Checking PC connection" : library.phase === "scanning" ? "Reading PC library" : online ? "PC share connected" : "PC share needs attention" };
       }
       function readState(response) {
@@ -351,8 +352,9 @@
             cover:item.cover,canPlay:item.canPlay,canPrepare:item.canSend,startupReady:item.startupReady,playReason:item.playReason,preparationReason:item.sendReason,
             canUninstall:item.canUninstall === true,removed:item.removed === true,canRestore:item.canRestore === true,uninstallReason:item.uninstallReason || "",restoreReason:item.restoreReason || ""};
           if (item.kind === 1) {
-            var found=(state.games || []).filter(function (source) {return (source.source || source.name) === item.source && source.titleId === item.titleId;});
-            if (found.length === 1) ["sourceKind","sendBytes","stayBytes","sizeKnown","onConsole","consoleAllocatedBytes","storageVerifiedAt","consoleStorageUnconfirmed","scanMessage","dashboardLaunchReady","dashboardLaunchReason","setupOnly","prepared"].forEach(function (key) {game[key]=found[0][key];});
+            var binding=/^pc:PPSA[0-9]{5}:[0-9a-f]{64}$/.test(item.id) ? item.id.slice(3).replace(":","_") : "";
+            var found=(state.games || []).filter(function (source) {return (source.source || source.name) === item.source && source.titleId === item.titleId && (!source.sourceBinding || !binding || source.sourceBinding === binding);});
+            if (found.length === 1) ["sourceBinding","sourceShare","sourceKind","sendBytes","stayBytes","sizeKnown","onConsole","consoleAllocatedBytes","storageVerifiedAt","consoleStorageUnconfirmed","scanMessage","dashboardLaunchReady","dashboardLaunchReason","setupOnly","prepared"].forEach(function (key) {game[key]=found[0][key];});
             if(item.storageKnown === true){game.sizeKnown=true;game.onConsole=true;game.sendBytes=item.startupBytes;game.stayBytes=item.pcBytes;game.consoleAllocatedBytes=item.consoleAllocatedBytes;game.storageVerifiedAt="preparation";}
             if(game.removed){game.sizeKnown=false;game.onConsole=false;delete game.consoleAllocatedBytes;delete game.storageVerifiedAt;}
           }
@@ -562,6 +564,10 @@
         var keep=fields.keep === true && setup.hasSavedCredentials === true && server === settings.server &&
           (typeof settings.user !== "string" || String(fields.user || "").trim() === settings.user);
         var body={server:server,share:share,revision:typeof fields.revision === "number" ? fields.revision : setup.revision,keepCredentials:keep};
+        if (Object.prototype.hasOwnProperty.call(fields,"share2")) {
+          body.share2=String(fields.share2 || "").trim();
+          if (body.share2 && body.share2.toLowerCase() === share.toLowerCase()) throw new Error("Choose two different shared folders, or leave the second folder blank.");
+        }
         if (!keep) {body.smbUser=String(fields.user || "").trim();body.smbPassword=String(fields.password || "");}
         return body;
       }
@@ -569,13 +575,18 @@
         if (!operation || setup.operation !== operation || setup.busy) return "pending";
         return setup.phase === "saved" ? "saved" : setup.phase === "error" || setup.phase === "unconfirmed" ? "error" : "pending";
       }
-      function preparationBody(state,name) {
+      function preparationBody(state,name,binding) {
         if (!state || state.backend !== "native") return {name:name};
         var library=state.library || {}, setup=state.setup || {};
         var generation=library.generation, revision=setup.revision;
         if (!name || library.phase !== "ready" || library.stale || typeof generation !== "number" || generation <= 0 || generation > 9007199254740991 || Math.floor(generation) !== generation
           || typeof revision !== "number" || revision <= 0 || revision > 4294967295 || Math.floor(revision) !== revision) throw new Error("Refresh the library before preparing this game.");
-        return {name:name,libraryGeneration:generation,settingsRevision:revision};
+        var body={name:name,libraryGeneration:generation,settingsRevision:revision};
+        if (binding) {
+          if (!/^PPSA[0-9]{5}_[0-9a-f]{64}$/.test(binding)) throw new Error("Choose the exact game copy from the library.");
+          body.sourceBinding=binding;
+        }
+        return body;
       }
       function playBody(state,name,closing) {
         var run=(state.stream || {}).runId || "";
@@ -598,7 +609,7 @@
         var flow={message:"",error:false};
         function fail(message) {phase="error";flow.error=true;flow.message=message;return null;}
         function request(route,state) {
-          var body=preparationBody(state,source);
+          var body=preparationBody(state,source,pin && pin.binding);
           phase=route === "/api/send" ? "send-requested" : "play-requested";
           return {route:route,body:body,message:route === "/api/send" ? "Preparing " + source + " for streaming…" : "Starting " + source + " from Blackwire…"};
         }
@@ -608,14 +619,15 @@
           var library=state.library || {}, setup=state.setup || {}, settings=state.settings || {};
           if (!setup.configured || library.phase === "initial" || library.phase === "scanning" || setup.busy) return null;
           if (library.phase !== "ready" || library.stale) return fail("Refresh the PC library before launching this dashboard entry.");
-          var found=(state.games || []).filter(function (game) {return (game.source || game.name) === source;});
-          if (found.length !== 1) return fail("The dashboard entry's exact PC source is unavailable. Check the shared folder.");
+          var candidates=(state.games || []).filter(function (game) {return (game.source || game.name) === source;});
+          var found=candidates.filter(function (game) {return !expectedBinding || game.sourceBinding === expectedBinding;});
+          if (found.length !== 1) return fail(expectedBinding && candidates.length ? "This dashboard entry belongs to a different PC source or connection. Open the game from Blackwire and recreate its dashboard entry." : "The dashboard entry's exact PC source is unavailable. Check the shared folder.");
           var game=found[0];
           if (expectedBinding && game.sourceBinding !== expectedBinding) return fail("This dashboard entry belongs to a different PC source or connection. Open the game from Blackwire and recreate its dashboard entry.");
-          if (pin && (pin.title !== game.titleId || pin.revision !== setup.revision || pin.server !== settings.server || pin.share !== settings.share)) return fail("The selected source or PC connection changed. Open this game again from the library.");
+          if (pin && (pin.title !== game.titleId || pin.binding !== game.sourceBinding || pin.revision !== setup.revision || pin.server !== settings.server || pin.share !== settings.share || pin.share2 !== settings.share2)) return fail("The selected source or PC connection changed. Open this game again from the library.");
           var session=state.stream || {};
           if (active(session)) {
-            if (session.game === source) {phase="done";return null;}
+            if (session.game === source && (!session.sourceBinding || !game.sourceBinding || session.sourceBinding === game.sourceBinding)) {phase="done";return null;}
             return fail("Close the active game before using this dashboard entry.");
           }
           if (phase === "preparing") {
@@ -626,7 +638,7 @@
             if (jobs[0].state !== "done") return fail(jobs[0].message || "Startup preparation failed. Check Blackwire before trying again.");
             if (!game.prepared || !game.canPlay) return fail(game.playReason || "Preparation finished, but playback is unavailable for this source.");
           } else if (activeJobs(state).length) return fail("Wait for the current preparation before using this dashboard entry.");
-          if (!pin) pin={title:game.titleId,revision:setup.revision,server:settings.server,share:settings.share};
+          if (!pin) pin={title:game.titleId,binding:game.sourceBinding,revision:setup.revision,server:settings.server,share:settings.share,share2:settings.share2};
           try {
             if (game.canStart === true) return request("/api/start",state);
             if (game.canPlay) return request("/api/play",state);
@@ -805,6 +817,7 @@
       var smbPassword = document.getElementById("smbPassword");
       var server = document.getElementById("server");
       var shareName = document.getElementById("shareName");
+      var shareName2 = document.getElementById("shareName2");
       var keepCredentials = document.getElementById("keepCredentials");
       var note = document.getElementById("note");
       var games = document.getElementById("games");
@@ -966,7 +979,7 @@
         var game=cards[name].game;
         document.getElementById("heroCopy").hidden=false;document.getElementById("heroActions").hidden=false;
         var back=document.getElementById("closeDetails");if(back.parentElement)back.remove();cards[name].footer.appendChild(back);
-        text(cards[name].titleIdentifier,game.titleId || "Not known");text(cards[name].sourceDescriptor,game.kind >= 2 ? "Console" : "PC");
+        text(cards[name].titleIdentifier,game.titleId || "Not known");text(cards[name].sourceDescriptor,game.kind >= 2 ? "Console" : "PC"+(game.sourceShare ? " · "+game.sourceShare : ""));
         text(document.getElementById("heroTitle"),game.title || game.name);
         text(document.getElementById("heroSource"),game.kind >= 2 ? "Console" : "PC");
         var measured=typeof game.consoleAllocatedBytes === "number" && game.storageVerifiedAt === "preparation";
@@ -1063,7 +1076,7 @@
         var help=!document.getElementById("helpOverlay").hidden;
         if(help)return [document.getElementById("closeHelp")];
         if(!document.getElementById("setupPanel").open)return null;
-        return ["closeSetup","server","shareName","smbUser","smbPassword","pwToggle","keepCredentials","saveSetup","reloadSetup"].map(function (id) {return document.getElementById(id);}).filter(function (button) {
+        return ["closeSetup","server","shareName","shareName2","smbUser","smbPassword","pwToggle","keepCredentials","saveSetup","reloadSetup"].map(function (id) {return document.getElementById(id);}).filter(function (button) {
           return !button.disabled && !button.hidden && (button !== keepCredentials || !document.getElementById("keepCredentialsField").hidden);
         });
       }
@@ -1237,11 +1250,11 @@
         }
         var saved=statusFresh && value.backend === "native" && setup.configured === true && typeof settings.server === "string" && !!settings.server && typeof settings.share === "string" && !!settings.share;
         if(loadSaved && saved) {
-          server.value=settings.server;shareName.value=settings.share;smbUser.value=typeof settings.user === "string"?settings.user:"";
+          server.value=settings.server;shareName.value=settings.share;shareName2.value=settings.share2 || "";smbUser.value=typeof settings.user === "string"?settings.user:"";
           smbPassword.value="";keepCredentials.checked=setup.hasSavedCredentials === true;
         }
         text(document.getElementById("savedServer"),saved?settings.server:"Not set");
-        text(document.getElementById("savedShare"),saved?settings.share:"Not set");
+        text(document.getElementById("savedShare"),saved?settings.share+(settings.share2 ? " + "+settings.share2 : ""):"Not set");
         text(document.getElementById("savedUser"),!saved?"Not set":typeof settings.user === "string"?(settings.user || "No username saved"):"Saved account");
         text(document.getElementById("savedPassword"),!saved?"Not set":settings.passwordSaved === true?"********":settings.passwordSaved === false?"No password saved":"Saved sign-in hidden");
         var savedStatus=!statusFresh?"Connection status unavailable":setup.busy || setupPosting?"Checking connection…":!saved?"Not configured":setup.phase === "error"?"Connection check failed; saved details kept":link.online?"Connected (last share check)":"Saved — share not checked";
@@ -1281,7 +1294,7 @@
         ["smbUserField","smbPasswordField"].forEach(function (id) {document.getElementById(id).hidden=false;});
         [smbUser,smbPassword].forEach(function (input) {input.disabled=!editable;});
         smbPassword.placeholder=keeping?"********":"";
-        [server,shareName].forEach(function (input) {input.disabled=!editable;});
+        [server,shareName,shareName2].forEach(function (input) {input.disabled=!editable;});
         if (setupScrollPending) {
           document.getElementById("setupPanel").open=true;
           document.getElementById("setupPanel").scrollIntoView();
@@ -1680,7 +1693,7 @@
       document.getElementById("clearSearch").addEventListener("click", function () {
         search.value = ""; renderCards(); search.focus();
       });
-      [smbUser, smbPassword, server, shareName, keepCredentials].forEach(function (input) {
+      [smbUser, smbPassword, server, shareName, shareName2, keepCredentials].forEach(function (input) {
         input.addEventListener("input", function () {
           if(input===smbUser || input===smbPassword || input===server)keepCredentials.checked=false;
           if(input===keepCredentials && keepCredentials.checked)smbPassword.value="";
@@ -1691,7 +1704,7 @@
         event.preventDefault();
         if (!setupAvailability().canSave) {renderSetup();return;}
         var body;
-        try {body=view.setupBody(state,{server:server.value,share:shareName.value,user:smbUser.value,password:smbPassword.value,keep:keepCredentials.checked,revision:formRevision});}
+        try {body=view.setupBody(state,{server:server.value,share:shareName.value,share2:shareName2.value,user:smbUser.value,password:smbPassword.value,keep:keepCredentials.checked,revision:formRevision});}
         catch(error) {notice={text:error.message,kind:"bad"};show(state);return;}
         var save = document.getElementById("saveSetup");
         setupPosting=true;
