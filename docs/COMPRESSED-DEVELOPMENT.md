@@ -114,4 +114,4 @@ The corrected source passed these host checks:
 
 PFS metadata caching invalidates a page before filling it and marks it valid only after a complete callback. Namespace validation is committed only after a complete walk; traversal scratch is discarded on failure. The repair retains those rules, signing, immutable-generation checks, cache sizes, worker affinity and priority.
 
-These checks do not establish a linked or installed repair. The console comparison above used development 3 without this source change. The repaired reader still needs a separate development build and hardware qualification; the public folder-only release remains unchanged.
+These checks do not establish a linked or installed repair. The console comparison above used development 3 without this source change. Development 4 now contains the repair and the exact guarded upgrade from the independently read-back development 3 reader. Its complete reader/resident SDK build, import checks, memory-layout checks and load-preserving packaging passed. The new reader is staged for controlled hardware qualification; the public folder-only release remains unchanged.
