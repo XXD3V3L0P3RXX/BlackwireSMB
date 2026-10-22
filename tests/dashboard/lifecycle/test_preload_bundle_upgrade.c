@@ -92,6 +92,14 @@ int main(int argc,char **argv){CHECK(argc==2);char file[2048];struct bw_preload_
  CHECK(pu_previous_match(pu_compressed_dev3.size,dev3_hash));
  CHECK(!pu_previous_match(pu_compressed_dev3.size+1,dev3_hash));
  dev3_hash[0]^=1;CHECK(!pu_previous_match(pu_compressed_dev3.size,dev3_hash));
+ uint8_t dev5_hash[32];CHECK(!pb_hex("135148e2de73b5b54d6f18dbfb95c1f2cd2d7d7e3e6dac60b756e844e6cbc684",dev5_hash));
+ CHECK(pu_previous_match(829328,dev5_hash));
+ CHECK(!pu_previous_match(829329,dev5_hash));
+ dev5_hash[0]^=1;CHECK(!pu_previous_match(829328,dev5_hash));
+ uint8_t dev6_hash[32];CHECK(!pb_hex("c9d069b520c367c971e52432a053d7105a7019cb19ee97185120bffb6190e025",dev6_hash));
+ CHECK(pu_previous_match(831168,dev6_hash));
+ CHECK(!pu_previous_match(831169,dev6_hash));
+ dev6_hash[0]^=1;CHECK(!pu_previous_match(831168,dev6_hash));
  struct bw_preload_bundle_upgrade_request q=fixture(argv[1],0);CHECK(!bw_preload_bundle_upgrade_workspace(q.data_root,q.game));execute(&q,0,1);CHECK(access(workspace,F_OK)<0&&errno==ENOENT);CHECK(!bw_preload_bundle_upgrade_workspace(q.data_root,q.game));CHECK(!bw_preload_bundle_verify_checked(&q.bundle,&r));
  q=fixture(argv[1],1);struct stat before,after;joined_path(file,current_root,"fakelib2/libSceAmpr.sprx");CHECK(!lstat(file,&before));execute(&q,0,1);CHECK(!lstat(file,&after)&&pb_same(&before,&after));
  for(unsigned state=0;state<3;state++){q=fixture(argv[1],state==2);if(state==0)CHECK(!mkdir(workspace,0700));else if(state==1)write_file(workspace,"foreign",7,0600);else CHECK(!symlink("/unrelated",workspace));CHECK(bw_preload_bundle_upgrade_workspace(q.data_root,q.game)==1);execute(&q,-1,state==2);}
