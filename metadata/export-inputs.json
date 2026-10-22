@@ -128,8 +128,12 @@
       "sha256": "d5b36e1bb6857b803447f470b52cc6127ca061031f1b7210e52bc2f0f7f4ee50"
     },
     "README.md": {
-      "bytes": 7119,
-      "sha256": "5a3fee69f984f8873abddd3a41e0333f8f173ff06b8f9b47acc1afe24b17a9c3"
+      "bytes": 8243,
+      "sha256": "68816b0540cdf2fc6ded522c8417b0447721c28af3ffccc8831c39732235726e"
+    },
+    "payloads.json": {
+      "bytes": 886,
+      "sha256": "0543196abfbcf3f5141670af796ae200670ec6f17d4c4e1aff297071c4a60d91"
     },
     "SECURITY.md": {
       "bytes": 1186,

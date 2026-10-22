@@ -20,6 +20,22 @@ We are already working on a full native **Blackwire Dashboard**: a cover browser
 
 Dashboard is a separate product under development. This standalone preview uses the web interface; it does not include the native Dashboard installer or interface. Follow the [roadmap](docs/ROADMAP.md#blackwire-dashboard) for the planned work. No release date is announced.
 
+## Install with PS5 Payload Manager
+
+Blackwire is available through this project's custom source. Add it once in [PS5 Payload Manager](https://github.com/itsPLK/ps5-payload-manager):
+
+1. Open **Settings → Manage Sources → Add Source**.
+2. Paste this direct catalog URL and choose **Add**:
+
+   ```text
+   https://raw.githubusercontent.com/XXD3V3L0P3RXX/BlackwireSMB/main/payloads.json
+   ```
+
+3. Select **Blackwire** from the added source, install it, then load `Blackwire.elf` after starting the required jailbreak, Kstuff and ShadowMountPlus environment.
+4. Open `http://<PS5-address>:5918/` and follow the [quick start](#quick-start) to connect your SMB share and prepare games.
+
+The catalog points to the published preview ELF and supplies its SHA-256 checksum for Payload Manager to verify. This is an optional custom source, separate from Payload Manager's default catalog. It installs Blackwire; the [required dependencies](docs/REQUIREMENTS.md) must be supplied separately. The [release download](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.1.0-preview.1) remains available for manual loading.
+
 ## Quick start
 
 1. Share a parent folder containing complete extracted game folders on your PC. Give your SMB account read access and keep the PC awake. Follow the [Windows share guide](docs/SETUP.md#windows-shared-folder).

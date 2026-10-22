@@ -1,0 +1,19 @@
+{
+  "name": "Blackwire",
+  "payloads": [
+    {
+      "id": "blackwire",
+      "name": "Blackwire",
+      "filename": "Blackwire.elf",
+      "url": "https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/download/v0.1.0-preview.1/Blackwire.elf",
+      "description": "Stream extracted PS5 games from an SMB share with local startup files. Requires a compatible jailbreak, Kstuff, ShadowMountPlus and separately supplied console libraries. Web interface on port 5918.",
+      "version": "v0.1.0-preview.1",
+      "last_update": "2026-10-22",
+      "category": "Networking",
+      "checksum": "c4897f0078b8854d1c345587198bc33210d6d80c8c61d3fb290e9e8ff1c1f577",
+      "author": "XXD3V3L0P3RXX",
+      "details_url": "https://raw.githubusercontent.com/XXD3V3L0P3RXX/BlackwireSMB/main/README.md",
+      "source": "https://github.com/XXD3V3L0P3RXX/BlackwireSMB"
+    }
+  ]
+}
