@@ -1,0 +1,31 @@
+{
+  "kind": "blackwire-public-relink-summary/1",
+  "passed": true,
+  "files": 170,
+  "stripObjectCopies": 158,
+  "archive": {
+    "bytes": 7674712,
+    "sha256": "33eeeb80f9855254daaf29c9bda115ab653ef857ce12c29e01cba6084d338a5c"
+  },
+  "application": {
+    "bytes": 5706512,
+    "sha256": "c4897f0078b8854d1c345587198bc33210d6d80c8c61d3fb290e9e8ff1c1f577"
+  },
+  "reader": {
+    "bytes": 798192,
+    "sha256": "d02f20f4ee8b1db1617e7b2c7ad4f76821e8b9da2523ac185a2e881ca33462be"
+  },
+  "byteIdenticalRelinkPackage": true,
+  "allocatedExecutableBytesIdentical": true,
+  "runtimeRelocationSemanticsUnchanged": true,
+  "privateMarkers": 0,
+  "originalRawObjectsPreserved": true,
+  "rawPrivateObjectsIncluded": false,
+  "consoleContacted": false,
+  "asset": "Blackwire-relink-materials.tar.gz",
+  "linkRecipe": "Blackwire-relink/application-link.json",
+  "sourceManifest": {
+    "bytes": 68840,
+    "sha256": "340290bbfbc48617b525c71ed4df244156b37a158b307bd69ae25da73aaa6a9a"
+  }
+}

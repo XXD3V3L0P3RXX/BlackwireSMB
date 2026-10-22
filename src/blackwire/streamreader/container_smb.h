@@ -1,0 +1,26 @@
+#ifndef BW_CONTAINER_SMB_H
+#define BW_CONTAINER_SMB_H
+#include "container_source.h"
+#include <time.h>
+#include <smb2/smb2.h>
+#include <smb2/libsmb2.h>
+
+/* Borrows one already connected SMB context; owns one O_RDONLY handle.
+ * Keep at a stable address and serialize calls. The remote file must remain
+ * unchanged. Named/held inode, size, type, mtime and ctime are checked before
+ * and after every public container operation. These metadata checks are not
+ * cryptographic authentication against a malicious or non-coherent server.
+ * No share, source, mount, game or console-cache mutation is performed.
+ */
+struct bw_container_smb {
+    struct bw_container container;
+    struct smb2_context *smb;
+    struct smb2fh *handle;
+    struct smb2_stat_64 admitted;
+    char path[1024];
+    uint64_t read_calls,read_bytes,generation_checks;
+    int failed,last_transport_error;
+};
+int bw_container_smb_open(struct bw_container_smb *,struct smb2_context *,const char *);
+int bw_container_smb_close(struct bw_container_smb *);
+#endif

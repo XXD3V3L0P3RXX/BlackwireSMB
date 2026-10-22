@@ -1,0 +1,58 @@
+# Generated build and release output
+/build/
+/dist/
+/out/
+*.o
+*.obj
+*.a
+*.lib
+*.elf
+*.prx
+*.sprx
+*.self
+*.pkg
+*.pdb
+*.dmp
+*.core
+
+# Local credentials, console state and runtime captures
+.env
+.env.*
+!.env.example
+share.conf
+stream.conf
+register.conf
+console-catalog.conf
+native-reader.conf
+*.selection
+*.bin
+*.db
+*.db-*
+*.sqlite*
+*.log
+*.jsonl
+/captures/
+/private/
+/research/
+/archive/
+/reference/
+/games/
+/saves/
+
+# Editors and language caches
+.DS_Store
+Thumbs.db
+.vs/
+.idea/
+.vscode/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+node_modules/
+coverage/
+
+# Only synthetic reviewed fixtures may override a relevant ignore rule.
+
+# Exact upstream synthetic byte-sequence fixture, not game content.
+!vendor/ampr/tests/data.bin

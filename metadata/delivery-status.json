@@ -1,0 +1,50 @@
+{
+  "kind": "blackwire-preview-delivery/1",
+  "product": "Blackwire",
+  "version": "v0.1.0-preview.1",
+  "readyToPublish": true,
+  "binaryIncludedInSourceRepository": false,
+  "nativeFrontendIncluded": false,
+  "selectedApplication": {
+    "bytes": 5706512,
+    "sha256": "c4897f0078b8854d1c345587198bc33210d6d80c8c61d3fb290e9e8ff1c1f577"
+  },
+  "selectedReader": {
+    "bytes": 798192,
+    "sha256": "d02f20f4ee8b1db1617e7b2c7ad4f76821e8b9da2523ac185a2e881ca33462be"
+  },
+  "sourceBuildPassed": true,
+  "sourceManifest": {
+    "bytes": 68840,
+    "sha256": "340290bbfbc48617b525c71ed4df244156b37a158b307bd69ae25da73aaa6a9a"
+  },
+  "buildManifest": {
+    "bytes": 9521,
+    "sha256": "a49fe2954ceb06b27bb424727996d63d4a8c0e79ce30656382c57f7ffa4233a1"
+  },
+  "relinkManifest": {
+    "bytes": 976,
+    "sha256": "a464c3f65412c5c48670942585fdc0abeb7cb1d4d9f16131feeb30b4b8b0c864"
+  },
+  "publicationTarget": "https://github.com/XXD3V3L0P3RXX/BlackwireSMB",
+  "knownLimits": [
+    "Loading performance varies; no all-game or zero-lag promise.",
+    "Updated ordinary Uninstall recovery passed host checks; hardware deletion remains unqualified.",
+    "Fresh-start automatic Media registration is not integrated; explicit same-ELF setup is documented."
+  ],
+  "excluded": [
+    "settings and credentials",
+    "private logs and captures",
+    "game files, game artwork assets and saves",
+    "console system libraries and keys",
+    "native Dashboard application",
+    "custom ShadowMount helper"
+  ],
+  "documentationMedia": {
+    "screenshotsIncluded": false,
+    "readmeImagesEmbedded": false,
+    "video": "https://youtu.be/xIPHo9kespo",
+    "runtimeLogoRetained": true
+  },
+  "publicationAuthor": "XXD3V3L0P3RXX"
+}

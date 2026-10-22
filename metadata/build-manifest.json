@@ -1,0 +1,291 @@
+{
+  "kind": "blackwire-standalone-release-build/1",
+  "product": "Blackwire",
+  "version": "v0.1.0-preview.1",
+  "artifact": "Blackwire.elf",
+  "buildPassed": true,
+  "package": {
+    "bytes": 5706512,
+    "sha256": "c4897f0078b8854d1c345587198bc33210d6d80c8c61d3fb290e9e8ff1c1f577"
+  },
+  "reader": {
+    "bytes": 798192,
+    "sha256": "d02f20f4ee8b1db1617e7b2c7ad4f76821e8b9da2523ac185a2e881ca33462be"
+  },
+  "page": {
+    "bytes": 141067,
+    "sha256": "0e3efe1e8bba33feee55a56828af5662536464102a69ba4062fe9838b7bf6a80"
+  },
+  "suppliedLogo": {
+    "bytes": 1430630,
+    "sha256": "cfb85eff8f7928e1e68912b8c656741c39fdf49227d2e693945913157b4843da"
+  },
+  "sourceManifest": {
+    "bytes": 68840,
+    "sha256": "340290bbfbc48617b525c71ed4df244156b37a158b307bd69ae25da73aaa6a9a"
+  },
+  "dependencies": {
+    "bytes": 71090,
+    "sha256": "35e608bc3a3bd8374e31ba63611697c7d3eef58e0fbcdd1f6d5b19490fc08945"
+  },
+  "buildMode": "clean-source-baseline-with-focused-resident-and-modal-repairs",
+  "readerPolicy": "STRICT",
+  "contiguousReadCoalescerRetained": true,
+  "readerDataPathChangedByRepairs": false,
+  "nativeFrontendIncluded": false,
+  "standaloneWeb": true,
+  "homeStartupBroker": true,
+  "cleanSourceVerification": {
+    "passed": true,
+    "package": {
+      "bytes": 5706512,
+      "sha256": "b7f2aebcd292f6ceb09d5238b1dcba6b053d89296084de0b26691f74c6c6024b"
+    },
+    "reader": {
+      "bytes": 798192,
+      "sha256": "d02f20f4ee8b1db1617e7b2c7ad4f76821e8b9da2523ac185a2e881ca33462be"
+    },
+    "sourceManifest": {
+      "bytes": 68840,
+      "sha256": "9a63c8a31837df4cec20518e6b9a0130a46289cddffcc1b5cc96c5af9cf16aed"
+    },
+    "sourceBeforeAfterMatch": true,
+    "commands": 144,
+    "laterRuntimeSourceChanges": [
+      "src/blackwire/desk/index.html"
+    ],
+    "laterTestChanges": [
+      "src/blackwire/desk/tests/test_ui.py"
+    ],
+    "laterMainRecompiledWithIdenticalSourceControl": true
+  },
+  "hostVerification": {
+    "reader": {
+      "source": {
+        "passed": true,
+        "cases": 47,
+        "checks": 75945,
+        "transportModelOnly": true,
+        "nativeReadProved": false,
+        "requestScopedFences": true,
+        "coalescingMaximumBytes": 1048576,
+        "scratchSeparateFrom64MiBCache": true,
+        "cold1MiB": {
+          "namedStats": 2,
+          "heldStats": 2,
+          "fullDataCalls": 1
+        },
+        "cached1MiB": {
+          "namedStats": 2,
+          "heldStats": 2,
+          "dataCalls": 0
+        },
+        "partialThreeBlockRead": {
+          "namedStats": 2,
+          "heldStats": 2,
+          "dataCalls": 17
+        },
+        "contextsDestroyed": 42,
+        "pendingDestinationDrainedBeforeReuse": 7,
+        "telemetryClock": "modeled monotonic nanoseconds; faults nonauthoritative"
+      },
+      "adapter": {
+        "passed": true,
+        "checks": 19,
+        "networkCalls": 0,
+        "privateAdapterOnly": true,
+        "gameRngNotReseeded": true
+      },
+      "prehook": {
+        "passed": true,
+        "cases": 13,
+        "checks": 320,
+        "actualGeneratedPrepass": true,
+        "targetTableModelOnly": true,
+        "nativeLoaderProved": false
+      },
+      "input_diagnostic": {
+        "passed": true,
+        "cases": 20,
+        "checks": 2133,
+        "actualInputAndReporter": true,
+        "savedOriginalCallsModeled": true,
+        "maximumPhaseAttempts": 7,
+        "privateWaitBudgetUs": 10000000,
+        "nativePermissionProved": false
+      },
+      "first_read": {
+        "passed": true,
+        "cases": 10,
+        "checks": 20,
+        "maximumMarkerBytes": 342,
+        "actualCFormatter": true,
+        "actualGeneratedCompletionPredicate": true,
+        "sample": "[BWREAD1] event=first-positive-remote-v1 mapId=2 offset=11 requested=5 returned=5 digestOffset=11 digestBytes=5 sha256=36bbe50ed96841d10443bcb670d6554f0a34b761be67ec9c4a8ad2c0c44ca42c fetchedPayloadBytes=65536 copiedBytes=5"
+      },
+      "connect": {
+        "passed": true,
+        "cases": 20,
+        "checks": 179,
+        "actualConnectAndWorker": true,
+        "callsModeled": true,
+        "maximumObservedMarkerBytes": 417,
+        "nativeHeapOrTransportProved": false
+      },
+      "cache": {
+        "passed": true,
+        "cases": 9,
+        "checks": 2130,
+        "actualCanonicalCache": true,
+        "fixedPayloadBytes": 67108864,
+        "entryMetadataBytes": 40960,
+        "normalMallocPathRetained": true,
+        "borrowedPayloadNeverFreed": true,
+        "nativeAllocationProved": false
+      },
+      "home_startup": {
+        "passed": true,
+        "results": {
+          "client": {
+            "passed": true,
+            "cases": 64,
+            "checks": 23458,
+            "behaviorFingerprint": "7935b8c62cf47c2d",
+            "actualClient": true,
+            "modeledSockets": true,
+            "networkActions": 0
+          },
+          "runtime": {
+            "passed": true,
+            "cases": 17,
+            "checks": 4701,
+            "actualRuntimeAdmission": true,
+            "actualSelectionCodec": true,
+            "nativeExitProved": false
+          },
+          "prehook": {
+            "passed": true,
+            "cases": 13,
+            "checks": 320,
+            "actualGeneratedPrepass": true,
+            "targetTableModelOnly": true,
+            "nativeLoaderProved": false
+          },
+          "input_diagnostic": {
+            "passed": true,
+            "cases": 20,
+            "checks": 2133,
+            "actualInputAndReporter": true,
+            "savedOriginalCallsModeled": true,
+            "maximumPhaseAttempts": 7,
+            "privateWaitBudgetUs": 10000000,
+            "nativePermissionProved": false
+          }
+        },
+        "native": {
+          "passed": true,
+          "syntaxOnly": true,
+          "fullReaderBuilds": 0,
+          "compiler": {
+            "bytes": 2697,
+            "sha256": "3403cafbed6fedb4029016a37a7c92f1e6ffb410c3577a7c799c806e5060f8a1"
+          },
+          "clientObjectAudit": {
+            "bytes": 22288,
+            "sha256": "896f5b6ed8fdf5332f42d63e9e57c9a30004103b41cc628221241d03a8c5b714"
+          },
+          "clientImports": [
+            "__error",
+            "bw_home_ack_parse",
+            "bw_home_claim_format",
+            "clock_gettime",
+            "close",
+            "connect",
+            "getsockopt",
+            "memcmp",
+            "memcpy",
+            "memset",
+            "poll",
+            "recv",
+            "send",
+            "setsockopt",
+            "snprintf",
+            "socket",
+            "strcasecmp",
+            "strchr",
+            "strlen",
+            "strstr",
+            "sysctl"
+          ],
+          "providerQualified": true,
+          "newSystemServiceDependency": false
+        },
+        "sourceBeforeAfterMatched": true,
+        "dataPathByteIdenticalToBase": {
+          "reader/preload/source.c": {
+            "bytes": 24298,
+            "sha256": "2010425492e98ad9968d98104ef4e45788c7941251c0852d394138a9540019f8"
+          },
+          "reader/preload/source.h": {
+            "bytes": 7632,
+            "sha256": "3de0703d3e7420925e6a84fdaad812b1fb55d6bfcb14e979840cc49b880a6e48"
+          },
+          "reader/preload/private_smb.c": {
+            "bytes": 2552,
+            "sha256": "b58a998a4f1a5f69ce83f9048d00a4110d6cc510595afdfd2210c2f111016e7c"
+          },
+          "streamreader/cache.c": {
+            "bytes": 4596,
+            "sha256": "24b67a0f394aef0cb4bf2ffdc6690bafd72ba0881ed85214d0d66c35b704dcff"
+          },
+          "streamreader/cache.h": {
+            "bytes": 2510,
+            "sha256": "c62bba19c8235bb61cffd1398aab89bde7b0d6a97ad4567e1047022693f70347"
+          }
+        },
+        "consoleActions": 0,
+        "networkActions": 0,
+        "fullReaderBuilds": 0,
+        "residentBuilds": 0,
+        "nativeExitExecuted": false,
+        "scope": "Actual local startup control/HTTP/failure paths with modeled transport and SDK; native syntax only"
+      }
+    },
+    "sharedUiTests": 87,
+    "browserHandoffCases": 19,
+    "preparedAbsenceCases": 25,
+    "preparedAbsenceChecks": 527,
+    "registrationGenerationCases": 12,
+    "registrationGenerationChecks": 15873,
+    "ordinaryUninstallCases": 54,
+    "ordinaryUninstallChecks": 23506
+  },
+  "consoleVerification": {
+    "currentPageAndLogoServed": true,
+    "sameReaderAsWorkingGames": true,
+    "currentChromeControlsVerified": true,
+    "gtaRetainedFilesRecovery": {
+      "passed": true,
+      "applicationSha256": "a59e5cda3d7cac2af23670f984f74d104d9e88f9e451552bd3e69e879ce5b302",
+      "registered": true,
+      "sourceBytesCopied": 0,
+      "currentBackendUnchanged": true
+    },
+    "updatedUninstallDeletionHardwareVerified": false,
+    "newGameGameplayNotInferredFromReady": true
+  },
+  "privateBuildLogsIncluded": false,
+  "externalConsoleLibrariesIncluded": false,
+  "sourcePackaging": {
+    "amprTextConversionDisabled": true,
+    "runtimeSourcesChanged": false,
+    "originalAmprAttributes": {
+      "bytes": 271,
+      "sha256": "23ea8716365613c7e782e45015e8ac77b827a54eac4a0e8e1fae74103c5ad053"
+    },
+    "packagedAmprAttributes": {
+      "bytes": 258,
+      "sha256": "39d6dec9588760cbfe4e15e4d01b8c2190e8eb2e0f70644dcc955084f8322566"
+    }
+  }
+}

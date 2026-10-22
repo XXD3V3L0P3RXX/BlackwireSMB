@@ -1,0 +1,1799 @@
+{
+  "schema": 1,
+  "ampr": {
+    "url": "https://github.com/drakmor/ampr_emu",
+    "commit": "cfa85df379f6eeeb165d7badf9b648e266fe77b7",
+    "files": {
+      ".gitattributes": {
+        "bytes": 258,
+        "sha256": "39d6dec9588760cbfe4e15e4d01b8c2190e8eb2e0f70644dcc955084f8322566"
+      },
+      ".github/workflows/ps5.yml": {
+        "bytes": 3828,
+        "sha256": "e5b2df2f72038b075aba95cd02904889a9952007300864e6cc72d4195abdfd5b"
+      },
+      ".gitignore": {
+        "bytes": 501,
+        "sha256": "3cacaed293b28f40064477176d5a4bf50d269d68515b77e0913e6e8c225dc172"
+      },
+      "LICENSE": {
+        "bytes": 35823,
+        "sha256": "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809"
+      },
+      "Makefile": {
+        "bytes": 12027,
+        "sha256": "a287d13082989d15b67189d9dccc8b7d0a361a4f121f5d58c95f804a5af02eb8"
+      },
+      "README.md": {
+        "bytes": 83,
+        "sha256": "56235c779e45097a67712575eaf009ecfad11d80323d73cc33868f4fe62aaf1c"
+      },
+      "docs/AMPR_PACK_DISTRIBUTION_README_EN.md": {
+        "bytes": 1610,
+        "sha256": "2c92847f59c56cb02528e6e7b915a8bcdf88c369004c578d87fb6d8b3122d8b8"
+      },
+      "docs/AMPR_PACK_DISTRIBUTION_README_RU.md": {
+        "bytes": 2575,
+        "sha256": "3f1a5ee69ebe9050b4867a4f1e6106eb2bec4637a768035e84590146761ba371"
+      },
+      "docs/ASSET_PACKS.md": {
+        "bytes": 39132,
+        "sha256": "9226cd9dc97ba4febebfd78c1f7fec67290ebe0a9bdc2114e51f6c6d7cf9c3fb"
+      },
+      "docs/ASSET_PACK_WORKFLOW_EN.md": {
+        "bytes": 32712,
+        "sha256": "5f42f2c3ec59ace09786bce50bb139ec9cb3cc69ab1d56193181eb2984e1402f"
+      },
+      "docs/ASSET_PACK_WORKFLOW_RU.md": {
+        "bytes": 53328,
+        "sha256": "0da34cedcedd06274dbd78a0407ba027b9fd591771b297797cc1ba90e50a5616"
+      },
+      "include/ampr.h": {
+        "bytes": 3964,
+        "sha256": "cf178685ac39655b32f8d4662b94d85d1dee77bcdf5d9d6370eec40afda9bc11"
+      },
+      "include/ampr_debug_log.h": {
+        "bytes": 2104,
+        "sha256": "220d00fa37e32cfa41a3ba970d454f3285ad723f6f5b8796d6068c2be1c4daed"
+      },
+      "include/ampr_emu_aio_broker.h": {
+        "bytes": 2024,
+        "sha256": "f16fe9dd0069bf1f7db3231f1d4445d524e507721088b8085931275b3c0b96f0"
+      },
+      "include/ampr_emu_amm.h": {
+        "bytes": 8031,
+        "sha256": "821da6a49b596066f6d6f2069dddc30d43b1997275b8867247b280d953277130"
+      },
+      "include/ampr_emu_apr_equeue.h": {
+        "bytes": 3903,
+        "sha256": "8d8d18444f3a8cc319a0e9da84ecba84e454832df427349ffd69743a943f8f55"
+      },
+      "include/ampr_emu_apr_reactor.h": {
+        "bytes": 2008,
+        "sha256": "c01c648770ff33c08404df2cf6f45b721ced913b7e5bb0d3060fc3faf7323094"
+      },
+      "include/ampr_emu_apr_reactor_common.h": {
+        "bytes": 3833,
+        "sha256": "1cae286d44faa1b55f6c0126be03d6bd31944b339a4eac12f3edd7ceb64333f0"
+      },
+      "include/ampr_emu_apr_services.h": {
+        "bytes": 3018,
+        "sha256": "38b56ec240e04ee7ffff396238b510cfe66c773295168f43f42f78d988805adf"
+      },
+      "include/ampr_emu_command_buffer_apr.h": {
+        "bytes": 2285,
+        "sha256": "4160848ebaeb9f0ba3b08dfbb64f837a100ff6fd451381966a929c55be5f0d35"
+      },
+      "include/ampr_emu_command_buffer_common.h": {
+        "bytes": 2219,
+        "sha256": "c6bdaf621d136c2c7f087ea06db16f892736d4948263d948c4f4d97c54aa39a9"
+      },
+      "include/ampr_emu_command_buffer_dump.h": {
+        "bytes": 17634,
+        "sha256": "bae5fb51413815fd05f1cdde98efe505adbda1d2d30fefb1633b5e4b4df793e1"
+      },
+      "include/ampr_emu_command_buffer_types.h": {
+        "bytes": 7875,
+        "sha256": "584d151280c366c80243546f33584888fc9c704c4abf8b1f694be3d09847d3a6"
+      },
+      "include/ampr_emu_command_log.h": {
+        "bytes": 1225,
+        "sha256": "c50e74f6ffc5563c673726e1c05061a3cdc4a31e7037cbe42129644c8ac5a9a4"
+      },
+      "include/ampr_emu_command_packing.h": {
+        "bytes": 2934,
+        "sha256": "b5fd2d4f049ca25309ae6835e970792ca5622acbcf85279404ebcff3f2605b52"
+      },
+      "include/ampr_emu_command_types.h": {
+        "bytes": 2246,
+        "sha256": "470bf4a360aec6da7200f7bf7021370ca58057e2f06b7495e4455fd42e48b24e"
+      },
+      "include/ampr_emu_config.h": {
+        "bytes": 39341,
+        "sha256": "9ded1c0808c35b8ad65c87a37027a0781012802055558eb0911ea32342a68988"
+      },
+      "include/ampr_emu_errno.h": {
+        "bytes": 3551,
+        "sha256": "ce2588096ada7d0f2c6ff15e53566aeb2681ba49f784aae89306675738827359"
+      },
+      "include/ampr_emu_fd_cache.h": {
+        "bytes": 2591,
+        "sha256": "20e8cee5fcf4352e45ef9400a96d97b42df75167040536ce91bc5f5c36fc1780"
+      },
+      "include/ampr_emu_index.h": {
+        "bytes": 886,
+        "sha256": "fe863539db3450d47a4c73081cf96d2c7235ca4ad32fdb0aa38431e7638fe5c8"
+      },
+      "include/ampr_emu_kernel_amm.h": {
+        "bytes": 7581,
+        "sha256": "8ef93f210b53ea11e1f4012a7220dfe53eb5873f269cd8b3b96569844bfd475d"
+      },
+      "include/ampr_emu_kernel_file.h": {
+        "bytes": 5427,
+        "sha256": "f951cfcb76169a70af2f92be092a8b978047ea693b640339e708d1988cc08251"
+      },
+      "include/ampr_emu_kernel_lookup.h": {
+        "bytes": 889,
+        "sha256": "75373f0d24138c52f88768ef6d2e9f64f9582214fe8eebdd60ffedf456155c8c"
+      },
+      "include/ampr_emu_kernel_memory.h": {
+        "bytes": 1720,
+        "sha256": "3d491a90dae0201a71f783f128c30d7387372774cfbb16bd00ec011c0d00af24"
+      },
+      "include/ampr_emu_log.h": {
+        "bytes": 6950,
+        "sha256": "d9b480412a171fb8e03d87edb9e6a7f55eb4e15876e23eaec1df0455f91d9301"
+      },
+      "include/ampr_emu_loose_adaptive.h": {
+        "bytes": 8796,
+        "sha256": "7fcc1924337050ddcc7e2b5a76503c4d719cef86e6d904584849edd5163401ad"
+      },
+      "include/ampr_emu_measure_commands.h": {
+        "bytes": 1231,
+        "sha256": "a12482a6b9c3240cfb883e28dd88ddfadc4140fe50fe2bed213990f507f12f7f"
+      },
+      "include/ampr_emu_pack.h": {
+        "bytes": 14782,
+        "sha256": "cb4b3e7002665363873393b2fba8c30ba5bec9c45a95a60c126a22771d40ea6f"
+      },
+      "include/ampr_emu_pack_core.h": {
+        "bytes": 4162,
+        "sha256": "9f881e5fdd7585dfe65adf19644b9e73c9b111992c71d749967493b8fc6c1234"
+      },
+      "include/ampr_emu_pack_format.h": {
+        "bytes": 6991,
+        "sha256": "6cc6eebbcda0599c39a7a925c0f3c715d212e4f6fad9e55f749f08f0af1b5987"
+      },
+      "include/ampr_emu_prot.h": {
+        "bytes": 1890,
+        "sha256": "81250656d70cde0f07c5a02f0c732d573dbfdacbe961e54f98201a52b73fdc9d"
+      },
+      "include/ampr_emu_runtime_memory.h": {
+        "bytes": 5422,
+        "sha256": "98d629119e37b19db3a8fab36e18740a4cf64145fe4d2156f8f6bd9330f2f471"
+      },
+      "include/ampr_emu_sync.h": {
+        "bytes": 9284,
+        "sha256": "7c15aa1a48062306fde340495990f5fbd6f5adf2c82234e0ca6012f214a5bbd7"
+      },
+      "include/ampr_libkernel_hook.h": {
+        "bytes": 7580,
+        "sha256": "ce2f7d4028ac76bc415ff1a44c5a918fcb4e222f4f2bbde7dab111e1e85f9d30"
+      },
+      "include/ampr_libkernel_hook_targets.h": {
+        "bytes": 8672,
+        "sha256": "d9a4e4e2b75169910603258a4de6c48fa6792f5bcef873a8f2c6407a1ceb0f2b"
+      },
+      "include/hde64.h": {
+        "bytes": 3398,
+        "sha256": "94946fa71cd7f7d130fec6eb549b3c402a2aa99db6f8bd14b4a6d975b82c35a9"
+      },
+      "include/table64.h": {
+        "bytes": 3651,
+        "sha256": "0b6c69ad498e67907e0c574ab06123aee4ec30c99fa181099ea929a8d820bfc1"
+      },
+      "libSceAmpr.sln": {
+        "bytes": 988,
+        "sha256": "cf822b643af57a24a6027d7f10a4502fcddc5c2424ce842bfbcb3d3a43b7933e"
+      },
+      "msbuild/Prospero.App.props": {
+        "bytes": 313,
+        "sha256": "a7e1558bb18cc49ada10cb1ff2b24106e6f3bed06717dd735b551a1cc2fc50da"
+      },
+      "msbuild/Prospero.Common.props": {
+        "bytes": 3629,
+        "sha256": "46ba9fea3a32d686d18668c70bf395c77636e9a337e8609ecf1fb937df863522"
+      },
+      "msbuild/libSceAmpr/libSceAmpr.vcxproj": {
+        "bytes": 13996,
+        "sha256": "27e6e6af7313508d2317786ccbfa7b559f0ab8b46816e2fd7491891a7d729d57"
+      },
+      "ps5/crt/README.md": {
+        "bytes": 703,
+        "sha256": "15fc118910812593b071dbb18adf92cf34cc283e819c9bbd93e024f81d30ef58"
+      },
+      "ps5/crt/crtbeginS.c": {
+        "bytes": 2276,
+        "sha256": "a7a960a25d2702f2a26d89ed6e3c82664dbdb66644a9e58262a92b132138d255"
+      },
+      "ps5/crt/crtendS.c": {
+        "bytes": 1530,
+        "sha256": "4b09e3e6df892e5bad0c82068946985d0b65daa673c53f4754ddc53de661a1bf"
+      },
+      "ps5/crt/crti.S": {
+        "bytes": 290,
+        "sha256": "06919b64c9619b1c90cc153ae104e700edf17c18cbdadb04b1a2ef3ab9306727"
+      },
+      "ps5/crt/crtn.S": {
+        "bytes": 290,
+        "sha256": "91d3f87e7157b5e418330abcc979a6197f921ed000b9316f37dbd33ebef838f8"
+      },
+      "ps5/include/sce/README.md": {
+        "bytes": 640,
+        "sha256": "434ec6bd0be37384d420283831cb5146f3b264a0fda3a297837e7fe46199d9ca"
+      },
+      "ps5/include/sce/_fs.h": {
+        "bytes": 4469,
+        "sha256": "b9ef2ba007bd6a4e05040605feb65bbe792498804fdd1c6a3e64bdc5981f3c64"
+      },
+      "ps5/include/sce/_kernel.h": {
+        "bytes": 1132,
+        "sha256": "9403951ce4248d626de8804065aae97f1541e293dfd676f8f650ad3f37282ba0"
+      },
+      "ps5/include/sce/_pthread.h": {
+        "bytes": 2139,
+        "sha256": "2e6b51b67820e3b2341e0589fed959a35088c9855e0b91372f18b3e1eb182dc8"
+      },
+      "ps5/include/sce/_types.h": {
+        "bytes": 411,
+        "sha256": "9b47857d6214c2cb36d195e4fa1ee06cdc2d621c2619b8c581c7e6ea527fd8a0"
+      },
+      "ps5/include/sce/ampr/ampr_error.h": {
+        "bytes": 611,
+        "sha256": "c2c3a9dada6eb17c50320a245af88faa385f78c622daff96cab35f71c2312648"
+      },
+      "ps5/include/sce/kernel.h": {
+        "bytes": 263,
+        "sha256": "bec4b7e2f060cde03275a4cbb0ccefd6eaf13c98f9812f6c5a867834dfd0065c"
+      },
+      "ps5/include/sce/kernel/equeue.h": {
+        "bytes": 1736,
+        "sha256": "ed1e9f8bd1ec3d835099fb9ce8f7d2962e7e8b78f3e52e070fc817674f0e98be"
+      },
+      "ps5/include/sce/kernel/semaphore.h": {
+        "bytes": 779,
+        "sha256": "9d3b2c732fbde3f188b6c80aff3b9d125e44613cbf3efa51f01725576c4f2775"
+      },
+      "ps5/include/sce/sys/dmem.h": {
+        "bytes": 4534,
+        "sha256": "f78cc946be64e473479ee2530eb779ca63326d5fbea796c2b83f2106ceb36ccf"
+      },
+      "ps5/include/sce/sys/sce_errno.h": {
+        "bytes": 1620,
+        "sha256": "35ddd1608c96aa8cfe7667aed578b7e201e5c66cc0b6a4db4dba5f7d70fdffb1"
+      },
+      "ps5/prx/README.md": {
+        "bytes": 376,
+        "sha256": "149c321bba5d1fc9122715e898aff60d50013463fa59b4e3e20f5305937c0060"
+      },
+      "ps5/prx/prx.script": {
+        "bytes": 5954,
+        "sha256": "65489782e0cb1b8e1b59832166412713e7fcaadab10991e9530ce5bb8507916f"
+      },
+      "src/ampr_debug_log.cpp": {
+        "bytes": 36138,
+        "sha256": "dcda20c167092e15a115282cf7fcc31bb5a5628721f677d9d6bd64a6936c5426"
+      },
+      "src/ampr_emu_amm.cpp": {
+        "bytes": 55009,
+        "sha256": "b3326de961bbad2cd576518efea9018d1a55356149fb3895d08a18310baac0ee"
+      },
+      "src/ampr_emu_apr_command_buffer.cpp": {
+        "bytes": 6218,
+        "sha256": "b87cbf56199b8de680f4023d41d599f14a8fec7053952c52705622a59d194f2f"
+      },
+      "src/ampr_emu_apr_equeue.cpp": {
+        "bytes": 126103,
+        "sha256": "aee6321ae08bea2317eda427402af90d2bdf05236dfa7289db9e690b54091701"
+      },
+      "src/ampr_emu_apr_kernel_bridge.cpp": {
+        "bytes": 19832,
+        "sha256": "68b5b3887aa60b24c7c7c7a5ecc651971810abc00e119e178674df97758dadad"
+      },
+      "src/ampr_emu_apr_reactor.cpp": {
+        "bytes": 620994,
+        "sha256": "e808329cc4da845b550c9d39d4caf7518ef43ffbb5765c541e469e3c1f66f549"
+      },
+      "src/ampr_emu_apr_reactor_common.cpp": {
+        "bytes": 2969,
+        "sha256": "fb56d897363beaf59bb9291314d67fdc2dfabde39283f68b18cb7372447aeea4"
+      },
+      "src/ampr_emu_apr_services.cpp": {
+        "bytes": 20985,
+        "sha256": "176e066067320e6cdf4e12545a5db24660ac391094262e26e2d1b7ef78e7356a"
+      },
+      "src/ampr_emu_command_buffer.cpp": {
+        "bytes": 26181,
+        "sha256": "b3214566e954a608f46d06a7feadd339b86ab9991b7f06b55286c386dc597102"
+      },
+      "src/ampr_emu_command_buffer_amm.cpp": {
+        "bytes": 20127,
+        "sha256": "069961be898a3762378b3065f5272fd347e16f87df94e32110e97c53a4278138"
+      },
+      "src/ampr_emu_command_buffer_apr.cpp": {
+        "bytes": 11315,
+        "sha256": "69defb809782dcba8f144e8c5dfe06661feeb57c7aaa7babaf96bc88e02993c9"
+      },
+      "src/ampr_emu_command_log.cpp": {
+        "bytes": 25627,
+        "sha256": "40a80d68e73d19c98de180f374625c17b3359d4ad6021fab7480324c915b9e2c"
+      },
+      "src/ampr_emu_command_packing.cpp": {
+        "bytes": 48185,
+        "sha256": "c6da6cf5624720158bdfa6ab69a714dca114e40df923d8ce31a9e81e65774bc2"
+      },
+      "src/ampr_emu_fd_cache.cpp": {
+        "bytes": 61827,
+        "sha256": "3253dbaaa5f2cbfb64c827ed28544538317eb9068f15af12e15bbe46fd08f8a0"
+      },
+      "src/ampr_emu_index.cpp": {
+        "bytes": 101709,
+        "sha256": "d379b5c3f4897a9bb2a07c65bec666e00ba3e8935187faa8adffbf4351ac873e"
+      },
+      "src/ampr_emu_loose_adaptive.cpp": {
+        "bytes": 10242,
+        "sha256": "2d8f4a08bd6701b191c37dab8f8336e46000f95e39fb0e917607b8d4112e8e4f"
+      },
+      "src/ampr_emu_measure_commands.cpp": {
+        "bytes": 4605,
+        "sha256": "b405beef894a69a84f853f7f430a98f45050867b8563aad836c7db0a887aa01a"
+      },
+      "src/ampr_emu_pack.cpp": {
+        "bytes": 354548,
+        "sha256": "71fb9a8b08de879b1774564c17ed4830a9dfdd3fb5205b422d43baa687fd3087"
+      },
+      "src/ampr_emu_pack_core.cpp": {
+        "bytes": 28581,
+        "sha256": "76923b9cd3a6e83eba7a2c9d04cb02fcfbe8646fdb02c342f818ba244ec77a40"
+      },
+      "src/ampr_emu_runtime_memory.cpp": {
+        "bytes": 45258,
+        "sha256": "d90c070efe39601ca52a73d484ac033c0632c3bbb503eb4edb785c71c4c13152"
+      },
+      "src/ampr_libc_internal_link.cpp": {
+        "bytes": 195,
+        "sha256": "801cc959a764108482e6f55dd8e7353c0a97454fd70adeb1b2a58ad8476a2548"
+      },
+      "src/ampr_libkernel_hook.cpp": {
+        "bytes": 128438,
+        "sha256": "f813152a5a9274c82c30042b53b1baaba468f2a8623fc79e60cf5ca3915b5d7f"
+      },
+      "src/hde64.cpp": {
+        "bytes": 17215,
+        "sha256": "8f52ae84688b81aa391be62ace0b2da3dae9d2bd5b96a5de1afff74140376ce7"
+      },
+      "src/sceampr_exports.cpp": {
+        "bytes": 55873,
+        "sha256": "8dcc9ab5aee9605152c4920555b1db5cc1c974283ee25ad2ca917a83fafe3eb8"
+      },
+      "tests/data.bin": {
+        "bytes": 256,
+        "sha256": "40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880"
+      },
+      "tests/prospero_negtest.cpp": {
+        "bytes": 51001,
+        "sha256": "dab2e275e4a53b1108153802aadff58eaa76529fcdeeb5a88f7f6743ae27a851"
+      },
+      "tests/prospero_prx_boundary.cpp": {
+        "bytes": 59134,
+        "sha256": "e3254b897ee8e23d27b7a3debac5f7aa21f2624ea0b9d2c33d714955f64dff52"
+      },
+      "tests/prospero_smoketest.cpp": {
+        "bytes": 3110,
+        "sha256": "d17f796b5c93645957be9720db193b7ba045befbfe2f0b5651394fa8a4d0708b"
+      },
+      "tests/prospero_stress.cpp": {
+        "bytes": 6663,
+        "sha256": "055fc7da9fd2b29aaa43747ee433b72d261683e30e1edbc29b3c595bdd035fed"
+      },
+      "tests/prospero_test_common.h": {
+        "bytes": 984,
+        "sha256": "5d00e312e7ee2db1eb635aabc44639d0c3dd00a862d8e0270305fb7cc7286f49"
+      },
+      "third_party/lz4/LICENSE": {
+        "bytes": 658,
+        "sha256": "5c3a531b92d858389aa4191445b12b0c6788f2887a9caea57aafe17b62763881"
+      },
+      "third_party/lz4/README.ampr.md": {
+        "bytes": 449,
+        "sha256": "908effe4a17864337b748a72b35bb49df1490eed0ea31235acfd8333d08f7b3f"
+      },
+      "third_party/lz4/lib/lz4.c": {
+        "bytes": 120974,
+        "sha256": "acecb7244d92b0e5ef27c6bda601847c6a5b0c99c9474ddd4957a3d02c0f9a38"
+      },
+      "third_party/lz4/lib/lz4.h": {
+        "bytes": 46898,
+        "sha256": "9a1de32919a47dcb02575dd1b2650563eb73b7e0d91a4f846192becc78d1e7c3"
+      },
+      "tools/ampr_pack.example.toml": {
+        "bytes": 5889,
+        "sha256": "29ed5617a90e264f66b3830dcc7b52a330dc8522d2540ea2cdddb80421c58eef"
+      },
+      "tools/ampr_pack.py": {
+        "bytes": 102574,
+        "sha256": "b176b682bb049b015f408973733de7c84d73ee5fc98a89d5b593838fa7828d39"
+      },
+      "tools/ampr_pack_format.py": {
+        "bytes": 42206,
+        "sha256": "aa717e1902a3abd49a010966bf7075e7730b832d7f1ea8dbb896b223b0823d18"
+      },
+      "tools/ampr_pack_gui.cmd": {
+        "bytes": 192,
+        "sha256": "5632bd62d5e30ceacbdb740f645899ffcb2c355d70f2a09cfeed09ef80f774f9"
+      },
+      "tools/ampr_pack_gui.py": {
+        "bytes": 59813,
+        "sha256": "1ccc967e575cbb2bceea46b0c7f33db4cee2349aadfd72fe91b704b318b8aea2"
+      },
+      "tools/ampr_pack_profile.py": {
+        "bytes": 108961,
+        "sha256": "1d2f64bb78b8a42f7954377df80253fb6524854098b61556e7679b65760b64eb"
+      },
+      "tools/analyze_ampr_log.py": {
+        "bytes": 235500,
+        "sha256": "1f5888401b0f3452ebbb4d2f499cbaedd387dcc12fe7fcd64361f38ce458eb5e"
+      },
+      "tools/build_ampr_index.py": {
+        "bytes": 18350,
+        "sha256": "6e0dbb5a106eec957990658521237bfcf360ed95951e8af11d4c4332a9a139e5"
+      },
+      "tools/build_pack_distribution.ps1": {
+        "bytes": 7324,
+        "sha256": "323e0af7c229c056112b37912cd2a1a330bf287d3a524271ff5a940d74d54e40"
+      },
+      "tools/build_prospero.ps1": {
+        "bytes": 2406,
+        "sha256": "1442d9352e3f41009154e83a5f8511141300c89742b3561cbf486b0936b2c253"
+      },
+      "tools/convert_ampr_pack_v3.py": {
+        "bytes": 11292,
+        "sha256": "e0fbb8d01165b2145a31187a0da1305040361a44e7a44ce02bf4268e8aab8abc"
+      },
+      "tools/generate_payload_exports.py": {
+        "bytes": 6204,
+        "sha256": "2eeb7806276e32cd79cffaea0ffd8ddc8bd96e1590d0b0eb0f90e89bb72571b8"
+      },
+      "tools/make_fself.py": {
+        "bytes": 27517,
+        "sha256": "d44f89de99c4a8081304d98011f1bc60fe7ba78a86c3a6bcc6632185cfd783c3"
+      },
+      "tools/make_import_stub.py": {
+        "bytes": 7793,
+        "sha256": "469094dc8c668a2e2cc7d44be48a496a1d0f9a55b92cd9700e25dd55ebe300f1"
+      },
+      "tools/parse_ampr_command_log.py": {
+        "bytes": 60303,
+        "sha256": "cae213af118f762584e931584042953c778beb0f164ce4f2826b09fd8def2844"
+      },
+      "tools/prepare_prx_link_script.py": {
+        "bytes": 2137,
+        "sha256": "46740f76ee0c31e75e24e0cd3524131ff7dbe779da0f9973b23d4e1735d76c88"
+      },
+      "tools/prx_hash_fix.py": {
+        "bytes": 9811,
+        "sha256": "0024bf21f217f91063d5868407e699af7c6b0af4c8e8edd78bb1a6a616599c35"
+      },
+      "tools/requirements-pack-build.txt": {
+        "bytes": 48,
+        "sha256": "263859ac79c470d82d40d24729ad1b60ce6dfbf49e45c03f5b306fac37508ab0"
+      },
+      "tools/requirements-pack.txt": {
+        "bytes": 12,
+        "sha256": "90a5606d8c8a91f20aaa4ca49e4a06a157771e614c3941d6481001b8b3960989"
+      },
+      "tools/stamp_payload_prx.py": {
+        "bytes": 4057,
+        "sha256": "9d8daebf7049bb9d723fc0158e873ff48645fb3710e7152cf1edbd93146020c3"
+      },
+      "tools/verify_payload_prx.py": {
+        "bytes": 9569,
+        "sha256": "8d4efb2460d39f19e78945de4a54b0572a80a9f0e888a4b2bc4a2d5689318047"
+      }
+    },
+    "packagingChanges": {
+      ".gitattributes": "Disable text conversion to preserve the pinned source bytes in Git clones and source archives; runtime source is unchanged."
+    }
+  },
+  "libsmb2": {
+    "url": "https://github.com/sahlberg/libsmb2",
+    "version": "6.1.0",
+    "upstreamCommitRecorded": false,
+    "files": {
+      "README": {
+        "sha256": "ad43ebb701972d9146eb4ab40d3ccecf83586dc070d237d6b8cb51fc2821ce4a",
+        "bytes": 15813
+      },
+      "Makefile.am": {
+        "sha256": "a303c50a76e6e465bb042785fe40fec35f2e2cb2f342d3fabcd681ef801b0ffb",
+        "bytes": 262
+      },
+      "COPYING": {
+        "sha256": "749c710c2b3d5c95906c785f28af9abbe4ce909311e72eb72eee5c6873e2fa6f",
+        "bytes": 895
+      },
+      "Makefile.platform": {
+        "sha256": "b9b78dbb4e6486c2fe64b5df743ddf2843068ec3835cdb62e627b30a5cd1008a",
+        "bytes": 3811
+      },
+      "configure.ac": {
+        "sha256": "6a9f19c8aebae8e8e772846b2d530a29781bc766e0e987287a69ee63d8d9d43d",
+        "bytes": 4762
+      },
+      "component.mk": {
+        "sha256": "3e410a6a19cf7f09d3160d9249b846f88674cd559da7e5b825e9b46f06d529cb",
+        "bytes": 114
+      },
+      ".gitignore": {
+        "sha256": "ce007323998c708c0716093b1a0cdd356b5e208f0e3c13f22af59882597037e9",
+        "bytes": 304
+      },
+      "idf_component.yml": {
+        "sha256": "df78ec962e24fe55aa61af4e66d6b7ad51091a3700dec6463cc412ab4cc88f6f",
+        "bytes": 185
+      },
+      "bootstrap": {
+        "sha256": "0b99069043ddb0a44132248ac135ce21497fd155003aaef88f8b5150f00fe844",
+        "bytes": 26
+      },
+      "LICENCE-LGPL-2.1.txt": {
+        "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551",
+        "bytes": 26530
+      },
+      "libsmb2.pc.in": {
+        "sha256": "b1f4a68da69a61e76d6a7b285c954595587ae6577c4067eef97bc0959362f1a6",
+        "bytes": 295
+      },
+      "CMakeLists.txt": {
+        "sha256": "7f3c8387d34554bda4533fe4184c93656ccb659e9fa4aa2c40c6c6bf62ae16be",
+        "bytes": 10029
+      },
+      "utils/Makefile.am": {
+        "sha256": "c4c592d307d6d463fac4bd79bd877423824c0c3ae446a997893aecee8bd1ddee",
+        "bytes": 263
+      },
+      "utils/smb2-cp.c": {
+        "sha256": "80b8759a000a1b55261366f5b7b051c5743b260092a17aa996891829eb902335",
+        "bytes": 6365
+      },
+      "utils/smb2-ls.c": {
+        "sha256": "f240a8558accda5fd7a410d1791d51f286117092ee4fe39442ec317c0c1439e6",
+        "bytes": 5059
+      },
+      "cmake/ConfigureChecks.cmake": {
+        "sha256": "dfbdc712f426c6728e761eaae8d43e781719180fad78d12a43257b2c4af33541",
+        "bytes": 2530
+      },
+      "cmake/config.h.cmake": {
+        "sha256": "4d358830f10c10cfce0dd2bcd6f937e1d2279864f02f3a64e8e2b6983bcd96df",
+        "bytes": 4410
+      },
+      "cmake/FindSMB2.cmake": {
+        "sha256": "ee71f3bbdfa7001841a2bef9181970439f3bdd2926fac2ff8a403090b2847735",
+        "bytes": 1004
+      },
+      "cmake/libsmb2.pc.cmake": {
+        "sha256": "7f54272480d98052f83dabca81fadf045316d47c5de34d5c57871e05bf28d1ec",
+        "bytes": 340
+      },
+      "Xbox/libsmb2.sln": {
+        "sha256": "819a42a305f3662132b4f86c1f69637ae1903bf3ecf2616e21aa3ef3b9df129b",
+        "bytes": 1454
+      },
+      "Xbox/libsmb2.vcproj": {
+        "sha256": "968158bb6704336fac4be8e7c08da7144675c25eead012c72a60f8911f540ce3",
+        "bytes": 11673
+      },
+      "Xbox 360/libsmb2.sln": {
+        "sha256": "6ddca01ca961ffbec187de78de91c30317f0d87e36df86a2f1885863eb2a0093",
+        "bytes": 1844
+      },
+      "Xbox 360/libsmb2.vcxproj.filters": {
+        "sha256": "006d23c7c164cd57ddc4624707316fdb2b7d68f6e46d39fd4132ca0bc80188e9",
+        "bytes": 8610
+      },
+      "Xbox 360/libsmb2.vcxproj": {
+        "sha256": "a9f1be0b9d871def8f139e05bd8033024cdffab6a92f2583445632975e9c84c7",
+        "bytes": 17819
+      },
+      "lib/smb2-cmd-write.c": {
+        "sha256": "c1bc2bb185c06bb4b6a57ac19c99657ca40b2eebd41cceb209a6650a9c9e678d",
+        "bytes": 10016
+      },
+      "lib/smb3-seal.c": {
+        "sha256": "fa42fff16555511e7b08d6ff2df412647fb63845109ccbe769f0460e96c06a2c",
+        "bytes": 4597
+      },
+      "lib/hmac-md5.c": {
+        "sha256": "b0627706b518eb7c36385eef494ce693050f178ff6940d3e2c42cea863c4eb8f",
+        "bytes": 2788
+      },
+      "lib/Makefile.am": {
+        "sha256": "67cc686a88ea648cd30f1501106935fe5d87cf3ce5745a52a45f934ca2eda7db",
+        "bytes": 1570
+      },
+      "lib/md5.h": {
+        "sha256": "47175dafb09aa5c90d41b7e877d2e2a3c9c78318ca3d6e4551d8f8978e3526cf",
+        "bytes": 1773
+      },
+      "lib/smb2-cmd-echo.c": {
+        "sha256": "f2e999665563dd5e3dc1de82183a2177b70196574dba2e16ea094b65b802c3aa",
+        "bytes": 5064
+      },
+      "lib/md4.h": {
+        "sha256": "bf8b13f1b40b9dc00dc4d85d0b5105713af2f983fe1a46f95b5fe9be8a0cdce8",
+        "bytes": 1509
+      },
+      "lib/smb2-cmd-negotiate.c": {
+        "sha256": "214d9c0992419377b4c54bf9221e410952be4236ee85388be680c51b3fa19198",
+        "bytes": 21659
+      },
+      "lib/sha-private.h": {
+        "sha256": "8c11ea0a0ea998665a61ea4f7b302f7b05350ba9908ffb968c27ee68577ada7e",
+        "bytes": 900
+      },
+      "lib/smb2-cmd-notify-change.c": {
+        "sha256": "a04426607481dbcfcbf5a38d9c0f7a1d371ae5d6691c05ded0fbde724c29ab7b",
+        "bytes": 7981
+      },
+      "lib/unicode.c": {
+        "bytes": 11119,
+        "sha256": "c85d7515670c5e790e2750a19465ef4fe5c9678dcf1a3b8a58dc343cee6ad321"
+      },
+      "lib/libsmb2.c": {
+        "sha256": "f8ffc06510886c158b4ffc20c80e761398bc270523559d2bc5de58f2493f4f3b",
+        "bytes": 142271
+      },
+      "lib/socket.c": {
+        "bytes": 51500,
+        "sha256": "1bc7b1e7c84a9b1b532751933961177bf8f8436fb32c37ae2059b16073c1cca7"
+      },
+      "lib/dcerpc-lsa.c": {
+        "sha256": "bb564110fbb731680536d7f06fc506d31d2b7325d11ce3458e7ad3d4e28b5a30",
+        "bytes": 19845
+      },
+      "lib/sha384-512.c": {
+        "sha256": "2809d5ca4181a375cc4eaf14324356da47603cb5e15d7fcf0c67da982dc94907",
+        "bytes": 36160
+      },
+      "lib/aes.h": {
+        "sha256": "28f11bb2262c0041236f553ea92599c12ee4829d9dcebfa8cca523ce61e67a64",
+        "bytes": 1156
+      },
+      "lib/asn1-ber.c": {
+        "sha256": "d8463e9532059f5c5b65dd48132f2193892211311d1b41657b3ae9c5bc9c1d02",
+        "bytes": 22216
+      },
+      "lib/smb2-signing.h": {
+        "sha256": "4177fdb8554b00ed9665aaa2b110a0618164889c27310511e72a46b27f397c45",
+        "bytes": 1382
+      },
+      "lib/sha224-256.c": {
+        "sha256": "7a937a52dded5c8577b3cb04c87e647001f5a17b72877a3aa36bd0bad6c15bff",
+        "bytes": 17766
+      },
+      "lib/errors.c": {
+        "sha256": "4bdde4522a97837177cfb87a5a700f342c7c49f86ab4b27692afc259f08dbf16",
+        "bytes": 57837
+      },
+      "lib/pdu.c": {
+        "sha256": "f35ef08293707ecb9c5ecd3a9302d13723af2ed8c079a31f129e5b92266f4757",
+        "bytes": 34204
+      },
+      "lib/smb2-data-reparse-point.c": {
+        "sha256": "89be3c7dfe882c450371e24b8ad32117f1043c5b53d42b782582c9cb875163b6",
+        "bytes": 3660
+      },
+      "lib/smb2-cmd-flush.c": {
+        "sha256": "b86ecb6b2803b8f4065f86af45afa101b936cbca09f0b1f421b50bc21743c3fd",
+        "bytes": 5319
+      },
+      "lib/hmac.c": {
+        "sha256": "fe18f2a9570e65b19ebf349d7011986760ff7936cd5d4d679ae4fea3f209a7d7",
+        "bytes": 6191
+      },
+      "lib/smb2-cmd-query-info.c": {
+        "sha256": "0b89a96d656dd3ad7f05bf5df9edc9f1865d1917f1d849075e856640f7cf2f58",
+        "bytes": 31400
+      },
+      "lib/usha.c": {
+        "sha256": "76aac95de954bc57ac54bd9d8a66a834c59b3b5a3aec0a7502743fcd3ab880c7",
+        "bytes": 7369
+      },
+      "lib/smb2-cmd-close.c": {
+        "sha256": "2802eddf3a67be166a9287d97364305c9084eee036fa4fb32a1b292f387a4079",
+        "bytes": 6685
+      },
+      "lib/smb2-cmd-tree-disconnect.c": {
+        "sha256": "5f7a0210c49ed2c22334a0365306f307b61510b6a26bc96984f8b805812daef3",
+        "bytes": 4146
+      },
+      "lib/Makefile.AMIGA_OS3": {
+        "sha256": "5d46d767d7a6cafbdf745fa49b480ec69033f8a7421235a569d05d148666d6bf",
+        "bytes": 1989
+      },
+      "lib/ntlmssp.h": {
+        "sha256": "4964bff18a1f497f897f7b82c7c9165f9b0bbbcff08f8e39ffbd2c09b9483e9a",
+        "bytes": 2524
+      },
+      "lib/asn1-ber.h": {
+        "sha256": "adec716b9688234ab0246a57609b318051cf66ec5e91117202a486542e3da26b",
+        "bytes": 6541
+      },
+      "lib/sha.h": {
+        "sha256": "039cfcdf9e3d1c19ad1849581ff6b380c9153cd8753fb3f9ecb863545c4960ac",
+        "bytes": 9848
+      },
+      "lib/md5.c": {
+        "sha256": "bfd366d688d939f13d5ad52395c10a86a1544d769d66429d95a8514347823c99",
+        "bytes": 7580
+      },
+      "lib/sha1.c": {
+        "sha256": "6eaa2487ced1b21ead367f46cba1149b2a2d8fb7fba58089f050afa68609ae0c",
+        "bytes": 12534
+      },
+      "lib/dcerpc.c": {
+        "sha256": "1ef23d78f93c79531b1345eb440ee149c8f84295e861caf7b73f19f3f40141fc",
+        "bytes": 59937
+      },
+      "lib/dcerpc-srvsvc.c": {
+        "sha256": "cc0411f466db3a2597f6110f33e0da68bf1251a346f377db469ccef6aa642dbd",
+        "bytes": 14088
+      },
+      "lib/timestamps.c": {
+        "sha256": "5cc1f54434caad4eb6ea66a30d99c591fd08c223f4c34d04ca32c88f3f145a66",
+        "bytes": 1670
+      },
+      "lib/aes128ccm.c": {
+        "sha256": "a7bff6d17d039dc5235269ec12fa3753aa4b621ad5932fdcff6613c1e4c8339a",
+        "bytes": 5396
+      },
+      "lib/init.c": {
+        "sha256": "e5c352140290428c548463455895976847c4d0d2026bfb61e35dfe9a02496b5d",
+        "bytes": 21278
+      },
+      "lib/smb2-data-security-descriptor.c": {
+        "sha256": "6d5e5c80d9831b6f2f8f66b8a224cf82c83815c276735841ea53e0e152ea95c4",
+        "bytes": 11622
+      },
+      "lib/smb2-data-file-info.c": {
+        "sha256": "12b33642b389f429fc6ec3bb20caedcf77580d50e98772656c04c37d90fe4a64",
+        "bytes": 9396
+      },
+      "lib/libsmb2.syms": {
+        "sha256": "6dc77e99262eb21cbb34943ac53a74c48c39335f74133d242ecb852cea25bcc7",
+        "bytes": 2819
+      },
+      "lib/Makefile.AMIGA_AROS": {
+        "sha256": "70900852e651adfa7652b2503f752241a094302c1ae713d92c3b4c1e7f6c5ea1",
+        "bytes": 1870
+      },
+      "lib/smb2-share-enum.c": {
+        "sha256": "e12b3dba43126fefae057b05d4b90a2843d96d80bb0efe5665acd8c721529055",
+        "bytes": 5496
+      },
+      "lib/smb2-cmd-logoff.c": {
+        "sha256": "0109b9859e4b03270e6cbe8bdd650007f7783e43833aca0f9d68c21f58aba6be",
+        "bytes": 4610
+      },
+      "lib/smb2-cmd-session-setup.c": {
+        "sha256": "e5976ad1d0aa07d36eb60689ed7be133d4992c46ec1674294accdb9446942eaf",
+        "bytes": 10369
+      },
+      "lib/sync.c": {
+        "sha256": "e1e77ad027ee607b86366fe5decb3fd3dbc1f9c4c3d565479d76ddbe6e7fc355",
+        "bytes": 21481
+      },
+      "lib/smb2-cmd-create.c": {
+        "sha256": "d6f9b5a1d15cd53266352920f80d2a94f8c50a2d0528bbbeb1fb652ec727ed08",
+        "bytes": 17513
+      },
+      "lib/compat.h": {
+        "sha256": "d86de12368b1c6861d331af12b04cbb250995c2621ca613578f5d2c629939010",
+        "bytes": 17498
+      },
+      "lib/smb2-cmd-lock.c": {
+        "sha256": "8d6e9758b1a58eec38f7ba9742c74433b6022497db4d6a0e727d55667a89b257",
+        "bytes": 8985
+      },
+      "lib/smb3-seal.h": {
+        "sha256": "740dea4db7b7c19f6b6e1ac9dd01ba0f832da40af936f2ccdb1afbe07b9b3ce1",
+        "bytes": 1192
+      },
+      "lib/alloc.c": {
+        "sha256": "d8eff2c41f0830912771d1daeb3bedabfdce8573bc48442f91334e8117631a9b",
+        "bytes": 3522
+      },
+      "lib/smb2-data-filesystem-info.c": {
+        "sha256": "2afd3a8747bd63d17709e97f51ea8e907cc81918952937efef42a8f8c0ade46e",
+        "bytes": 12155
+      },
+      "lib/krb5-wrapper.h": {
+        "sha256": "5d984bd245cc4ff928cae921a3cb308d5bc756bc5f96cbf76539c2b51eff3120",
+        "bytes": 2708
+      },
+      "lib/smb2-cmd-tree-connect.c": {
+        "sha256": "7d1c8982e5f6dcc10a446d949ba02eea2974d6f4bfaf59cab42f5a974db8d4d5",
+        "bytes": 8020
+      },
+      "lib/smb2-cmd-oplock-break.c": {
+        "sha256": "24c55e1c6806d488c76f7dc12aad31b55754d4a1d4a72579f537f01c8113310b",
+        "bytes": 17021
+      },
+      "lib/Makefile.AMIGA": {
+        "sha256": "63c85a0a050d726349fbe74d95bb348a6d4ab8a8c860f2944e7f90bdb3f7d8af",
+        "bytes": 1582
+      },
+      "lib/aes.c": {
+        "sha256": "c6a3ce31229cf49c6a0b6eb361ca671ad3a393302fcaeff867c404c972a112a0",
+        "bytes": 18827
+      },
+      "lib/smb2-signing.c": {
+        "sha256": "0e792e1d3d156e31abb27dd0be46ea631b4007fc410bc882e96132dc250daad1",
+        "bytes": 7797
+      },
+      "lib/smb2-cmd-read.c": {
+        "sha256": "02606bc638e3006497d78f96e1514b79dc9e74d9dae9ef324a84e0136f79dc80",
+        "bytes": 12232
+      },
+      "lib/compat.c": {
+        "sha256": "d2efbd3f091214030be7f3c32a37a8a8abc60f406f1ed99f2d9e49e6a8fb5895",
+        "bytes": 14666
+      },
+      "lib/smb2-cmd-error.c": {
+        "sha256": "4f542da3ebb8aaea19528dfb844f9769b6ca0ed180ba549293cde55a77690c56",
+        "bytes": 4124
+      },
+      "lib/krb5-wrapper.c": {
+        "sha256": "daa33c994c6f08de09c4d317c3f5fe3991a0377c86ce25c1bc35bd99d530f548",
+        "bytes": 13805
+      },
+      "lib/smb2-cmd-query-directory.c": {
+        "sha256": "bdea0317f9f58ec76e40448ba00b8574df83fe1ddecda35931a81d3966947477",
+        "bytes": 22577
+      },
+      "lib/hmac-md5.h": {
+        "sha256": "4a1d8a60823de96fbf0d6e59ef8851e4be021481261822a333da5b62fd3944e2",
+        "bytes": 613
+      },
+      "lib/md4c.c": {
+        "sha256": "30aff0344de6db6717ee2bb9d3a888da5ebb3c8d90521270206f773bd85b87fa",
+        "bytes": 8579
+      },
+      "lib/aes128ccm.h": {
+        "sha256": "f6e585136bbe780687e695f0fe6d5a276eb2e2b370710a5483d49626d772ce6d",
+        "bytes": 1232
+      },
+      "lib/spnego-wrapper.h": {
+        "sha256": "661c25cc20487b5032c3512abed806f4337811b5fab9af40fe192ab3dcb9df64",
+        "bytes": 1978
+      },
+      "lib/smb2-cmd-ioctl.c": {
+        "sha256": "b5ecf9e671d019fae2cb62543c10b3878216aa13c133a9dc395c4b33034c8f32",
+        "bytes": 14327
+      },
+      "lib/ntlmssp.c": {
+        "bytes": 40535,
+        "sha256": "6b9569e29513ccb22d6457bbff0e05f580f8144a495b6409d6756ea4fb73ce9a"
+      },
+      "lib/spnego-wrapper.c": {
+        "sha256": "8fd6a0ee74d64e1cd0c7ca84dc27ca7833eb7fa2b3ee7d47335175450131d1e7",
+        "bytes": 20008
+      },
+      "lib/smb2-cmd-set-info.c": {
+        "sha256": "cb1dc370316dc5625cdd84fab32df91e9fedb11905e71116c914d235f71bb557",
+        "bytes": 11640
+      },
+      "lib/CMakeLists.txt": {
+        "sha256": "ee81145d420f7127c1d5f458d1e0ee1da0442665c6dddb0f77b8b9a79aefec00",
+        "bytes": 6738
+      },
+      "lib/Makefile.PS3_PPU": {
+        "sha256": "839b3e1d72880987df475a51db3a585f31d239e1a7aef8c06bdf58093e0221f1",
+        "bytes": 3035
+      },
+      "tests/test_0200_mkdir.sh": {
+        "sha256": "4f8b45f33d365e5b9b228733e4a2c5baf11d3674befd1e163be3dca27bf0dd2b",
+        "bytes": 295
+      },
+      "tests/README": {
+        "sha256": "299b7f1641b889802b97c9654ebaa426076a35eeca42286abb0a808e36834d1f",
+        "bytes": 790
+      },
+      "tests/test_900_dcerpc.sh": {
+        "sha256": "95e312141f54c62dd61e7f88a60e4f56fa9c09201782806780b84fa2226910f3",
+        "bytes": 109
+      },
+      "tests/test_0103_ls_basic_valgrind_malloc_error.sh": {
+        "sha256": "fae3506069ebb7e6e3bcbb72a3fb3bbb57418832ad3576c13c9b221eb2c78150",
+        "bytes": 911
+      },
+      "tests/test_0100_ls_basic.sh": {
+        "sha256": "b3f3fec1428a326a434452b38a32a7cebde60b8da0045afb3b0300deb8e048b9",
+        "bytes": 552
+      },
+      "tests/Makefile.am": {
+        "sha256": "20158ef9a5ed239793a72d8902bfd6567499e6dea19f7476e226b6378aef786f",
+        "bytes": 825
+      },
+      "tests/test_0210_cp_basic.sh": {
+        "sha256": "f9625f948ed2851f5b470354075d78270c67bbad2e709e3754c83b1f134fe131",
+        "bytes": 611
+      },
+      "tests/prog_cat.c": {
+        "sha256": "2bcb3c6f282285b2cf2ca50c8220ffa0b7e2721d8798edf2179b9da5baeef44c",
+        "bytes": 6029
+      },
+      "tests/test_0300_cat_basic.sh": {
+        "sha256": "556aac0d1d860fc80106fee376ca0327bf89330dd2a9b099fa91ca3a33b9b8db",
+        "bytes": 220
+      },
+      "tests/aes128ccm-test.c": {
+        "sha256": "67b2251af6b5eb535e68ee1ae93c05084ffb32048faf84840a3685dac3c69e82",
+        "bytes": 3781
+      },
+      "tests/prog_mkdir.c": {
+        "sha256": "d634e521f4810fbd64ec6752387c74650c0317d7f743337cf3ef3051e4444533",
+        "bytes": 3107
+      },
+      "tests/test_0211_cp_valgrind.sh": {
+        "sha256": "b090b6153e464c1b276be28b93b326f85f78611550fba1af533368a193e160c8",
+        "bytes": 887
+      },
+      "tests/test_0201_mkdir_valgrind.sh": {
+        "sha256": "0158d6268afd78ff66382900f7cd1c2d1b898007dad23d2409220e574231708a",
+        "bytes": 439
+      },
+      "tests/test_0212_cp_valgrind_socket_error.sh": {
+        "sha256": "620dea8e6320ed77f4960225eb40892263ec1059611ecfd6ad95b500775fb796",
+        "bytes": 1263
+      },
+      "tests/ntlmssp_generate_blob.c": {
+        "sha256": "62355701031535cb784b21de84c4f6d4655cbdf77e6dd3e77552fc95f6214c83",
+        "bytes": 4678
+      },
+      "tests/test_0101_ls_basic_valgrind.sh": {
+        "sha256": "3533278910423d57cf0af644be6823d796a23abcdab5b30f6bf96abb9ee9bdf2",
+        "bytes": 820
+      },
+      "tests/ld_sockerr.c": {
+        "sha256": "de1ec937c0c826e6f5f0ddf8dbaa05734796071e96ea3414fca00b8a48889d28",
+        "bytes": 1703
+      },
+      "tests/prog_ls.c": {
+        "sha256": "9aa8bda6d235a0c5d2b6347cef613f84d529f04292b83e2324cb221195ade0bf",
+        "bytes": 6105
+      },
+      "tests/prog_rmdir.c": {
+        "sha256": "ae37f32c81c3524e169876cb4b07d99b48fb9d3883c68e9077adcefdc7cc5ed2",
+        "bytes": 3077
+      },
+      "tests/smb2-dcerpc-coder-test.c": {
+        "sha256": "374b35f327c966db965e9c75a9436ad6d8c98b66363c0591a941af74cd369c49",
+        "bytes": 29544
+      },
+      "tests/test_0102_ls_basic_socket_error.sh": {
+        "sha256": "c4eb46b84c49ea1ed95d8cb68c4a19e8c34fe0d3129ba70e20e11eee8201b476",
+        "bytes": 564
+      },
+      "tests/functions.sh": {
+        "sha256": "0deb1ef34d461a7c81e19cc198e869cc124d51686a7815c8f3879ca1932dd9f6",
+        "bytes": 94
+      },
+      "tests/test_0301_cat_valgrind.sh": {
+        "sha256": "26e9bad830326faaa37b650dbc55f8c4118c8023a1c71584f21e8ffcbcc7ade8",
+        "bytes": 307
+      },
+      "tests/test_0302_cat_valgrind_socket_error.sh": {
+        "sha256": "38325af9a069aca648094d20c8225f5d01cdff300d92b8c7f0ecd4963859bfa6",
+        "bytes": 589
+      },
+      "include/Makefile.am": {
+        "sha256": "a449ad4db1a4002c9a9fd23336749a690bf88fd7bc3fdc8df45be3923ab6823f",
+        "bytes": 302
+      },
+      "include/asprintf.h": {
+        "sha256": "1a9aa50ed7611ce47fdf0c3147465a13c5f8b8e63ca1457a2a07a9ed063964ae",
+        "bytes": 1410
+      },
+      "include/portable-endian.h": {
+        "sha256": "515ac682e615f32b125005e6afc67829583725a736827cdcd1b8ad59914aaa6f",
+        "bytes": 9211
+      },
+      "include/module.modulemap": {
+        "sha256": "98fd41d682efaf96f693a81d984d0eb322a0bd6cb89bcf1c46ca505db4d0ae35",
+        "bytes": 470
+      },
+      "include/libsmb2-private.h": {
+        "bytes": 26040,
+        "sha256": "20e103358712321c36d7fd606c66aac435e49f86eff454b253193629aa4fc582"
+      },
+      "include/slist.h": {
+        "sha256": "d28eb4174c27d25f1610bf690b8518c8d0da49df413c5e6a0382a28b90219899",
+        "bytes": 1859
+      },
+      "examples/smb2-rename-sync.c": {
+        "sha256": "f8e0138b3b89159b94cea034c9ee13723c2e955806b0a006b68eb1d7c36ba2f5",
+        "bytes": 3008
+      },
+      "examples/smb2-cat-async.c": {
+        "sha256": "eae4f6d0d0965d66c7c5fe8634e07cfca09b9e0d2c80ec9fb7ca62bb15afd026",
+        "bytes": 5747
+      },
+      "examples/smb2-cat-sync.c": {
+        "sha256": "bf6a35ff0ceb3eecb6aaa656baa3d17f17fdca0f2c193cb6e10755a037ce1517",
+        "bytes": 3693
+      },
+      "examples/Makefile.am": {
+        "sha256": "409c1bec7ef4b90ac931c8bc7d0910d61dcb9374da9449acf64929a932c9e97d",
+        "bytes": 1374
+      },
+      "examples/smb2-raw-fsstat-async.c": {
+        "sha256": "9def7b985812a11f72c70c7c7bb3403cfe44e93f0d869a3ae05d25495f16fae1",
+        "bytes": 12663
+      },
+      "examples/smb2-raw-stat-async.c": {
+        "sha256": "38cee0958e2c9d4139373b92303b650fd31a51e269f9a7b05d5238511986718c",
+        "bytes": 15705
+      },
+      "examples/smb2-statvfs-sync.c": {
+        "sha256": "d9a3aa10e397a86f8f00375e68ba8fc0071b5f76b494b53a9319198001336235",
+        "bytes": 3243
+      },
+      "examples/smb2-server-sync.c": {
+        "sha256": "fd8233b10ab7a9b6cfc1b8e590bf3e627837e995081377cd2a550730ea47addd",
+        "bytes": 16711
+      },
+      "examples/smb2-ftruncate-sync.c": {
+        "sha256": "4458ea19ce510a4e0f1eb412f84b0c4333d0d064b3928baa733372fc9c0d6ecd",
+        "bytes": 3205
+      },
+      "examples/smb2-truncate-sync.c": {
+        "sha256": "cef5edb17787d3d23b51329b098895545e6ad221a6f0ced034dd1f404c76a06b",
+        "bytes": 2943
+      },
+      "examples/smb2-share-enum.c": {
+        "sha256": "ff22dbd3deba9e1017e79676c76bdae087ce4fdc0e86c27a6c80c7a1c080e852",
+        "bytes": 6783
+      },
+      "examples/smb2-lseek-sync.c": {
+        "sha256": "bea917593fa4cff1abb47dd57b891d0f0ab27d024a9482339a91ad96deb29e79",
+        "bytes": 3675
+      },
+      "examples/smb2-put-sync.c": {
+        "sha256": "9df8c8429ce122207f52d26835b3e78f402ebeda8292229749a61e2061194386",
+        "bytes": 3513
+      },
+      "examples/smb2-CMD-FIND.c": {
+        "sha256": "26f7f39176fb8f1f3fa40a8c0885ac6f84b737ae9ecb8c7640b69a1d64323e7c",
+        "bytes": 12481
+      },
+      "examples/smb2-lsa-lookupsids.c": {
+        "sha256": "6b81dd8f88d37928a8dff13b0c7e7afb67b69634fb6a7917621e2c8ce6752d13",
+        "bytes": 10065
+      },
+      "examples/smb2-readlink.c": {
+        "sha256": "ffc57485159e69303f45e681f0ffa7669680f48eee2eab21dfded02c73319488",
+        "bytes": 3006
+      },
+      "examples/smb2-raw-getsd-async.c": {
+        "sha256": "a39d06150bc606f92544cbc39230ad85023ae6379f5e825fd3a4176ce78d6d78",
+        "bytes": 12442
+      },
+      "examples/smb2-ls-async.c": {
+        "sha256": "e265b4285892a61c09e5b9c483f47c235f6bd9106ec6485dfc4ceeeb783aad6f",
+        "bytes": 5742
+      },
+      "examples/smb2-share-info.c": {
+        "sha256": "0eb0665c0173e1b12212946e4cb650cb2ed1a8862d93e5bc0af63ac21a2b5f2c",
+        "bytes": 6785
+      },
+      "examples/smb2-put-async.c": {
+        "sha256": "4a31ea67934d3b3d5aaef3da5344969bc79fff7b88b5e7ba79cebb59bf4f9591",
+        "bytes": 5443
+      },
+      "examples/CMakeLists.txt": {
+        "sha256": "45208b9fc882d16c3a5a6d530e4e7865d6ef938e5520891a494e4ee8677c63a8",
+        "bytes": 762
+      },
+      "examples/smb2-stat-sync.c": {
+        "sha256": "10b0881b0dd0fac4753cfa00f3891f35ab2c71b324ed15f54c1c952b3e5ae18c",
+        "bytes": 3764
+      },
+      "examples/picow/README.md": {
+        "sha256": "cd5177bc3e6e7ddf92e65e8e5f9e707fcec26192c69939899f015f39774b6464",
+        "bytes": 267
+      },
+      "examples/picow/main.cpp": {
+        "sha256": "8da44f2d5117a6c65d1defead9acc546b7f6438e34df2f58efd521a07055953b",
+        "bytes": 3355
+      },
+      "examples/picow/smb-ls-sync.c": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "examples/picow/CMakeLists.txt": {
+        "sha256": "87882cf069edc50486513011dd39757907337b749bc90aa2da8bfb1ad2ae6475",
+        "bytes": 2403
+      },
+      "include/apple/config.h": {
+        "sha256": "e97aa5ea902cd5914c99e9ef03291a7906d3b873a591bee05c9cfe8f1cccd422",
+        "bytes": 4081
+      },
+      "include/picow/README.md": {
+        "sha256": "d6ce9072fa21ad2583503294be4f84878e3c3d9de9f350051860ce040cf7f7eb",
+        "bytes": 288
+      },
+      "include/picow/FreeRTOSConfig.h": {
+        "sha256": "2a481b1d0faf333f9473727c5acdcd437e3d4b7b642cedaac06b7855846e0f4d",
+        "bytes": 5962
+      },
+      "include/picow/config.h": {
+        "sha256": "0226bb8eee4c36284653ca2acbded7092cc44350595efb7d399c57ae1645a338",
+        "bytes": 4141
+      },
+      "include/picow/lwipopts_examples_common.h": {
+        "sha256": "c4a1f36f99b5c4a594be5625de0be24c33f054ac62a35d679b08293ecdebbbca",
+        "bytes": 3417
+      },
+      "include/picow/lwipopts.h": {
+        "sha256": "c3a43ce0a6a70cd6bb0a1814f0a97599b4828d89bf342bcf755a4bdf0998ff14",
+        "bytes": 759
+      },
+      "include/ps3/config.h": {
+        "sha256": "8104da91ff6ddd5efd858d9247d9138aeeb66ba2c4988eb5efc1f839f58a5dc2",
+        "bytes": 4138
+      },
+      "include/ps2/config.h": {
+        "sha256": "d12b91081cdbb3ba54a40dcf8520b680ae6c31f34a0b96c058e9192f3cd9a6b5",
+        "bytes": 4139
+      },
+      "include/xbox 360/config.h": {
+        "sha256": "8ad4ceea937ad1a2332e71efba7b83e5b8e4d926963448a6b49d0aed43698da8",
+        "bytes": 4147
+      },
+      "include/amiga_os/config.h": {
+        "sha256": "0378367f9a07bbc1317e2fa5d23779a17dfb1b2b9ba41e0bb133f5a4ea2717a8",
+        "bytes": 4096
+      },
+      "include/esp/config.h": {
+        "sha256": "cf5c69fbd812b380f7afaf8d68eb756c8fae0ac5ca71953516dbc861f3fb56a3",
+        "bytes": 4105
+      },
+      "include/xbox/config.h": {
+        "sha256": "466d1fe011ede17baf54619632ac879a1431b3bf5a8bab107aca464438d1ae33",
+        "bytes": 4141
+      },
+      "include/smb2/libsmb2-dcerpc-lsa.h": {
+        "sha256": "442e036fe49a0b778344273236d5e491827f2809a3f22703213305dad7105b2b",
+        "bytes": 5851
+      },
+      "include/smb2/libsmb2-dcerpc-srvsvc.h": {
+        "sha256": "628c6a21522aff2885b949204c74305d21ac813f922857a83b1f862a36d4e25b",
+        "bytes": 5663
+      },
+      "include/smb2/libsmb2.h": {
+        "sha256": "78faa193ce23f1b68e93a72deeb02bfe07edf9b10139587ce4f01a1cdde812ca",
+        "bytes": 41627
+      },
+      "include/smb2/libsmb2-dcerpc.h": {
+        "sha256": "cb42d95863200d37c3f724b8c0eda86eaafd930858c7de6a90b790fe9928201d",
+        "bytes": 6057
+      },
+      "include/smb2/smb2.h": {
+        "sha256": "6044a3e59b1ee3647d2feb288871635ff6e679d3650ac9e2b98982923b665ff5",
+        "bytes": 37487
+      },
+      "include/smb2/libsmb2-raw.h": {
+        "sha256": "8f5349e9c201fb024d196280e77c3461c36fa9e94aaa6a0e9eab5e0cf6e121f0",
+        "bytes": 19187
+      },
+      "include/smb2/smb2-errors.h": {
+        "sha256": "579e432ab6ff38ff6ad2830e80193d657d6b43a806e286a452714ef4a09d041d",
+        "bytes": 34916
+      },
+      "lib/ps2/TODO": {
+        "sha256": "304e8f1c772310bc714314df1cb6b0c59b1e98c6bcf3a8e9260fcc0c68738b8e",
+        "bytes": 243
+      },
+      "lib/ps2/irx_imports.h": {
+        "sha256": "86aabfdde0ed1865ac9eb2317669729ffdd9f4b2001b269a045c761c19400ca3",
+        "bytes": 672
+      },
+      "lib/ps2/smb2_fio.c": {
+        "sha256": "049f206dc075fcd2999aa9aacf54d5222f8e314e1dfac358dfb01b8f482d9702",
+        "bytes": 17029
+      },
+      "lib/ps2/smb2man.c": {
+        "sha256": "67bea83e5768c7a07b122aca97ea5bc139ca3b89defa8e50856332dd790bcf9e",
+        "bytes": 1299
+      },
+      "lib/ps2/smb2_fio.h": {
+        "sha256": "c5c99a39ce61f1c90f2ba2a1dd7f02dc4f3a988125c8738120f5f18e1a46de64",
+        "bytes": 307
+      },
+      "lib/ps2/ps2smb2.h": {
+        "sha256": "8473005cdd340b79977e5c390d2fa4df1aad3d462c1c94819582b1a7ad04ffba",
+        "bytes": 557
+      },
+      "lib/ps2/imports.lst": {
+        "sha256": "3267bd069208c7246e13d77e9f18dcd7c1f89d8a175165960100f4d8a1eec784",
+        "bytes": 1112
+      },
+      "packaging/RPM/makerpms.sh": {
+        "sha256": "6e83e174bdd196078ac69bc34858c33945f63ec354b8f7e54562b166282fc68a",
+        "bytes": 3030
+      },
+      "packaging/RPM/libsmb2.spec.in": {
+        "sha256": "2650c6c44dca39454a85634745eb04c5f621cdf9aa65c44eea7fa0d89a02a4ca",
+        "bytes": 3322
+      },
+      ".github/workflows/esp_upload_component.yml": {
+        "sha256": "5c79d19f6e0831831eaf28239766e8fcc7c8d00609f50496e7b5c3d023066a15",
+        "bytes": 453
+      },
+      ".github/workflows/codeql.yml": {
+        "sha256": "acb195551031ef4568827a78d23d45711265e214df1943aeaa2b930ad0043364",
+        "bytes": 863
+      },
+      ".github/workflows/ccpp.yml": {
+        "sha256": "c96a0dc8a0d78f461a695198406130347e1a736071e826689f3df388a29514be",
+        "bytes": 6507
+      },
+      "cmake/Modules/FindLibKrb5.cmake": {
+        "sha256": "bb66d2598eb43d61aea7077b434c8758bd2581856c52413ec9a1f5e08e97a2fd",
+        "bytes": 1118
+      },
+      "cmake/Modules/FindGSSAPI.cmake": {
+        "sha256": "295d610a9144fba50b65fe7187d5b6292c49c3e0916467b50bb9edb16c003a17",
+        "bytes": 802
+      }
+    },
+    "localPatches": {
+      "lib/unicode.c": {
+        "beforeSha256": "c1dfadb05c452d7c921c52f5b6a4fcf36110d641af000d02ee7e200825a497e4",
+        "afterSha256": "c85d7515670c5e790e2750a19465ef4fe5c9678dcf1a3b8a58dc343cee6ad321"
+      },
+      "lib/ntlmssp.c": {
+        "beforeSha256": "cb666e93637ce2a46912f94984c065e25809ab13fe315f78f3347c1c95286964",
+        "afterSha256": "6b9569e29513ccb22d6457bbff0e05f580f8144a495b6409d6756ea4fb73ce9a"
+      },
+      "lib/socket.c": {
+        "beforeSha256": "a6c8b58367225274a3b819fecda0381c5e5f9568e4e37fbb582bdcf1082044d6",
+        "afterSha256": "1bc7b1e7c84a9b1b532751933961177bf8f8436fb32c37ae2059b16073c1cca7",
+        "description": "Required client receive integrity, correlated reply commands, final SMB3.1.1 signing presence, and retained compound header position. Host-only tests; not deployed."
+      },
+      "include/libsmb2-private.h": {
+        "beforeSha256": "7f8d463441ffcddf12c51ed3961d54a3b83c6938ec06ae8dfdd61d5662dc0c88",
+        "afterSha256": "20e103358712321c36d7fd606c66aac435e49f86eff454b253193629aa4fc582",
+        "description": "Required client receive integrity, correlated reply commands, final SMB3.1.1 signing presence, and retained compound header position. Host-only tests; not deployed."
+      }
+    }
+  },
+  "sqlite": {
+    "url": "https://www.sqlite.org/2026/sqlite-amalgamation-3540100.zip",
+    "version": "3.54.1",
+    "checkin": "555e07ef33f69a0957d24d8e555b702464a1",
+    "files": {
+      "sqlite3.c": {
+        "sha256": "0c657666d819f261cc4007526ad57e1669de9949df7a8ea847aa284a2bf0ee52",
+        "bytes": 9582521
+      },
+      "sqlite3.h": {
+        "sha256": "d6c84557261893439b341d2e6c35187ae3ea24fbfd843ad94616f72d89242b8c",
+        "bytes": 695729
+      }
+    }
+  },
+  "sdk": {
+    "url": "https://github.com/ps5-payload-dev/sdk",
+    "sourceCheckoutCommit": "f5d40f02770e9b0001dd9e18056eca70b3da8b40",
+    "checkoutCommitDoesNotAttestInstalledToolchain": true,
+    "linkedRuntimeSource": {
+      "arc4random.c": {
+        "bytes": 6715,
+        "sha256": "e297485af1aa7b78880bc2b3add5290070c3d213512da0543ec0c3acaf057c5a"
+      },
+      "namespace.h": {
+        "bytes": 12011,
+        "sha256": "d95e3735a43a328ba9b80c6e2f2a5cfcc707eef36f1cab5f1d74a06455513fab"
+      },
+      "un-namespace.h": {
+        "bytes": 7335,
+        "sha256": "ff4b5fa04f7fa6e40e50710fa33c13af9131e3868740c94695e78a59d65a8276"
+      },
+      "LICENSE": {
+        "bytes": 35823,
+        "sha256": "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809"
+      },
+      "NOTICE.md": {
+        "bytes": 4149,
+        "sha256": "df3b156d737be77e0ed42287f6db0f6ab698404d18adf8d64ea2162189c67b8d"
+      },
+      "README.md": {
+        "bytes": 1909,
+        "sha256": "4be5c24bf36149fa52c54c4f6af72a61880f3256303392bf9237c3d9e98e9663"
+      },
+      "runtime-source.json": {
+        "bytes": 19995,
+        "sha256": "b7f108f3ae489e132cddde9a4e9656771e522bc6e03728e2d9a28a6e3e0ae77e"
+      },
+      "source/crt/_start.S": {
+        "bytes": 996,
+        "sha256": "9695a7582af148272ab81b2c2bcc6c26460b1fc70bdc4c3e724ac5ae5750610c"
+      },
+      "source/crt/crt.c": {
+        "bytes": 4726,
+        "sha256": "f0c9e81e740b6beeda3dd4a62e22751603b310b258b7bb7c0875a4cbdcaa212e"
+      },
+      "source/crt/elf.h": {
+        "bytes": 2840,
+        "sha256": "ac0b9c99600cfb82031eb845b4f68512dbbf09c2bc42a09a4aaa19a052c98358"
+      },
+      "source/crt/kernel.c": {
+        "bytes": 41440,
+        "sha256": "16ca32ffc36309f2caa768d2f4e565f8d31186d7f8625de83bf3f1869e0c81c0"
+      },
+      "source/crt/kernel.h": {
+        "bytes": 4492,
+        "sha256": "cea69374188ff1cf6daf5730ac519dd9a83fa6781e125d90c5c1b06717010dc8"
+      },
+      "source/crt/kernel_iommu.c": {
+        "bytes": 5651,
+        "sha256": "ab2fe9327974f54249bdb0b3cf754e8ee236edaa57a06263489234034dbf40de"
+      },
+      "source/crt/kernel_iommu.h": {
+        "bytes": 764,
+        "sha256": "bd7b329afc9a9bf6c50e4406ede46c88b4e871fe4541280f8a7d7746757d9768"
+      },
+      "source/crt/kernel_procio.c": {
+        "bytes": 4610,
+        "sha256": "39875daba1d6cc99308a928aa5dfdb98a86e85113a5f28addd4e17aad533694e"
+      },
+      "source/crt/klog.c": {
+        "bytes": 2353,
+        "sha256": "d407003bf3ec08613fd57d18f57bbbdaae7b8c8c67f30c0d1f54288e01f719de"
+      },
+      "source/crt/klog.h": {
+        "bytes": 800,
+        "sha256": "19fc44e52797d1a1f9959f5f7e6dee6006f600486f4bae451db862510a2cbe11"
+      },
+      "source/crt/mdbg.c": {
+        "bytes": 3634,
+        "sha256": "5a3cba6021d77252c831c8aa994989604c867cb9b0c14c8757d73438c2cea233"
+      },
+      "source/crt/mdbg.h": {
+        "bytes": 861,
+        "sha256": "1813b77e063b8620b47942278984c1396cff1d9bc6fd49622660b33e4259389e"
+      },
+      "source/crt/nid.c": {
+        "bytes": 9120,
+        "sha256": "6bd670b05ec4a8816688e18cc4425353c2f764f574d0c7f3db5cc4e8c5b7a9dc"
+      },
+      "source/crt/nid.h": {
+        "bytes": 765,
+        "sha256": "f79fd2a5daacde8bae9e070d4bf8158b42b2fdd8fccd9ea5f868a7a099dcb365"
+      },
+      "source/crt/patch.c": {
+        "bytes": 2184,
+        "sha256": "a9cf1814874f3c2c4b337a23270a80ff159b2e6247f9781018bbe1def1845deb"
+      },
+      "source/crt/patch.h": {
+        "bytes": 767,
+        "sha256": "19398a4ac71942c6f361bc5eb12d634305ea7932f9d26bb14142cf666c5e4082"
+      },
+      "source/crt/payload.h": {
+        "bytes": 982,
+        "sha256": "e4803d043c38fbb60f2d027501d572db9b81a14af0b09b460129cbc84ecb617d"
+      },
+      "source/crt/rtld.c": {
+        "bytes": 10257,
+        "sha256": "98b2f3d1e35cdfe993decae673142ebe0b51a8a7ce587ae50ac6e9b19aa5f565"
+      },
+      "source/crt/rtld.h": {
+        "bytes": 3244,
+        "sha256": "c030e80e217cf8da475012e23a624afb099d24e2c5c97743ef1eaf0c8fc4be0b"
+      },
+      "source/crt/rtld_dlfcn.c": {
+        "bytes": 4096,
+        "sha256": "4ea97294c0b340ee815850d43ad7b120dbffe426edb07780f89a53d2bed84d19"
+      },
+      "source/crt/rtld_dlfcn.h": {
+        "bytes": 1011,
+        "sha256": "334901ae4debd1da1756c3fc2a5f8f68649af75cf0db3e02e94172824668c970"
+      },
+      "source/crt/rtld_payload.c": {
+        "bytes": 9838,
+        "sha256": "dae19a11e7e70deb5cb64674970e6d781e6247b21b39759def63e5eca725506b"
+      },
+      "source/crt/rtld_payload.h": {
+        "bytes": 865,
+        "sha256": "9d9b4c278e86740d2777dbf5647a3af2ba77e5e303dd97dfb0299f962f59476a"
+      },
+      "source/crt/rtld_so.c": {
+        "bytes": 15661,
+        "sha256": "f7444ca7a88e2b6d8ee487787211a7512e9f76fb20c3907f095ecb2e2f3fbba6"
+      },
+      "source/crt/rtld_so.h": {
+        "bytes": 871,
+        "sha256": "26489835d2ae74ec64e8c8adfd58fca4f318ccb0e2e590063321b49ea8caf756"
+      },
+      "source/crt/rtld_sprx.c": {
+        "bytes": 13664,
+        "sha256": "0cacf785e80ecdf89ad0f0fad07b8a9a5f7bf2a20ba109c61d20f1d8041f6bf4"
+      },
+      "source/crt/rtld_sprx.h": {
+        "bytes": 880,
+        "sha256": "c495fdd9e0cb3f0eef3a997cf64676ede7ca59b15deede1586ebffc0fd15f582"
+      },
+      "source/crt/syscall.c": {
+        "bytes": 1664,
+        "sha256": "7c2f8120c8e5059d387aaed0a144258c140a5ba5360f6f23da2a3442470e24b2"
+      },
+      "source/crt/syscall.h": {
+        "bytes": 1551,
+        "sha256": "463fc16da04c2b7b98a41cbf71e0901faa32a4a9a19421a52bc27dfb52186577"
+      },
+      "source/include/freebsd/_ctype.h": {
+        "bytes": 6142,
+        "sha256": "c36047093eaf127b3d51bec7b03bdc356a6b207be51ad65ea8669189bb6c1b51"
+      },
+      "source/include/freebsd/arpa/inet.h": {
+        "bytes": 6012,
+        "sha256": "5da0c355c4c5dd724809e107b362fef921ecf860ec107a55a3ccdde31588225f"
+      },
+      "source/include/freebsd/assert.h": {
+        "bytes": 3019,
+        "sha256": "d66ec78f56e38ea24b304e9168a20b7cba750a93658a6eb9ab8662517b5ede75"
+      },
+      "source/include/freebsd/ctype.h": {
+        "bytes": 4780,
+        "sha256": "65142b9f8347ced336de54a828541ef6381cd4bff82e192a0a2f5347c846c1e5"
+      },
+      "source/include/freebsd/errno.h": {
+        "bytes": 8437,
+        "sha256": "1fefa8eba3a0eaec642e0fca02f9a7e0535cc44b0b389fb90fd84e6e41ac3bb1"
+      },
+      "source/include/freebsd/fcntl.h": {
+        "bytes": 11295,
+        "sha256": "d41a582c3b731d1a4faffe12325f552df9be867b6bfbd6817e32d51eafd9927f"
+      },
+      "source/include/freebsd/ifaddrs.h": {
+        "bytes": 2155,
+        "sha256": "73ec5572055a1be79a3c3676e3df4c4f36313261468f22e98148b3bcc692001c"
+      },
+      "source/include/freebsd/limits.h": {
+        "bytes": 4830,
+        "sha256": "bb02d828e5ba08d401eab0eb2cde85871ce178dc65f04e02211f50c3252f09f0"
+      },
+      "source/include/freebsd/machine/_align.h": {
+        "bytes": 161,
+        "sha256": "f88e1971055e1785c9bf01ad17ee3aaba77b81f2d514e931ac30abcdd0f3eb10"
+      },
+      "source/include/freebsd/machine/_limits.h": {
+        "bytes": 163,
+        "sha256": "def93e9415d66750ae3c00ada3feaa1e61f8bf8524c7d491adc743869fe82acc"
+      },
+      "source/include/freebsd/machine/_types.h": {
+        "bytes": 161,
+        "sha256": "28a99920e25187f2db6bbf815b21e3c956a2d30cec62fef8343fcbf4f5abfd16"
+      },
+      "source/include/freebsd/machine/endian.h": {
+        "bytes": 161,
+        "sha256": "1f50385d15244a95cb2d5ad34c81667e6ec01124587f8d35b97578261aa8b72c"
+      },
+      "source/include/freebsd/machine/param.h": {
+        "bytes": 5812,
+        "sha256": "a8ca59296049f0fa4405916af67132bcf6eb0aaa846aec105c69692d6eb653e7"
+      },
+      "source/include/freebsd/machine/signal.h": {
+        "bytes": 160,
+        "sha256": "e79a3e9435c326a0a1c432f769704619459ae6be4077949f12625306cc243c21"
+      },
+      "source/include/freebsd/machine/trap.h": {
+        "bytes": 157,
+        "sha256": "17bb71d3633a364d03eba1fb323329b4ea8e3ee683654e79721828478f45d9af"
+      },
+      "source/include/freebsd/net/if.h": {
+        "bytes": 22129,
+        "sha256": "367d0a155e06e9537de3241a43fa85016f8cdace4a13f740e99b821a954daeba"
+      },
+      "source/include/freebsd/net/if_types.h": {
+        "bytes": 12450,
+        "sha256": "429c8e01c4925d7b1d59c83ba1cc4d961d78d3b5496537bf9b83dc4c08bc5321"
+      },
+      "source/include/freebsd/netdb.h": {
+        "bytes": 11013,
+        "sha256": "4111f5923eb0620e9ff3797f8f0b5034772ac5e0a3ac08093df8361cfe4ab7a3"
+      },
+      "source/include/freebsd/netinet/in.h": {
+        "bytes": 26328,
+        "sha256": "222715f1f521abb60748ef37da4919d2f0af9c6eb5561028c644ec054e329e47"
+      },
+      "source/include/freebsd/netinet6/in6.h": {
+        "bytes": 27212,
+        "sha256": "b6e07e834f8b4b1383d10006b8b8b06e403b3167291a639f31e7b50f0cd6f531"
+      },
+      "source/include/freebsd/netinet6/in6_var.h": {
+        "bytes": 30437,
+        "sha256": "224a47d92ffd8d6b9f29b99bf166f8a90000ddc4d12aa3cd1abeb4d10c8be6e3"
+      },
+      "source/include/freebsd/netinet6/nd6.h": {
+        "bytes": 16983,
+        "sha256": "ed8577e90694c0501528628fb0db348ae5d7cc5fd8f6cc171e26f05723dcf685"
+      },
+      "source/include/freebsd/pthread.h": {
+        "bytes": 12920,
+        "sha256": "b8c84af542d20ed52124d7aa7df65a3b0c50ce8030dc5f54af0465115750fa18"
+      },
+      "source/include/freebsd/runetype.h": {
+        "bytes": 3969,
+        "sha256": "2171252d2d1e1bd529bb7a50702c9a4044d9710953d2da9a52f923584e5fee21"
+      },
+      "source/include/freebsd/sched.h": {
+        "bytes": 8389,
+        "sha256": "84d333b2a249a3bb6ecf132024c014e9f83ac91c65ad2ce032106064c6484b21"
+      },
+      "source/include/freebsd/stdio.h": {
+        "bytes": 18220,
+        "sha256": "1e0b639eb07c7098f6618b782df76cef37356f1d8d3e1fb7fdeebae9f36b6618"
+      },
+      "source/include/freebsd/stdlib.h": {
+        "bytes": 11306,
+        "sha256": "13f957e42e795b6c364959cf239c63daf6cab204349fdae7b5be772babab6a82"
+      },
+      "source/include/freebsd/string.h": {
+        "bytes": 5470,
+        "sha256": "f87d89ae675a01333634a9965562778cbc26abce696ef304266f3a2efae98693"
+      },
+      "source/include/freebsd/strings.h": {
+        "bytes": 2546,
+        "sha256": "609dd67f6e79412d92874df5968ec8e359fbb62f85c658d36a1fe9eaebf24fe6"
+      },
+      "source/include/freebsd/sys/_callout.h": {
+        "bytes": 2763,
+        "sha256": "62800561235757d2cf1b21befe68470b746ec6c1193ae7ea986f82f663877382"
+      },
+      "source/include/freebsd/sys/_iovec.h": {
+        "bytes": 1998,
+        "sha256": "9d7e2dd57fca764186f12b0a1e635fc306a9992dffeabf2e66e13dfef4fe1436"
+      },
+      "source/include/freebsd/sys/_null.h": {
+        "bytes": 1752,
+        "sha256": "a99eb389e85e6670342c944eec802a42d65044c684100f1a4960a3778d34a97b"
+      },
+      "source/include/freebsd/sys/_pthreadtypes.h": {
+        "bytes": 3626,
+        "sha256": "116216248126e80b1b727666c3a63ff76dc25df52482053516af7753beb73d3f"
+      },
+      "source/include/freebsd/sys/_sigset.h": {
+        "bytes": 2536,
+        "sha256": "910da11ab45558cb313fc9095c2270a6ee5ed59dd7cbad4fcffb848a38030c5d"
+      },
+      "source/include/freebsd/sys/_sockaddr_storage.h": {
+        "bytes": 2460,
+        "sha256": "5682f60d2d95d9db5cae02ff4c860f4f5736747012d130cdffe30bb707d5a9fd"
+      },
+      "source/include/freebsd/sys/_stdint.h": {
+        "bytes": 2682,
+        "sha256": "67671ac35e1f81ecf45e65bc67c7f9cff646a35f1d42a13ac89319fac0d6161a"
+      },
+      "source/include/freebsd/sys/_timespec.h": {
+        "bytes": 2078,
+        "sha256": "ffbc661bc94d6cb7f792620195d27e632f8a8ffbdf50be34eee6ccc6043b32aa"
+      },
+      "source/include/freebsd/sys/_timeval.h": {
+        "bytes": 1936,
+        "sha256": "5be80e2278ab4e0f29e4fd8af30dc28159926f059f82513b68d4acab890c5074"
+      },
+      "source/include/freebsd/sys/_types.h": {
+        "bytes": 5059,
+        "sha256": "2f8550bf75580c2685100d3da694da2bd8fa162a19bc94055568bf580b75ce93"
+      },
+      "source/include/freebsd/sys/callout.h": {
+        "bytes": 6859,
+        "sha256": "f03b982f7043668333f339b52ba8699ef3a4fbb5ab617b2fe14704a29ae7201e"
+      },
+      "source/include/freebsd/sys/cdefs.h": {
+        "bytes": 29079,
+        "sha256": "4d57a1bc5c6cd4b0b0ae8d2d4d1486f868c03aeea02049610a49ce65a1f005b3"
+      },
+      "source/include/freebsd/sys/counter.h": {
+        "bytes": 2352,
+        "sha256": "5ab2bb8090c387007b2395f9d686cf1c7657aac1448f4ccf49eff32d71cb5a6d"
+      },
+      "source/include/freebsd/sys/errno.h": {
+        "bytes": 8437,
+        "sha256": "1fefa8eba3a0eaec642e0fca02f9a7e0535cc44b0b389fb90fd84e6e41ac3bb1"
+      },
+      "source/include/freebsd/sys/filio.h": {
+        "bytes": 3171,
+        "sha256": "1c8a92fd605842804709a3205bfda1a8b63179d2c70c9da721f34af834e3a540"
+      },
+      "source/include/freebsd/sys/ioccom.h": {
+        "bytes": 3591,
+        "sha256": "19f8ec31388e3587f4ffc71162618396c8b429aa85f74d9bbcf2a1f1afa4a62b"
+      },
+      "source/include/freebsd/sys/ioctl.h": {
+        "bytes": 2318,
+        "sha256": "f0166309a2157d2aee7cbc2b28cbcf930548ac214985a45e852caffb5bfa2e5a"
+      },
+      "source/include/freebsd/sys/limits.h": {
+        "bytes": 3801,
+        "sha256": "9e5af188cfbd9ca8d3d514f92e4b3ef218a018f66fab4d29f7c8fc81c0f248a4"
+      },
+      "source/include/freebsd/sys/mman.h": {
+        "bytes": 8634,
+        "sha256": "a6fb30d3211f8119fe67b67218a7176e563f5dedf5581e180828cbf30be484be"
+      },
+      "source/include/freebsd/sys/param.h": {
+        "bytes": 12372,
+        "sha256": "5320b88e72409c38ee5a5673783a9182e2e3136d0aedaa31c7af94dff286ca25"
+      },
+      "source/include/freebsd/sys/queue.h": {
+        "bytes": 27354,
+        "sha256": "fadeaf6c9cfd22f9dc436d58b3184ca98133f49f26c201395c7158abde3bb79a"
+      },
+      "source/include/freebsd/sys/select.h": {
+        "bytes": 3601,
+        "sha256": "705983f0088caabacf0d9ea3b5ec1550e96231a79a223f5945644fdfa78e0425"
+      },
+      "source/include/freebsd/sys/signal.h": {
+        "bytes": 16128,
+        "sha256": "8942fcbd8d9c99ad5ffce3ce78c65786c45d672322e92bc0bc1e181971b7367a"
+      },
+      "source/include/freebsd/sys/socket.h": {
+        "bytes": 22240,
+        "sha256": "5dc1783b68e9790d6b07fd694e6e1b05d0c1fe6e0c467c1d0dec76c2767d096c"
+      },
+      "source/include/freebsd/sys/sockio.h": {
+        "bytes": 8036,
+        "sha256": "d8841e082f0cf7a9067c5c8bd5be07ea31d91a66368e746dbb562083b7fa632e"
+      },
+      "source/include/freebsd/sys/syscall.h": {
+        "bytes": 12669,
+        "sha256": "9c59d208429135b2b1e35577ff287b273e33d82c1ec208b1c1ba06a542c6fea9"
+      },
+      "source/include/freebsd/sys/sysctl.h": {
+        "bytes": 44520,
+        "sha256": "fa9df23b70f08b8659d33a30be77f1760a218b3db6901f9d63f640c464f4658c"
+      },
+      "source/include/freebsd/sys/syslimits.h": {
+        "bytes": 3178,
+        "sha256": "109cc538df651767d5ce07b5f38be42e864fd0c53fdf2496c468f77eb0374f5f"
+      },
+      "source/include/freebsd/sys/time.h": {
+        "bytes": 14389,
+        "sha256": "af814fb3b76c2934b0fae7d29e6ce56f64853b344f4ce5dad209bd461aca7427"
+      },
+      "source/include/freebsd/sys/timespec.h": {
+        "bytes": 2479,
+        "sha256": "3541c41894e5357a509224cc4f168ad0d2d36fd12396e81c8cf949735d42cf33"
+      },
+      "source/include/freebsd/sys/tree.h": {
+        "bytes": 27495,
+        "sha256": "c5aebd8aea37d933f6bae1aa1c5b584abe639745c136f4a865e9efbbb6269ceb"
+      },
+      "source/include/freebsd/sys/ttycom.h": {
+        "bytes": 7029,
+        "sha256": "8256d487dcac6b7ffe0ddd1562e84a5c3264db6bbfcb6b0cbdd8602394a00521"
+      },
+      "source/include/freebsd/sys/types.h": {
+        "bytes": 10797,
+        "sha256": "8c3c5962287dd7f23683f8c77563f79010f5eb874280953d852e07dab7de6fdd"
+      },
+      "source/include/freebsd/sys/unistd.h": {
+        "bytes": 7543,
+        "sha256": "80305ed345b9b43186d57a736c456aceab0f9c8987e20f6cf57c5244e52e4959"
+      },
+      "source/include/freebsd/time.h": {
+        "bytes": 6699,
+        "sha256": "1d3518b38a3ac3cd40308702e42ab7939fcad4357f58d85f5e12d91860fc6665"
+      },
+      "source/include/freebsd/unistd.h": {
+        "bytes": 19016,
+        "sha256": "a69fe86ee9267af53ededa0b3013dd2e62bc835ca5a6cbde151f78389063f20b"
+      },
+      "source/include/freebsd/x86/_align.h": {
+        "bytes": 2494,
+        "sha256": "626914211771b4efe1e6605c1e1a3d99ff7e656c2957272551a84c4b3ad95520"
+      },
+      "source/include/freebsd/x86/_limits.h": {
+        "bytes": 4333,
+        "sha256": "46e8ac5bd498f07c0ad68452f4bc8675d6cb26fb375fd22251541cc9e30760de"
+      },
+      "source/include/freebsd/x86/_types.h": {
+        "bytes": 5814,
+        "sha256": "65976701a171449e759e8b53f491fb3df47a098f8d80eb1bda0213b5e19f4131"
+      },
+      "source/include/freebsd/x86/endian.h": {
+        "bytes": 4175,
+        "sha256": "786900a84764b9742e3050aafba4fc479d07c73a6b0c998bd93f8c2b0dba5ee6"
+      },
+      "source/include/freebsd/x86/signal.h": {
+        "bytes": 4350,
+        "sha256": "3fa59ba086a1f11e394d9a70cf4c8304d88cdbd6da277c708e6f49d9a585b3e9"
+      },
+      "source/include/freebsd/x86/trap.h": {
+        "bytes": 4052,
+        "sha256": "8096d4d52d80807026d02c4b88cba80090e3a14c1bac6bd5fe49994a67153d14"
+      },
+      "source/include/freebsd/xlocale/_ctype.h": {
+        "bytes": 6897,
+        "sha256": "44043cb01fa086f5b259478121db3be34961c03861fd9f42a9eda38ac343ca79"
+      },
+      "source/include/freebsd/xlocale/_string.h": {
+        "bytes": 2230,
+        "sha256": "6f24ae28a1a56883dd004b56738ff4fc809fe3485103ef1a0160b36982d5c873"
+      },
+      "source/include/freebsd/xlocale/_strings.h": {
+        "bytes": 2023,
+        "sha256": "b05d977c9ac2d8a76d94093f10b2e6aaf69e1be237baf3711b8798638b994d4b"
+      },
+      "source/include/freebsd/xlocale/_time.h": {
+        "bytes": 2352,
+        "sha256": "2f99046ab296d903a932c47e35285143b291b1f6263a1d8a8844d1dfe662672e"
+      },
+      "source/libc/arc4random.c": {
+        "bytes": 6401,
+        "sha256": "a5646bb0ddbb6ff7f2d71a1e35e79f4d519a184bb285a77bcf1d94d508b0a1ec"
+      },
+      "source/libc/assert.c": {
+        "bytes": 2221,
+        "sha256": "c75931a65f6a5492b47acb6cda9cb91bccf91c81f753218b57c6e35e23bdb72f"
+      },
+      "source/libc/mman.c": {
+        "bytes": 2570,
+        "sha256": "5288da12a3bde81ccbaf10c6b7bac5c23c80cbdf151c9cd4872c16d7e969acfe"
+      },
+      "source/libc/namespace.h": {
+        "bytes": 11739,
+        "sha256": "bb3951b1b5cc9af7afcf4ec0f02999cdf60d4ac1c4a568118662616580cd8cba"
+      },
+      "source/libc/netdb.c": {
+        "bytes": 14859,
+        "sha256": "e98d7906f4095125893e83efa1311a16873b1d193fba06e965ae498987fbe723"
+      },
+      "source/libc/strcasecmp.c": {
+        "bytes": 1418,
+        "sha256": "685cfc3d94cda15d722201275b5e5448d4ce4eea53d6767c27bf132aa375ba56"
+      },
+      "source/libc/syscalls.c": {
+        "bytes": 33673,
+        "sha256": "82bb957e859b7fcba00f6d777fe753a7e6fce7bac864f42f730b130fda187a77"
+      },
+      "source/libc/un-namespace.h": {
+        "bytes": 7073,
+        "sha256": "365b11097b26fc6a8ce3602fb99803f69c2df461023a2cc5fe2a7a627f43bd17"
+      }
+    },
+    "sourceOwnedRuntime": {
+      "manifest": "vendor/sdk-runtime/runtime-source.json",
+      "commit": "f5d40f02770e9b0001dd9e18056eca70b3da8b40",
+      "unitCount": 21,
+      "fileCount": 112,
+      "installedStaticRuntimeUsed": false
+    }
+  },
+  "miniz": {
+    "via": "https://github.com/juma-sayeh/PS5-Game-Compressor",
+    "commit": "5a040799eed7a8355ae9194608f353717b6634d5",
+    "independentLicense": "MIT"
+  },
+  "lz4": {
+    "url": "https://github.com/lz4/lz4",
+    "commit": "ebb370ca83af193212df4dcbadcc5d87bc0de2f0",
+    "version": "1.10.0",
+    "independentLicense": "BSD-2-Clause"
+  }
+}

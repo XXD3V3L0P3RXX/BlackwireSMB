@@ -1,0 +1,60 @@
+[
+  {
+    "bytes": 35823,
+    "sha256": "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809",
+    "source": "vendor/ampr/LICENSE",
+    "path": "LICENSES/GPL-3.0.txt"
+  },
+  {
+    "bytes": 26530,
+    "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551",
+    "source": "vendor/libsmb2/LICENCE-LGPL-2.1.txt",
+    "path": "LICENSES/LGPL-2.1.txt"
+  },
+  {
+    "bytes": 658,
+    "sha256": "5c3a531b92d858389aa4191445b12b0c6788f2887a9caea57aafe17b62763881",
+    "source": "vendor/ampr/third_party/lz4/LICENSE",
+    "path": "LICENSES/LZ4-LICENSE.txt"
+  },
+  {
+    "bytes": 35823,
+    "sha256": "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809",
+    "source": "src/blackwire/third-party/ps5-payload-manager-LICENSE",
+    "path": "LICENSES/PS5-PAYLOAD-MANAGER-LICENSE.txt"
+  },
+  {
+    "bytes": 842,
+    "sha256": "51e8121a6d8a353d40ebec90aeb6dcc6c8ae4ceb6f133ea39beaa82e2828ab7c",
+    "source": "vendor/sdk-runtime/arc4random.c",
+    "path": "LICENSES/SDK-ARC4-NOTICE.txt"
+  },
+  {
+    "sha256": "9fcf1abe13616084860e07a7e033156b3cd5ec9ee4efeb04df0798e067d81135",
+    "extraction": "first complete license comment, or exact SQLite dedication comment",
+    "path": "LICENSES/MINIZ-LICENSE.txt",
+    "source": "src/blackwire/streamreader/vendor/miniz/miniz_tinfl.c",
+    "bytes": 1404
+  },
+  {
+    "sha256": "d04db61deccb176b1ab2035075f982d0fe0a4aa10e3b75725351dfc0e73f3b73",
+    "extraction": "first complete license comment, or exact SQLite dedication comment",
+    "path": "LICENSES/LZ4-LIBRARY-NOTICE.txt",
+    "source": "vendor/ampr/third_party/lz4/lib/lz4.c",
+    "bytes": 1630
+  },
+  {
+    "sha256": "49cf7bcb103eb3244150a23bb23d840370a4762914faf1b450072a4b03c14670",
+    "extraction": "first complete license comment, or exact SQLite dedication comment",
+    "path": "LICENSES/SQLITE-PUBLIC-DOMAIN.txt",
+    "source": "vendor/sqlite/sqlite3.c",
+    "bytes": 427
+  },
+  {
+    "bytes": 35823,
+    "path": "LICENSE",
+    "sha256": "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809",
+    "applicationGrant": "GPL-3.0-or-later per NOTICE.md",
+    "source": "vendor/ampr/LICENSE"
+  }
+]

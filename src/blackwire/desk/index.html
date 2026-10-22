@@ -1,0 +1,1745 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blackwire</title>
+<link rel="icon" type="image/png" href="/assets/blackwire-logo.png">
+<style>
+  /* Same palette as the current Blackwire page */
+  :root{color-scheme:dark;--bg:#000;--surface:#101216;--surface2:#171a20;--line:#30363e;--text:#eef4f2;--muted:#a7afba;
+        --blue:#8fb8e8;--green:#7fd1a6;--red:#ef8f95;--amber:#f2c46b;--focus:#ffffff}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:16px/1.4 "Segoe UI",Inter,system-ui,sans-serif}
+  body{overflow:hidden}
+  .stage-art{position:fixed;inset:0;background-size:cover;background-position:center;opacity:.42;transition:opacity .35s, background-image .35s;filter:saturate(1.05)}
+  .stage-fade{position:fixed;inset:0;background:
+     linear-gradient(90deg,#000 0%,rgba(0,0,0,.86) 34%,rgba(0,0,0,.25) 70%,rgba(0,0,0,.55) 100%),
+     linear-gradient(0deg,#000 6%,rgba(0,0,0,0) 48%)}
+  .app{position:relative;height:100%;display:flex;flex-direction:column;padding:28px 56px 22px}
+
+  /* Top bar: brand + connection chip + help */
+  .topbar{display:flex;align-items:center;gap:18px}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:650;font-size:22px;letter-spacing:.3px}
+  .mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#1c2430,#0b0e12);border:1px solid var(--line);
+        display:grid;place-items:center;font-weight:800;color:var(--blue)}
+  .spacer{flex:1}
+  .chip{display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:999px;background:rgba(16,18,22,.75);border:1px solid var(--line);
+        color:var(--muted);font-size:14px;cursor:pointer}
+  .chip:hover,.chip:focus{color:var(--text);outline:none;border-color:#56606c}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+  .link{color:var(--muted);font-size:14px;cursor:pointer;background:none;border:0}
+  .link:hover{color:var(--text)}
+
+  /* Hero: title, one status word, one big action */
+  .hero{margin-top:7vh;max-width:640px}
+  .hero-tags{display:flex;gap:8px;margin-bottom:12px}
+  .tag{font-size:12px;letter-spacing:.6px;text-transform:uppercase;padding:4px 9px;border-radius:6px;background:rgba(255,255,255,.08);color:var(--muted)}
+  .hero h1{font-size:52px;line-height:1.05;margin:0 0 14px;font-weight:700}
+  .status{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:16px;cursor:pointer;border:0;background:none;padding:0;color:var(--text)}
+  .status i{width:10px;height:10px;border-radius:50%}
+  .s-ready i{background:var(--green)} .s-ready{color:var(--green)}
+  .s-notready i{background:var(--red)} .s-notready{color:var(--red)}
+  .s-prep i{background:var(--blue)} .s-prep{color:var(--blue)}
+  .s-attn i{background:var(--amber)} .s-attn{color:var(--amber)}
+  .s-play i{background:var(--green);animation:pulse 1.4s infinite} .s-play{color:var(--green)}
+  @keyframes pulse{50%{opacity:.35}}
+  .reason{margin:10px 0 0;color:var(--muted);font-size:14px;max-width:520px;display:none}
+  .reason.open{display:block}
+  .actions{display:flex;gap:12px;margin-top:26px;align-items:center}
+  .btn{font:inherit;font-weight:650;font-size:18px;padding:14px 34px;border-radius:12px;border:2px solid transparent;cursor:pointer}
+  .btn-primary{background:#f2f5f4;color:#05070a}
+  .btn-ghost{background:rgba(16,18,22,.8);color:var(--text);border-color:var(--line)}
+  .btn:focus-visible,.btn:hover{outline:3px solid var(--focus);outline-offset:3px}
+  .btn[disabled]{opacity:.45;cursor:default;outline:none}
+
+  /* In-place progress */
+  .progress{margin-top:22px;max-width:520px;display:none}
+  .progress.on{display:block}
+  .progress-top{display:flex;justify-content:space-between;color:var(--muted);font-size:14px;margin-bottom:8px}
+  .bar{height:6px;border-radius:6px;background:#22272e;overflow:hidden}
+  .bar span{display:block;height:100%;background:var(--blue);border-radius:6px;transition:width .4s}
+
+  /* Library rail */
+  .rail-wrap{margin-top:auto}
+  .rail-head{display:flex;align-items:center;gap:22px;margin-bottom:14px}
+  .rail-head h2{font-size:18px;margin:0;font-weight:600}
+  .tabs{display:flex;gap:6px}
+  .tab{font:inherit;font-size:14px;padding:7px 15px;border-radius:999px;border:1px solid var(--line);background:rgba(16,18,22,.7);color:var(--muted);cursor:pointer}
+  .tab[aria-selected=true]{background:#eef4f2;color:#05070a;border-color:#eef4f2;font-weight:600}
+  .search{margin-left:auto;position:relative}
+  .search input{font:inherit;font-size:14px;width:260px;padding:8px 30px 8px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(16,18,22,.8);color:var(--text)}
+  .search input:focus{outline:2px solid var(--focus)}
+  .search .x{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);cursor:pointer;display:none}
+  .count{color:var(--muted);font-size:14px}
+  .rail{display:flex;gap:22px;overflow-x:auto;padding:20px 20px 22px;margin:0 -20px;scroll-behavior:smooth;scrollbar-width:none}
+  .rail::-webkit-scrollbar{display:none}
+  .card{flex:0 0 auto;width:150px;cursor:pointer;transition:transform .18s}
+  .cover{position:relative;width:150px;height:150px;border-radius:14px;overflow:hidden;background:var(--surface);border:2px solid transparent}
+  .cover img{width:100%;height:100%;object-fit:cover;display:block}
+  .card.sel{transform:scale(1.12)}
+  .card.sel .cover{border-color:var(--focus);box-shadow:0 0 0 3px rgba(255,255,255,.25),0 12px 30px rgba(0,0,0,.7)}
+  .badge{position:absolute;left:8px;bottom:8px;width:12px;height:12px;border-radius:50%;border:2px solid #000}
+  .src{position:absolute;right:7px;top:7px;font-size:10px;font-weight:700;letter-spacing:.5px;padding:2px 6px;border-radius:5px;background:rgba(0,0,0,.72);color:#dfe6ee}
+  .card-title{margin-top:10px;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card.sel .card-title{color:var(--text);font-weight:600}
+  .hint{color:#6f7782;font-size:13px;margin-top:4px}
+  kbd{font:inherit;font-size:12px;border:1px solid #3a414a;border-radius:4px;padding:0 5px;color:var(--muted)}
+
+  /* Overlays: details, settings, help */
+  .sheet{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:5}
+  .sheet.on{display:flex}
+  .panel{width:min(620px,92vw);background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px 30px}
+  .panel h3{margin:0 0 6px;font-size:22px}
+  .panel p{color:var(--muted);margin:8px 0}
+  .kv{display:grid;grid-template-columns:150px 1fr;gap:8px 16px;margin:16px 0;font-size:15px}
+  .kv dt{color:var(--muted)} .kv dd{margin:0}
+  .field{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+  .field input{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0b0d10;color:var(--text)}
+  .panel .row{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+  .danger{color:var(--red);border-color:#5a2a2e}
+  .btn.small{font-size:14px;padding:8px 16px;border-radius:999px}
+  .field small{color:#7d8590;font-size:12px}
+  .pw{display:flex;gap:8px;align-items:center}.pw input{flex:1}
+  .conn-state{display:flex;align-items:center;gap:8px;color:var(--green)!important;font-size:14px}
+  .label{position:fixed;right:18px;bottom:14px;font-size:12px;color:#5d6570;z-index:2}
+</style>
+<style id="production-bindings">
+[hidden],.production-hidden,.production-bindings{display:none!important}
+.mark{object-fit:contain;flex:none}
+.cover-choice{display:block;padding:0;margin:0;width:100%;border:0;background:none;color:inherit;text-align:left;font:inherit;cursor:pointer}
+.btn[aria-disabled="true"]{opacity:.45;cursor:default;outline:none}
+.cover-choice:focus-visible{outline:3px solid var(--focus);outline-offset:4px;border-radius:14px}
+.cover-label{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:44px}
+.card-title{display:block}
+.card[data-readiness="ready"] .badge{background:var(--green)}
+.card[data-readiness="not-ready"] .badge{background:var(--red)}
+.card[data-readiness="removed"] .badge{background:var(--muted)}
+.hero .reason[hidden]{display:none}
+.sheet .panel{max-height:calc(100vh - 36px);overflow:auto}
+.setup>summary{display:none}
+.field small{display:block}
+.setup-error{font-size:13px;color:var(--amber)!important}
+.conn-state.is-warning{color:var(--amber)!important}
+.conn-state.is-offline{color:var(--red)!important}
+.kv dd{overflow-wrap:anywhere}
+.detail-bindings{display:none!important}
+.detail-reason{font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.library-options{margin-top:18px;color:var(--muted);font-size:13px}
+.advanced-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.library-options .row{flex-wrap:wrap}
+.library-options button{font-size:13px}
+.check{display:flex;gap:16px;justify-content:space-between;margin-top:8px}
+.check strong{font-weight:500}
+.empty{color:var(--muted);margin:16px 0;font-size:14px}
+.bad{color:var(--red)}.ok{color:var(--green)}
+.preparation-indeterminate .bar span{width:24%!important;animation:production-progress 1.8s ease-in-out infinite alternate}
+@keyframes production-progress{from{transform:translateX(0)}to{transform:translateX(310%)}}
+.browser-handoff{position:fixed;z-index:50;left:24px;right:24px;bottom:24px;margin:auto;max-width:720px;padding:16px 20px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text)}
+.app[data-layout="grid"]{height:auto;min-height:100%}
+.app[data-layout="grid"] .rail-wrap{margin-top:36px}
+.rail[data-layout="grid"]{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:24px 22px;overflow:visible;margin:0;padding:20px 0 22px}
+@media(max-width:760px){body{overflow:auto}.app{height:auto;min-height:100%;padding:20px 22px}.topbar{flex-wrap:wrap;gap:10px}.chip{order:4}.hero{margin-top:36px}.hero h1{font-size:34px}.rail-wrap{margin-top:36px}.rail-head{flex-wrap:wrap;gap:12px}.search{margin-left:0;width:100%}.search input{width:100%}.btn{padding:12px 22px;font-size:16px}.sheet .panel{padding:24px}.kv{grid-template-columns:110px 1fr}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="stage-art" id="stageArt"></div>
+<div class="stage-fade"></div>
+
+<main class="app" id="librarySurface">
+  <header class="topbar">
+    <div class="brand"><img class="mark" src="/assets/blackwire-logo.png" width="38" height="38" alt="Blackwire logo">Blackwire</div>
+    <div class="spacer"></div>
+    <button class="chip" id="connectionChip" type="button" title="Open settings"><span class="dot" id="connectionDot"></span><span id="connection">Checking Blackwire</span></button>
+    <button class="btn btn-ghost small" id="openSetup">⚙ Settings</button>
+    <button class="link" id="openHelp">Help</button>
+  </header>
+
+  <section class="hero" id="libraryStage" data-layout="carousel">
+    <div id="heroCopy" hidden><div class="hero-tags" id="heroTags"><span class="tag" id="heroSource"></span><span class="tag" id="heroStorage" hidden></span></div>
+    <h1 id="heroTitle"></h1>
+    <button class="status" id="heroStatus" type="button" aria-expanded="false" aria-controls="heroReason"><i aria-hidden="true"></i><span id="heroStatusLabel"></span></button>
+    <p class="reason" id="heroReason" hidden></p></div>
+    <div class="progress" id="preparationStatus" hidden>
+      <div class="progress-top"><span id="preparationDetail"></span><span id="preparationPercent"></span></div>
+      <div class="bar" id="preparationTrack" role="progressbar" aria-label="Startup file preparation"><span id="preparationFill" style="width:0%"></span></div>
+    </div>
+    <div class="actions" id="heroActions" hidden>
+      <button class="btn btn-primary" id="heroPrimary" type="button" disabled></button>
+      <button class="btn btn-ghost" id="heroDetails" type="button">Details</button>
+    </div>
+  </section>
+
+  <div class="rail-wrap">
+    <div class="rail-head">
+      <h2>Your library</h2>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="filter-all" data-f="all" aria-controls="games" type="button" aria-selected="true">All</button>
+        <button class="tab" role="tab" id="filter-ready" data-f="ready" aria-controls="games" type="button" aria-selected="false">Ready</button>
+        <button class="tab" role="tab" id="filter-not-ready" data-f="notready" aria-controls="games" type="button" aria-selected="false">Not ready</button>
+      </div>
+      <span class="count" id="resultCount"></span>
+      <div class="search"><input id="search" placeholder="Search games" autocomplete="off"><span class="x" id="clearSearch" role="button" tabindex="0" aria-label="Clear search">×</span></div>
+    </div>
+    <div class="rail" id="games" data-layout="carousel" aria-label="Game covers" aria-describedby="controllerHint"></div>
+    <p id="empty" class="empty" hidden></p>
+    <div class="hint" id="controllerHint"><kbd>←</kbd> <kbd>→</kbd> browse &nbsp; <kbd>Enter</kbd> main action &nbsp; <kbd>D</kbd> details</div>
+  </div>
+</main>
+
+<!-- Details -->
+<div class="sheet" id="selectedGame" role="dialog" aria-modal="true" aria-label="Selected game" tabindex="-1" hidden><div class="panel" id="detailsBody"><button id="closeDetails" class="btn btn-ghost" type="button">Back</button></div>
+  <div id="removalConfirm" class="panel" role="alertdialog" aria-modal="true" aria-labelledby="removalHeading" aria-describedby="removalDescription" hidden><h3 id="removalHeading">Uninstall this console copy?</h3><p id="removalTitle"></p><p id="removalDescription"></p><div class="row"><button id="cancelRemoval" class="btn btn-ghost" type="button">Cancel</button><button id="confirmRemoval" class="btn btn-ghost danger" type="button">Uninstall</button></div></div>
+</div>
+
+<!-- Settings -->
+<div class="sheet" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="setupHeading" hidden><div class="panel">
+<details id="setupPanel" class="setup"><summary class="production-hidden">Settings</summary>
+  <h3 id="setupHeading">Settings</h3>
+  <p>The PS5 reads your games from this shared folder on your PC.</p>
+  <p class="conn-state" id="settingsConnection"><span class="dot" id="settingsDot"></span><span id="savedConnectionStatus">Connection status unavailable</span></p>
+  <form id="setup" autocomplete="off">
+    <div class="field" id="nativeServerField"><label for="server">PC address</label><input id="server" autocomplete="off" spellcheck="false" disabled></div>
+    <div class="field" id="nativeShareField"><label for="shareName">Shared folder name</label><input id="shareName" autocomplete="off" spellcheck="false" disabled></div>
+    <div class="field" id="smbUserField"><label for="smbUser" id="smbUserLabel">Windows username</label><input id="smbUser" autocomplete="off" spellcheck="false" disabled></div>
+    <div class="field" id="smbPasswordField"><label for="smbPassword" id="smbPasswordLabel">Password</label>
+      <div class="pw"><input id="smbPassword" type="password" autocomplete="off" disabled><button type="button" class="link" id="pwToggle" aria-pressed="false">Show</button></div>
+      <small id="savedPasswordHint">Use the account password that can read the share.</small></div>
+    <p id="setupReason" class="setup-error" role="status"></p>
+    <div class="row"><button class="btn btn-ghost" type="button" id="closeSetup">Cancel</button><button class="btn btn-primary" type="submit" id="saveSetup" disabled aria-disabled="true">Save and check</button></div>
+  </form>
+</details></div></div>
+
+<!-- Help -->
+<div class="sheet" id="helpOverlay" role="dialog" aria-modal="true" aria-labelledby="helpHeading" hidden><div class="panel" id="helpPanel">
+  <h3 id="helpHeading">Help</h3>
+  <p><b>Ready</b> means the startup files are on the PS5. It doesn't guarantee every game is compatible.</p>
+  <p><b>Storage:</b> startup files use PS5 space; the rest of the game stays on the PC and is read while you play. Files can show their full size in a file manager even though most of it isn't stored on the PS5.</p>
+  <p><b>Network:</b> use wired Ethernet and keep the PC awake while playing.</p>
+  <details class="library-options"><summary>Library options</summary>
+    <div class="advanced-tabs"><button class="tab" id="filter-pc" role="tab" type="button" aria-controls="games">PC</button><button class="tab" id="filter-console" role="tab" type="button" aria-controls="games">Console</button><button class="tab" id="filter-removed" role="tab" type="button" aria-controls="games">Removed</button></div>
+    <div class="row"><button id="layoutCarousel" class="btn btn-ghost small" type="button" aria-pressed="true">Carousel</button><button id="layoutGrid" class="btn btn-ghost small" type="button" aria-pressed="false">Grid</button><button id="refreshLibrary" class="btn btn-ghost small" type="button">Refresh library</button><button id="reloadSetup" class="btn btn-ghost small" type="button" hidden>Refresh connection</button></div>
+    <div id="checks"></div><p id="note" role="status" aria-live="polite">Checking Blackwire…</p>
+  </details>
+  <div class="row"><button class="btn btn-ghost" type="button" id="closeHelp">Close</button></div>
+</div></div>
+<div class="production-bindings" aria-hidden="true">
+  <span id="preparationKicker"></span><span id="preparationTitle"></span><button id="preparationRefresh" type="button"></button><button id="preparationInspect" type="button"></button>
+  <section id="sessionStatus" hidden><span id="sessionHeading"></span><span id="sessionSource"></span><span id="sessionMessage"></span><span id="sessionOwnership"></span><button id="sessionAction" type="button"></button><button id="sessionRefresh" type="button"></button><button id="sessionDismiss" type="button"></button></section>
+  <label id="keepCredentialsField" hidden><input id="keepCredentials" type="checkbox">Use saved sign-in</label>
+  <span id="savedServer"></span><span id="savedShare"></span><span id="savedUser"></span><span id="savedPassword"></span><span id="setupCopy"></span><span id="setupHelp"></span>
+  <button id="focusSearch" type="button"></button><button id="previousGame" type="button"></button><button id="nextGame" type="button"></button><span id="railPosition"></span>
+  <aside id="preparationToast" hidden><span id="preparationToastTitle"></span><span id="preparationToastDetail"></span></aside>
+</div>
+<aside id="browserHandoff" class="browser-handoff" role="status" aria-live="polite" hidden>Game started. Close the PS5 browser with the controller to see it.</aside>
+<script id="blackwire-view-model">
+    (function (root) {
+      var activePhases = ["preflight", "launching", "running", "closing", "unknown"];
+      function active(session) { return (session || {}).phase === "preparing" || activePhases.indexOf((session || {}).phase) !== -1; }
+      function activeJobs(state) {
+        return (state.jobs || []).filter(function (job) { return job.state === "queued" || job.state === "running"; });
+      }
+      function connection(state) {
+        state=state || {};
+        var confirmed=state.backend === "native", settings=state.settings || {}, library=state.library || {};
+        var configured=confirmed && (state.setup || {}).configured === true;
+        var online=confirmed && library.phase === "ready" && !library.stale;
+        return { native:confirmed, configured:configured, online:online,
+          folder:confirmed && settings.server && settings.share ? "\\\\" + settings.server + "\\" + settings.share : "",
+          label:!confirmed ? "Console status unconfirmed" : (state.setup || {}).busy ? "Checking PC connection" : library.phase === "scanning" ? "Reading PC library" : online ? "PC share connected" : "PC share needs attention" };
+      }
+      function readState(response) {
+        return response.json().then(function (value) {
+          if (!response.ok) throw new Error(value.error || "Blackwire status is unavailable.");
+          return value;
+        }, function () { throw new Error("Blackwire returned an unreadable status response."); });
+      }
+      function readAppState(response) {
+        return readState(response).then(function (value) {
+          var object=function (v) {return v && typeof v === "object" && !Array.isArray(v);};
+          if (!object(value) || value.backend !== "native" || !object(value.settings) || !Array.isArray(value.games))
+            throw new Error("This page needs a valid Blackwire console status. Reopen Blackwire on the PS5.");
+          var setup=value.setup, fields=["supported","editable","busy","configured","hasSavedCredentials"];
+          if (!object(setup) || fields.some(function (key) {return typeof setup[key] !== "boolean";})
+            || typeof value.settings.server !== "string" || typeof value.settings.share !== "string"
+            || typeof setup.revision !== "number" || Math.floor(setup.revision) !== setup.revision || setup.revision < 0 || setup.revision > 4294967295
+            || typeof setup.token !== "string" || setup.supported && (!nonce(setup.token) || setup.revision < 1)
+            || setup.editable && !setup.supported)
+            throw new Error("The console returned incomplete connection settings. Refresh before saving.");
+          return value;
+        });
+      }
+      function setupPresentation(state,options) {
+        options=options || {};var setup=state && state.setup || {};
+        var reason="", fresh=options.fresh === true;
+        if (!fresh) reason=options.error ? "Console status unavailable: " + options.error : "Connecting to the PS5 app. Settings cannot be saved until its status is confirmed.";
+        else if (!state || state.backend !== "native") reason="Reopen Blackwire on the PS5 to confirm its connection settings.";
+        else if (options.posting || options.pending) reason="Wait for the current request to finish.";
+        else if (options.operation) reason="Waiting for this connection check to finish. It will not be submitted again.";
+        else if (!setup.supported || !nonce(setup.token) || !setup.revision) reason="Connection editing is unavailable until the console confirms its settings capability.";
+        else if (options.dirty && (options.revision !== setup.revision || options.token !== setup.token)) reason="Saved settings changed. Refresh connection status before saving this draft.";
+        else if (setup.busy || !setup.editable) reason=setup.message || "Wait for the current console operation before changing the connection.";
+        else if (state && dashboardBusy(state)) reason=state.dashboardUnavailable || "Wait for the retained dashboard operation before changing the connection.";
+        return {canSave:!reason,reason:reason,fresh:fresh};
+      }
+      function startupFilesReady(game) { return typeof game.startupReady === "boolean" ? game.startupReady : game.canPlay === true; }
+      function ready(game) { return startupFilesReady(game) && game.dashboardLaunchReady !== false; }
+      function matches(game, query, filter) {
+        var text = [game.title, game.name, game.titleId, game.source].join(" ").toLowerCase();
+        return text.indexOf(String(query || "").trim().toLowerCase()) !== -1
+          && (filter === "removed" ? game.removed === true : game.removed !== true)
+          && (filter === "ready" ? ready(game) : filter === "not-ready" ? !ready(game) : filter === "pc" ? !game.kind || game.kind === 1 : filter === "console" ? game.kind >= 2 && game.kind <= 4 : true);
+      }
+      function counts(games, query) {
+        var matching = games.filter(function (game) { return matches(game, query); });
+        var readyCount = matching.filter(ready).length;
+        return { all:matching.length, pc:matching.filter(function (game) {return !game.kind || game.kind === 1;}).length,
+          console:matching.filter(function (game) {return game.kind >= 2 && game.kind <= 4;}).length, ready:readyCount, "not-ready":matching.length - readyCount,
+          removed:games.filter(function (game) {return matches(game,query,"removed");}).length };
+      }
+      function nonce(value) { return typeof value === "string" && /^[0-9a-f]{32}$/.test(value) && !/^0+$/.test(value); }
+      function catalogId(value) { return typeof value === "string" && value.length < 96 && /^[a-z]+:(?:PPSA|CUSA)[0-9]{5}:[0-9a-f]{64}$/.test(value); }
+      function boundedText(value,limit,empty) { return typeof value === "string" && value.length < limit && (empty || value.length > 0) && !/[\x00-\x1f\x7f]/.test(value); }
+      function dashboardLibrary(value) {
+        var valid=value && value.schema === 1 && typeof value.catalogGeneration === "number" && value.catalogGeneration > 0
+          && value.catalogGeneration <= 9007199254740991 && Math.floor(value.catalogGeneration) === value.catalogGeneration
+          && typeof value.pcConnected === "boolean" && typeof value.consoleConnected === "boolean" && Array.isArray(value.items) && value.items.length <= 512;
+        if (!valid) throw new Error("The combined library response is invalid. Refresh Blackwire.");
+        var seen=Object.create(null);
+        value.items.forEach(function (item) {
+          if (!item || !catalogId(item.id) || seen[item.id] || !boundedText(item.title,256,false) || !/^(?:PPSA|CUSA)[0-9]{5}$/.test(item.titleId)
+            || !boundedText(item.source,1024,false) || typeof item.kind !== "number" || Math.floor(item.kind) !== item.kind || item.kind < 1 || item.kind > 4
+            || typeof item.canPlay !== "boolean" || typeof item.canSend !== "boolean" || typeof item.startupReady !== "boolean"
+            || item.kind !== 1 && item.canSend || !boundedText(item.playReason,256,true) || !boundedText(item.sendReason,256,true)
+            || item.cover !== "/api/dashboard/cover?id=" + item.id) throw new Error("A combined library entry is invalid. Refresh Blackwire.");
+          if(typeof item.storageKnown !== "undefined" && (typeof item.storageKnown !== "boolean" || item.storageKnown &&
+            (item.kind !== 1 || !wholeNumber(item.startupBytes,9007199254740991) || !wholeNumber(item.pcBytes,9007199254740991)
+              || !wholeNumber(item.consoleAllocatedBytes,9007199254740991) || item.storageVerifiedAt !== "preparation")))
+            throw new Error("The measured game storage is invalid. Refresh Blackwire.");
+          ["canUninstall","removed","canRestore"].forEach(function (key) {
+            if(typeof item[key] !== "undefined" && typeof item[key] !== "boolean")throw new Error("The game removal capability is invalid. Refresh Blackwire.");
+          });
+          ["uninstallReason","restoreReason"].forEach(function (key) {
+            if(typeof item[key] !== "undefined" && !boundedText(item[key],256,true))throw new Error("The game removal reason is invalid. Refresh Blackwire.");
+          });
+          if(item.removed === true && (item.kind !== 1 || item.startupReady || item.canPlay || item.canSend || item.canUninstall)
+            || item.canRestore === true && item.removed !== true)throw new Error("The removed game state is invalid. Refresh Blackwire.");
+          seen[item.id]=true;
+        });
+        var operation=value.operation, phases=["idle","waiting-for-dashboard-exit","accepted","refused","unknown","running","stopped"];
+        if (!operation || phases.indexOf(operation.phase) === -1 || typeof operation.active !== "boolean" || !boundedText(operation.message,256,true)
+          || (operation.phase === "idle" ? operation.id !== "" || operation.itemId !== "" || operation.active : !nonce(operation.id) || !catalogId(operation.itemId)))
+          throw new Error("The dashboard operation status is invalid. Refresh Blackwire.");
+        if (typeof operation.action !== "undefined" && (["","play","send","uninstall","restore"].indexOf(operation.action) === -1
+          || !boundedText(operation.title,256,true) || !validPreparation(operation.preparation)
+          || operation.action === "send" && operation.exitRequested === true))
+          throw new Error("The file preparation status is invalid. Refresh Blackwire.");
+        if(typeof operation.removal !== "undefined"){
+          var removal=operation.removal;
+          if(!removal || typeof removal.observed !== "boolean" || !wholeNumber(removal.phase,7) || !wholeNumber(removal.files,4294967295)
+            || !wholeNumber(removal.filesTotal,4294967295) || removal.filesTotal > 0 && removal.files > removal.filesTotal
+            || removal.observed && ["uninstall","restore"].indexOf(operation.action) === -1)
+            throw new Error("The removal progress is invalid. Refresh Blackwire.");
+        }
+        return value;
+      }
+      function libraryGames(state) {
+        if (!state.dashboard) return state.dashboardRequired ? [] : state.games || [];
+        return state.dashboard.items.map(function (item) {
+          var game={name:item.id,dashboardId:item.id,title:item.title,titleId:item.titleId,source:item.source,kind:item.kind,
+            cover:item.cover,canPlay:item.canPlay,canPrepare:item.canSend,startupReady:item.startupReady,playReason:item.playReason,preparationReason:item.sendReason,
+            canUninstall:item.canUninstall === true,removed:item.removed === true,canRestore:item.canRestore === true,uninstallReason:item.uninstallReason || "",restoreReason:item.restoreReason || ""};
+          if (item.kind === 1) {
+            var found=(state.games || []).filter(function (source) {return (source.source || source.name) === item.source && source.titleId === item.titleId;});
+            if (found.length === 1) ["sourceKind","sendBytes","stayBytes","sizeKnown","onConsole","consoleAllocatedBytes","storageVerifiedAt","consoleStorageUnconfirmed","scanMessage","dashboardLaunchReady","dashboardLaunchReason","setupOnly","prepared"].forEach(function (key) {game[key]=found[0][key];});
+            if(item.storageKnown === true){game.sizeKnown=true;game.onConsole=true;game.sendBytes=item.startupBytes;game.stayBytes=item.pcBytes;game.consoleAllocatedBytes=item.consoleAllocatedBytes;game.storageVerifiedAt="preparation";}
+            if(game.removed){game.sizeKnown=false;game.onConsole=false;delete game.consoleAllocatedBytes;delete game.storageVerifiedAt;}
+          }
+          return game;
+        });
+      }
+      function dashboardBusy(state) {
+        var preparation=preparationPanel(state,null);
+        return !!state.dashboardUnavailable || !!state.dashboardWatch || !!(state.dashboard && state.dashboard.operation.active)
+          || !!(preparation.visible && preparation.busy);
+      }
+      function wholeNumber(value,maximum) { return typeof value === "number" && isFinite(value) && value >= 0 && value <= maximum && Math.floor(value) === value; }
+      function validPreparation(value) {
+        return !!value && typeof value.observed === "boolean" && typeof value.ready === "boolean"
+          && (value.jobId === "" || nonce(value.jobId)) && ["","queued","running","done","error"].indexOf(value.jobState) !== -1
+          && boundedText(value.message,384,true) && wholeNumber(value.phase,13)
+          && wholeNumber(value.files,4294967295) && wholeNumber(value.filesTotal,4294967295) && value.files <= value.filesTotal
+          && wholeNumber(value.bytes,9007199254740991) && wholeNumber(value.bytesTotal,9007199254740991) && value.bytes <= value.bytesTotal
+          && (!value.ready || value.observed && value.jobState === "done" && nonce(value.jobId));
+      }
+      var preparationPhases=["Starting preparation","Scanning PC files","Checking game metadata","Verifying PC startup files","Rechecking the PC source","PC source verified","Checking console files","Copying and verifying startup files","Preparing streamed file entries","Building the game index","Verifying the game index","Checking console storage","Setting up the reader and PS5 dashboard icon","Preparation needs attention"];
+      function preparationPanel(state,pending) {
+        var hidden={visible:false}, items=state.dashboard ? state.dashboard.items : [], op=state.dashboard && state.dashboard.operation;
+        var item=null, progress=null, title="", id="", itemId="", busy=false, message="", uncertain=false, failed=false;
+        if (pending && pending.action === "send") return {visible:true,key:"request:"+pending.itemId,itemId:pending.itemId,title:pending.title || pending.name,
+          state:"requesting",heading:"Starting preparation",message:"Sending the request to your PS5…",detail:"The app stays open while startup files are prepared.",percent:null,busy:true};
+        if(state.preparationIssue && !(op && op.action === "send" && op.active))return state.preparationIssue;
+        var watch=state.dashboardWatch;
+        if (watch && watch.action === "send" && (!op || op.id !== watch.id || op.itemId !== watch.itemId)) {
+          var waitingUnknown=watch.phase === "unknown" || !!state.dashboardUnavailable;
+          return {visible:true,key:watch.id || "request:"+watch.itemId,itemId:watch.itemId,title:watch.title || "Selected game",
+            state:waitingUnknown ? "unknown" : "preparing",heading:waitingUnknown ? "Checking preparation" : "Preparing startup files",
+            message:waitingUnknown ? watch.message || "The request outcome is not confirmed. No request was repeated." : "Preparation accepted. Waiting for measured progress…",
+            detail:waitingUnknown ? "Refresh status to check the existing operation." : "You can browse the library while this prepares.",percent:null,busy:true};
+        }
+        if (op && op.action === "send" && nonce(op.id) && catalogId(op.itemId)) {
+          itemId=op.itemId;item=items.filter(function (entry) {return entry.id === itemId;})[0];
+          progress=validPreparation(op.preparation) ? op.preparation : null;title=op.title || item && item.title || "Selected game";
+          id=op.id;busy=op.active;message=progress && progress.message || op.message;failed=op.phase === "refused";
+          uncertain=op.phase === "unknown" || !!state.dashboardUnavailable;
+        } else {
+          var jobs=(state.jobs || []).filter(function (job) {return job.action === "send" && nonce(job.id);});
+          var current=jobs.filter(function (job) {return job.state === "queued" || job.state === "running";});
+          // A newer named action supersedes terminal Send history. It cannot
+          // turn a completed copy into a second, indefinite preparation job.
+          if(!current.length && op && nonce(op.id) && op.action && op.action !== "send")return hidden;
+          var job=current.length ? current[0] : jobs[jobs.length-1];if(!job)return hidden;
+          var matching=items.filter(function (entry) {return entry.kind === 1 && entry.source === job.name;});
+          item=matching.length === 1 ? matching[0] : null;itemId=item ? item.id : "";
+          var originals=(state.games || []).filter(function (entry) {return (entry.source || entry.name) === job.name;});
+          title=item ? item.title : originals.length === 1 ? originals[0].title || job.name : job.name;
+          id=job.id;busy=job.state === "queued" || job.state === "running";message=job.error || job.message || "";failed=job.state === "error";
+          if(job.progress) {
+            progress={jobId:job.id,jobState:job.state,message:job.message || "",observed:true,phase:job.progress.phase,
+              files:job.progress.files,filesTotal:job.progress.filesTotal,bytes:job.progress.bytes,bytesTotal:job.progress.bytesTotal,
+              ready:job.state === "done" && job.filesPrepared === true && !!item && item.startupReady === true};
+            if(!validPreparation(progress))progress=null;
+          }
+          uncertain=!!state.dashboardUnavailable;
+        }
+        var observed=progress && progress.observed, ready=observed && progress.ready && !!item && item.startupReady === true;
+        var homeSetupNeeded=ready && libraryGames(state).some(function (game) {return game.dashboardId === itemId && game.dashboardLaunchReady === false;});
+        failed=failed || observed && progress.jobState === "error";
+        var status=uncertain ? "unknown" : failed ? "error" : homeSetupNeeded ? "setup-needed" : ready ? "ready" : !busy && observed && progress.jobState === "done" ? "unknown" : "preparing";
+        var heading=status === "ready" ? "Ready to launch" : status === "setup-needed" ? "Dashboard setup needs attention" : status === "error" ? "Preparation failed" : status === "unknown" ? "Checking preparation" : "Preparing startup files";
+        var phase=observed ? preparationPhases[progress.phase] : "Waiting for progress";
+        var detail="",percent=null;
+        if(observed) {
+          if(progress.filesTotal)detail=progress.files+" / "+progress.filesTotal+" files";
+          if(progress.bytesTotal)detail+=(detail ? " · " : "")+(progress.bytes/1048576).toFixed(1)+" / "+(progress.bytesTotal/1048576).toFixed(1)+" MiB";
+          if(!uncertain && !failed) {
+            if(progress.bytesTotal)percent=Math.floor(progress.bytes/progress.bytesTotal*100);
+            else if(progress.filesTotal)percent=Math.floor(progress.files/progress.filesTotal*100);
+          }
+        }
+        if(status === "ready") {
+          var dashboardReady=libraryGames(state).some(function (game) {return game.dashboardId === itemId && game.dashboardLaunchReady === true;});
+          message=dashboardReady ? "Startup files are verified. Choose Play here or the game’s PS5 dashboard icon." : "Startup files are verified. Choose Play when you’re ready.";percent=100;
+        }
+        else if(status === "setup-needed") {message="Startup files are kept. Choose Finish setup and play for this game; no files need to be sent again.";percent=100;}
+        else if(status === "unknown") {message=state.dashboardUnavailable || message || "The existing operation needs a fresh status check. No request was repeated.";percent=null;}
+        else if(status === "error") {message=message || "The startup files could not be prepared. Review this result before retrying.";percent=null;}
+        else message=phase;
+        return {visible:true,key:progress && nonce(progress.jobId) ? progress.jobId : id,itemId:itemId,title:title,state:status,heading:heading,message:message,
+          detail:detail || (busy ? "You can browse the library while this prepares." : "Open this game to see its current actions."),percent:percent,busy:busy || status === "unknown"};
+      }
+      function preparationBusyReason(state) {
+        var panel=preparationPanel(state,null);return panel.visible && panel.busy ? (panel.state === "unknown" ? "Checking preparation for " : "Preparing ") + panel.title + ". Wait for this operation to finish." : "";
+      }
+      function preparationNotifications() {
+        var initialized=false, seen=Object.create(null), keys=[];
+        return {observe:function (panel,fresh) {
+          if(!fresh)return null;
+          var first=!initialized;initialized=true;if(!panel || !panel.visible || !panel.key)return null;
+          var previous=seen[panel.key];seen[panel.key]=panel.state;
+          if(typeof previous === "undefined")keys.push(panel.key);
+          while(keys.length>32)delete seen[keys.shift()];
+          if(first || previous === panel.state || ["ready","setup-needed","error","unknown"].indexOf(panel.state) === -1)return null;
+          return {key:panel.key,state:panel.state,title:panel.state === "ready" ? panel.title + " is ready" : panel.title + (panel.state === "setup-needed" ? " needs dashboard setup" : panel.state === "error" ? " needs attention" : " · checking preparation"),
+            detail:panel.state === "ready" ? "Startup files are prepared. Choose Play in the library." : panel.message,attention:panel.state !== "ready"};
+        }};
+      }
+      function dashboardBody(state,game,action,confirmedTitle) {
+        var catalog=state && state.dashboard;
+        var found=catalog && catalog.items.filter(function (item) {return item.id === game.dashboardId && item.kind === game.kind;});
+        if (!found || found.length !== 1 || dashboardBusy(state) || ["play","send","uninstall","restore"].indexOf(action) === -1
+          || (action === "play" ? found[0].removed || !found[0].canPlay || found[0].kind === 1 && !found[0].startupReady
+            : action === "send" ? found[0].removed || found[0].kind !== 1 || found[0].startupReady || !found[0].canSend
+            : action === "uninstall" ? found[0].canUninstall !== true || confirmedTitle !== found[0].titleId
+            : found[0].removed !== true || found[0].canRestore !== true))
+          throw new Error("Refresh the library and choose an available action.");
+        var body={id:found[0].id,kind:found[0].kind,action:action,catalogGeneration:catalog.catalogGeneration};
+        if(action === "uninstall")body.confirmedTitleId=confirmedTitle;
+        return body;
+      }
+      function dashboardAccepted(status,value,action) {
+        if (status !== 202 || !value || value.ok !== true || value.accepted !== true || !nonce(value.id)
+          || ["waiting-for-dashboard-exit","accepted"].indexOf(value.phase) === -1 || !boundedText(value.message,256,true))
+          throw new Error("The operation was not confirmed. Refresh status before trying again.");
+        if(typeof value.action !== "undefined" && (["play","send","uninstall","restore"].indexOf(value.action) === -1 || action && action !== value.action
+          || typeof value.exitRequested !== "boolean" || value.action === "send" && (value.exitRequested || value.phase !== "accepted")
+          || value.action !== "send" && value.exitRequested !== (value.phase === "waiting-for-dashboard-exit")))
+          throw new Error("The operation acknowledgement differs from the selected action. Refresh status.");
+        return value;
+      }
+      function dashboardPost(body,token,request) {
+        if (!nonce(token)) return Promise.reject(Object.assign(new Error("Refresh Blackwire before sending an action."),{uncertain:false}));
+        return request("/api/dashboard/action",{method:"POST",headers:{"Content-Type":"application/json","X-Blackwire-Token":token},body:JSON.stringify(body)}).then(function (response) {
+          return response.json().then(function (value) {
+            if (!response.ok) throw Object.assign(new Error(value.error || "The dashboard action was refused."),{status:response.status,uncertain:response.status >= 500});
+            return dashboardAccepted(response.status,value,body.action);
+          });
+        });
+      }
+      function dashboardWatch(watch,operation) {
+        if (!watch) return null;
+        var matches=operation && operation.itemId === watch.itemId && nonce(operation.id)
+          && (watch.id ? operation.id === watch.id : operation.id !== watch.previousId);
+        if (matches) {
+          if (!operation.active && (operation.phase === "stopped" || operation.phase === "refused")) return null;
+          return {id:operation.id,itemId:watch.itemId,previousId:watch.previousId,phase:operation.phase,message:operation.message,action:operation.action || watch.action,title:operation.title || watch.title,removal:operation.removal};
+        }
+        return watch;
+      }
+      function browserHandoff(location,navigator) {
+        var host=String(location && location.hostname || "").toLowerCase();
+        var eligible=host === "127.0.0.1" || host === "::1" || host === "[::1]"
+          || /\bPlayStation\b/i.test(String(navigator && navigator.userAgent || ""));
+        var accepted=null, attempted=Object.create(null), attempts=0, visible=false;
+        var streamObserved=false, initialRun="", latestRun="", visibleRun="";
+        return {
+          accepted:function (body,reply) {
+            if(!eligible || !body || body.action !== "play" || !catalogId(body.id) || !reply || reply.ok !== true || reply.accepted !== true
+              || reply.action !== "play" || !nonce(reply.id) || ["accepted","waiting-for-dashboard-exit"].indexOf(reply.phase) === -1)return;
+            if(!accepted || accepted.id !== reply.id || accepted.itemId !== body.id) {
+              visible=false;visibleRun="";
+              accepted={id:reply.id,itemId:body.id,previousRun:latestRun,run:""};
+            }
+          },
+          update:function (operation,stream,fresh) {
+            var close=false;
+            if(!eligible || fresh === false)return {attemptClose:false,visible:visible};
+            var own=accepted && operation && operation.id === accepted.id && operation.itemId === accepted.itemId;
+            var run=stream && nonce(stream.runId) ? stream.runId : "";
+            var streamValid=stream && typeof stream.phase === "string" && (run || (!stream.runId && ["idle","stopped","error","unverified"].indexOf(stream.phase) !== -1));
+            if(streamValid) {
+              latestRun=run;
+              // The first session snapshot is inspection, even if a game is already running.
+              if(!streamObserved) {streamObserved=true;initialRun=run;}
+              else if(run && run !== initialRun) {
+                if(visibleRun && visibleRun !== run) {visible=false;visibleRun="";}
+                if(own && operation.action === "play" && operation.active === true && operation.phase === "running"
+                  && !accepted.run && run !== accepted.previousRun)accepted.run=run;
+                if(stream.phase === "running" && wholeNumber(stream.gamePid,2147483647) && stream.gamePid > 1) {
+                  visible=true;visibleRun=run;
+                  var key="run:"+run;
+                  // The native and dashboard observations of the same launch share one attempt.
+                  if(!attempted[key] && attempts < 128) {
+                    attempted[key]=true;
+                    if(!(own && accepted.run === run && attempted[accepted.id])) {attempts++;close=true;}
+                  }
+                  if(own && accepted.run === run)attempted[accepted.id]=true;
+                } else if(run === visibleRun && ["stopped","error","unverified"].indexOf(stream.phase) !== -1) {visible=false;visibleRun="";}
+              }
+            }
+            if(own) {
+              if(operation.action === "play" && operation.active === true && operation.phase === "running") {
+                visible=true;
+                // Bound automatic attempts for this page lifetime; never replay an operation.
+                if(!attempted[operation.id] && attempts < 128) {
+                  // A delayed ACK can arrive after the native run already caused dismissal.
+                  if(!(run && attempted["run:"+run])) {attempted[operation.id]=true;attempts++;close=true;}
+                  else if(accepted.run === run)attempted[operation.id]=true;
+                }
+              } else if(!operation.active && (operation.phase === "stopped" || operation.phase === "refused") && !visibleRun)visible=false;
+            }
+            return {attemptClose:close,visible:visible};
+          }
+        };
+      }
+      function setupBody(state,fields) {
+        if (!state || state.backend !== "native") throw new Error("Refresh the console status before saving connection settings.");
+        var setup=state.setup || {}, settings=state.settings || {};
+        if (!setup.editable) throw new Error(setup.message || "Wait for the current connection check.");
+        var server=String(fields.server || "").trim(), share=String(fields.share || "").trim();
+        if (!server || !share) throw new Error("Enter the PC address and shared folder name.");
+        var keep=fields.keep === true && setup.hasSavedCredentials === true && server === settings.server &&
+          (typeof settings.user !== "string" || String(fields.user || "").trim() === settings.user);
+        var body={server:server,share:share,revision:typeof fields.revision === "number" ? fields.revision : setup.revision,keepCredentials:keep};
+        if (!keep) {body.smbUser=String(fields.user || "").trim();body.smbPassword=String(fields.password || "");}
+        return body;
+      }
+      function setupResult(setup,operation) {
+        if (!operation || setup.operation !== operation || setup.busy) return "pending";
+        return setup.phase === "saved" ? "saved" : setup.phase === "error" || setup.phase === "unconfirmed" ? "error" : "pending";
+      }
+      function preparationBody(state,name) {
+        if (!state || state.backend !== "native") return {name:name};
+        var library=state.library || {}, setup=state.setup || {};
+        var generation=library.generation, revision=setup.revision;
+        if (!name || library.phase !== "ready" || library.stale || typeof generation !== "number" || generation <= 0 || generation > 9007199254740991 || Math.floor(generation) !== generation
+          || typeof revision !== "number" || revision <= 0 || revision > 4294967295 || Math.floor(revision) !== revision) throw new Error("Refresh the library before preparing this game.");
+        return {name:name,libraryGeneration:generation,settingsRevision:revision};
+      }
+      function playBody(state,name,closing) {
+        var run=(state.stream || {}).runId || "";
+        if (state.backend !== "native") return {name:name,runId:closing ? run : ""};
+        if (!closing) return preparationBody(state,name);
+        if (!/^[0-9a-f]{32}$/.test(run) || /^0+$/.test(run)) throw new Error("Refresh Blackwire before closing this session.");
+        return run;
+      }
+      function dashboardLaunch(fragment) {
+        if (!fragment || fragment.indexOf("#stream=") !== 0) return null;
+        var source, expectedBinding="", fields=fragment.slice(1).split("&");
+        if (fields.length > 2 || fields.length === 2 && fields[1].indexOf("binding=") !== 0) throw new Error("This dashboard game entry is invalid.");
+        try {
+          source=decodeURIComponent(fields[0].slice(7));
+          if (fields.length === 2) expectedBinding=decodeURIComponent(fields[1].slice(8));
+        } catch (error) { throw new Error("This dashboard game entry is invalid."); }
+        if (fields.length === 2 && !/^PPSA[0-9]{5}_[0-9a-f]{64}$/.test(expectedBinding)) throw new Error("This dashboard game entry is invalid.");
+        if (!source || source.length > 1023 || /[\\\x00-\x1f\x7f]/.test(source) || source.split("/").some(function (part) {return !part || part === "." || part === "..";})) throw new Error("This dashboard game entry is invalid.");
+        var phase="waiting", pin=null, jobId="", missing=0;
+        var flow={message:"",error:false};
+        function fail(message) {phase="error";flow.error=true;flow.message=message;return null;}
+        function request(route,state) {
+          var body=preparationBody(state,source);
+          phase=route === "/api/send" ? "send-requested" : "play-requested";
+          return {route:route,body:body,message:route === "/api/send" ? "Preparing " + source + " for streaming…" : "Starting " + source + " from Blackwire…"};
+        }
+        flow.step=function (state,pending) {
+          if (phase === "error" || phase === "done" || phase === "send-requested" || phase === "play-requested" || pending) return null;
+          if (state.backend !== "native") return fail("This dashboard entry needs the native Blackwire console app.");
+          var library=state.library || {}, setup=state.setup || {}, settings=state.settings || {};
+          if (!setup.configured || library.phase === "initial" || library.phase === "scanning" || setup.busy) return null;
+          if (library.phase !== "ready" || library.stale) return fail("Refresh the PC library before launching this dashboard entry.");
+          var found=(state.games || []).filter(function (game) {return (game.source || game.name) === source;});
+          if (found.length !== 1) return fail("The dashboard entry's exact PC source is unavailable. Check the shared folder.");
+          var game=found[0];
+          if (expectedBinding && game.sourceBinding !== expectedBinding) return fail("This dashboard entry belongs to a different PC source or connection. Open the game from Blackwire and recreate its dashboard entry.");
+          if (pin && (pin.title !== game.titleId || pin.revision !== setup.revision || pin.server !== settings.server || pin.share !== settings.share)) return fail("The selected source or PC connection changed. Open this game again from the library.");
+          var session=state.stream || {};
+          if (active(session)) {
+            if (session.game === source) {phase="done";return null;}
+            return fail("Close the active game before using this dashboard entry.");
+          }
+          if (phase === "preparing") {
+            var jobs=(state.jobs || []).filter(function (job) {return job.id === jobId && job.name === source;});
+            if (jobs.length !== 1) return ++missing > 5 ? fail("Preparation could not be confirmed. Check Blackwire before trying again.") : null;
+            missing=0;
+            if (jobs[0].state === "queued" || jobs[0].state === "running") return null;
+            if (jobs[0].state !== "done") return fail(jobs[0].message || "Startup preparation failed. Check Blackwire before trying again.");
+            if (!game.prepared || !game.canPlay) return fail(game.playReason || "Preparation finished, but playback is unavailable for this source.");
+          } else if (activeJobs(state).length) return fail("Wait for the current preparation before using this dashboard entry.");
+          if (!pin) pin={title:game.titleId,revision:setup.revision,server:settings.server,share:settings.share};
+          try {
+            if (game.canStart === true) return request("/api/start",state);
+            if (game.canPlay) return request("/api/play",state);
+            if (!game.prepared && game.canPrepare) return request("/api/send",state);
+            return fail(game.playReason || game.preparationReason || "This source is not available for streaming.");
+          } catch (error) {return fail(error.message);}
+        };
+        flow.accepted=function (reply) {
+          var id=phase === "send-requested" ? reply && reply.jobId : reply && reply.runId;
+          if (!reply || reply.ok !== true || !/^[0-9a-f]{32}$/.test(id || "") || /^0+$/.test(id)) throw new Error("The launch request could not be confirmed. Check Blackwire before trying again.");
+          if (phase === "send-requested") {jobId=id;phase="preparing";} else if (phase === "play-requested") phase="done";
+          else throw new Error("The dashboard launch request is no longer current.");
+        };
+        flow.failed=function (error) {fail(error && error.message || "The request could not be confirmed. Check Blackwire before trying again.");};
+        return flow;
+      }
+      function orderedGames(state) {
+        var stream=state.stream || {};
+        function rank(game) {return active(stream) && stream.game === (game.source || game.name) ? 0 : ready(game) ? 1 : game.canPrepare ? 2 : 3;}
+        return libraryGames(state).slice().sort(function (a,b) {return rank(a)-rank(b) || String(a.title || a.name).localeCompare(String(b.title || b.name)) || String(a.name).localeCompare(String(b.name));});
+      }
+      function controllerStep(previous,pad,now) {
+        var command="", buttons=pad && pad.buttons, axes=pad && pad.axes;
+        function pressed(index) {var button=buttons[index];return button && (button.pressed === true || typeof button.value === "number" && button.value >= .5);}
+        if (pad && pad.connected !== false && pad.mapping === "standard" && buttons && buttons.length >= 16) {
+          command=pressed(14) ? "ArrowLeft" : pressed(15) ? "ArrowRight" : pressed(12) ? "ArrowUp" : pressed(13) ? "ArrowDown"
+            : pressed(0) ? "Confirm" : pressed(1) ? "Back" : "";
+          if (!command && axes && axes.length >= 2 && typeof axes[0] === "number" && isFinite(axes[0]) && typeof axes[1] === "number" && isFinite(axes[1]))
+            command=axes[0] < -.65 ? "ArrowLeft" : axes[0] > .65 ? "ArrowRight" : axes[1] < -.65 ? "ArrowUp" : axes[1] > .65 ? "ArrowDown" : "";
+        }
+        var valid=typeof now === "number" && isFinite(now) && now >= 0;
+        var changed=!previous || previous.held !== command || !valid || now < previous.at;
+        var next={held:command,at:valid ? now : 0,repeatAt:changed ? now+440 : previous.repeatAt,action:""};
+        if (valid && command && (changed || command.indexOf("Arrow") === 0 && now >= next.repeatAt)) {
+          next.action=command;
+          if (!changed) next.repeatAt=now+170;
+        }
+        return next;
+      }
+      function saveSetup(body, request, token) {
+        return request("/api/setup", body, token);
+      }
+      function failureMessage(message) {
+        if (typeof message !== "string") return "";
+        if (message.indexOf("reason=reader_upgrade_predecessor_unknown") !== -1)
+          return "This Blackwire payload does not match the reader installed for this game. Load the matching Blackwire ELF, then refresh this page. Sending the game files again will not fix this version mismatch.";
+        return message;
+      }
+      function failure(state, game) {
+        var stream=state.stream || {}, value=stream.lastFailure;
+        if (!value && stream.phase === "error" && typeof stream.game === "string" && typeof stream.message === "string" && stream.message) value={runId:stream.runId || "",game:stream.game,message:stream.message};
+        if (!value || typeof value.runId !== "string" || typeof value.game !== "string" || !value.game || typeof value.message !== "string" || !value.message) return null;
+        if (active(stream) && (value.runId !== stream.runId || value.game !== stream.game)) return null;
+        if (game && value.game !== (game.source || game.name)) return null;
+        return {runId:value.runId,game:value.game,message:failureMessage(value.message)};
+      }
+      function canRefresh(state,pending) {
+        return state.backend === "native" && !pending && !dashboardBusy(state) && !active(state.stream || {}) && !activeJobs(state).length && !(state.setup || {}).busy && (state.library || {}).phase !== "scanning";
+      }
+      function elapsedLabel(state) {
+        var ms=(state.stream || {}).elapsedMs;
+        if (typeof ms !== "number" || !isFinite(ms) || ms < 0 || ms > 9007199254740991 || Math.floor(ms) !== ms) return "";
+        var seconds=Math.floor(ms/1000), minutes=Math.floor(seconds/60), rest=String(seconds%60);
+        if(rest.length < 2)rest="0"+rest;
+        if(minutes < 60)return "Since launch request: "+minutes+":"+rest;
+        var part=String(minutes%60);if(part.length < 2)part="0"+part;
+        return "Since launch request: "+Math.floor(minutes/60)+":"+part+":"+rest;
+      }
+      function sessionPanel(state,pending) {
+        var stream=state.stream || {}, issue=failure(state), owned=active(stream), elapsed=elapsedLabel(state);
+        var operation=state.dashboardWatch || state.dashboard && state.dashboard.operation;
+        if(!owned && (operation && operation.action === "send" || pending && pending.action === "send"))return {visible:false};
+        if(!owned && !issue && !state.dashboardWatch && operation && operation.phase === "stopped" && !operation.active)return {visible:false};
+        if (!owned && operation && operation.phase !== "idle") {
+          var selected=libraryGames(state).filter(function (game) {return game.dashboardId === operation.itemId;})[0];
+          var removing=operation.action === "uninstall",restoring=operation.action === "restore",removal=operation.removal,detail=operation.message;
+          if(removal && removal.observed && (removing || restoring)) {
+            var phases=["Checking selected source","Removing registration","Removing console files","Removing preparation record","Updating library","Finished","Removal refused","Checking uncertain result"];
+            detail=phases[removal.phase]+(removal.filesTotal ? " · "+removal.files+" / "+removal.filesTotal+" files" : removal.files ? " · "+removal.files+" files removed" : "")+(operation.message ? ". "+operation.message : "");
+          }
+          var launchFailed=operation.action === "play" && (operation.phase === "refused" || operation.phase === "stopped" && issue && selected && issue.game === selected.source);
+          if(launchFailed && detail === "registration_ownership_intent_unconfirmed")detail="Game registration could not be confirmed. No game was started.";
+          detail=failureMessage(detail);
+          return {visible:true,key:operation.id+":"+operation.phase,failed:launchFailed || operation.phase === "refused" || operation.phase === "unknown",source:operation.title || (selected ? selected.title : "Selected game"),
+            heading:operation.phase === "waiting-for-dashboard-exit" ? removing ? "Closing Blackwire to uninstall" : restoring ? "Closing Blackwire to restore" : "Closing dashboard for launch" : launchFailed ? "Launch failed" : operation.phase === "refused" ? removing ? "Uninstall failed" : restoring ? "Restore failed" : "Action refused" : operation.phase === "unknown" ? "Operation status unknown" : removing ? "Uninstalling "+(operation.title || selected && selected.title || "selected game") : restoring ? "Restoring library entry" : operation.phase === "running" ? "Game session open" : operation.phase === "stopped" ? "Game closed" : "Starting game",
+            message:detail || "Checking the exact dashboard operation.",ownershipLabel:operation.phase === "waiting-for-dashboard-exit" ? "Waiting for the native dashboard to exit normally." : operation.active || state.dashboardWatch ? "The operation is retained. Further actions are paused." : "",
+            primaryVisible:false,primaryEnabled:false,refreshVisible:true,refreshEnabled:!pending,dismissible:!operation.active && !state.dashboardWatch && operation.phase !== "unknown"};
+        }
+        if (!owned && !issue) return {visible:false};
+        var source=owned ? stream.game : issue ? issue.game : stream.game;
+        var game=libraryGames(state).filter(function (item) {return (item.source || item.name) === source;})[0];
+        var close=owned && stream.canClose === true, action=game ? actions(game,state,pending) : null;
+        var retry=!owned && issue && action && action.canPlay;
+        var stillOwned=owned || stream.canClose === true || stream.gamePid > 0 || stream.readerPid > 0;
+        var exact=state.backend === "native" && typeof stream.runId === "string" && /^[0-9a-f]{32}$/.test(stream.runId) && !/^0+$/.test(stream.runId)
+          && typeof stream.game === "string" && !!stream.game && (!issue || issue.runId === stream.runId && issue.game === stream.game);
+        var released=exact && !stillOwned && (stream.phase === "stopped" || stream.phase === "error")
+          && stream.gamePid === 0 && stream.readerPid === 0 && stream.canClose === false;
+        var ownership=stillOwned ? stream.canClose === true ? issue ? "Session is still open. Close it before trying again." : "Session is open."
+          : "Session is still open. Wait for Blackwire to release it." : released ? "Session closed." : "Session release is not confirmed.";
+        return {visible:true,compact:owned && stream.phase === "running" && !issue,key:(issue ? issue.runId : stream.runId)+":"+(issue ? "error" : stream.phase),failed:!!issue,source:game ? game.title : source || "",elapsedLabel:elapsed,ownershipLabel:stillOwned || !released ? ownership : "",heading:issue ? "Launch failed" : !owned ? "Last game session ended" : stream.phase === "unknown" ? "Session status unknown" : stream.phase === "running" ? "Game launched" : stream.phase === "closing" ? "Closing session" : "Starting game",
+          message:issue ? issue.message : stream.message || (owned ? "Blackwire is checking the selected session." : "The session has ended."),
+          primaryVisible:close || !!retry,primaryLabel:close ? stream.gamePid > 0 ? "Close game" : "Cancel launch" : "Retry",primaryEnabled:!pending && (close || !!retry),
+          route:close ? "/api/close" : action ? action.playRoute : "",closing:close,game:game,
+          refreshVisible:!owned,refreshEnabled:canRefresh(state,pending),dismissible:released};
+      }
+      function sessionNotice(stream,amount) {
+        stream=stream || {};
+        if(stream.phase !== "running")return stream.message || "Starting the selected game…";
+        if(stream.dataCountersObserved === false || typeof stream.networkBytes !== "number" || !isFinite(stream.networkBytes))
+          return stream.message || "Game launched. PC reader delivery has not been observed.";
+        return "Game active · " + amount(stream.networkBytes) + " read from PC · fixed working cache";
+      }
+      function actions(game, state, pending) {
+        if (game.dashboardId) return dashboardActions(game,state,pending);
+        var session = state.stream || {};
+        var jobs = activeJobs(state);
+        var selected = session.game === game.name;
+        var running = active(session);
+        var compatibility = game.compatibility || {};
+        var issue=failure(state,game);
+        var busyReason = pending ? "Wait for the current request to finish."
+          : jobs.length ? "Preparing " + jobs[0].name + "."
+          : running ? (selected ? "This game is already active." : "Close the active game first.") : "";
+        var closing = selected && running && (typeof session.canClose === "boolean" ? session.canClose : session.gamePid > 0 && session.readerPid > 0);
+        var legacy = typeof game.canPrepare === "undefined";
+        var startupReady = startupFilesReady(game);
+        var showPrepare = !startupReady && !closing, showPlay = startupReady || closing;
+        var canPrepare = showPrepare && (game.canPrepare === true || legacy && game.onConsole === true && game.canPlay === true);
+        var prepareReason = busyReason || (canPrepare ? "" : game.preparationReason || compatibility.reason
+          || (legacy ? "Refresh Blackwire before preparing this source." : "Preparation is not available for this source."));
+        var playReason = closing ? (pending ? busyReason : session.phase === "unknown" && session.canClose !== true ? "The current session could not be checked." : "")
+          : busyReason || (startupReady && (game.canPlay === true || game.canStart === true) ? "" : game.playReason || compatibility.reason || "Prepare this game before playing.");
+        return {
+          prepareLabel: game.setupOnly === true ? "Finish setup" : "Send files", showPrepare:showPrepare, showPlay:showPlay, prepareReason: prepareReason, canPrepare: showPrepare && !prepareReason,
+          playLabel: closing ? session.phase === "unknown" ? "Close session" : session.gamePid > 0 ? "Close game" : "Cancel launch" : selected && running ? session.phase === "closing" ? "Closing…" : "Starting…" : issue ? "Retry" : "Play",
+          playReason: playReason, canPlay: showPlay && !playReason, close: closing,
+          playRoute: state.backend === "native" && game.canStart === true ? "/api/start" : "/api/play",
+          badge: issue ? selected && running ? "Launch failed; session open" : "Last launch failed" : selected && running ? (session.phase === "unknown" ? "Status unavailable" : session.phase === "running" ? session.dataCountersObserved === false ? "Launched" : "Running" : session.phase === "preparing" ? "Preparing" : "Starting")
+            : selected && session.phase === "error" ? "Last launch failed"
+            : ready(game) ? "Startup ready" : state.backend === "native" && game.prepared === true ? "Startup files prepared" : game.canPrepare === true ? "Ready to prepare" : "Unavailable"
+        };
+      }
+      function dashboardActions(game,state,pending) {
+        var stream=state.stream || {}, selected=game.kind === 1 && stream.game === game.source, running=active(stream);
+        var close=selected && running && stream.canClose === true, issue=game.kind === 1 ? failure(state,game) : null;
+        var operation=state.dashboardWatch || state.dashboard && state.dashboard.operation;
+        var preparing=preparationBusyReason(state);
+        var busy=pending ? pending.action === "send" ? "Preparing " + (pending.title || pending.name) + ". Wait for the request to finish." : "Wait for the current request to finish." : state.dashboardUnavailable ? "Refresh the dashboard connection before continuing."
+          : preparing || (dashboardBusy(state) ? operation && operation.message || "Wait for the current dashboard operation." : activeJobs(state).length ? "Wait for the current file preparation." : running ? "Close the active game first." : "");
+        var closingReason=pending ? busy : state.dashboardUnavailable ? busy : "";
+        var showPrepare=!game.removed && game.kind === 1 && !startupFilesReady(game) && !close, showPlay=!game.removed && (game.kind !== 1 || startupFilesReady(game) || close);
+        var ownPreparation=preparationPanel(state,pending), ownSending=ownPreparation.visible && ownPreparation.busy && ownPreparation.itemId === game.dashboardId;
+        return {prepareLabel:ownSending ? "Preparing…" : game.setupOnly === true ? "Finish setup" : "Send files",showPrepare:showPrepare,showPlay:showPlay,canPrepare:showPrepare && !busy && game.canPrepare,
+          prepareReason:game.kind === 1 ? busy || (game.canPrepare ? "" : game.preparationReason || "Preparation is unavailable.") : "",
+          playLabel:close ? stream.gamePid > 0 ? "Close game" : "Cancel launch" : game.kind === 1 && game.startupReady && game.dashboardLaunchReady === false ? "Finish setup and play" : "Play",close:close,
+          canPlay:close ? !closingReason : showPlay && !busy && game.canPlay,
+          playReason:close ? closingReason : busy || (game.canPlay ? "" : game.playReason || "This source is not available to launch."),playRoute:"/api/dashboard/action",
+          canUninstall:!busy && game.canUninstall === true,canRestore:!busy && game.removed === true && game.canRestore === true,
+          uninstallReason:busy || game.uninstallReason || "",restoreReason:busy || game.restoreReason || "",
+          badge:game.removed ? "Removed · PC backup preserved" : ownSending ? ownPreparation.state === "unknown" ? "Checking preparation" : "Preparing files" : selected && running ? stream.phase === "running" ? stream.dataCountersObserved === false ? "Launched" : "Running" : "Starting"
+            : issue ? "Last launch failed" : game.dashboardLaunchReady === false && startupFilesReady(game) ? "Dashboard setup needed" : ready(game) ? game.kind === 1 ? "Startup ready" : "Ready on PS5" : "Not ready"};
+      }
+      var api = { dashboardLibrary:dashboardLibrary,libraryGames:libraryGames,dashboardBody:dashboardBody,dashboardAccepted:dashboardAccepted,dashboardPost:dashboardPost,dashboardWatch:dashboardWatch,dashboardBusy:dashboardBusy,browserHandoff:browserHandoff,
+        preparationPanel:preparationPanel,preparationNotifications:preparationNotifications,validPreparation:validPreparation,
+        failure:failure, canRefresh:canRefresh, elapsedLabel:elapsedLabel, sessionPanel:sessionPanel, sessionNotice:sessionNotice, active: active, activeJobs: activeJobs, connection:connection, readState:readState, readAppState:readAppState, setupPresentation:setupPresentation, setupBody:setupBody, setupResult:setupResult, preparationBody:preparationBody, playBody:playBody, dashboardLaunch:dashboardLaunch, orderedGames:orderedGames, controllerStep:controllerStep, ready:ready, matches: matches, counts:counts, actions: actions, saveSetup:saveSetup };
+      root.BlackwireView = api;
+      if (typeof module !== "undefined" && module.exports) module.exports = api;
+    })(typeof window !== "undefined" ? window : globalThis);
+  </script>
+<script id="blackwire-app">
+    (function () {
+      var view = window.BlackwireView;
+      var search = document.getElementById("search");
+      var smbUser = document.getElementById("smbUser");
+      var smbPassword = document.getElementById("smbPassword");
+      var server = document.getElementById("server");
+      var shareName = document.getElementById("shareName");
+      var keepCredentials = document.getElementById("keepCredentials");
+      var note = document.getElementById("note");
+      var games = document.getElementById("games");
+      var selectedGame = document.getElementById("selectedGame");
+      var detailsBody = document.getElementById("detailsBody");
+      var detailsOpen = false;
+      var removalConfirmation = null;
+      var layout = "carousel";
+      var cards = Object.create(null);
+      var selectedName = "";
+      var visibleNames = [];
+      var controllerState = null;
+      var keyboardAt = 0;
+      var sequence = 0;
+      var state = null;
+      var statusFresh = false;
+      var statusError = "";
+      var pending = null;
+      var operationWatch = null;
+      var browserHandoff = view.browserHandoff(window.location,window.navigator);
+      var dismissedSessionKey = "";
+      var notice = null;
+      var preparationIssue = null;
+      var preparationNotice = view.preparationNotifications();
+      var preparationToastTimer;
+      var preparationCurrent = null;
+      var preparationReadySeen = Object.create(null);
+      var preparationReadyTimers = Object.create(null);
+      var preparationReadyOrder = [];
+      var timer;
+      var loading = false;
+      var reload = false;
+      var settingsDirty = false;
+      var initialSetup = false;
+      var formRevision = 0;
+      var formToken = "";
+      var nativeSaveOperation = 0;
+      var setupPosting = false;
+      var filter = "all";
+      var filters = ["all", "pc", "console", "ready", "not-ready", "removed"];
+      var dashboardFlow=null;
+      var fragment=null;
+      var setupScrollPending=false;
+      var setupFocusPending=false;
+      function readFragment() {
+        var next=location.hash || "";
+        if (next !== fragment) {setupScrollPending=setupFocusPending=next === "#setup";}
+        fragment=next;
+        try {dashboardFlow=view.dashboardLaunch(next);notice=null;} catch (error) {dashboardFlow=null;notice={text:error.message,kind:"bad"};}
+      }
+      readFragment();
+
+      function text(node, value) {
+        value = String(value || "");
+        if (node.textContent !== value) node.textContent = value;
+      }
+      function control(button,enabled) {
+        button.setAttribute("aria-disabled",enabled ? "false" : "true");
+        // A polling capability change must not evict keyboard/controller focus.
+        // Click handlers recheck current capabilities, including aria-disabled
+        // focused controls; all other unavailable controls remain native-disabled.
+        button.disabled=!enabled && document.activeElement !== button;
+      }
+      function amount(bytes) {
+        if (!bytes) return "0 MiB";
+        return bytes >= 1073741824 ? (bytes / 1073741824).toFixed(1) + " GiB" : Math.max(1, Math.round(bytes / 1048576)) + " MiB";
+      }
+      function node(tag, className, parent) {
+        var element = document.createElement(tag);
+        if (className) element.className = className;
+        if (parent) parent.appendChild(element);
+        return element;
+      }
+      function createCard(name) {
+        var card={root:node("article","card",games)};
+        card.select=node("button","cover-choice",card.root);card.select.type="button";card.select.setAttribute("aria-controls","selectedGame");
+        card.cover=node("div","cover",card.select);card.coverLabel=node("span","cover-label",card.cover);card.coverLabel.setAttribute("aria-hidden","true");
+        card.image=node("img","",card.cover);card.image.loading="lazy";card.image.alt="";
+        card.sourceBadge=node("span","src",card.cover);card.statusDot=node("span","badge",card.cover);card.statusDot.setAttribute("aria-hidden","true");
+        card.railTitle=node("span","card-title",card.select);card.railBadge=node("span","production-hidden",card.select);
+        card.details=node("div","game-details",detailsBody);card.details.hidden=true;
+        card.title=node("h3","",card.details);card.title.id="game-title-"+(++sequence);card.details.setAttribute("aria-labelledby",card.title.id);
+        var kv=node("dl","kv",card.details);
+        text(node("dt","",kv),"Status");card.badge=node("dd","detail-status",kv);
+        text(node("dt","",kv),"Title ID");card.titleIdentifier=node("dd","",kv);
+        text(node("dt","",kv),"Source");card.sourceDescriptor=node("dd","",kv);
+        text(node("dt","",kv),"On PS5");card.size=node("dd","",kv);
+        text(node("dt","",kv),"Stays on PC");card.stay=node("dd","",kv);
+        card.failure=node("p","detail-reason",card.details);card.failure.hidden=true;
+        card.progress=node("div","progress",card.details);card.progress.hidden=true;
+        var progressTop=node("div","progress-top",card.progress);card.progressLabel=node("span","",progressTop);card.progressPercent=node("span","",progressTop);
+        card.progressTrack=node("div","bar",card.progress);card.progressTrack.setAttribute("role","progressbar");card.progressTrack.setAttribute("aria-label","Startup file preparation");card.progressFill=node("span","",card.progressTrack);
+        var bindings=node("div","detail-bindings",card.details);
+        card.meta=node("p","",bindings);card.homeStatus=node("p","",bindings);card.testing=node("p","",bindings);card.storageNote=node("p","",bindings);card.job=node("p","",bindings);
+        card.detailImage=node("img","",bindings);card.detailImage.alt="";
+        card.playGroup=node("div","",bindings);card.play=node("button","",card.playGroup);card.play.type="button";card.playReason=node("p","",card.playGroup);
+        card.prepareGroup=node("div","",bindings);card.prepare=node("button","",card.prepareGroup);card.prepare.type="button";card.prepareReason=node("p","",card.prepareGroup);
+        card.footer=node("div","row",card.details);card.removalGroup=node("div","",card.footer);card.remove=node("button","btn btn-ghost danger",card.removalGroup);card.remove.type="button";card.removeReason=node("p","production-hidden",card.removalGroup);
+        card.restoreGroup=node("div","",card.footer);card.restore=node("button","btn btn-ghost",card.restoreGroup);card.restore.type="button";text(card.restore,"Restore to library");card.restoreReason=node("p","production-hidden",card.restoreGroup);
+        card.select.addEventListener("click", function () { selectGame(name,false,true); });
+        card.select.addEventListener("focus", function () { selectGame(name,false,true); });
+        card.image.addEventListener("error", function () {
+          card.failedImage=card.image.getAttribute("src");
+          card.image.hidden=true;
+          card.coverLabel.hidden=false;
+        });
+        card.play.addEventListener("click", function () {
+          var action = view.actions(card.game, state, pending);
+          if (!action.canPlay) return;
+          if (card.game.dashboardId && !action.close) {requestDashboard(card.game,"play");return;}
+          var body;
+          try {body=view.playBody(state,name,action.close);} catch (error) {notice={text:error.message,kind:"bad"};show(state);return;}
+          requestAction(action.close ? "/api/close" : action.playRoute, body, action.close ? "Closing " + (card.game.title || name) : "Starting " + (card.game.title || name));
+        });
+        card.prepare.addEventListener("click", function () {
+          if (!view.actions(card.game, state, pending).canPrepare) return;
+          if (card.game.dashboardId) {requestDashboard(card.game,"send");return;}
+          var body;
+          try {body=view.preparationBody(state,name);} catch (error) {notice={text:error.message,kind:"bad"};show(state);return;}
+          requestAction("/api/send", body, "Preparing " + name);
+        });
+        card.remove.addEventListener("click",function () {
+          if(!view.actions(card.game,state,pending).canUninstall)return;
+          removalConfirmation={id:card.game.dashboardId,titleId:card.game.titleId,generation:state.dashboard.catalogGeneration,name:name};
+          text(document.getElementById("removalTitle"),(card.game.title || name)+" · "+card.game.titleId);
+          text(document.getElementById("removalDescription"),card.game.kind === 1 ? "Removes this game's prepared console files and registration, and hides this PC source from your library. Your PC backup and saved games remain. Restore is available under Removed."
+            : "Removes this selected full console game and its registration. Saved games and other copies remain. Keep another backup if you want to install it again.");
+          document.getElementById("removalConfirm").hidden=false;detailsBody.hidden=true;detailsBody.inert=true;
+          document.getElementById("cancelRemoval").focus();
+        });
+        card.restore.addEventListener("click",function () {if(view.actions(card.game,state,pending).canRestore)requestDashboard(card.game,"restore");});
+        cards[name] = card;
+        return card;
+      }
+      function scrollCover(card) {
+        if (!card) return;
+        if (layout === "grid") {
+          if (document.activeElement === card.select) card.select.scrollIntoView({block:"nearest",inline:"nearest"});
+          return;
+        }
+        var item=card.root.getBoundingClientRect(), rail=games.getBoundingClientRect();
+        // Scroll the rail only; scrolling an ancestor can hide the selected actions.
+        games.scrollLeft += item.left + item.width/2 - rail.left - rail.width/2;
+      }
+      function selectGame(name,focus,scroll) {
+        if (visibleNames.indexOf(name) === -1 || !cards[name]) return;
+        var previous=cards[selectedName];
+        if (previous && previous !== cards[name] && previous.details.contains(document.activeElement)) cards[name].select.focus();
+        selectedName=name;
+        Object.keys(cards).forEach(function (key) {
+          var chosen=key === selectedName;
+          cards[key].root.className="card"+(chosen?" sel":"");
+          cards[key].select.setAttribute("aria-pressed",String(chosen));
+          cards[key].select.tabIndex=chosen ? 0 : -1;
+          cards[key].details.hidden=!chosen;
+        });
+        selectedGame.hidden=!detailsOpen;
+        selectedGame.setAttribute("aria-labelledby",cards[name].title.id);
+        var game=cards[name].game;
+        document.getElementById("heroCopy").hidden=false;document.getElementById("heroActions").hidden=false;
+        var back=document.getElementById("closeDetails");if(back.parentElement)back.remove();cards[name].footer.appendChild(back);
+        text(cards[name].titleIdentifier,game.titleId || "Not known");text(cards[name].sourceDescriptor,game.kind >= 2 ? "Console" : "PC");
+        text(document.getElementById("heroTitle"),game.title || game.name);
+        text(document.getElementById("heroSource"),game.kind >= 2 ? "Console" : "PC");
+        var measured=typeof game.consoleAllocatedBytes === "number" && game.storageVerifiedAt === "preparation";
+        text(document.getElementById("heroStorage"),measured ? amount(game.consoleAllocatedBytes)+" on PS5" : "");document.getElementById("heroStorage").hidden=!measured;
+        var action=view.actions(game,state,pending),prepared=view.preparationPanel(state,pending),ownPrep=prepared.visible && prepared.busy && prepared.itemId === game.dashboardId;
+        var issue=game.kind >= 2 ? null : view.failure(state,game),ownRun=view.active(state.stream || {}) && (state.stream || {}).game === (game.source || game.name);
+        var prepAttention=prepared.visible && prepared.itemId === game.dashboardId && (prepared.state === "error" || prepared.state === "unknown" || prepared.state === "setup-needed");
+        var status=prepAttention ? prepared.state === "unknown" ? "Checking status" : "Needs attention" : ownPrep ? "Preparing" : issue ? "Needs attention" : ownRun ? (state.stream || {}).phase === "running" ? "Running" : "Starting" : game.removed ? "Removed" : view.ready(game) ? "Ready" : "Not ready";
+        var operation=state.dashboardWatch || state.dashboard && state.dashboard.operation;
+        var ownLaunch=(pending && pending.action === "play" && pending.itemId === game.dashboardId) || (operation && operation.action === "play" && operation.itemId === game.dashboardId && operation.active);
+        if(ownLaunch && !ownRun && !issue)status=operation && operation.phase === "unknown" ? "Checking status" : "Starting";
+        text(document.getElementById("heroStatusLabel"),status);text(cards[name].badge,status);
+        document.getElementById("heroStatus").className="status "+(prepAttention ? "s-attn" : ownPrep ? "s-prep" : issue ? "s-attn" : ownRun ? "s-play" : view.ready(game) ? "s-ready" : "s-notready");
+        document.getElementById("heroStatus").setAttribute("data-readiness",cards[name].root.getAttribute("data-readiness"));
+        renderHeroAction(cards[name]);
+        if(ownLaunch && !ownRun && !issue) {
+          document.getElementById("heroStatus").className="status "+(operation && operation.phase === "unknown" ? "s-attn" : "s-play");
+          text(document.getElementById("heroPrimary"),operation && operation.phase === "unknown" ? "Check status" : "Starting…");
+        }
+        text(cards[name].size,game.kind >= 2 ? "Full copy" : measured ? amount(game.consoleAllocatedBytes) : typeof game.sendBytes === "number" ? amount(game.sendBytes)+(game.onConsole ? "" : " to prepare") : "Not checked");cards[name].size.hidden=false;
+        text(cards[name].stay,game.kind >= 2 ? "—" : typeof game.stayBytes === "number" ? amount(game.stayBytes) : "Not checked");
+        var artwork=document.getElementById("stageArt"),image=cards[name].image.getAttribute("src");
+        artwork.hidden=cards[name].image.hidden || !image;
+        if(image && artwork.getAttribute("src") !== image)artwork.setAttribute("src",image);
+        artwork.style.backgroundImage=artwork.hidden ? "" : "url("+JSON.stringify(image)+")";
+        var index=visibleNames.indexOf(name);
+        text(document.getElementById("railPosition"),(index+1) + " / " + visibleNames.length);
+        control(document.getElementById("previousGame"),index > 0);
+        control(document.getElementById("nextGame"),index < visibleNames.length-1);
+        if (scroll) scrollCover(cards[name]);
+        syncPreparationPlacement();
+        if (focus && document.activeElement !== cards[name].select) cards[name].select.focus();
+      }
+      function heroAction(card) {
+        if(!card || !card.game)return null;
+        var action=view.actions(card.game,state,pending);
+        if(action.showPlay !== false)return {button:card.play,enabled:action.canPlay,label:action.playLabel,reason:action.playReason,kind:"play"};
+        if(action.showPrepare !== false && !card.game.removed)return {button:card.prepare,enabled:action.canPrepare,label:action.prepareLabel,reason:action.prepareReason,kind:"send"};
+        if(card.game.removed)return {button:card.restore,enabled:action.canRestore,label:"Restore to library",reason:action.restoreReason,kind:"restore"};
+        return null;
+      }
+      function renderHeroAction(card) {
+        var action=heroAction(card),primary=document.getElementById("heroPrimary"),reason=document.getElementById("heroReason");
+        text(primary,action ? action.label : "Unavailable");
+        control(primary,!!(action && action.enabled));
+        primary.setAttribute("data-action",action ? action.kind : "none");
+        text(reason,action && action.reason || "");reason.hidden=!action || !action.reason;
+        control(document.getElementById("heroDetails"),!!card);
+      }
+      function moveGame(step) {
+        var index=visibleNames.indexOf(selectedName);
+        var next=Math.max(0,Math.min(visibleNames.length-1,index+step));
+        if (visibleNames[next]) selectGame(visibleNames[next],true,true);
+      }
+      function focusActions() {
+        if(detailsOpen)document.getElementById("closeDetails").focus();
+        else if(cards[selectedName]) {
+          var primary=document.getElementById("heroPrimary");
+          (primary.getAttribute("aria-disabled") !== "true" ? primary : document.getElementById("heroDetails")).focus();
+        }
+      }
+      function setDetailsOpen(open,focus) {
+        if(open && !cards[selectedName])return;
+        if(!open)cancelRemoval(false);
+        detailsOpen=!!open;
+        selectedGame.hidden=!detailsOpen;
+        syncOverlays();
+        if(focus) {
+          if(detailsOpen)focusActions();
+          else if(cards[selectedName])cards[selectedName].select.focus();
+        }
+      }
+      function syncOverlays() {
+        var setupOpen=document.getElementById("setupPanel").open;
+        document.getElementById("settingsOverlay").hidden=!setupOpen;
+        document.getElementById("settingsOverlay").className=setupOpen ? "sheet on" : "sheet";
+        document.getElementById("helpOverlay").className=document.getElementById("helpOverlay").hidden ? "sheet" : "sheet on";
+        selectedGame.className=detailsOpen ? "sheet on" : "sheet";
+        var any=detailsOpen || setupOpen || !document.getElementById("helpOverlay").hidden;
+        document.getElementById("librarySurface").inert=any;
+        document.body.style.overflow=any || layout !== "grid" ? "hidden" : "auto";
+        syncPreparationPlacement();
+      }
+      function openSettings() {
+        setDetailsOpen(false,false);document.getElementById("helpOverlay").hidden=true;
+        var panel=document.getElementById("setupPanel");panel.open=true;syncOverlays();
+        if(!server.disabled)server.focus();else document.getElementById("closeSetup").focus();
+      }
+      function closeSettings() {
+        document.getElementById("setupPanel").open=false;syncOverlays();document.getElementById("connectionChip").focus();
+      }
+      function closeHelp() {document.getElementById("helpOverlay").hidden=true;syncOverlays();document.getElementById("openHelp").focus();}
+      function auxiliaryControls() {
+        var help=!document.getElementById("helpOverlay").hidden;
+        if(help)return [document.getElementById("closeHelp")];
+        if(!document.getElementById("setupPanel").open)return null;
+        return ["closeSetup","server","shareName","smbUser","smbPassword","pwToggle","keepCredentials","saveSetup","reloadSetup"].map(function (id) {return document.getElementById(id);}).filter(function (button) {
+          return !button.disabled && !button.hidden && (button !== keepCredentials || !document.getElementById("keepCredentialsField").hidden);
+        });
+      }
+      function cancelRemoval(focus) {
+        var prior=removalConfirmation;removalConfirmation=null;
+        document.getElementById("removalConfirm").hidden=true;detailsBody.hidden=false;detailsBody.inert=false;
+        if(focus && prior && cards[prior.name] && !cards[prior.name].removalGroup.hidden)cards[prior.name].remove.focus();
+      }
+      document.getElementById("cancelRemoval").addEventListener("click",function () {cancelRemoval(true);});
+      document.getElementById("confirmRemoval").addEventListener("click",function () {
+        var confirmed=removalConfirmation;if(!confirmed || !state || !state.dashboard || state.dashboard.catalogGeneration !== confirmed.generation)return;
+        var card=cards[confirmed.name];if(!card || card.game.dashboardId !== confirmed.id || card.game.titleId !== confirmed.titleId)return;
+        cancelRemoval(false);setDetailsOpen(false,false);requestDashboard(card.game,"uninstall",confirmed.titleId);
+      });
+      function setLayout(next,persist) {
+        if(next !== "carousel" && next !== "grid")return;
+        layout=next;
+        document.getElementById("librarySurface").setAttribute("data-layout",layout);
+        games.setAttribute("data-layout",layout);
+        document.getElementById("libraryStage").setAttribute("data-layout",layout);
+        document.getElementById("layoutCarousel").setAttribute("aria-pressed",String(layout === "carousel"));
+        document.getElementById("layoutGrid").setAttribute("aria-pressed",String(layout === "grid"));
+        syncOverlays();
+        if(persist)try {localStorage.setItem("blackwire-library-layout",layout);}catch(error){}
+        scrollCover(cards[selectedName]);
+      }
+      function renderCards() {
+        if (!state) return;
+        if(removalConfirmation && (!state.dashboard || state.dashboard.catalogGeneration !== removalConfirmation.generation || !state.dashboard.items.some(function (item) {return item.id === removalConfirmation.id && item.titleId === removalConfirmation.titleId && item.canUninstall === true;}))) {
+          cancelRemoval(true);notice={text:"The library changed. Review the selected source before uninstalling.",kind:"bad"};
+        }
+        var present = Object.create(null);
+        var libraryHadFocus=games.contains(document.activeElement) || selectedGame.contains(document.activeElement);
+        var previousSelection=selectedName;
+        visibleNames = [];
+        view.orderedGames(state).forEach(function (game,index) {
+          present[game.name] = true;
+          var card = cards[game.name] || createCard(game.name);
+          var before=games.children[index];
+          // Polls update existing nodes without moving the selected cover or action.
+          if (before !== card.root && !games.contains(document.activeElement) && !selectedGame.contains(document.activeElement)) games.insertBefore(card.root,before || null);
+          card.game = game;
+          card.root.setAttribute("data-ready",view.ready(game) ? "true" : "false");
+          card.root.hidden = !view.matches(game, search.value, filter);
+          if (!card.root.hidden) visibleNames.push(game.name);
+          text(card.title, game.title || game.name);
+          text(card.railTitle,game.title || game.name);
+          card.select.setAttribute("aria-label","Details for " + (game.title || game.name));
+          text(card.sourceBadge,game.kind >= 2 ? "PS5" : "PC");
+          text(card.meta, (game.titleId ? game.titleId + "\n" : "") + (game.source || (game.name !== game.title ? game.name : "")));
+          var image = game.dashboardId ? game.cover : "/cover?name=" + encodeURIComponent(game.name);
+          if (!game.dashboardId && view.connection(state).native) image += "&v=" + ((state.library || {}).generation || 0);
+          var imageFailed=card.failedImage === image;
+          card.image.hidden = !game.cover || imageFailed;
+          text(card.coverLabel,String(game.title || game.name || "B").replace(/[^a-z0-9\u00c0-\uffff]/gi, "").slice(0,2) || "B");
+          card.coverLabel.hidden=!!game.cover && !imageFailed;
+          if (game.cover && card.image.getAttribute("src") !== image) card.image.setAttribute("src", image);
+          card.detailImage.hidden=card.image.hidden;
+          if(game.cover && card.detailImage.getAttribute("src") !== image)card.detailImage.setAttribute("src",image);
+          text(card.testing, game.kind >= 2 ? game.kind === 2 ? "Console folder" : game.kind === 3 ? "Installed console package" : "Console image" : game.sourceKind === "container" ? "PC streaming · Compressed source" : game.sourceKind === "folder" ? "PC streaming · Folder source" : "PC streaming");
+          var issue=game.kind >= 2 ? null : view.failure(state,game);
+          text(card.failure,issue ? issue.message : "");
+          card.failure.hidden=!issue;
+          var sizesKnown = game.sizeKnown !== false && typeof game.sendBytes === "number" && typeof game.stayBytes === "number";
+          var consoleMeasured = game.onConsole && typeof game.consoleAllocatedBytes === "number" && game.storageVerifiedAt === "preparation";
+          text(card.size, game.consoleStorageUnconfirmed ? "Console space needs a fresh check" : consoleMeasured
+            ? "PS5 startup: " + amount(game.consoleAllocatedBytes)
+            : sizesKnown ? "Startup files: " + amount(game.sendBytes) + (game.onConsole ? " copied to PS5" : " to prepare on PS5") : "Size not checked");
+          card.size.hidden = !game.consoleStorageUnconfirmed && !consoleMeasured && !sizesKnown;
+          text(card.stay, game.removed ? "Your original PC backup is preserved. Restore this source to prepare it again." : game.kind >= 2 ? "Uses this console copy. No PC streaming is needed." : sizesKnown ? amount(game.stayBytes) + " stays on the PC" : game.scanMessage || "Storage is checked during preparation.");
+          text(card.storageNote,game.kind >= 2 ? "" : "Streamed files show their full logical size. Empty sparse regions do not use that amount of PS5 storage.");
+          card.storageNote.hidden=game.kind >= 2;
+          var action = view.actions(game, state, pending);
+          var detailReason=issue ? issue.message : action.showPlay !== false ? action.playReason : action.prepareReason;
+          var ownProgress=view.preparationPanel(state,pending);
+          if(ownProgress.visible && ownProgress.itemId === game.dashboardId)detailReason="";
+          text(card.failure,detailReason || "");card.failure.hidden=!detailReason;
+          var readiness=game.removed ? "removed" : issue ? "not-ready" : view.ready(game) ? "ready" : "not-ready";
+          card.root.setAttribute("data-readiness",readiness);
+          card.badge.setAttribute("data-readiness",readiness);
+          text(card.badge, action.badge);
+          var homeKnown=game.kind === 1 && !game.removed && game.startupReady && typeof game.dashboardLaunchReady === "boolean";
+          text(card.homeStatus,homeKnown ? game.dashboardLaunchReady ? "Ready from the PS5 dashboard." : game.dashboardLaunchReason || "Dashboard setup needs attention. Choose Play here to finish setup without sending the files again." : "");
+          card.homeStatus.className="meta"+(homeKnown ? game.dashboardLaunchReady ? " ok" : " bad" : "");
+          card.homeStatus.hidden=!homeKnown;
+          text(card.railBadge,action.badge);
+          text(card.play, action.playLabel);
+          card.play.setAttribute("aria-label", action.playLabel + " " + (game.title || game.name));
+          control(card.play,action.canPlay);
+          card.playGroup.hidden=action.showPlay === false;
+          text(card.playReason, action.playReason);
+          text(card.prepare, action.prepareLabel);
+          card.prepare.setAttribute("aria-label", action.prepareLabel + " for " + (game.title || game.name));
+          control(card.prepare,action.canPrepare);
+          card.prepareGroup.hidden=action.showPrepare === false;
+          text(card.prepareReason, action.prepareReason);
+          card.removalGroup.hidden=game.canUninstall !== true;
+          text(card.remove,"Uninstall from PS5");card.remove.setAttribute("aria-label","Uninstall " + (game.title || game.name));
+          control(card.remove,action.canUninstall === true);text(card.removeReason,action.uninstallReason || "");
+          card.restoreGroup.hidden=game.removed !== true;
+          card.restore.setAttribute("aria-label","Restore " + (game.title || game.name) + " to library");
+          control(card.restore,action.canRestore === true);text(card.restoreReason,action.restoreReason || "");
+          if (card.playGroup.hidden && document.activeElement === card.play || card.prepareGroup.hidden && document.activeElement === card.prepare) {
+            if (action.canPlay && !card.playGroup.hidden) card.play.focus();
+            else if (action.canPrepare && !card.prepareGroup.hidden) card.prepare.focus();
+            else card.select.focus();
+          }
+          var jobs = (state.jobs || []).filter(function (job) { return job.name === (game.source || game.name); });
+          var job = jobs[jobs.length - 1];
+          text(card.job, job ? job.error || job.message || job.state : "");
+          card.job.className = "job" + (job && job.state === "error" ? " bad" : "");
+          card.job.hidden = !job;
+        });
+        Object.keys(cards).forEach(function (name) {
+          if (!present[name]) {
+            if (cards[name].root.contains(document.activeElement) || cards[name].details.contains(document.activeElement)) search.focus();
+            cards[name].details.remove();
+            cards[name].root.remove();
+            delete cards[name];
+          }
+        });
+        if (visibleNames.length) {
+          if(detailsOpen && visibleNames.indexOf(selectedName) === -1)setDetailsOpen(false,false);
+          if (visibleNames.indexOf(selectedName) === -1) selectedName=visibleNames[0];
+          selectGame(selectedName,false,false);
+          if (libraryHadFocus && selectedName !== previousSelection) selectGame(selectedName,true,true);
+        } else {
+          if (games.contains(document.activeElement) || selectedGame.contains(document.activeElement)) search.focus();
+          selectedName="";
+          setDetailsOpen(false,false);
+          document.getElementById("heroCopy").hidden=true;document.getElementById("heroActions").hidden=true;
+          document.getElementById("stageArt").hidden=true;
+          Object.keys(cards).forEach(function (name) {cards[name].details.hidden=true;cards[name].select.tabIndex=-1;cards[name].select.setAttribute("aria-pressed","false");});
+          text(document.getElementById("railPosition"),"0 / 0");
+          control(document.getElementById("previousGame"),false);control(document.getElementById("nextGame"),false);
+        }
+        var libraryGames=view.libraryGames(state);
+        var totals=view.counts(libraryGames,"");
+        text(document.getElementById("resultCount"),visibleNames.length+" game"+(visibleNames.length === 1 ? "" : "s"));
+        document.getElementById("clearSearch").style.display=search.value ? "block" : "none";
+        var counts = view.counts(libraryGames, search.value);
+        filters.forEach(function (value) {
+          var tab = document.getElementById("filter-" + value);
+          var label = value === "all" ? "All" : value === "pc" ? "PC" : value === "console" ? "Console" : value === "ready" ? "Ready" : value === "removed" ? "Removed" : "Not ready";
+          text(tab,(value === "all" || value === "ready" || value === "not-ready") ? label : label+" ("+counts[value]+")");
+          tab.setAttribute("aria-selected", String(filter === value));
+          tab.tabIndex = filter === value ? 0 : -1;
+        });
+        var empty = document.getElementById("empty");
+        empty.hidden = visibleNames.length > 0;
+        text(empty, libraryGames.length ? "No games match this search." : state.dashboardUnavailable ? state.dashboardUnavailable : "No games found. Check the PC share or installed console library, then refresh.");
+      }
+      function check(label, value, kind) {
+        var row = node("div", "check", document.getElementById("checks"));
+        text(node("span", "", row), label);
+        text(node("strong", kind || "", row), value);
+      }
+      function setupAvailability() {
+        return view.setupPresentation(state,{fresh:statusFresh,error:statusError,posting:setupPosting,pending:pending,
+          operation:nativeSaveOperation,dirty:settingsDirty,revision:formRevision,token:formToken});
+      }
+      function renderSetup() {
+        var value=state || {}, settings=value.settings || {}, setup=value.setup || {};
+        var link=view.connection(value);
+        var saveResult = view.setupResult(setup,nativeSaveOperation);
+        var loadSaved=statusFresh && !settingsDirty && !initialSetup;
+        if (statusFresh && saveResult !== "pending") {
+          nativeSaveOperation=0;smbPassword.value="";
+          if (saveResult === "saved") {settingsDirty=false;notice=null;loadSaved=true;}
+          else notice={text:setup.message || "Connection check failed.",kind:"bad"};
+        }
+        var saved=statusFresh && value.backend === "native" && setup.configured === true && typeof settings.server === "string" && !!settings.server && typeof settings.share === "string" && !!settings.share;
+        if(loadSaved && saved) {
+          server.value=settings.server;shareName.value=settings.share;smbUser.value=typeof settings.user === "string"?settings.user:"";
+          smbPassword.value="";keepCredentials.checked=setup.hasSavedCredentials === true;
+        }
+        text(document.getElementById("savedServer"),saved?settings.server:"Not set");
+        text(document.getElementById("savedShare"),saved?settings.share:"Not set");
+        text(document.getElementById("savedUser"),!saved?"Not set":typeof settings.user === "string"?(settings.user || "No username saved"):"Saved account");
+        text(document.getElementById("savedPassword"),!saved?"Not set":settings.passwordSaved === true?"********":settings.passwordSaved === false?"No password saved":"Saved sign-in hidden");
+        var savedStatus=!statusFresh?"Connection status unavailable":setup.busy || setupPosting?"Checking connection…":!saved?"Not configured":setup.phase === "error"?"Connection check failed; saved details kept":link.online?"Connected (last share check)":"Saved — share not checked";
+        text(document.getElementById("savedConnectionStatus"),savedStatus);
+        document.getElementById("savedConnectionStatus").className=statusFresh && saved && link.online && !setup.busy && setup.phase !== "error"?"ok":"subtle";
+        if (statusFresh && !settingsDirty) {
+          formRevision=setup.revision || 0;formToken=setup.token || "";
+        }
+        if (statusFresh && !initialSetup) {
+          document.getElementById("setupPanel").open = fragment === "#setup" || !link.configured;
+          initialSetup = true;
+        }
+        if (!state) document.getElementById("setupPanel").open=true;
+        var connection = document.getElementById("connection");
+        var online = link.online;
+        if (value.dashboard) {
+          online=value.dashboard.pcConnected || value.dashboard.consoleConnected;
+          link.label=value.dashboard.pcConnected && value.dashboard.consoleConnected ? "PC and console connected" : value.dashboard.consoleConnected ? "Console library connected" : value.dashboard.pcConnected ? "PC share connected" : "Library connections need attention";
+        }
+        if (value.dashboardUnavailable) {online=false;link.label="Dashboard connection needs attention";}
+        if (!statusFresh) {online=false;link.label=statusError ? "Console app disconnected" : "Connecting to console app";}
+        text(connection, link.label);
+        connection.className = "connection " + (online ? "ok" : "bad");
+        document.getElementById("connectionDot").style.background=online ? "var(--green)" : "var(--amber)";
+        document.getElementById("connectionDot").style.boxShadow=online ? "0 0 10px var(--green)" : "none";
+        document.getElementById("settingsDot").style.background=statusFresh && saved && link.online && !setup.busy && setup.phase !== "error" ? "var(--green)" : "var(--amber)";
+        document.getElementById("settingsConnection").className="conn-state"+(statusFresh && saved && link.online && !setup.busy && setup.phase !== "error" ? "" : " is-warning");
+        text(document.getElementById("savedPasswordHint"),saved && settings.passwordSaved === true ? "A password is saved. Type a new one only if you changed it on the PC." : "Use the account password that can read the share.");
+        control(document.getElementById("refreshLibrary"),statusFresh && (value.dashboardRequired ? !pending : view.canRefresh(value,pending)));
+        var supported=setup.supported === true;
+        var editable=statusFresh && supported && setup.editable && !setup.busy && !setupPosting && !pending && !nativeSaveOperation && !view.dashboardBusy(value);
+        var accountChanged=typeof settings.user === "string" && smbUser.value.trim() !== settings.user;
+        keepCredentials.disabled=!editable || server.value.trim() !== settings.server || accountChanged;
+        if (server.value.trim() !== settings.server || accountChanged) keepCredentials.checked=false;
+        document.getElementById("keepCredentialsField").hidden = !supported || !setup.hasSavedCredentials;
+        var keeping=supported && keepCredentials.checked;
+        ["smbUserField","smbPasswordField"].forEach(function (id) {document.getElementById(id).hidden=false;});
+        [smbUser,smbPassword].forEach(function (input) {input.disabled=!editable;});
+        smbPassword.placeholder=keeping?"********":"";
+        [server,shareName].forEach(function (input) {input.disabled=!editable;});
+        if (setupScrollPending) {
+          document.getElementById("setupPanel").open=true;
+          document.getElementById("setupPanel").scrollIntoView();
+          setupScrollPending=false;
+        }
+        if (setupFocusPending && !server.disabled) {
+          document.getElementById("setupPanel").open=true;
+          server.focus();setupFocusPending=false;
+        }
+        var presentation=setupAvailability(), save=document.getElementById("saveSetup");
+        save.disabled=!presentation.canSave;
+        save.setAttribute("aria-disabled",save.disabled ? "true" : "false");
+        text(document.getElementById("setupReason"),presentation.reason);
+        document.getElementById("setupReason").hidden=!presentation.reason;
+        var reloadSetup=document.getElementById("reloadSetup");
+        reloadSetup.hidden=!settingsDirty;
+        reloadSetup.disabled=!statusFresh || setupPosting || !!pending || !!setup.busy || !!nativeSaveOperation;
+        document.getElementById("checks").textContent = "";
+        check("Blackwire",statusFresh ? "Running on PS5" : "Status unconfirmed",statusFresh ? "ok" : "bad");
+        check("Share",statusFresh ? value.share && value.share.shared ? "Available" : "Needs setup" : "Not confirmed",statusFresh && value.share && value.share.shared ? "ok" : "bad");
+        if (statusFresh && Array.isArray(setup.checks)) setup.checks.forEach(function (item) {
+          check(item.label || "Connection check", item.message || item.state || "", item.state === "error" || item.state === "failed" ? "bad" : "");
+        });
+        syncOverlays();
+      }
+      function syncPreparationPlacement() {
+        var panel=preparationCurrent,region=document.getElementById("preparationStatus");
+        if(!panel){region.hidden=true;return;}
+        var visible=panel.visible && !(panel.state === "ready" && preparationReadySeen[panel.key] === "hidden");
+        var card=cards[selectedName],matches=card && panel.itemId && card.game.dashboardId === panel.itemId;
+        var auxiliary=document.getElementById("setupPanel").open || !document.getElementById("helpOverlay").hidden;
+        region.hidden=!visible || !matches || detailsOpen || auxiliary;
+        region.className="progress"+(!region.hidden ? " on" : "")+(typeof panel.percent !== "number" ? " preparation-indeterminate" : "");
+        Object.keys(cards).forEach(function (name) {
+          var current=cards[name],own=visible && panel.itemId && current.game.dashboardId === panel.itemId;
+          current.statusDot.style.background=own && panel.busy ? "var(--blue)" : current.root.getAttribute("data-readiness") === "ready" ? "var(--green)" : current.game.removed ? "var(--muted)" : "var(--red)";
+          current.statusDot.title=own && panel.busy ? "Preparing" : current.root.getAttribute("data-readiness") === "ready" ? "Ready" : "Not ready";
+          current.progress.hidden=!own || !detailsOpen || selectedName !== name || auxiliary;
+          current.progress.className="progress"+(!current.progress.hidden ? " on" : "")+(typeof panel.percent !== "number" ? " preparation-indeterminate" : "");
+          if(own) {
+            text(current.progressLabel,panel.message+(panel.detail ? " · "+panel.detail : ""));
+            text(current.progressPercent,typeof panel.percent === "number" ? Math.round(panel.percent)+"%" : "");
+            current.progressTrack.setAttribute("aria-valuemin","0");current.progressTrack.setAttribute("aria-valuemax","100");
+            if(typeof panel.percent === "number")current.progressTrack.setAttribute("aria-valuenow",String(panel.percent));else current.progressTrack.removeAttribute("aria-valuenow");
+            current.progressTrack.setAttribute("aria-valuetext",panel.message+(panel.detail ? ": "+panel.detail : ""));
+            current.progressFill.style.width=typeof panel.percent === "number" ? panel.percent+"%" : "";
+          }
+        });
+      }
+      function renderPreparation() {
+        var panel=view.preparationPanel(state,pending);preparationCurrent=panel;
+        var region=document.getElementById("preparationStatus");
+        var operation=state.dashboardWatch || state.dashboard && state.dashboard.operation;
+        var launching=pending && pending.action === "play" || operation && operation.action === "play" && operation.active || view.active(state.stream || {});
+        if(panel.visible && panel.state === "ready" && panel.key) {
+          if(!preparationReadySeen[panel.key]) {
+            preparationReadySeen[panel.key]="shown";preparationReadyOrder.push(panel.key);
+            while(preparationReadyOrder.length>32) {
+              var retired=preparationReadyOrder.shift();clearTimeout(preparationReadyTimers[retired]);
+              delete preparationReadyTimers[retired];delete preparationReadySeen[retired];
+            }
+            (function (key) {
+              preparationReadyTimers[key]=setTimeout(function () {
+                preparationReadySeen[key]="hidden";delete preparationReadyTimers[key];
+                if(preparationCurrent && preparationCurrent.key === key && preparationCurrent.state === "ready") {
+                  if(document.activeElement === document.getElementById("preparationRefresh") || document.activeElement === document.getElementById("preparationInspect"))focusActions();
+                  region.hidden=true;
+                }
+              },5000);
+            })(panel.key);
+          }
+          if(launching) {
+            preparationReadySeen[panel.key]="hidden";clearTimeout(preparationReadyTimers[panel.key]);delete preparationReadyTimers[panel.key];
+          }
+        }
+        region.hidden=!panel.visible || panel.state === "ready" && preparationReadySeen[panel.key] === "hidden";
+        region.className="progress"+(!region.hidden ? " on" : "")+(typeof panel.percent !== "number" ? " preparation-indeterminate" : "");
+        text(document.getElementById("preparationPercent"),typeof panel.percent === "number" ? Math.round(panel.percent)+"%" : "");
+        if(panel.visible) {
+          region.setAttribute("data-state",panel.state);
+          region.setAttribute("data-indeterminate",typeof panel.percent === "number" ? "false" : "true");
+          text(document.getElementById("preparationKicker"),panel.heading);
+          text(document.getElementById("preparationTitle"),panel.title);
+          text(document.getElementById("preparationDetail"),(panel.title ? panel.title+": " : "")+panel.message+(panel.detail ? " · "+panel.detail : ""));
+          var track=document.getElementById("preparationTrack");track.setAttribute("aria-valuemin","0");track.setAttribute("aria-valuemax","100");
+          track.setAttribute("aria-valuetext",panel.message+(panel.detail ? ": "+panel.detail : ""));
+          if(typeof panel.percent === "number")track.setAttribute("aria-valuenow",String(panel.percent));else track.removeAttribute("aria-valuenow");
+          document.getElementById("preparationFill").style.width=typeof panel.percent === "number" ? panel.percent+"%" : "";
+          var inspect=document.getElementById("preparationInspect");inspect.hidden=!panel.itemId;
+          control(inspect,!!panel.itemId && view.libraryGames(state).some(function (game) {return game.dashboardId === panel.itemId;}));
+          control(document.getElementById("preparationRefresh"),!pending);
+        }
+        var next=preparationNotice.observe(panel,statusFresh && !state.dashboardUnavailable);
+        if(next) {
+          clearTimeout(preparationToastTimer);
+          var toast=document.getElementById("preparationToast");toast.hidden=true;toast.setAttribute("data-attention",next.attention ? "true" : "false");
+          text(document.getElementById("preparationToastTitle"),next.title);text(document.getElementById("preparationToastDetail"),next.detail);
+          preparationToastTimer=setTimeout(function () {toast.hidden=true;},next.attention ? 9000 : 5000);
+        }
+        syncPreparationPlacement();
+      }
+      function show(value) {
+        state = value;
+        if (state.dashboard) {
+          var previousWatch=operationWatch;
+          operationWatch=view.dashboardWatch(operationWatch,state.dashboard.operation);
+          if (previousWatch && (!operationWatch || previousWatch.phase === "unknown" && operationWatch.phase !== "unknown")) notice=null;
+          if(preparationIssue && previousWatch && previousWatch.action === "send" && state.dashboard.operation.itemId === previousWatch.itemId
+            && nonceForWatch(state.dashboard.operation.id,previousWatch))preparationIssue=null;
+        }
+        state.dashboardWatch=operationWatch;
+        state.preparationIssue=preparationIssue;
+        var handoff=browserHandoff.update(!state.dashboardUnavailable && state.dashboard && state.dashboard.operation,state.stream,statusFresh);
+        document.getElementById("browserHandoff").hidden=!handoff.visible;
+        if(handoff.attemptClose) {try {window.close();} catch(error) { /* Controller fallback stays visible. */ }}
+        renderSetup();
+        var setup=state.setup || {};
+        var jobs = view.activeJobs(state);
+        var session = state.stream || {};
+        var message = notice;
+        if (!message || message.kind !== "bad") {
+          if (pending) message = { text: pending.message };
+          else if (state.dashboardUnavailable) message = {text:state.dashboardUnavailable,kind:"bad"};
+          else if (state.dashboardWatch || state.dashboard && state.dashboard.operation.active) {
+            var operation=state.dashboardWatch || state.dashboard.operation;
+            message={text:operation.message || "Checking the exact dashboard operation.",kind:operation.phase === "unknown" || operation.phase === "refused" ? "bad" : ""};
+          }
+          else if (setupPosting) message = {text:"Checking the connection…"};
+          else if (jobs.length) message = { text: jobs[0].message || "Preparing " + jobs[0].name };
+          else if (view.active(session)) message = { text: view.sessionNotice(session,amount) };
+          else if (session.phase === "error") message = { text: session.message || "The game could not start.", kind: "bad" };
+          else message = { text:setup.message || "Reading the PC library.", kind: (state.library || {}).phase === "error" ? "bad" : "" };
+        }
+        text(note, message.text);
+        note.className = message.kind || "";
+        renderCards();
+        renderPreparation();
+        var panel=view.sessionPanel(state,pending);
+        document.getElementById("sessionStatus").hidden=true;
+        document.getElementById("sessionStatus").setAttribute("data-failed",panel.failed ? "true" : "false");
+        document.getElementById("sessionStatus").setAttribute("data-compact",panel.compact ? "true" : "false");
+        note.hidden=!!panel.visible && !(notice && notice.kind === "bad") || preparationCurrent && preparationCurrent.visible && preparationCurrent.busy && !(notice && notice.kind === "bad");
+        text(document.getElementById("sessionHeading"),panel.heading);
+        text(document.getElementById("sessionMessage"),panel.message);
+        document.getElementById("sessionMessage").hidden=!!panel.compact;
+        text(document.getElementById("sessionOwnership"),panel.ownershipLabel);
+        document.getElementById("sessionOwnership").hidden=!!panel.compact || !panel.ownershipLabel;
+        text(document.getElementById("sessionSource"),panel.source);
+        document.getElementById("sessionAction").hidden=!panel.primaryVisible;
+        control(document.getElementById("sessionAction"),!!panel.primaryEnabled);
+        text(document.getElementById("sessionAction"),panel.primaryLabel);
+        document.getElementById("sessionRefresh").hidden=!panel.refreshVisible;
+        control(document.getElementById("sessionRefresh"),!!panel.refreshEnabled);
+        document.getElementById("sessionDismiss").hidden=!panel.dismissible || !panel.key;
+      }
+      function nonceForWatch(id,watch) {return /^[0-9a-f]{32}$/.test(id) && !/^0+$/.test(id) && (watch.id ? id === watch.id : id !== watch.previousId);}
+      function jsonRequest(url, body, token) {
+        var headers={"Content-Type":"application/json"};
+        var session=typeof token === "string" ? token : state && (state.setup || {}).token;
+        if (state && view.connection(state).native && session) headers["X-Blackwire-Token"]=session;
+        return fetch(url, { method:"POST", headers:headers, body:JSON.stringify(body) }).then(function (response) {
+          return response.json().then(function (result) {
+            if (!response.ok) {
+              var error = new Error(result.error || "The request failed.");
+              error.status = response.status;
+              throw error;
+            }
+            return result;
+          });
+        });
+      }
+      function requestAction(url, body, message, automatic) {
+        if (pending) return;
+        if (!automatic) dashboardFlow=null;
+        pending = { name: body.name, message: message };
+        notice = null;
+        if (state) show(state);
+        return jsonRequest(url, body).then(function (result) {
+          if (automatic) automatic.accepted(result);
+          notice = { text: result.message || (result.jobId ? "Preparation queued." : "Done") };
+          if (result.job && state) {
+            state.jobs = (state.jobs || []).filter(function (job) { return job.id !== result.job.id; });
+            state.jobs.push(result.job);
+          }
+        }).catch(function (error) {
+          if (automatic) automatic.failed(error);
+          notice = { text: error.message, kind:"bad" };
+        }).then(function () {
+          pending = null;
+          if (state) show(state);
+          load();
+        });
+      }
+      function requestDashboard(game,action,confirmedTitle) {
+        if (pending || !state) return;
+        var body;
+        try {body=view.dashboardBody(state,game,action,confirmedTitle);} catch (error) {notice={text:error.message,kind:"bad"};show(state);return;}
+        var previousId=state.dashboard.operation.id;
+        preparationIssue=null;dismissedSessionKey="";
+        pending={name:game.name,itemId:game.dashboardId,title:game.title,action:action,message:action === "send" ? "Sending startup files for " + game.title + "…" : action === "uninstall" ? "Uninstalling " + game.title + "…" : action === "restore" ? "Restoring " + game.title + " to the library…" : "Starting " + game.title + "…"};
+        notice=null;dashboardFlow=null;show(state);
+        return view.dashboardPost(body,(state.setup || {}).token,fetch).then(function (reply) {
+          browserHandoff.accepted(body,reply);
+          operationWatch={id:reply.id,itemId:game.dashboardId,previousId:previousId,phase:reply.phase,message:reply.message,action:action,title:game.title};
+          notice={text:reply.message || "The operation was accepted. Checking its status."};
+        }).catch(function (error) {
+          if (error.uncertain !== false) operationWatch={id:"",itemId:game.dashboardId,previousId:previousId,phase:"unknown",
+            message:"The request outcome is uncertain. Refresh status before trying again; it will not be sent again automatically.",action:action,title:game.title};
+          if(action === "send")preparationIssue={visible:true,key:"request:"+game.dashboardId,itemId:game.dashboardId,title:game.title,
+            state:error.uncertain === false ? "error" : "unknown",heading:error.uncertain === false ? "Preparation refused" : "Checking preparation",
+            message:error.message,detail:error.uncertain === false ? "No preparation was accepted. Review this result before trying again." : "No request was repeated. Refresh status to check the existing operation.",percent:null,busy:error.uncertain !== false};
+          notice={text:error.message,kind:"bad"};
+        }).then(function () {pending=null;if(state)show(state);load();});
+      }
+      function advanceDashboard() {
+        if (!dashboardFlow || !state || pending) return;
+        if (state.dashboardRequired) {dashboardFlow=null;notice={text:"Choose this game from the combined library to use its current source.",kind:"bad"};show(state);return;}
+        var action=dashboardFlow.step(state,pending);
+        if (action) requestAction(action.route,action.body,action.message,dashboardFlow);
+        else if (dashboardFlow.error) {notice={text:dashboardFlow.message,kind:"bad"};show(state);}
+      }
+      function load() {
+        clearTimeout(timer);
+        if (loading) { reload = true; return; }
+        loading = true;
+        fetch("/api/state").then(view.readAppState).then(function (value) {
+          value.dashboardRequired=true;
+          return fetch("/api/dashboard/library").then(view.readState).then(view.dashboardLibrary).then(function (catalog) {
+            value.dashboard=catalog;return value;
+          }).catch(function (error) {value.dashboardUnavailable=error.message || "The combined library is unavailable. Refresh Blackwire.";return value;});
+        }).then(function (value) {statusFresh=true;statusError="";show(value);}).then(advanceDashboard).catch(function (error) {
+          statusFresh=false;statusError=error.message || "Blackwire status could not be refreshed.";
+          if (state) {state.dashboardUnavailable="Blackwire status could not be refreshed. Check the console connection.";show(state);}
+          else renderSetup();
+          text(note, error.message);
+          note.className = "bad";
+        }).then(function () {
+          loading = false;
+          if (reload) { reload = false; load(); }
+          else timer = setTimeout(load, 3000);
+        });
+      }
+      window.addEventListener("hashchange",function () {
+        readFragment();renderSetup();load();
+      });
+      document.getElementById("preparationInspect").addEventListener("click",function () {
+        if(!state || !preparationCurrent || !preparationCurrent.itemId)return;
+        var matches=view.libraryGames(state).filter(function (game) {return game.dashboardId === preparationCurrent.itemId;});if(matches.length !== 1)return;
+        filter="all";search.value="";selectedName=matches[0].name;renderCards();selectGame(selectedName,false,true);setDetailsOpen(true,true);
+      });
+      document.getElementById("preparationRefresh").addEventListener("click",function () {if(!pending)load();});
+      document.getElementById("openSetup").addEventListener("click",openSettings);
+      document.getElementById("connectionChip").addEventListener("click",openSettings);
+      document.getElementById("closeSetup").addEventListener("click",closeSettings);
+      document.getElementById("settingsOverlay").addEventListener("click",function (event) {if(event.target === this)closeSettings();});
+      document.getElementById("setupPanel").addEventListener("toggle",syncOverlays);
+      document.getElementById("openHelp").addEventListener("click",function () {
+        setDetailsOpen(false,false);document.getElementById("setupPanel").open=false;
+        document.getElementById("helpOverlay").hidden=false;document.getElementById("helpPanel").open=true;
+        syncOverlays();document.getElementById("closeHelp").focus();
+      });
+      document.getElementById("closeHelp").addEventListener("click",closeHelp);
+      document.getElementById("helpOverlay").addEventListener("click",function (event) {if(event.target === this)closeHelp();});
+      document.getElementById("heroDetails").addEventListener("click",function () {setDetailsOpen(true,true);});
+      document.getElementById("heroStatus").addEventListener("click",function () {
+        var reason=document.getElementById("heroReason"),open=reason.className.indexOf("open") === -1;
+        reason.className="reason"+(open ? " open" : "");this.setAttribute("aria-expanded",String(open));
+      });
+      document.getElementById("pwToggle").addEventListener("click",function () {
+        var showing=(smbPassword.type || "password") === "password";smbPassword.type=showing ? "text" : "password";
+        text(this,showing ? "Hide" : "Show");this.setAttribute("aria-pressed",String(showing));
+      });
+      document.getElementById("heroPrimary").addEventListener("click",function () {
+        var action=heroAction(cards[selectedName]);
+        if(action && action.enabled)action.button.click();
+      });
+      search.addEventListener("input", renderCards);
+      document.getElementById("closeDetails").addEventListener("click",function () {setDetailsOpen(false,true);});
+      selectedGame.addEventListener("click",function (event) {if(event.target === selectedGame)setDetailsOpen(false,true);});
+      document.getElementById("focusSearch").addEventListener("click",function () {search.focus();});
+      document.getElementById("layoutCarousel").addEventListener("click",function () {setLayout("carousel",true);});
+      document.getElementById("layoutGrid").addEventListener("click",function () {setLayout("grid",true);});
+      try {setLayout(localStorage.getItem("blackwire-library-layout") === "grid" ? "grid" : "carousel",false);}catch(error){setLayout("carousel",false);}
+      function detailsControls() {
+        if(removalConfirmation)return [document.getElementById("cancelRemoval"),document.getElementById("confirmRemoval")];
+        var card=cards[selectedName],controls=[];
+        if(card && !card.removalGroup.hidden && !card.remove.disabled && card.remove.getAttribute("aria-disabled") !== "true")controls.push(card.remove);
+        if(card && !card.restoreGroup.hidden && !card.restore.disabled && card.restore.getAttribute("aria-disabled") !== "true")controls.push(card.restore);
+        controls.push(document.getElementById("closeDetails"));return controls;
+      }
+      function libraryNavigation(key) {
+        var auxiliary=auxiliaryControls();
+        if(auxiliary) {
+          if(key === "Back") {if(document.getElementById("setupPanel").open)closeSettings();else closeHelp();return true;}
+          if((key === "ArrowDown" || key === "ArrowUp") && auxiliary.length) {
+            var current=auxiliary.indexOf(document.activeElement),direction=key === "ArrowDown" ? 1 : -1;
+            auxiliary[(current+direction+auxiliary.length)%auxiliary.length].focus();return true;
+          }
+          return false;
+        }
+        var focused=document.activeElement, card=cards[selectedName];
+        if (!card || !focused) return false;
+        if(detailsOpen) {
+          if(key === "Back") {if(removalConfirmation)cancelRemoval(true);else setDetailsOpen(false,true);return true;}
+          if(removalConfirmation && (key === "ArrowLeft" || key === "ArrowRight")) {
+            document.getElementById(key === "ArrowLeft" ? "cancelRemoval" : "confirmRemoval").focus();return true;
+          }
+          if(key === "ArrowDown" || key === "ArrowUp") {
+            var controls=detailsControls(),at=controls.indexOf(focused),step=key === "ArrowDown" ? 1 : -1;
+            controls[(at+step+controls.length)%controls.length].focus();return true;
+          }
+          return false;
+        }
+        var onHero=focused === document.getElementById("heroPrimary") || focused === document.getElementById("heroDetails");
+        if(onHero) {
+          if(key === "ArrowDown" || key === "Back") {card.select.focus();return true;}
+          if(key === "ArrowLeft" || key === "ArrowRight") {document.getElementById(focused === document.getElementById("heroPrimary") ? "heroDetails" : "heroPrimary").focus();return true;}
+          return false;
+        }
+        var onCover=games.contains(focused) || focused === document.body;
+        var inActions=card.details.contains(focused);
+        if (!onCover && !inActions) return false;
+        if(onCover && layout === "carousel" && key === "ArrowUp") {
+          var primary=document.getElementById("heroPrimary");
+          (primary.getAttribute("aria-disabled") !== "true" ? primary : document.getElementById("heroDetails")).focus();return true;
+        }
+        if(onCover && key === "Confirm") {document.getElementById("heroPrimary").click();return true;}
+        if (key === "ArrowRight" || key === "ArrowLeft") moveGame(key === "ArrowRight" ? 1 : -1);
+        else if(layout === "grid" && onCover && (key === "ArrowDown" || key === "ArrowUp")) {
+          var columns=1;
+          try {columns=window.getComputedStyle(games).gridTemplateColumns.split(" ").filter(Boolean).length;}catch(error){}
+          moveGame((key === "ArrowDown" ? 1 : -1)*Math.max(1,columns));
+        }
+        else if (onCover && (key === "Home" || key === "End")) selectGame(visibleNames[key === "Home" ? 0 : visibleNames.length-1],true,true);
+        else if (key === "ArrowDown" || key === "Confirm" && onCover) {
+          if (focused === card.play && !card.prepareGroup.hidden && !card.prepare.disabled && card.prepare.getAttribute("aria-disabled") !== "true") card.prepare.focus();
+          else if (onCover) setDetailsOpen(true,true);
+          else return false;
+        } else if (key === "ArrowUp" || key === "Back") {
+          if (key !== "Back" && focused === card.prepare && !card.playGroup.hidden && !card.play.disabled && card.play.getAttribute("aria-disabled") !== "true") card.play.focus();
+          else card.select.focus();
+        } else return false;
+        return true;
+      }
+      document.addEventListener("keydown",function (event) {
+        var auxiliary=auxiliaryControls();
+        if(auxiliary && event.key === "Tab" && auxiliary.length) {
+          var auxiliaryAt=auxiliary.indexOf(document.activeElement);
+          auxiliary[(auxiliaryAt+(event.shiftKey ? -1 : 1)+auxiliary.length)%auxiliary.length].focus();event.preventDefault();return;
+        }
+        if(detailsOpen && event.key === "Tab") {
+          var controls=detailsControls(),at=controls.indexOf(document.activeElement);
+          controls[(at+(event.shiftKey ? -1 : 1)+controls.length)%controls.length].focus();event.preventDefault();return;
+        }
+        if(!auxiliary && !detailsOpen && (event.key === "d" || event.key === "D") && ["INPUT","TEXTAREA","SELECT"].indexOf((document.activeElement || {}).tagName) === -1 && cards[selectedName]) {setDetailsOpen(true,true);event.preventDefault();return;}
+        if (event.key.indexOf("Arrow") === 0 || event.key === "Enter" || event.key === " ") keyboardAt=Date.now();
+        var key=event.key === "Enter" || event.key === " " ? "Confirm" : event.key === "Escape" ? "Back" : event.key;
+        if (event.repeat && key === "Confirm" && (games.contains(document.activeElement) || selectedGame.contains(document.activeElement))) {event.preventDefault();return;}
+        if (libraryNavigation(key)) event.preventDefault();
+      });
+      document.getElementById("previousGame").addEventListener("click",function () {if(this.getAttribute("aria-disabled") !== "true")moveGame(-1);});
+      document.getElementById("nextGame").addEventListener("click",function () {if(this.getAttribute("aria-disabled") !== "true")moveGame(1);});
+      window.addEventListener("resize",function () {scrollCover(cards[selectedName]);});
+      function controllerTick() {
+        var pads=null,pad=null,now=Date.now(),focused=document.activeElement;
+        try {if(typeof navigator.getGamepads === "function")pads=navigator.getGamepads();} catch (error) {}
+        if (pads) for(var i=0;i<Math.min(pads.length,4);i++) if(pads[i] && pads[i].connected !== false && pads[i].mapping === "standard") {pad=pads[i];break;}
+        controllerState=view.controllerStep(controllerState,pad,now);
+        if (controllerState.action && !document.hidden && (!document.hasFocus || document.hasFocus()) && now-keyboardAt > 600
+          && focused && ["INPUT","TEXTAREA","SELECT"].indexOf(focused.tagName) === -1) {
+          if (!libraryNavigation(controllerState.action) && controllerState.action === "Confirm" && focused.tagName === "BUTTON"
+            && !focused.disabled && focused.getAttribute("aria-disabled") !== "true") focused.click();
+        }
+        setTimeout(controllerTick,80);
+      }
+      filters.forEach(function (value, index) {
+        var tab = document.getElementById("filter-" + value);
+        function select(target, focus) {
+          filter = target;
+          renderCards();
+          if (focus) document.getElementById("filter-" + target).focus();
+        }
+        tab.addEventListener("click", function () { select(value, false); });
+        tab.addEventListener("keydown", function (event) {
+          var main=["all","ready","not-ready"],group=main.indexOf(value) === -1 ? ["pc","console","removed"] : main,position=group.indexOf(value);
+          var target = event.key === "ArrowRight" ? group[(position + 1) % group.length]
+            : event.key === "ArrowLeft" ? group[(position + group.length - 1) % group.length]
+            : event.key === "Home" ? group[0] : event.key === "End" ? group[group.length - 1] : null;
+          if (target) { event.preventDefault(); select(target, true); }
+        });
+      });
+      search.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") { search.value = ""; renderCards(); }
+      });
+      document.getElementById("clearSearch").addEventListener("keydown",function (event) {if(event.key === "Enter" || event.key === " ") {event.preventDefault();this.click();}});
+      document.getElementById("clearSearch").addEventListener("click", function () {
+        search.value = ""; renderCards(); search.focus();
+      });
+      [smbUser, smbPassword, server, shareName, keepCredentials].forEach(function (input) {
+        input.addEventListener("input", function () {
+          if(input===smbUser || input===smbPassword || input===server)keepCredentials.checked=false;
+          if(input===keepCredentials && keepCredentials.checked)smbPassword.value="";
+          settingsDirty=true;renderSetup();
+        });
+      });
+      document.getElementById("setup").addEventListener("submit", function (event) {
+        event.preventDefault();
+        if (!setupAvailability().canSave) {renderSetup();return;}
+        var body;
+        try {body=view.setupBody(state,{server:server.value,share:shareName.value,user:smbUser.value,password:smbPassword.value,keep:keepCredentials.checked,revision:formRevision});}
+        catch(error) {notice={text:error.message,kind:"bad"};show(state);return;}
+        var save = document.getElementById("saveSetup");
+        setupPosting=true;
+        save.disabled = true;
+        notice = { text:"Checking the connection…" };
+        if (state) show(state);
+        view.saveSetup(body, jsonRequest, formToken).then(function (result) {
+          if(result.pending) {nativeSaveOperation=result.operation;settingsDirty=true;}
+          else settingsDirty = false;
+          smbPassword.value = "";
+          smbUser.value = "";
+          notice = { text:result.message || "Settings saved. Connection checks updated." };
+        }).catch(function (error) {
+          nativeSaveOperation=0;
+          notice = { text:error.message, kind:"bad" };
+        }).then(function () {setupPosting=false;renderSetup();load();});
+      });
+      document.getElementById("reloadSetup").addEventListener("click",function () {
+        if (!statusFresh || setupPosting || pending || nativeSaveOperation || (state.setup || {}).busy) return;
+        settingsDirty=false;formRevision=0;formToken="";statusFresh=false;statusError="";notice=null;
+        renderSetup();load();
+      });
+      document.getElementById("sessionAction").addEventListener("click",function () {
+        if (!state) return;
+        var panel=view.sessionPanel(state,pending);if(!panel.primaryEnabled)return;
+        if (panel.game && panel.game.dashboardId && !panel.closing) {requestDashboard(panel.game,"play");return;}
+        var body;try {body=view.playBody(state,panel.source,panel.closing);} catch(error) {notice={text:error.message,kind:"bad"};show(state);return;}
+        requestAction(panel.route,body,panel.closing ? "Closing the selected session…" : "Retrying the selected source…");
+      });
+      document.getElementById("sessionRefresh").addEventListener("click",function () {
+        if (state && state.dashboardRequired) {load();return;}
+        if(state && view.canRefresh(state,pending))requestAction("/api/refresh",{},"Reading the PC library…");
+      });
+      document.getElementById("sessionDismiss").addEventListener("click",function () {
+        if(!state)return;
+        var panel=view.sessionPanel(state,pending);
+        if(!panel.dismissible || !panel.key)return;
+        dismissedSessionKey=panel.key;document.getElementById("sessionStatus").hidden=true;
+        search.focus();
+      });
+      document.getElementById("refreshLibrary").addEventListener("click", function () {
+        if (state && state.dashboardRequired) {load();return;}
+        if (state && view.canRefresh(state,pending)) requestAction("/api/refresh", {}, "Reading the PC library…");
+      });
+      renderSetup();
+      load();
+      controllerTick();
+    })();
+  </script>
+</body>
+</html>

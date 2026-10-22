@@ -1,0 +1,6 @@
+# Corresponding-source and inventory manifests hash exact file bytes. Preserve
+# those bytes across checkouts; editors use .editorconfig for new text changes.
+* -text
+*.png binary
+*.jpg binary
+*.webp binary

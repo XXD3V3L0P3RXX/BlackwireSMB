@@ -1,0 +1,1656 @@
+{
+  "schema": 1,
+  "nativeSource": {
+    "src/blackwire/dashboard/local-removal/local_removal.c": {
+      "bytes": 36185,
+      "sha256": "45ec4983d7085b3dd1ee04efd602bd3da81b257676df0b0eaa1f7632812b2cd6"
+    },
+    "src/blackwire/dashboard/local-removal/local_removal.h": {
+      "bytes": 4547,
+      "sha256": "0555341ee6e279f7159bcfa5f6f86949b5b2eb79ab73d765f46619a04253a2d4"
+    },
+    "src/blackwire/dashboard/local-removal/local_removal_runtime.c": {
+      "bytes": 15628,
+      "sha256": "a0a17d71f299d3cf3497ba39a87c4a303b870325518b62a05186e4ee6e4d9d30"
+    },
+    "src/blackwire/dashboard/local-removal/local_removal_runtime.h": {
+      "bytes": 2292,
+      "sha256": "30f5420779bb3c1a1391b77cb9d83f73285b424f1a50a6a7b573d62989caadca"
+    },
+    "src/blackwire/dashboard/model/dashboard_model.c": {
+      "bytes": 13301,
+      "sha256": "5e9764185c3c41edb6644f18fa125499d200bca89d1f139576c54658d8fcc3b4"
+    },
+    "src/blackwire/dashboard/model/dashboard_model.h": {
+      "bytes": 6005,
+      "sha256": "01e87273bd041345c741e001d5adef0039d49b0cb9ad448475bf93b2611604bd"
+    },
+    "src/blackwire/dashboard/service/catalog_adapter.c": {
+      "bytes": 11878,
+      "sha256": "fa4989536c27565d0ebc692cf5faa369ce23b43b5379052ca184dad953b428f7"
+    },
+    "src/blackwire/dashboard/service/catalog_adapter.h": {
+      "bytes": 1510,
+      "sha256": "688355c96b85ad5a8ebbdd1d222a68d47e4989a261ba9edc512a78df172efbf6"
+    },
+    "src/blackwire/dashboard/service/catalog_snapshot.c": {
+      "bytes": 12330,
+      "sha256": "38578653820918872cefa4b9dd1a83e19b93967076d8cba7df83c00a011f3d5a"
+    },
+    "src/blackwire/dashboard/service/catalog_snapshot.h": {
+      "bytes": 905,
+      "sha256": "c92044e521f7338301e544c8ca4b3cbacf01f17c9efc6bf3e3990d6057919173"
+    },
+    "src/blackwire/dashboard/service/dashboard_service.c": {
+      "bytes": 65475,
+      "sha256": "4c1c4da7a4c1248a498eb9c4c7d1cec5ba2141556da2729aa1dba3df84b55636"
+    },
+    "src/blackwire/dashboard/service/dashboard_service.h": {
+      "bytes": 6854,
+      "sha256": "42ac2b55e261635b3250975cfff64d8deb8c7b4edb6172cafa22a2085814bac8"
+    },
+    "src/blackwire/dashboard/service/frontend_identity.c": {
+      "bytes": 21323,
+      "sha256": "d9c19a4a2322a3d73da5c3710185f9c8760a16120658613019e20a570bbaf85d"
+    },
+    "src/blackwire/dashboard/service/frontend_identity.h": {
+      "bytes": 5096,
+      "sha256": "ac26f72559ee9b2138e343969aec5ae0fad48aaa3e21ceb9dee31a648ea5fb2e"
+    },
+    "src/blackwire/dashboard/service/game_identity.c": {
+      "bytes": 10159,
+      "sha256": "0207a910f382954bf363d74eba9de85c9f0e8a3edfcdc0dd69b69025de1c300c"
+    },
+    "src/blackwire/dashboard/service/game_identity.h": {
+      "bytes": 2914,
+      "sha256": "01eaab788527133bade408e24843ed1c119b617edd6b1281d58bfe2b41150b40"
+    },
+    "src/blackwire/dashboard/service/local_http.c": {
+      "bytes": 10475,
+      "sha256": "ca99dd2d8ad8423f625631236f4e7ed6865860c850ab5067123889f4cd8ff780"
+    },
+    "src/blackwire/dashboard/service/local_http.h": {
+      "bytes": 1756,
+      "sha256": "43931260b9a9ec0deb69a313cbdd9e4311286e5b0dd79f35fc5bb848ac258f05"
+    },
+    "src/blackwire/dashboard/service/local_launch.c": {
+      "bytes": 16324,
+      "sha256": "d6f67b5bdaacdca573e352700dd117e27eef269a0d9ffff9e578afd58547e8c8"
+    },
+    "src/blackwire/dashboard/service/local_launch.h": {
+      "bytes": 3431,
+      "sha256": "e5b9e7c39c6cc06b83649b2b24d3e44f92465fbdff95abfaf6c4bb78eabf4505"
+    },
+    "src/blackwire/dashboard/service/registration_observer.c": {
+      "bytes": 5710,
+      "sha256": "2247af17f7e81d571c36409fb4b9a48dfd0bdc96a308be50911cda10ecd367e2"
+    },
+    "src/blackwire/dashboard/service/registration_observer.h": {
+      "bytes": 1499,
+      "sha256": "6d67e64b06efe0e3ead83a7d295774a2849fbd7089a9cc3b9f64fc68f913a4d3"
+    },
+    "src/blackwire/dashboard/service/resident.c": {
+      "bytes": 6042,
+      "sha256": "893757b2fd182321bb84154ded3b74027ba5b0c559e15eda895475c242ac773f"
+    },
+    "src/blackwire/dashboard/service/resident.h": {
+      "bytes": 473,
+      "sha256": "5db3af16c2dff5266937ecd666f9725ea0dee7e113d6c56b2cabd5764d35a6a6"
+    },
+    "src/blackwire/dashboard/service/settings_guard.h": {
+      "bytes": 2579,
+      "sha256": "4858c5c6eecd3df4cacfc82dabe4119ccfebc85d941c4f60095b41b2d87f49c4"
+    },
+    "src/blackwire/dashboard/service/tests/check_bfp_optional.py": {
+      "bytes": 12723,
+      "sha256": "ea59170418b8222f34df03b87257b9ba58c753076c5aa5054ee4dd75eec45fc4"
+    },
+    "src/blackwire/dashboard/service/tests/host_bfp_service.c": {
+      "bytes": 20870,
+      "sha256": "78d832eab9aa23afff4a5d3027e37c571c1669839400092f29b6a94ae9bc2e6a"
+    },
+    "src/blackwire/dashboard/service/tests/host_publish_guard.c": {
+      "bytes": 2629,
+      "sha256": "8c1c49a4905638728ee364fbcdbd48482a2e70ad076f78d1e195b7eeb877f3c2"
+    },
+    "src/blackwire/dashboard/service/tests/host_source_changes.c": {
+      "bytes": 2912,
+      "sha256": "1cfb44add29f594b5058642357d7595381014f696bcacc3cca4c00b85f215b99"
+    },
+    "src/blackwire/desk/index.html": {
+      "bytes": 141067,
+      "sha256": "0e3efe1e8bba33feee55a56828af5662536464102a69ba4062fe9838b7bf6a80"
+    },
+    "src/blackwire/desk/tests/browser_handoff_harness.js": {
+      "bytes": 12691,
+      "sha256": "7f2746e80d30620128ed719e3f00de62bf03bd6a0d7c9d815dafeb088c572d85"
+    },
+    "src/blackwire/desk/tests/exact_preview_dom_harness.js": {
+      "bytes": 4950,
+      "sha256": "55f0e0bb850ddbfd6fd7d2a31af7484306875b0a513506867a4187fcd82971b5"
+    },
+    "src/blackwire/desk/tests/library_dom_harness.js": {
+      "bytes": 4895,
+      "sha256": "e4a8b01878be6e05ea861e44d2cead34afe57c4c8528273444531045846e86a0"
+    },
+    "src/blackwire/desk/tests/preparation_dom_harness.js": {
+      "bytes": 14179,
+      "sha256": "071cac2e072a6496e71a71f7e716e69662653c99df6fbc682163e2e923de54c7"
+    },
+    "src/blackwire/desk/tests/preview_fixture.py": {
+      "bytes": 16071,
+      "sha256": "17f8dd2995ca6f5b43038a0623246f3488d73e758ad74c1ec30afff1086deb80"
+    },
+    "src/blackwire/desk/tests/redesign_dom_harness.js": {
+      "bytes": 4790,
+      "sha256": "ba88e374cec2bc716cb1d3b4d3fde83a700da2360f558f80b23d5b302ef0ff95"
+    },
+    "src/blackwire/desk/tests/removal_dom_harness.js": {
+      "bytes": 5528,
+      "sha256": "e75bc2af75a736187e4cc3f1fc683983d4a9bdd2dc518cd998e6a0458b4ac034"
+    },
+    "src/blackwire/desk/tests/setup_dom_harness.js": {
+      "bytes": 17420,
+      "sha256": "24d4f821bacf5615f2641d54f8a280b4f84a61d5b131088987edaf5502adb6dc"
+    },
+    "src/blackwire/desk/tests/test_preview_fixture.py": {
+      "bytes": 6261,
+      "sha256": "f528f296a7c4d7755784da5adfe38969cac8b298adcf96f922cd0dd313c0ff6e"
+    },
+    "src/blackwire/desk/tests/test_ui.py": {
+      "bytes": 63992,
+      "sha256": "0cd8cfeaea165374cd453a4f5a3e4517b19e38a7ac34aafd6a67db161c698a2f"
+    },
+    "src/blackwire/desk/tests/verify_combined_browser.js": {
+      "bytes": 8483,
+      "sha256": "b037b87711461063f406e5639270474970062c35391c775c8054cd6700af8a9b"
+    },
+    "src/blackwire/library/batch_metadata.c": {
+      "bytes": 7377,
+      "sha256": "369efce9cece916c89bf56b6371f28a8ba69c3d5fb6cee2a8e2de8aa64436663"
+    },
+    "src/blackwire/library/batch_metadata.h": {
+      "bytes": 3063,
+      "sha256": "9f1263cf843d5bfa225f1ca6aa3aa1e6067b4f81df34c0f5e32c0b4f7408ebae"
+    },
+    "src/blackwire/library/compressed_data.c": {
+      "bytes": 9918,
+      "sha256": "9fcd4b860bdffde3ae80338391eb83eb8a5403621b965a3ec3017d67f0ba4ebb"
+    },
+    "src/blackwire/library/compressed_data.h": {
+      "bytes": 3870,
+      "sha256": "509cd2d4a15ad94484c8a2653a62c5941e1a6109cf0822faf09cff926372c7b2"
+    },
+    "src/blackwire/library/derived_batch.c": {
+      "bytes": 43875,
+      "sha256": "a7a69590a61e74b18337af8fe52ab03d453de5b5189a146c600c331b4f22bd04"
+    },
+    "src/blackwire/library/derived_batch.h": {
+      "bytes": 5108,
+      "sha256": "bcbab116bb366a76bccf55ab6160067c069d05b247d288c1dd7902498e65dd35"
+    },
+    "src/blackwire/library/derived_batch_internal.h": {
+      "bytes": 600,
+      "sha256": "c32926612645c0fd15bf0efef87303bb2a70f30365ec4d6794189fbcfd7ba2ee"
+    },
+    "src/blackwire/library/derived_batch_provenance.c": {
+      "bytes": 13604,
+      "sha256": "723469ab74f5cf8bc137e9948b1e072154b65f02f990ae8cb9bf6cf6962ff67b"
+    },
+    "src/blackwire/library/derived_batch_provenance.h": {
+      "bytes": 858,
+      "sha256": "ec9a84a42f778849a3a58cc9c643b5ea0af3d10572f4de90a5aa9ba1e164808b"
+    },
+    "src/blackwire/library/derived_local.c": {
+      "bytes": 13284,
+      "sha256": "a8fa31d3756897e5aa12a55aea7e21e5812adab353279dbcc3cba94219e12b89"
+    },
+    "src/blackwire/library/derived_local.h": {
+      "bytes": 3085,
+      "sha256": "ab1af78002f27421ac1cee249704a1e0f0c5cc51a8292477b266dbacf6378d76"
+    },
+    "src/blackwire/library/derived_material.c": {
+      "bytes": 13269,
+      "sha256": "fd8ee9c6bcb1536c74888ceee44f250b54c7ca2182ca8c83d9e4fcf0e8c06d8e"
+    },
+    "src/blackwire/library/derived_material.h": {
+      "bytes": 3364,
+      "sha256": "7747ae9ca33510251da2b5cc40e6cb8340da671255039b348b3e8f75da2e1ced"
+    },
+    "src/blackwire/library/derived_plan.c": {
+      "bytes": 26136,
+      "sha256": "76e639450ad1f2c3bfbf538d6c3b9a8d9b7bcd372c78e138e61d46a7693eae33"
+    },
+    "src/blackwire/library/derived_plan.h": {
+      "bytes": 4773,
+      "sha256": "a1a4b97d6f724d10dd383ca5acaeae21d51023f600108d4592406c24e6690ab1"
+    },
+    "src/blackwire/library/derived_provenance.c": {
+      "bytes": 20686,
+      "sha256": "ea6e247701f80778b02eadb53f35ca23bfe80914f8bd3705bb2ebf2990e35e2f"
+    },
+    "src/blackwire/library/derived_provenance.h": {
+      "bytes": 2002,
+      "sha256": "d15cdd8a9ace867e0867817c94971f9b98ace0c711587cc8982920e5913b0ffc"
+    },
+    "src/blackwire/library/derived_terminal.c": {
+      "bytes": 15169,
+      "sha256": "a59197e76dcc40a9f8fac665434b3595e1168d70c5c4491c12747f097d73c220"
+    },
+    "src/blackwire/library/derived_terminal.h": {
+      "bytes": 3149,
+      "sha256": "4255d9440841bf0230dbe183a3d12f144c0e808def2da039199c7a237e91cef2"
+    },
+    "src/blackwire/library/home_identity_ps5.c": {
+      "bytes": 1879,
+      "sha256": "4febe64d28789ce2af9ec62cc2c7301dd0afec090101dc053f523821fc740ec8"
+    },
+    "src/blackwire/library/home_identity_ps5.h": {
+      "bytes": 408,
+      "sha256": "c61e6b21a1aa6eb26e64ec93941451e1d6ceac71b8732317ff570a4dc94245a1"
+    },
+    "src/blackwire/library/home_protocol.c": {
+      "bytes": 4113,
+      "sha256": "616ae0cf306b90547a6383af7f774b53d45aa480c5d9988c92131211ba6595ea"
+    },
+    "src/blackwire/library/home_protocol.h": {
+      "bytes": 888,
+      "sha256": "1063cd5a8ca15683b2de062ae3e9433d60828bfb49e00c3787f5974c801efb84"
+    },
+    "src/blackwire/library/home_session.c": {
+      "bytes": 4247,
+      "sha256": "d484eba6d495f95b082661912bbad6a42770ff3844bddfa0f2a663708bc676f6"
+    },
+    "src/blackwire/library/home_session.h": {
+      "bytes": 2040,
+      "sha256": "b98d6072145316eca97388bff8f8949d07fba0e7cb1fd074538a92b21b4a3cc8"
+    },
+    "src/blackwire/library/icon0.png": {
+      "bytes": 1430630,
+      "sha256": "cfb85eff8f7928e1e68912b8c656741c39fdf49227d2e693945913157b4843da"
+    },
+    "src/blackwire/library/idle_log_cache.h": {
+      "bytes": 1979,
+      "sha256": "32bb8713f985ff06ac976e2c4d296ef5da54d5bc62b1e0edb1f2e38b9629d924"
+    },
+    "src/blackwire/library/launch_timing.c": {
+      "bytes": 8447,
+      "sha256": "693cf901ba32040fa1d0171aa9ee5bffdf6cabfb1c26968b852c5d8725a90dde"
+    },
+    "src/blackwire/library/launch_timing.h": {
+      "bytes": 3343,
+      "sha256": "de58ef1b68bb1430e77a99a1eee3c0936f0ffec0de3ae9ca7be048402ac1fda4"
+    },
+    "src/blackwire/library/main.c": {
+      "bytes": 40817,
+      "sha256": "df12a08d6ff5901b70cd23820ab23bdcba247bdf6a79174e5e4274e0a889f22c"
+    },
+    "src/blackwire/library/Makefile": {
+      "bytes": 246,
+      "sha256": "864238ad72c33c3fb8e2b851bc1099dc36606e60a4dddef009f93df8b9804b05"
+    },
+    "src/blackwire/library/media_public_trial.c": {
+      "bytes": 11482,
+      "sha256": "0f2c26417cf3ed5a5ea3e7db93dcf2f493b4865b316d88d4ba240d90ea3feb55"
+    },
+    "src/blackwire/library/media_public_trial.h": {
+      "bytes": 2782,
+      "sha256": "0f6c64dda1456217dd67226c84fcbaeac625c3d28db8244e9465399171e1a79f"
+    },
+    "src/blackwire/library/native_backend.c": {
+      "bytes": 141915,
+      "sha256": "ea581f939d482ee1a3c7296fdede32289b4ce86e45dfa5c5870f81a007f01649"
+    },
+    "src/blackwire/library/native_backend.h": {
+      "bytes": 9720,
+      "sha256": "744da4fd68a2da76bbfa02740820ba94383f12c1dbf7be67889faff1c69f2c11"
+    },
+    "src/blackwire/library/native_backend_home.h": {
+      "bytes": 29980,
+      "sha256": "445de65f2933951762cc52e56efd190c366ca9a6cc4a0bbf150c6d26028b192e"
+    },
+    "src/blackwire/library/native_backend_removal.h": {
+      "bytes": 19222,
+      "sha256": "9c721a7c5e83eb60cac97cea9bd2a4191c348576b283732285b1a22b6ea53903"
+    },
+    "src/blackwire/library/native_batch_context.c": {
+      "bytes": 20303,
+      "sha256": "555ce3771f2ec4eba5f0a1e8d67e1049e935d9451f96e5930f1196a3187de36c"
+    },
+    "src/blackwire/library/native_batch_context.h": {
+      "bytes": 3382,
+      "sha256": "f71ca3221d1c0d5f977321d45ed24710e8e5a7de3a73c1c01ac09b3ff426ce61"
+    },
+    "src/blackwire/library/native_batch_fs.c": {
+      "bytes": 23810,
+      "sha256": "6ed86573e4463501e4e341b0d8d70155bda5ef5bb5aa0ead9691d9e96b8de082"
+    },
+    "src/blackwire/library/native_batch_fs.h": {
+      "bytes": 557,
+      "sha256": "b7062b18195feb7680571e2235e77c31fcb1459a6da35bdb478db772e62da8ca"
+    },
+    "src/blackwire/library/native_batch_index.c": {
+      "bytes": 5944,
+      "sha256": "5242e80bc604d9870b83620c4dc120ba7508cb3b533b0b598e44952aa1402d6b"
+    },
+    "src/blackwire/library/native_batch_inspect.c": {
+      "bytes": 31302,
+      "sha256": "4fd477ddc98d82e01f8f546b7922afe31460d63ace6eb993e9b45b7201872acc"
+    },
+    "src/blackwire/library/native_batch_send.c": {
+      "bytes": 25711,
+      "sha256": "570ae293f2047a86dcd196773489ccbd3e59948a3c81393388f6f7223bc6f428"
+    },
+    "src/blackwire/library/native_batch_send.h": {
+      "bytes": 6691,
+      "sha256": "302e99dd533314b0a485b1495c962cdcb7589e4a2889f2e9e077b1cc1b4c8f34"
+    },
+    "src/blackwire/library/native_batch_terminal.c": {
+      "bytes": 14465,
+      "sha256": "013a766d40078dc96accfceaffbe9d0fa7691414333d0dbf8dd5b7d7ee9ba5ba"
+    },
+    "src/blackwire/library/native_batch_terminal.h": {
+      "bytes": 1945,
+      "sha256": "d4c11f6e06164c01c7dd95bce743e56ab388e576d2f99bb57268166278c9840c"
+    },
+    "src/blackwire/library/native_cleanup_remote.c": {
+      "bytes": 17566,
+      "sha256": "bf4a75773c06d65325244e990aab36f971c165e15fc07a021158dbb2497eebba"
+    },
+    "src/blackwire/library/native_cleanup_remote.h": {
+      "bytes": 3681,
+      "sha256": "ff9f3b420f1ab4e6830bdf8806cf1c094dc356cd434b8b2281782591c760dc12"
+    },
+    "src/blackwire/library/native_derived_context.c": {
+      "bytes": 7251,
+      "sha256": "cda48dea1c70df64e7f840263db77d444d49f14f2489434a108c08acebe7db95"
+    },
+    "src/blackwire/library/native_derived_context.h": {
+      "bytes": 1843,
+      "sha256": "e5dd9e71061a62d77ab375d16bf0e34a5422a37063154bc5956e1bd906446226"
+    },
+    "src/blackwire/library/native_derived_prepare_ops.c": {
+      "bytes": 10586,
+      "sha256": "aeb641dd01f1a7552b91cb8f57f38c4338a1118f000cee76c3e5eec0bad19e45"
+    },
+    "src/blackwire/library/native_derived_send.c": {
+      "bytes": 36642,
+      "sha256": "14adada5917f4d1f7b81ef0c1ff886b3394cfa183974e25c9c7e283130eddb36"
+    },
+    "src/blackwire/library/native_derived_send.h": {
+      "bytes": 3525,
+      "sha256": "02f9a9b1ecdd47004baecb4ce54b374ec4ae648300c46ccd682589fc5a6f4b5b"
+    },
+    "src/blackwire/library/native_document.h": {
+      "bytes": 726,
+      "sha256": "031b53ac5a163204bd88af43023e2de3a45075b85dc0bd70671a049e9881d86e"
+    },
+    "src/blackwire/library/native_game_uninstall.c": {
+      "bytes": 51488,
+      "sha256": "3075f1ad005e1714f126af0323bd0e23b1e4423f50d98d480231e99424ab1d2a"
+    },
+    "src/blackwire/library/native_game_uninstall.h": {
+      "bytes": 5998,
+      "sha256": "7d636e12fa066f34235e2e20624bafef73cba83b69c8166f778c247a83400733"
+    },
+    "src/blackwire/library/native_game_uninstall_remote.c": {
+      "bytes": 36871,
+      "sha256": "d3b21cfb602a2897c974fa332cb066454add5ffca6d001d009ab90cf7c9ab567"
+    },
+    "src/blackwire/library/native_game_uninstall_remote.h": {
+      "bytes": 1072,
+      "sha256": "b06e9e13e8f7d2a14b3ebb586846109ccf93f87a9c5c11dffe1a8deb126a9ba1"
+    },
+    "src/blackwire/library/native_job.c": {
+      "bytes": 12107,
+      "sha256": "734a85555ed57eab2dda8a37ee19e7ea30e8841046138acaeeb6d3c804fd901a"
+    },
+    "src/blackwire/library/native_job.h": {
+      "bytes": 2991,
+      "sha256": "e661739f5ad32515dbca4df3c67921cd202420392e5ec39a7c0ee3a39e9f18c4"
+    },
+    "src/blackwire/library/native_json.h": {
+      "bytes": 2055,
+      "sha256": "bb739d737f515dff714456a30899eb671bb22d25f7927ef8fa1d0a2af10871cd"
+    },
+    "src/blackwire/library/native_launch.c": {
+      "bytes": 9474,
+      "sha256": "afc0633c05dbfe0e91802b6ce45557a7f6a25dad448c3c435fcfc21d4a1457b8"
+    },
+    "src/blackwire/library/native_launch.h": {
+      "bytes": 1096,
+      "sha256": "0790e0b1d228b5b16f72c66ff3dc6c10fdf10b0f37601685fba6648b1467ed35"
+    },
+    "src/blackwire/library/native_launch_admission.c": {
+      "bytes": 16720,
+      "sha256": "5c3a5865645a27e242fcb25dc35e70de0563434251b8f151d1649f419d409fcc"
+    },
+    "src/blackwire/library/native_launch_admission.h": {
+      "bytes": 2323,
+      "sha256": "f0d69c90d037ce2411e7347a0e69b15bef6a958a8444653e2d9edbcbe0675233"
+    },
+    "src/blackwire/library/native_owned_registration.c": {
+      "bytes": 22809,
+      "sha256": "0ba541de662ba3a99dd6a5eea5e058e0711b162e9526c2c0049f324ad83ad193"
+    },
+    "src/blackwire/library/native_owned_registration.h": {
+      "bytes": 1775,
+      "sha256": "48015877bb8a611ed9ecd58c3a100c8a51731cdf2361c3fd40f222995f3f967c"
+    },
+    "src/blackwire/library/native_prepare_ops.c": {
+      "bytes": 11654,
+      "sha256": "4c51c29ee8690aba8a549b5c161223674713fc6ac0c5ac83f293e9b8ebd8299d"
+    },
+    "src/blackwire/library/native_prepared_target.c": {
+      "bytes": 7807,
+      "sha256": "1ed7d15c1e78335d4ead7ed0123df9c8a092d034827724b6313f8bdf8197e327"
+    },
+    "src/blackwire/library/native_prepared_target.h": {
+      "bytes": 722,
+      "sha256": "4d1b9bd1d2eb849da0db0de5b558cf9ef90f21da50d2e22cfa002f3d2e01d4ce"
+    },
+    "src/blackwire/library/native_process_result.h": {
+      "bytes": 539,
+      "sha256": "34d79d9cc646b33b5d2f7804551eafdf8aec40777ca8a393e3e8b91c262e38e8"
+    },
+    "src/blackwire/library/native_project_recipe.c": {
+      "bytes": 9521,
+      "sha256": "b486ff8c88e74ad0f00596d236f1e4e56973f94b8f071955c9a4b9d661113155"
+    },
+    "src/blackwire/library/native_project_recipe.h": {
+      "bytes": 1661,
+      "sha256": "1dc78fc17554e1350850df110b06db316dfa0f194de4d14adda2fc6d50ffa0d1"
+    },
+    "src/blackwire/library/native_register.c": {
+      "bytes": 13408,
+      "sha256": "212cb8a35ba443184f714f58852f12830f47e9776a483ab5bba68014991f98f4"
+    },
+    "src/blackwire/library/native_register.h": {
+      "bytes": 1156,
+      "sha256": "b105039bb415d56ee2347034c971e4f15affceb8d6ed0ce82cae92fcdbe5d1d0"
+    },
+    "src/blackwire/library/native_registration.c": {
+      "bytes": 6566,
+      "sha256": "d9a0a7f90615dac16ab235a032dc99d4892dbfc28d130663d615f0d145c53c8f"
+    },
+    "src/blackwire/library/native_registration.h": {
+      "bytes": 1140,
+      "sha256": "0146b705bad52e85ed718141cf01a4a3c3ed51a553c3af27e1d17e931b50081d"
+    },
+    "src/blackwire/library/native_registration_cleanup.c": {
+      "bytes": 54627,
+      "sha256": "591aaa9607d11035ea460c32bcd9abd6e4ff0761a27e4e76af4812f39f0a1af2"
+    },
+    "src/blackwire/library/native_registration_cleanup.h": {
+      "bytes": 7137,
+      "sha256": "3ab9dbdadb16e5ab535a44cd7b762cf25d9975acb9e95dfd62f939121c9ceab4"
+    },
+    "src/blackwire/library/native_registration_lifecycle.c": {
+      "bytes": 33879,
+      "sha256": "b35a9638b96ee891fc1b291b93d86010a54b588bb0c547c17af850c418cb843e"
+    },
+    "src/blackwire/library/native_registration_lifecycle.h": {
+      "bytes": 4425,
+      "sha256": "1dca17f8f61bddf011a75b8afb1165de72e5c6f7673c8f7f05fb99f6d70f9357"
+    },
+    "src/blackwire/library/native_registration_maintenance.h": {
+      "bytes": 1500,
+      "sha256": "8bc4675b70dd0a0fdfab901fdd0a6166e2a2a2c5d13c9b06747db29aec273af1"
+    },
+    "src/blackwire/library/native_registration_removed.h": {
+      "bytes": 2381,
+      "sha256": "c3496489e0f13d1b00414bce4790eaf1d3d16a2970922a9120f30b7a7906f555"
+    },
+    "src/blackwire/library/native_registration_retirement.h": {
+      "bytes": 3701,
+      "sha256": "de0f1cb7126f8a610c847b8afe343d3097817258e8f9df273b6dc075b644660a"
+    },
+    "src/blackwire/library/native_removal_request.c": {
+      "bytes": 2117,
+      "sha256": "44185c761a2464d3f08b26e9ae1b1ed68f007a919086fc055fd6858e9ebd7f20"
+    },
+    "src/blackwire/library/native_removal_request.h": {
+      "bytes": 530,
+      "sha256": "49400de55c4d85f1df174a6f4075539197ae31d88031ff3079ea61c23d5c7284"
+    },
+    "src/blackwire/library/native_removed_sources.c": {
+      "bytes": 16443,
+      "sha256": "69f307cd005620ca0b731f30a4f1c9379c8046d1a89b09adefa77faf786d7d70"
+    },
+    "src/blackwire/library/native_removed_sources.h": {
+      "bytes": 2384,
+      "sha256": "7cf978a3b5014a1054eaf7ebefb42a00dc05800d18d29ea8e5ebd2b3af5c715e"
+    },
+    "src/blackwire/library/native_request.c": {
+      "bytes": 6326,
+      "sha256": "3f00d5894f5d8902ee6100029e3c929a4a97029b734f81c25379359502faebc1"
+    },
+    "src/blackwire/library/native_request.h": {
+      "bytes": 874,
+      "sha256": "36585510c421b81e70218577fd83cd880c159747273895371a8e5b83a583d946"
+    },
+    "src/blackwire/library/native_send.c": {
+      "bytes": 35978,
+      "sha256": "fc28dd41d281571e954dfc89b066f5f9930949e277f61806bc1b567e2d031528"
+    },
+    "src/blackwire/library/native_send.h": {
+      "bytes": 3959,
+      "sha256": "7be9830fdc18021414e00bd7d3e46c769de55725495052227a07cb65bdf1a039"
+    },
+    "src/blackwire/library/native_session.c": {
+      "bytes": 3400,
+      "sha256": "5b705ae149383317300eed5ab96e90a09b232f101a211f338be58682b973e52e"
+    },
+    "src/blackwire/library/native_session.h": {
+      "bytes": 2004,
+      "sha256": "c40f27f22c965910307deafd3da50a7e5387040e02505d9bbf3d10806c61e041"
+    },
+    "src/blackwire/library/native_session_ps5.c": {
+      "bytes": 2179,
+      "sha256": "d1c8c613a1c01daeee276c4a98f2b9c33a10b4bdbcb3a4676f819e18c403825d"
+    },
+    "src/blackwire/library/native_setup.c": {
+      "bytes": 10241,
+      "sha256": "3e16eb9ccde483d6eba441cbc7c629fbbe41df607cad7caec753063260cba2d7"
+    },
+    "src/blackwire/library/native_setup.h": {
+      "bytes": 1376,
+      "sha256": "a5f298b4b466f312549e3cee5eaf42baab3b9a3edfba94cd7f09fb89eb61ef60"
+    },
+    "src/blackwire/library/native_startup_hint.c": {
+      "bytes": 3915,
+      "sha256": "bf747039927b01e698d6873e0599f5f639817a6737c19894037fa00dd89db1bf"
+    },
+    "src/blackwire/library/native_startup_hint.h": {
+      "bytes": 463,
+      "sha256": "8fdcef3c81874ca7dbb5fd0bc2fc7f747e55d4bbc79f2c1a65069b6b3b222b8e"
+    },
+    "src/blackwire/library/native_startup_upgrade.c": {
+      "bytes": 16839,
+      "sha256": "e17fb6748fbfdc3e528de8beb8e2b353d078c67c8ace5cabbd55573203bdd890"
+    },
+    "src/blackwire/library/packed_bootstrap.c": {
+      "bytes": 44762,
+      "sha256": "7ff497434db51ec682390daa8be78ef5ae489676359a1cb5f901a8ffba2a6c56"
+    },
+    "src/blackwire/library/packed_bootstrap.h": {
+      "bytes": 8100,
+      "sha256": "56cb418253d21194670a6f57421328c9cce8d17fc07ad9bdefa2ffd337554e9c"
+    },
+    "src/blackwire/library/packed_bootstrap_rules.h": {
+      "bytes": 5607,
+      "sha256": "73eb5246d1433d89f6ea4dd18497239c372ad8ffaf15e386a073fa5d9af8f32a"
+    },
+    "src/blackwire/library/packed_project.c": {
+      "bytes": 21730,
+      "sha256": "7981145588109215555f5578618a6724b25001c1703ff4ff1e8f62cf544fe191"
+    },
+    "src/blackwire/library/packed_project.h": {
+      "bytes": 2964,
+      "sha256": "2b9790ac6bddf3b0ad9492a86f1f99866f6264dc32bf8e924ee65f698db8e2b4"
+    },
+    "src/blackwire/library/packed_project_json.c": {
+      "bytes": 8053,
+      "sha256": "9317cfb816d95e8f79b0d80c1e8d0b8022f3e58de276665fac354a0bce6b6647"
+    },
+    "src/blackwire/library/packed_project_json.h": {
+      "bytes": 428,
+      "sha256": "db9adde18df5db04d5ec9bfd1d1aa2dcb7a289e6c271c40e08c4d96cf200b803"
+    },
+    "src/blackwire/library/packed_sha1.h": {
+      "bytes": 2229,
+      "sha256": "695244c51a40936ac58a595e3c3bb794a2a359d86724c6a93d36b0f104665395"
+    },
+    "src/blackwire/library/param.json": {
+      "bytes": 223,
+      "sha256": "8a00abc182be715d47d6786e098c23d49a555a41f534300477c6693dce5dd0a8"
+    },
+    "src/blackwire/library/preload_bundle.c": {
+      "bytes": 46559,
+      "sha256": "79851b22c2677767de7b45fb8931affcae0625fb9a206d1498df7f07e5a97e00"
+    },
+    "src/blackwire/library/preload_bundle.h": {
+      "bytes": 5611,
+      "sha256": "1ab6520775aabdce5cfd8649261e8fe371afe4f9d149f59f3b221003e01bf496"
+    },
+    "src/blackwire/library/preload_handoff.c": {
+      "bytes": 18542,
+      "sha256": "33550dd70edc3f8775cfbd58a34fd816e72694d379d40e193109e4079e0ac379"
+    },
+    "src/blackwire/library/preload_handoff.h": {
+      "bytes": 6001,
+      "sha256": "7ddbe76d48070348715c16fa3337ed1c85f2d833c9d7e29f6926a09f6643b673"
+    },
+    "src/blackwire/library/preload_launch.c": {
+      "bytes": 7562,
+      "sha256": "da3ea166bb52ff4b01f2d261fa4fa429a50b24527086de3366aecd9f50494476"
+    },
+    "src/blackwire/library/preload_launch.h": {
+      "bytes": 2898,
+      "sha256": "11d002dba065fedf31d87effb5ac89ac17bbc442fd20a778a1a4114e958753cf"
+    },
+    "src/blackwire/library/reader_asset.h": {
+      "bytes": 3577,
+      "sha256": "b3c4f9eacdf08051fe3457b455e703a37d92830e9e1fb42aede3d2ba7d8be627"
+    },
+    "src/blackwire/library/reader_asset_smb.h": {
+      "bytes": 2851,
+      "sha256": "b9703d278a46480c41f6fce79acf6beab089cca0ae5aefb409ef62e21e7befeb"
+    },
+    "src/blackwire/library/reader_preflight.c": {
+      "bytes": 28452,
+      "sha256": "1e8d1556fee98a5044e87e40dc71c7828f661dec6b82f55b76ddb18d01acf887"
+    },
+    "src/blackwire/library/reader_preflight.h": {
+      "bytes": 3764,
+      "sha256": "a8d42ecee8bb2aa64a255a22810114e937f144caee11d7efa44634dce2da6ba4"
+    },
+    "src/blackwire/library/reader_runtime.c": {
+      "bytes": 5316,
+      "sha256": "d9d8f0ea40cbbe6928238706b7220b7c4778024b4249c19583f01d51ff05d5c1"
+    },
+    "src/blackwire/library/reader_runtime.h": {
+      "bytes": 3248,
+      "sha256": "39d7645a05c912ddbc86028c5d2f22083528c14cc8e3e7bc28158665ff0e358c"
+    },
+    "src/blackwire/library/reader_selection.c": {
+      "bytes": 11448,
+      "sha256": "3db937809e932742fdb492eac4b095507e4ff5700b0a5c44d36d9eccb7d6d66d"
+    },
+    "src/blackwire/library/reader_selection.h": {
+      "bytes": 2565,
+      "sha256": "81019c4c1ee57f897fc9a6cb46e324b7f59da07687deecf8be4e9c22e8de8ab7"
+    },
+    "src/blackwire/library/reader_source.c": {
+      "bytes": 16943,
+      "sha256": "063cfa45fc3ee4b4e51db47b8df7546d689bd8a8b40b6945a58ff91eb61be584"
+    },
+    "src/blackwire/library/reader_source.h": {
+      "bytes": 3766,
+      "sha256": "3d0c3b034b8780775fcdb83eed19c507e4cf8c7b7c949010495d0763db4d15c7"
+    },
+    "src/blackwire/library/reader_user.c": {
+      "bytes": 1048,
+      "sha256": "dff2391d3392eed0f8c75929eef3da3d29aaa57c966bcbcab458ae7f9dfa2668"
+    },
+    "src/blackwire/library/reader_user.h": {
+      "bytes": 819,
+      "sha256": "3dc720d1a77e80b81d57b474139aff60a5d0c23e3adf87a3b420e2fe89d03dfe"
+    },
+    "src/blackwire/library/register_job.c": {
+      "bytes": 7461,
+      "sha256": "a76693ffd99896a438466a1f4207f65e4a3d976ac90c9278a02ff387ff900612"
+    },
+    "src/blackwire/library/register_job.h": {
+      "bytes": 1537,
+      "sha256": "a801a6f4714ca239279b854a31cca7485f4a381cceaaa1f230882de884d1bc2e"
+    },
+    "src/blackwire/library/registration_db.c": {
+      "bytes": 9247,
+      "sha256": "5495b641b18d22071718a3a777faa03e74b7396c79f14e79bf3e4c6102ba88de"
+    },
+    "src/blackwire/library/registration_param_compat.h": {
+      "bytes": 758,
+      "sha256": "aa3202f86343c220a1ecc159d7967c47779ba70ce888e6d7f7fbec7358002b31"
+    },
+    "src/blackwire/library/shadowmount_client.h": {
+      "bytes": 3662,
+      "sha256": "a996807be37699eaca93f0c16a0545a9cd29446e3c3de1fb58f9aa6f88ec7def"
+    },
+    "src/blackwire/library/shadowmount_http.c": {
+      "bytes": 13922,
+      "sha256": "7c740500565808b4df5eafb5d3b547d5f02dd88c59994c4fbcf631e04186eb2f"
+    },
+    "src/blackwire/library/shadowmount_reply.c": {
+      "bytes": 9182,
+      "sha256": "6babbe08a00136bdfd15278a483dd3728bff858c0c32a9a608dedeaf4948a857"
+    },
+    "src/blackwire/library/source_binding.c": {
+      "bytes": 1735,
+      "sha256": "4631408df5d80285eb2dbb89aab8e7c98270b79b314d927fc6eb7344893ba3ba"
+    },
+    "src/blackwire/library/source_binding.h": {
+      "bytes": 858,
+      "sha256": "6dd351eb2c5c29bf8b6df143f5f093a8aef8bc55ae69b892863e767f106798af"
+    },
+    "src/blackwire/library/source_catalog.c": {
+      "bytes": 16023,
+      "sha256": "6c84647ea6d985335d272805a5e1c6d495526ec2f285e360763d10a7f7de61a9"
+    },
+    "src/blackwire/library/source_catalog.h": {
+      "bytes": 2362,
+      "sha256": "344f793bdfafa6c7b6de50c3fe2007143b9707218227a744d88dd0e3a90c6146"
+    },
+    "src/blackwire/library/source_directory.c": {
+      "bytes": 2581,
+      "sha256": "8b7d2074c32c364f172eb3e32853c920937364e8b9610e1d7f5f97802b7aa07b"
+    },
+    "src/blackwire/library/source_directory.h": {
+      "bytes": 650,
+      "sha256": "aaa6f36b4fb967bc5089be4f7e6c0954876b53eab8543a5d8855fb4caa961a73"
+    },
+    "src/blackwire/library/source_identity.c": {
+      "bytes": 1036,
+      "sha256": "9bfc3e04b16b88d5bb67b16948ef3ae44d24ddcea97c9d61d091dcfe13940f1b"
+    },
+    "src/blackwire/library/source_identity.h": {
+      "bytes": 486,
+      "sha256": "ef45030a3d359398c9e32f9da9707e7a737614e3768242a0f725896bf1ab60fe"
+    },
+    "src/blackwire/library/source_param.c": {
+      "bytes": 16358,
+      "sha256": "833b471592da2e9f3e27dabb279663785b82dacbe8ba00ad97ace27a98b485ae"
+    },
+    "src/blackwire/library/source_param.h": {
+      "bytes": 983,
+      "sha256": "8e150737ddf88b8956599d83f54597bf97451c33c1fb0c3ae35b760d037c73a0"
+    },
+    "src/blackwire/library/source_plan.c": {
+      "bytes": 9391,
+      "sha256": "812bf860ba84860d47f4d22d41103c06e9aa864646b9782966170a8253cb7766"
+    },
+    "src/blackwire/library/source_plan.h": {
+      "bytes": 1751,
+      "sha256": "8f10bdab721f61d11ee85519e58c5e55df7913ae1c9ce110adae99d39753240e"
+    },
+    "src/blackwire/library/source_prepare.c": {
+      "bytes": 7493,
+      "sha256": "88ddee2c74ab0d039210d139a54be8929aece0c5762c1f116698bc6d76cd8cf2"
+    },
+    "src/blackwire/library/source_prepare.h": {
+      "bytes": 1254,
+      "sha256": "afd59b7daf4ee6726ef77ac4d8444f99e5a2dc1845552c1ffa0af1c53183dbc4"
+    },
+    "src/blackwire/library/source_profile.c": {
+      "bytes": 7687,
+      "sha256": "37119feeadc1dc2dfd8bb509eff59870ea51f9eecba031c8870b6476e704c5a0"
+    },
+    "src/blackwire/library/source_profile.h": {
+      "bytes": 1577,
+      "sha256": "62fc973feaf74c077f9594727dc9faf7dc88a433898f7e407a52dedd51aa9bfc"
+    },
+    "src/blackwire/library/source_provider.c": {
+      "bytes": 9400,
+      "sha256": "283f44a6aa7caff7f842473069c7807933e6f269492dd672fb228007b87bbff0"
+    },
+    "src/blackwire/library/source_provider.h": {
+      "bytes": 3167,
+      "sha256": "fe565d16be06ce5ee96948f78331afa279ab272a1a9b5293a2112319597c5697"
+    },
+    "src/blackwire/library/source_smb.c": {
+      "bytes": 35099,
+      "sha256": "e50de408243761cd4cef4bc9402767340725c6f78676e0efd6163d686bd3e563"
+    },
+    "src/blackwire/library/source_smb.h": {
+      "bytes": 5553,
+      "sha256": "a0566c85d4667ff66ba24fef114e091e2f88fa92daef5bb81373ad71ab69eaef"
+    },
+    "src/blackwire/library/source_snapshot.c": {
+      "bytes": 10450,
+      "sha256": "3a4577f7314ad3bf8c4cd64861af4407a8c5c73eb2e3bc66b3992303d84a7b02"
+    },
+    "src/blackwire/library/source_snapshot.h": {
+      "bytes": 1989,
+      "sha256": "3d58f0953c9c8c799b2c8d38443f8095f048359ac6c4d508155f0e34d6c1d64f"
+    },
+    "src/blackwire/library/startup_runtime_control.c": {
+      "bytes": 5064,
+      "sha256": "1d7d0e9e56383345f76c39f6fb656e2b0d412f3ba0add92fee1fc1a6f0252952"
+    },
+    "src/blackwire/library/startup_runtime_control.h": {
+      "bytes": 1839,
+      "sha256": "e263e081413334a8c4006402bf09e4b35fb366de61e1b290d9de07e827519e40"
+    },
+    "src/blackwire/library/startup_runtime_control_internal.h": {
+      "bytes": 1089,
+      "sha256": "9902be139c5fd53e7c187c638e53c070eaaa8d63b6aeec00538c6f30755930d2"
+    },
+    "src/blackwire/library/startup_runtime_http.c": {
+      "bytes": 6040,
+      "sha256": "c65535271cc1e8cb0905d493edbdc03d4bb461048c59303cdc5fbe3fd73b874b"
+    },
+    "src/blackwire/library/startup_runtime_idle.c": {
+      "bytes": 18121,
+      "sha256": "218d6e569e9d56cc71745155df55d60e8255e50581aa883b696a877c6a99371b"
+    },
+    "src/blackwire/library/startup_runtime_idle.h": {
+      "bytes": 1578,
+      "sha256": "287f286fe64202b8ff7238209c20aca800c9ef22c8fd549622404c93cd781507"
+    },
+    "src/blackwire/library/startup_runtime_idle_ps5.c": {
+      "bytes": 2608,
+      "sha256": "9852113ce5991f25786774793916d30298bb385d1aa758302be0fdd2f351eae9"
+    },
+    "src/blackwire/library/startup_runtime_paths.c": {
+      "bytes": 3869,
+      "sha256": "8f9e35af5328973bb5030d43ff785764a36ca02b1614b202e405a21404704fc7"
+    },
+    "src/blackwire/library/startup_runtime_reply.c": {
+      "bytes": 6214,
+      "sha256": "076e6d153c5b923fe255719d88273f6d2ad561e0eb3414b5b632a37a939b10ce"
+    },
+    "src/blackwire/library/tests/check_cover_cache.py": {
+      "bytes": 6488,
+      "sha256": "78c531a7453d79aee91f18807bd7927998a5f3f7fe71eb137b72e8438bf31ef0"
+    },
+    "src/blackwire/library/tests/host_cover_cache.c": {
+      "bytes": 8073,
+      "sha256": "4d2c70db3ad4dacc03b55bd55a61cf754d1c510ea232e9b5bee200d85e90a99e"
+    },
+    "src/blackwire/reader/native-reader.c": {
+      "bytes": 111071,
+      "sha256": "6438063469d2535d7360d0766cca0f5c48c5234deb9a4ab35bad2074004e970c"
+    },
+    "src/blackwire/reader/preload/first_read.c": {
+      "bytes": 1309,
+      "sha256": "e758d302df510617fea2adb1e7c1a5544f17412fcf047c444c37e6fbe40fd4e0"
+    },
+    "src/blackwire/reader/preload/first_read.h": {
+      "bytes": 636,
+      "sha256": "90ec80e7f399083aa608e6c392732ce23b56cfa03d8e03700553b676dd9280dc"
+    },
+    "src/blackwire/reader/preload/home_client.c": {
+      "bytes": 12284,
+      "sha256": "231e1a368436525e2c522ae26b2834580916539e863122fa68f6ed2dcb11070f"
+    },
+    "src/blackwire/reader/preload/home_client.h": {
+      "bytes": 1574,
+      "sha256": "35cb08413802b4364bcb619381454c2b69ffb5e0e6cf5d69a65bef1afca0d28b"
+    },
+    "src/blackwire/reader/preload/private_smb.c": {
+      "bytes": 2552,
+      "sha256": "b58a998a4f1a5f69ce83f9048d00a4110d6cc510595afdfd2210c2f111016e7c"
+    },
+    "src/blackwire/reader/preload/runtime.cpp": {
+      "bytes": 23943,
+      "sha256": "ff2cfa2daf212daab8e14d9c1dd47e8855490536733d6bdcb2523a3e25ab706a"
+    },
+    "src/blackwire/reader/preload/runtime.h": {
+      "bytes": 1454,
+      "sha256": "e2b7bba710bc042cc2f599245d8caa1903d24335987bc949d5bff9a8da18ffcb"
+    },
+    "src/blackwire/reader/preload/source.c": {
+      "bytes": 24298,
+      "sha256": "2010425492e98ad9968d98104ef4e45788c7941251c0852d394138a9540019f8"
+    },
+    "src/blackwire/reader/preload/source.h": {
+      "bytes": 7632,
+      "sha256": "3de0703d3e7420925e6a84fdaad812b1fb55d6bfcb14e979840cc49b880a6e48"
+    },
+    "src/blackwire/streamreader/asset_prepare.h": {
+      "bytes": 4842,
+      "sha256": "73bff2e1730d96eaa934c90aaceba59194a008eee57be9201846e2f9615c4272"
+    },
+    "src/blackwire/streamreader/asset_reader.h": {
+      "bytes": 2318,
+      "sha256": "3bd4ea54bd3af6ead62733cba56236c8fc20922b030b37e0189e13044e8e3668"
+    },
+    "src/blackwire/streamreader/asset_volume.h": {
+      "bytes": 3830,
+      "sha256": "24ce149de522f4abac698568b4066c0003d731f02cb5915bb2f43ceb3cdcad1a"
+    },
+    "src/blackwire/streamreader/asset_volume_bridge.h": {
+      "bytes": 1886,
+      "sha256": "d32023de4cd51c4453cd8d91af587eb066a93f079dcc9e04b3f68bb8d7b01272"
+    },
+    "src/blackwire/streamreader/asset_volume_cache.h": {
+      "bytes": 1304,
+      "sha256": "0d098a44bab65e4d363730c409e7a645f846087096aeed1126d8ccef5cd92970"
+    },
+    "src/blackwire/streamreader/asset_volume_smb.h": {
+      "bytes": 2490,
+      "sha256": "4142af56dde072c2d36700c25cf532537feee5c0bf238aa4e4569169b37d3d79"
+    },
+    "src/blackwire/streamreader/cache.c": {
+      "bytes": 4596,
+      "sha256": "24b67a0f394aef0cb4bf2ffdc6690bafd72ba0881ed85214d0d66c35b704dcff"
+    },
+    "src/blackwire/streamreader/cache.h": {
+      "bytes": 2510,
+      "sha256": "c62bba19c8235bb61cffd1398aab89bde7b0d6a97ad4567e1047022693f70347"
+    },
+    "src/blackwire/streamreader/container_cache.h": {
+      "bytes": 966,
+      "sha256": "38d6e7c227a14680edc70a5ecce6ce49959648c5bc491e250e5b449d797c0662"
+    },
+    "src/blackwire/streamreader/container_manifest.c": {
+      "bytes": 3303,
+      "sha256": "d171673b1b886bf6a8a3cedcee895bae1bc5ecf6f478e55a76f4681967710544"
+    },
+    "src/blackwire/streamreader/container_manifest.h": {
+      "bytes": 1264,
+      "sha256": "084adfd7de0137079aa9d45158ec543a56abee4174a76830021feeb3a9a5960a"
+    },
+    "src/blackwire/streamreader/container_smb.c": {
+      "bytes": 2907,
+      "sha256": "e300aeb1caa4974d515cb3ffc41dfaaa7aa00cd5edccd17248fb3d7b9316c825"
+    },
+    "src/blackwire/streamreader/container_smb.h": {
+      "bytes": 1028,
+      "sha256": "50d89727b35ac7b2b1191e9a2aa5ddd5c503e12d4733f52cb93486eedc45f3d1"
+    },
+    "src/blackwire/streamreader/container_source.c": {
+      "bytes": 6629,
+      "sha256": "cbcf37456f596c2b8e76cfe396d25cc43a924a56d613860b0a0f336194d089e4"
+    },
+    "src/blackwire/streamreader/container_source.h": {
+      "bytes": 2079,
+      "sha256": "3768fc349c1ab4e9583a4ce3ec6c1c76c48ae5ec19f43455396ed3be552e8fec"
+    },
+    "src/blackwire/streamreader/copy_fs.h": {
+      "bytes": 12266,
+      "sha256": "f8b84cfae85e8b1e3e3c479c8c80173b06a07777f78495eeaa51701c7f66d782"
+    },
+    "src/blackwire/streamreader/copy_sha256.h": {
+      "bytes": 3054,
+      "sha256": "2823060468f48440c6198fc8ad79b39aa88bb688eb997e80022fbfbc3b117b30"
+    },
+    "src/blackwire/streamreader/diagnostics/game_stop_identity.c": {
+      "bytes": 1737,
+      "sha256": "8b368cb2f026d778011a5021a55c693b4cc69d17a2f7eb0f720a343f823f864c"
+    },
+    "src/blackwire/streamreader/diagnostics/game_stop_identity.h": {
+      "bytes": 836,
+      "sha256": "5b09686c471f7abe0c07e6774944431817330190044b091d799239381a86edb5"
+    },
+    "src/blackwire/streamreader/filemap.c": {
+      "bytes": 15899,
+      "sha256": "61764514d80a5047f572dcec06861165e668ec3e267b98eb17c057cd97206fe2"
+    },
+    "src/blackwire/streamreader/filemap.h": {
+      "bytes": 4153,
+      "sha256": "ef6cb0c13df0fda4a4613960333b4177f05e70aa5df3bd19d98484984bb8fdb9"
+    },
+    "src/blackwire/streamreader/helper_window.h": {
+      "bytes": 977,
+      "sha256": "950fa4df282db1c2380caf7cb3637ee8ba456627f9cbbd4621fb1d4826c2d3c6"
+    },
+    "src/blackwire/streamreader/lifecycle.c": {
+      "bytes": 6352,
+      "sha256": "463e27a8b06d7be5662cf0e375c98ee6a6a250c3e133e54cc92cc2f07911418f"
+    },
+    "src/blackwire/streamreader/lifecycle.h": {
+      "bytes": 2494,
+      "sha256": "022a2fbb58b25473783459243517bec504fc6fea962800473b6224932ad88fbd"
+    },
+    "src/blackwire/streamreader/manifest.c": {
+      "bytes": 9785,
+      "sha256": "8f9a2c7229c860587ee9bb641d574f7185c799b1ab0b0e53346b060845e1db3e"
+    },
+    "src/blackwire/streamreader/manifest.h": {
+      "bytes": 2631,
+      "sha256": "9f3b3444efe09423bec8ac382a86af4bcc66c2fc2496d56b76b57b1ea2881420"
+    },
+    "src/blackwire/streamreader/native_profile.c": {
+      "bytes": 17228,
+      "sha256": "d95f2a45bd1486c131055d6057b0b4d016b88655870a6314a12e74ddab91efc4"
+    },
+    "src/blackwire/streamreader/native_profile.h": {
+      "bytes": 4525,
+      "sha256": "f4fe68a0e2271365749fcdc2f00a712cf7e06aa457f3c570a93cf088378c47a4"
+    },
+    "src/blackwire/streamreader/owned_vm.c": {
+      "bytes": 5474,
+      "sha256": "fe2ffb8419218267a878c01dd0b686e3dc0867c8bbbd8f53ed363d31c6e85ce4"
+    },
+    "src/blackwire/streamreader/owned_vm.h": {
+      "bytes": 2659,
+      "sha256": "f93f64ba769d05565600a89b7d4add814e9b67c1e990c4428fe99e159f6f5cb5"
+    },
+    "src/blackwire/streamreader/owned_vm_window.c": {
+      "bytes": 3268,
+      "sha256": "7efeb8e6fa0d7e06c4028fb2be201c352d4f14d5e36d3f32f170a2660052e76d"
+    },
+    "src/blackwire/streamreader/owned_vm_window.h": {
+      "bytes": 1811,
+      "sha256": "4b6b4db8b7e5015357fd4c42511057584b9dedff8b5fe14dd4277982c7358440"
+    },
+    "src/blackwire/streamreader/path_hook.S": {
+      "bytes": 3205,
+      "sha256": "0a52758eae314fe3061d7a6641827ad20ab1e07da337c4426f836b340a707281"
+    },
+    "src/blackwire/streamreader/path_protocol.h": {
+      "bytes": 2557,
+      "sha256": "085c6a3b2a0b01b65999a63be6ca055bffabe36d98bd706045e34488120057d8"
+    },
+    "src/blackwire/streamreader/perf.h": {
+      "bytes": 940,
+      "sha256": "3dc13b89fd1714752a6e501547e019656c2e1a257d1db5f932884e2e6ae40194"
+    },
+    "src/blackwire/streamreader/pfs_source.c": {
+      "bytes": 15733,
+      "sha256": "27ad4815d2b8442a025282b95727e0a3fef781c5d9b98d64922b12e2728dcc71"
+    },
+    "src/blackwire/streamreader/pfs_source.h": {
+      "bytes": 2040,
+      "sha256": "313e5e1005d2473d9f13d0b4a7ff04fe11cac445d0c1036a3526414a0bc5ffe9"
+    },
+    "src/blackwire/streamreader/pfsc_inflate.c": {
+      "bytes": 1397,
+      "sha256": "44dbd76a73e35045e5801a4b951b0cd87eaabc3064e249d73032ca18021bf530"
+    },
+    "src/blackwire/streamreader/pfsc_range.c": {
+      "bytes": 4917,
+      "sha256": "3829d23809f86d18a52a1b230ff964974daa6bb3e11962b69528ef77d9ab2fb6"
+    },
+    "src/blackwire/streamreader/pfsc_range.h": {
+      "bytes": 1970,
+      "sha256": "b6642fd2ca199bd24f1d5544e0ee997679adec21c48bff23b38fe37b82366e28"
+    },
+    "src/blackwire/streamreader/preparation_receipt.h": {
+      "bytes": 1817,
+      "sha256": "723ca3d36140407e668a1c6c7941aa5a52e8d9af1069e66ff7b1ae52fbf1b852"
+    },
+    "src/blackwire/streamreader/prepare_copy.c": {
+      "bytes": 53868,
+      "sha256": "bf85f5dfba6de151bcf512df21145f222781b85abf9fd27974069c65d7780e4d"
+    },
+    "src/blackwire/streamreader/protocol.h": {
+      "bytes": 1419,
+      "sha256": "0bf32673e1b0ebc955db14af5cc3f3f9f9a3cb7940f138b665b313eb15534e91"
+    },
+    "src/blackwire/streamreader/read_plan.c": {
+      "bytes": 6642,
+      "sha256": "786dba8e7945a5d439e29f4fcf64c6551deaf409d286341294a171ce6df17ac9"
+    },
+    "src/blackwire/streamreader/read_plan.h": {
+      "bytes": 4113,
+      "sha256": "71d9882dce6b4ca939f1f8a3af32ff6b76ac7143259df3a19107e7fda27b4b9a"
+    },
+    "src/blackwire/streamreader/readiness_window.h": {
+      "bytes": 905,
+      "sha256": "d02d001424be602acf891869d258ba1484959e0471e85d340d25788af2549be1"
+    },
+    "src/blackwire/streamreader/sequential.h": {
+      "bytes": 2757,
+      "sha256": "1716d51e60621334f58a2e384f36db86cb6f66f9f72b0f7bfb4c34d632f79a8f"
+    },
+    "src/blackwire/streamreader/share_config.c": {
+      "bytes": 3971,
+      "sha256": "e591d9310f880eed68de112e68a39b678012508f966096fe94b9682b9a139a06"
+    },
+    "src/blackwire/streamreader/share_config.h": {
+      "bytes": 483,
+      "sha256": "4cd15a2e8edeed02fe66efeef60db6b1d0f0fb3be57b741e3aed5cbb5c3d43ab"
+    },
+    "src/blackwire/streamreader/smb_diagnostics.h": {
+      "bytes": 3253,
+      "sha256": "8e7a54fd81d50a041b850d759eb1f2f7917659977e7ee6936f55d962eb2a5eb0"
+    },
+    "src/blackwire/streamreader/stage_identity.h": {
+      "bytes": 3776,
+      "sha256": "03ef6a5922dd9de00e123c19d158795c32d1ff657334f43a7df0c81ca354ee8e"
+    },
+    "src/blackwire/streamreader/stage_writer.h": {
+      "bytes": 1606,
+      "sha256": "1fc27b42e6254210194e3fd58bc11276de36f8486bb22cebb0d6c4f829448631"
+    },
+    "src/blackwire/streamreader/stage_writer_ps5.h": {
+      "bytes": 970,
+      "sha256": "78b014e8506535056f15d64f70e5bd03bce80aa998a1f5c1d09db4f1bd1b1dc4"
+    },
+    "src/blackwire/streamreader/startup_mode.h": {
+      "bytes": 859,
+      "sha256": "7a2a6ad16f28c9585fa6a041580287f043fd71ba9d2a1c52f9d40c81dde71799"
+    },
+    "src/blackwire/streamreader/startup_prefix.h": {
+      "bytes": 3032,
+      "sha256": "cf6e65a9fadd815341f17d888575115831b687d20f3c7d5401fcb4521cac8048"
+    },
+    "src/blackwire/streamreader/startup_prefix_fs.h": {
+      "bytes": 1749,
+      "sha256": "281e2cd58b8951402e26059758c098e1b737896f405c26339c9dd072ade297d6"
+    },
+    "src/blackwire/streamreader/startup_trace.h": {
+      "bytes": 2886,
+      "sha256": "440010f267e682b7747e3215de44910ed439714e485bbb1dd130836bb2610cd7"
+    },
+    "src/blackwire/streamreader/startup_trace_store.h": {
+      "bytes": 571,
+      "sha256": "ce424a5321ca006c54ffc8c10feae64145fead1b495a7f7fea4a9e8b92e04756"
+    },
+    "src/blackwire/streamreader/vendor/miniz/BLACKWIRE-NOTICE.md": {
+      "bytes": 687,
+      "sha256": "f3097902299023005c0b7644f8ff0167b8b014e64414a3e1c8b1dad848c10f68"
+    },
+    "src/blackwire/streamreader/vendor/miniz/miniz.h": {
+      "bytes": 981,
+      "sha256": "ac572c0990cd525f5433688002e26121633312f7c351661a097d8b5c7bb2d812"
+    },
+    "src/blackwire/streamreader/vendor/miniz/miniz_common.h": {
+      "bytes": 1377,
+      "sha256": "b216436de1837543a8938d4e89fb316fb2713365b37a2e006f903df62634f3e1"
+    },
+    "src/blackwire/streamreader/vendor/miniz/miniz_export.h": {
+      "bytes": 68,
+      "sha256": "7732ca31e3b860a456d4df0a4114acc644b2a33bde6bbc4a81054179c558f431"
+    },
+    "src/blackwire/streamreader/vendor/miniz/miniz_tinfl.c": {
+      "bytes": 37927,
+      "sha256": "720df41b72340e40193b3fe750aba67a5fb2b7c9e5b4d027ea97a381823543f8"
+    },
+    "src/blackwire/streamreader/vendor/miniz/miniz_tinfl.h": {
+      "bytes": 6496,
+      "sha256": "ce2babd339c9510f53a4f85c50ffacdb692bb0c96ee4b5d7b5e9c079a173223a"
+    },
+    "src/blackwire/third-party/BLACKWIRE-STARTUP-NOTICE.md": {
+      "bytes": 553,
+      "sha256": "67d9e1f4c4d33a40fd07cc12b2b55a523842600f2778cb518bef6676f7cfe726"
+    },
+    "src/blackwire/third-party/ps5-payload-manager-LICENSE": {
+      "bytes": 35823,
+      "sha256": "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809"
+    },
+    "src/blackwire/tools/compressed_stream_candidate/compressed_stream.c": {
+      "bytes": 11955,
+      "sha256": "83ebce9408a01f50bdbc080873e3c997f9b329c8e315efb6723faa8fa45ad511"
+    },
+    "src/blackwire/tools/compressed_stream_candidate/compressed_stream.h": {
+      "bytes": 4803,
+      "sha256": "6b4ac13edc5346c70dfecf99774bd4f4135080f80d57a7aff5ef2cdcaf5dfb9e"
+    }
+  },
+  "ui": {
+    "desk/index.html": {
+      "bytes": 141067,
+      "sha256": "0e3efe1e8bba33feee55a56828af5662536464102a69ba4062fe9838b7bf6a80"
+    },
+    "desk/tests/browser_handoff_harness.js": {
+      "bytes": 12691,
+      "sha256": "7f2746e80d30620128ed719e3f00de62bf03bd6a0d7c9d815dafeb088c572d85"
+    },
+    "desk/tests/exact_preview_dom_harness.js": {
+      "bytes": 4950,
+      "sha256": "55f0e0bb850ddbfd6fd7d2a31af7484306875b0a513506867a4187fcd82971b5"
+    },
+    "desk/tests/library_dom_harness.js": {
+      "bytes": 4895,
+      "sha256": "e4a8b01878be6e05ea861e44d2cead34afe57c4c8528273444531045846e86a0"
+    },
+    "desk/tests/preparation_dom_harness.js": {
+      "bytes": 14179,
+      "sha256": "071cac2e072a6496e71a71f7e716e69662653c99df6fbc682163e2e923de54c7"
+    },
+    "desk/tests/preview_fixture.py": {
+      "bytes": 16071,
+      "sha256": "17f8dd2995ca6f5b43038a0623246f3488d73e758ad74c1ec30afff1086deb80"
+    },
+    "desk/tests/redesign_dom_harness.js": {
+      "bytes": 4790,
+      "sha256": "ba88e374cec2bc716cb1d3b4d3fde83a700da2360f558f80b23d5b302ef0ff95"
+    },
+    "desk/tests/removal_dom_harness.js": {
+      "bytes": 5528,
+      "sha256": "e75bc2af75a736187e4cc3f1fc683983d4a9bdd2dc518cd998e6a0458b4ac034"
+    },
+    "desk/tests/setup_dom_harness.js": {
+      "bytes": 17420,
+      "sha256": "24d4f821bacf5615f2641d54f8a280b4f84a61d5b131088987edaf5502adb6dc"
+    },
+    "desk/tests/test_preview_fixture.py": {
+      "bytes": 6261,
+      "sha256": "f528f296a7c4d7755784da5adfe38969cac8b298adcf96f922cd0dd313c0ff6e"
+    },
+    "desk/tests/test_ui.py": {
+      "bytes": 63992,
+      "sha256": "0cd8cfeaea165374cd453a4f5a3e4517b19e38a7ac34aafd6a67db161c698a2f"
+    },
+    "desk/tests/verify_combined_browser.js": {
+      "bytes": 8483,
+      "sha256": "b037b87711461063f406e5639270474970062c35391c775c8054cd6700af8a9b"
+    }
+  },
+  "compressedEarlyReaderIncluded": false,
+  "sourceStagingOnly": false,
+  "exportModifications": [
+    {
+      "path": "src/blackwire/library/main.c",
+      "original": {
+        "bytes": 19543,
+        "sha256": "339d64b8ca2007c3d2c08a673b7d00f3dfb6d637671ff976488f626338f3e79f"
+      },
+      "exported": {
+        "bytes": 19539,
+        "sha256": "cefc9dfc24238281b55e593662e3960cfa8b452b0596b8b8e8b42c507b69be62"
+      },
+      "reason": "Legacy non-native proxy fallback host uses neutral loopback instead of a private installation address. Native backend branch unchanged."
+    },
+    {
+      "path": "src/blackwire/library/Makefile",
+      "original": {
+        "bytes": 340,
+        "sha256": "7a72e5f2cfb4c9e7d036fae382e1d733eefa168a7bf2c4056c09752cd26ccf89"
+      },
+      "exported": {
+        "bytes": 246,
+        "sha256": "864238ad72c33c3fb8e2b851bc1099dc36606e60a4dddef009f93df8b9804b05"
+      },
+      "reason": "Forward the legacy subdirectory entry point to the native portable builder; never accidentally build the retired PC-proxy launcher."
+    }
+  ],
+  "sdkRuntime": {
+    "manifest": "vendor/sdk-runtime/runtime-source.json",
+    "commit": "f5d40f02770e9b0001dd9e18056eca70b3da8b40",
+    "pin": {
+      "bytes": 19995,
+      "sha256": "b7f108f3ae489e132cddde9a4e9656771e522bc6e03728e2d9a28a6e3e0ae77e"
+    },
+    "llvmReference": {
+      "path": "metadata/llvm-runtime-reference.json",
+      "pin": {
+        "bytes": 2567,
+        "sha256": "0624961687d4decc30c387f97c6263114b346098a57727f989c9294367e35eb5"
+      }
+    },
+    "notices": {
+      "LICENSES/LLVM-Apache-2.0.txt": {
+        "bytes": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      "LICENSES/LLVM-RUNTIME-COPYRIGHT.txt": {
+        "bytes": 6897,
+        "sha256": "dc2a171c75ca72818f7f4312602f27cb0e4bf6d010a86e7073a3797cb228ddff"
+      },
+      "LICENSES/LLVM-BSD.txt": {
+        "bytes": 1499,
+        "sha256": "5d588eb3b157d52112afea935c88a7ff9efddc1e2d95a42c25d3b96ad9055008"
+      }
+    }
+  },
+  "product": "Blackwire",
+  "standaloneWeb": true,
+  "nativeFrontendIncluded": false,
+  "buildSource": {
+    "tools/build/app-recipe.json": {
+      "bytes": 65850,
+      "sha256": "18c6bab82ca3bfe1bbe28ed2998cbe8a4fc2c8462697974170afbea8d58e6d29"
+    },
+    "tools/build/app.py": {
+      "bytes": 9336,
+      "sha256": "9922b1768d1fe91fcfbc8f6208daa0459878ce48d071f50ef0914deb3d853e44"
+    },
+    "tools/build/common.py": {
+      "bytes": 4190,
+      "sha256": "9870759de8c3794a3b09d378626b05ac977cfc73dba4208fd48e0f2b41efb588"
+    },
+    "tools/build/deps.py": {
+      "bytes": 1743,
+      "sha256": "7b41599dce0bb76dad6c1bb4c42dd1838ffdd71decaebe0374a9fb2dc7bc1c30"
+    },
+    "tools/build/launch_timing.py": {
+      "bytes": 1556,
+      "sha256": "f21108e1165467c3721d90bd42207010bee9d45db213ca170687b95f029891db"
+    },
+    "tools/build/provenance.py": {
+      "bytes": 1996,
+      "sha256": "4c9ee4a7eb3e46a2621fa27d389b6c06f8f3bbc8fe5ef8c9e561dafda472d96a"
+    },
+    "tools/build/reader.py": {
+      "bytes": 16089,
+      "sha256": "33e14d83591485bef7328004a321a815cbcf4e60c74fd393ab39fcccef9562a3"
+    },
+    "tools/build/reader_patch.py": {
+      "bytes": 11859,
+      "sha256": "cd399e75986d8024c33b45fb36667a93dbb91240916301111a87a8027dc8c72c"
+    },
+    "tools/build/sdk_runtime.py": {
+      "bytes": 11202,
+      "sha256": "1a1b0312b36edcbe6e6fe0fdd08b49d4e3e53c14297358c66ba18e6dd985cf66"
+    },
+    "tools/build.py": {
+      "bytes": 5048,
+      "sha256": "aa56cb6303d5b0ef1f52fccbc1bc3a15625c04a83ced79dc983cc7b8dea3546b"
+    },
+    "tools/smb-transport-tests/README.md": {
+      "bytes": 5091,
+      "sha256": "64acdb20b6a3c68df1898807c67ba52f93643856acda236115afbe31f8696bbc"
+    },
+    "tools/smb-transport-tests/run.py": {
+      "bytes": 3062,
+      "sha256": "28af2ae8c3d1b65a60adfdc3ed8cb93bfc4935f31a565295381d814c94161dc5"
+    },
+    "tools/smb-transport-tests/transport_signing_test.c": {
+      "bytes": 18912,
+      "sha256": "14f040e1c1c19c5603754dac2a86ae51d9147a245ea6661b1f0769939fd4092d"
+    },
+    "tools/test_ui.py": {
+      "bytes": 734,
+      "sha256": "458ae0cece321495a4757f1c0aed87a9b54bd7d0fb76b74bceeaa5c9291b0d28"
+    }
+  },
+  "testSource": {
+    "tests/build/test_sdk_runtime.py": {
+      "bytes": 12292,
+      "sha256": "011a9240f8993ad2eb356832706d1d7c2821a6bcbc4457e192e546f816862696"
+    },
+    "tests/dashboard/lifecycle/check_dashboard_removal_service.py": {
+      "bytes": 6582,
+      "sha256": "251168f3e9e10e810592b9a3c18a94c60f483b2f64ac8cb9a46e33c5d3a626d8"
+    },
+    "tests/dashboard/lifecycle/check_fast_ready_play.py": {
+      "bytes": 11720,
+      "sha256": "85400e6d9ecff4e27001da16f8f40d885840593c557dc757035137f1b5bf0eab"
+    },
+    "tests/dashboard/lifecycle/check_game_removal_backend.py": {
+      "bytes": 6002,
+      "sha256": "240d71208919d82a74d79e1b2562321859ca8660b1126f959490077e2e9882a1"
+    },
+    "tests/dashboard/lifecycle/check_game_uninstall.py": {
+      "bytes": 11486,
+      "sha256": "f3bc70b8ea0b257e0974474f7a60d6b9d1adf094e93d64d494185425cceb9684"
+    },
+    "tests/dashboard/lifecycle/check_game_uninstall_remote.py": {
+      "bytes": 11175,
+      "sha256": "1cfb640348704eb4e925d78beece6bf792c87495267ab0a0809e628149940fff"
+    },
+    "tests/dashboard/lifecycle/check_guard_split.py": {
+      "bytes": 7239,
+      "sha256": "e7c74b2caf73c5733d5e6195b4cda7073de66124d7318aca003aabe521caa29f"
+    },
+    "tests/dashboard/lifecycle/check_idle_log_cache.py": {
+      "bytes": 13155,
+      "sha256": "6aa73ddbddcb290cf31463cc03d208f6dfe655cd440e3973fd7a0d96024aea0a"
+    },
+    "tests/dashboard/lifecycle/check_launch_feedback.py": {
+      "bytes": 6200,
+      "sha256": "fb09ecdd56952b30c0be869e80f8ef7ee7f8f209c09b0e9a4f0fce4a0f09e158"
+    },
+    "tests/dashboard/lifecycle/check_local_removal.py": {
+      "bytes": 6869,
+      "sha256": "ed81c1626b7c6e35169e5b1d272580a32ca2bc1b39b8cfdc4df906c54c5af84f"
+    },
+    "tests/dashboard/lifecycle/check_local_removal_runtime.py": {
+      "bytes": 5858,
+      "sha256": "66f68dd4724c085c88360f6a908817c336dd8ebe4363461ce0220f2be544d0c3"
+    },
+    "tests/dashboard/lifecycle/check_media_launcher.py": {
+      "bytes": 4065,
+      "sha256": "bcde67cdf496644664a7d19755ab90df71a0b2d4e329b20604e3c76ebb89400d"
+    },
+    "tests/dashboard/lifecycle/check_play_preparation_failure.py": {
+      "bytes": 5686,
+      "sha256": "2df6a2b84f2da26553be824a85da2192225ad9ab6f21100d016e98830f5bb81d"
+    },
+    "tests/dashboard/lifecycle/check_preload_bundle.py": {
+      "bytes": 5208,
+      "sha256": "d5b7c190e69bf73d6bce41bb26d05381727016466ccc1faea8fc6d03186030a5"
+    },
+    "tests/dashboard/lifecycle/check_preload_bundle_upgrade.py": {
+      "bytes": 10573,
+      "sha256": "55743f64ecade0279476d2ce6610df899a5301b5f8df247b6da41d6d8407ddd5"
+    },
+    "tests/dashboard/lifecycle/check_preload_bundle_upgrade_backend.py": {
+      "bytes": 5710,
+      "sha256": "d86f0c1df9700c069e9b7c6be182848570e52be558cbb49a4b69cac4ce79c854"
+    },
+    "tests/dashboard/lifecycle/check_preload_reader_uninstall.py": {
+      "bytes": 13261,
+      "sha256": "4310704d2065edde339c28babf1174255423d1a49566b19b30a676767fcb79be"
+    },
+    "tests/dashboard/lifecycle/check_ready_control_idle.py": {
+      "bytes": 8627,
+      "sha256": "dd74a2ab121aae4cd7fb807e280b24ab8b13c6b83c2ef0a6f48d04435203e32f"
+    },
+    "tests/dashboard/lifecycle/check_registration_initial_absence.py": {
+      "bytes": 6068,
+      "sha256": "55be48cb26d4a4f7c6daa3decd62a6ebd0f6e41736a94bc82ac413116aafcd57"
+    },
+    "tests/dashboard/lifecycle/check_registration_lifecycle.py": {
+      "bytes": 10093,
+      "sha256": "b43871c420ccafa41c6d228c4c9ae5ca9f6b4a6bb531973c514d536d02333035"
+    },
+    "tests/dashboard/lifecycle/check_registration_observer.py": {
+      "bytes": 4045,
+      "sha256": "1d30211005a5f63e8c16b3520700b567c787375097411193b8a3fdc66bfe2ad7"
+    },
+    "tests/dashboard/lifecycle/check_registration_removed.py": {
+      "bytes": 7993,
+      "sha256": "61b89fc0b6b9587471cfbe5e17670ece4aba2e8d8a01753a37edafb81d65d797"
+    },
+    "tests/dashboard/lifecycle/check_registration_retirement.py": {
+      "bytes": 7709,
+      "sha256": "fe8486bcd1461b5bc123adb041606f021bffc55445066e6628a74204a75fa136"
+    },
+    "tests/dashboard/lifecycle/check_removal_restore_default.py": {
+      "bytes": 6759,
+      "sha256": "b1da48781bd5cf9cdfaf0d6169e0764a6ed33f1013eb1ca9a71dac6589696bac"
+    },
+    "tests/dashboard/lifecycle/check_removed_sources.py": {
+      "bytes": 4979,
+      "sha256": "3a83b9e8c5c35a4817815dbb9cb9bb036d55de94de5c7627b48c8e0002ea2169"
+    },
+    "tests/dashboard/lifecycle/fixture_sdk.py": {
+      "bytes": 2899,
+      "sha256": "69512269bd9f29142ae76ffc96c5bb559674f40ecec69aa3921880fa933e9896"
+    },
+    "tests/dashboard/lifecycle/manifest_fixture.py": {
+      "bytes": 1213,
+      "sha256": "3e6d9ec9895ac812147cad075b3491e3532059c425a9b0484d396dc9762b7a33"
+    },
+    "tests/dashboard/lifecycle/test_bundle_control_split.inc": {
+      "bytes": 7667,
+      "sha256": "6bfe37e40fe81153c42b0d307763be9189d2ae7789c727593c7c4ba530da62cf"
+    },
+    "tests/dashboard/lifecycle/test_dashboard_removal_service.c": {
+      "bytes": 12528,
+      "sha256": "e9047babc116316787e9818d5ed789964bb6136dde98331a8a8bfe36537f8012"
+    },
+    "tests/dashboard/lifecycle/test_fast_ready_backend.c": {
+      "bytes": 5847,
+      "sha256": "7c15d27e3540924435f1e8f67eec7a41897e8868e84c0abd42048ce6516f2eab"
+    },
+    "tests/dashboard/lifecycle/test_fast_ready_play.c": {
+      "bytes": 16183,
+      "sha256": "6088cb79d2c22c00e48ae26f283fe7aace6829fad688adffb4da70cc8922ac39"
+    },
+    "tests/dashboard/lifecycle/test_game_removal_backend.c": {
+      "bytes": 12031,
+      "sha256": "ec3a39297817befcd228698c79d1a321d2b3ed66cacf43850a02af36781f62d6"
+    },
+    "tests/dashboard/lifecycle/test_game_uninstall.c": {
+      "bytes": 17505,
+      "sha256": "61017752ad94e6cec9d6795a50512f177c4ca459a79621c740179fd59234fc67"
+    },
+    "tests/dashboard/lifecycle/test_game_uninstall_io.h": {
+      "bytes": 639,
+      "sha256": "45e4de31788398198f39899d407530919a18866c6bdd1af176cbd3daaad4c090"
+    },
+    "tests/dashboard/lifecycle/test_game_uninstall_remote.c": {
+      "bytes": 28485,
+      "sha256": "aaa8a4e9c1c6c7c4be463c7b9643fa65da4036daf7c015e51a4b0b6aa0dad16e"
+    },
+    "tests/dashboard/lifecycle/test_game_uninstall_remote_io.h": {
+      "bytes": 451,
+      "sha256": "5fb16bfe5b021e0dac540430b91d9ef194160a70d6844ec5bf05446065cf32ef"
+    },
+    "tests/dashboard/lifecycle/test_idle_cache_begin.c": {
+      "bytes": 1731,
+      "sha256": "e420a3540fe055b9d337ec363439cdf5724a95ba78ef7c0d6d7ac9a0870f410b"
+    },
+    "tests/dashboard/lifecycle/test_idle_cache_callers.c": {
+      "bytes": 29220,
+      "sha256": "b8e183687fe9d65f5975b108d022cb9965696c3a715542ab2a9939551c6d4ed2"
+    },
+    "tests/dashboard/lifecycle/test_idle_log_cache.c": {
+      "bytes": 14264,
+      "sha256": "d8a9b9954c59d83a113bb1b6c58d75a7f64ed10b9227a92510af72bf1d34f2c6"
+    },
+    "tests/dashboard/lifecycle/test_launch_feedback_service.c": {
+      "bytes": 32295,
+      "sha256": "f9b418315f1063a64219cf6b59b47fb71abd027b321e44f0c32c9bb405a5336c"
+    },
+    "tests/dashboard/lifecycle/test_local_removal.c": {
+      "bytes": 15758,
+      "sha256": "2ffbd53fb87b1940b7afd5a550f4c18a2266b7ea3dcd24321f9f13d52ff9ee37"
+    },
+    "tests/dashboard/lifecycle/test_local_removal_runtime.c": {
+      "bytes": 9004,
+      "sha256": "c5316229495421b9d9aaeedb7c71b0fe281bd386dc203ff7419ad2c30496a7d0"
+    },
+    "tests/dashboard/lifecycle/test_media_launcher.c": {
+      "bytes": 10058,
+      "sha256": "82df444cf2f844e7e381272ab1b35f64c1520da7cfb7eb7741110f81329319ec"
+    },
+    "tests/dashboard/lifecycle/test_play_preparation_failure.c": {
+      "bytes": 22620,
+      "sha256": "bbd11b97c3c39b07a64a1d2414c175c3e86d9d7dea9125ac5cd2ac61a665766a"
+    },
+    "tests/dashboard/lifecycle/test_preload_bundle.c": {
+      "bytes": 7832,
+      "sha256": "09e39301d34729054eb9c80078e89fa9f11c886e9f97135906f1f07a744b7403"
+    },
+    "tests/dashboard/lifecycle/test_preload_bundle_upgrade.c": {
+      "bytes": 16120,
+      "sha256": "7f35ae448813ec96c7939945e3aa7774568ff6ed9f57d5fcaddb8d8308cc6e38"
+    },
+    "tests/dashboard/lifecycle/test_preload_bundle_upgrade_backend.c": {
+      "bytes": 20531,
+      "sha256": "3b84485a76a0f377131d15fe88710737dbbc79c694c3b57685348fe23f29f62d"
+    },
+    "tests/dashboard/lifecycle/test_preload_reader_selector.c": {
+      "bytes": 5121,
+      "sha256": "2fd6393d78ba1c302078b033a68eba7cd4c8f54e4f06e4655a0f40f7526fce54"
+    },
+    "tests/dashboard/lifecycle/test_preload_reader_uninstall.c": {
+      "bytes": 28849,
+      "sha256": "cbf7871e4354ad33a1eaf7cde87af096f2b9388e9ed9095ad1b707e816a56374"
+    },
+    "tests/dashboard/lifecycle/test_preload_reader_uninstall_wrapper.c": {
+      "bytes": 19510,
+      "sha256": "6fd788b0d0ad2ad6726aea8736ab18a5e823cfca45c9d416a95c1934c174e2db"
+    },
+    "tests/dashboard/lifecycle/test_ready_control_idle.c": {
+      "bytes": 11009,
+      "sha256": "9aa817f38ece20b4458b9662f2b1fc910ce5a8cde8252a5fa086ab9535166891"
+    },
+    "tests/dashboard/lifecycle/test_registration_backend.c": {
+      "bytes": 21009,
+      "sha256": "2f6ae689e3ca5ae689101a8324ca88262a6768b91784c6d359420ea9a470c703"
+    },
+    "tests/dashboard/lifecycle/test_registration_cleanup.c": {
+      "bytes": 28410,
+      "sha256": "ef6984cc0e9924631a8ff05cefeacce72c11bf1752994685543b285e4fa8fe90"
+    },
+    "tests/dashboard/lifecycle/test_registration_cleanup_io.h": {
+      "bytes": 790,
+      "sha256": "3afbc1356ad7295d8a99ceae7b433834b20b39c5e1e0455daf08d6374bd8d4aa"
+    },
+    "tests/dashboard/lifecycle/test_registration_initial_absence.c": {
+      "bytes": 21142,
+      "sha256": "7078337aeb0b3b89a03f0f2b076bc58d9d18479f6fa85acf737552d17a815ae7"
+    },
+    "tests/dashboard/lifecycle/test_registration_lifecycle.c": {
+      "bytes": 22044,
+      "sha256": "27831acb3cd3b78423c24eafdcd14e5e1d53e90f22e95e05a29e6e7c6113a947"
+    },
+    "tests/dashboard/lifecycle/test_registration_observer.c": {
+      "bytes": 5550,
+      "sha256": "a01898ab3e3f3c931852b335ff14b47efebd0354be59726309cc67d9e792b4f8"
+    },
+    "tests/dashboard/lifecycle/test_registration_removed.c": {
+      "bytes": 12498,
+      "sha256": "d6cfd17286b088961a6d7a95269a387c955ddc9dfbf16298d2dfec75ab113d92"
+    },
+    "tests/dashboard/lifecycle/test_registration_retirement.c": {
+      "bytes": 15559,
+      "sha256": "ffa9d07e8bcc384f705a7950aae8d9235d0070f66d404a5a84a502b4f73f123e"
+    },
+    "tests/dashboard/lifecycle/test_removal_restore_default.c": {
+      "bytes": 4849,
+      "sha256": "de3332eb2f6e2976e8142225a711981386ed9393d844ccc29d83683013631fb1"
+    },
+    "tests/dashboard/lifecycle/test_removed_sources.c": {
+      "bytes": 9904,
+      "sha256": "c015e85d2e6de0c14cf076aabef4d4ad1cdb4a0ab683a9642adbccc086125b04"
+    },
+    "tests/dashboard/lifecycle/test_removed_sources_io.h": {
+      "bytes": 491,
+      "sha256": "c0c1782ca2ae2c9f9f10c4d197a3e722134c7e6c26b4082a353f9a056871e5b7"
+    },
+    "tests/home/backend_test.c": {
+      "bytes": 10771,
+      "sha256": "a4186ee7239ba160058034ec6ee06c345d01bfb609d1a34866bf2ccb79232859"
+    },
+    "tests/home/check_backend.py": {
+      "bytes": 3898,
+      "sha256": "ef774a2e9ae703bce4cb9ed65f7a5213b7cf9b82e685b9f84f0c604c832cadc7"
+    },
+    "tests/home/check_main.py": {
+      "bytes": 2239,
+      "sha256": "3422a6201d32ebd9f6f8887526512a916be45645b77e6b79245cc923dcdbdb10"
+    },
+    "tests/home/check_provision.py": {
+      "bytes": 3651,
+      "sha256": "4743f93115abef4d2c4ef71b6cd8165723263a79a982128ca91aeebbc11e1558"
+    },
+    "tests/home/check_session.py": {
+      "bytes": 1531,
+      "sha256": "df356bdcd6158653cb1fa5dafd62746286830fbad0cffd7c8f6d599872dd637b"
+    },
+    "tests/home/home_test.c": {
+      "bytes": 12481,
+      "sha256": "0b0f170d5efc4672163a8e11fdd4c5e21a1ce14160ee3989a0083b5c297513f2"
+    },
+    "tests/home/main_peer_test.c": {
+      "bytes": 4673,
+      "sha256": "9fd61efbcbf0e7011722efa4bd93b3a99daa8b3e40a854f1d9e127add856d36c"
+    },
+    "tests/home/provision_test.c": {
+      "bytes": 6846,
+      "sha256": "5e93bc8d2c6b1a1bd4c006b20ebd6416372959feaf79449a66ff08aabc6ad854"
+    },
+    "tests/home/README.md": {
+      "bytes": 1521,
+      "sha256": "cbfe47ed0f30df328a7a15831d0d2279ea38d697428a56017c505ef0639cb46d"
+    },
+    "tests/home/support.py": {
+      "bytes": 787,
+      "sha256": "f78f05c6630e9abb94fa65f0f92e0be787d35352513a942a1e84c0506abb02e1"
+    },
+    "tests/reader/adapter_test.c": {
+      "bytes": 1775,
+      "sha256": "cccc75c9db790a8a0b78f74aa23f9f6bd1f37c33438f0c5dcab5ce1e11fe2426"
+    },
+    "tests/reader/cache_storage_test.c": {
+      "bytes": 5925,
+      "sha256": "c1d5361b13f09a3a86eea4802dea0f679aa1a3f0ab0898424a4049023045178d"
+    },
+    "tests/reader/check_home.py": {
+      "bytes": 10392,
+      "sha256": "8ea935e3b400f1cd74109a7a4d44e5f5365ebe541b818f498f756def2f31c14b"
+    },
+    "tests/reader/check_host.py": {
+      "bytes": 6843,
+      "sha256": "1e4ac528b6f88a5a90d4676788edb88cd6d804909798c6ad3e9c8d9fed4a754c"
+    },
+    "tests/reader/connect_diagnostic_test.cpp": {
+      "bytes": 10519,
+      "sha256": "ef577540134503e3382487498d007a1bb8329040443e273b348e7e4bbadc3aff"
+    },
+    "tests/reader/first_read_test.cpp": {
+      "bytes": 2911,
+      "sha256": "5c200553023018568fe54208635546d2f5a3ce0533c842ece4b0674311e5025b"
+    },
+    "tests/reader/home_client_test.c": {
+      "bytes": 15293,
+      "sha256": "a3f9c4b9b4931f1d5bce1db4da3c8cdd168d4743ed26d6d733ba3ebc4048d860"
+    },
+    "tests/reader/home_runtime_test.cpp": {
+      "bytes": 9981,
+      "sha256": "200c51c19439a4855241f98b31f0cdec7411084e8ace0597878e964083758547"
+    },
+    "tests/reader/input_diagnostic_test.cpp": {
+      "bytes": 7606,
+      "sha256": "e0d2b1c80d18f0263098d6fdca78ab2bc6a6ad177d5d7e84ba2b857f1e4202d9"
+    },
+    "tests/reader/prehook_test.cpp": {
+      "bytes": 5859,
+      "sha256": "93e5f9dce4372104d563f0bcde4fae493888ef69518297abf7b33eec7aa76fa0"
+    },
+    "tests/reader/source_test.c": {
+      "bytes": 30888,
+      "sha256": "d209924e5a98763191d3eb69f90b04e01dd22884c24d019179592b10255311fe"
+    }
+  },
+  "publicPreview": true
+}

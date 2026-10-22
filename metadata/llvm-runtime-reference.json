@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "kind": "LLVM-runtime-notices-and-source-reference",
+  "installedArchiveSourceAttested": false,
+  "sourceReference": {
+    "upstream": "https://github.com/llvm/llvm-project",
+    "recipeRequestedRelease": "llvmorg-18.1.8",
+    "archive": "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/llvm-project-18.1.8.src.tar.xz",
+    "components": [
+      "libcxx",
+      "libcxxabi",
+      "libunwind",
+      "compiler-rt"
+    ],
+    "sdkRecipe": {
+      "commit": "f5d40f02770e9b0001dd9e18056eca70b3da8b40",
+      "path": "libcxx.sh",
+      "bytes": 2083,
+      "sha256": "a0f8f7354618f5596bd683bf1a2b196cec99f75bdcc2778ebdbb184ebfe2b635"
+    },
+    "limit": "The retained SDK recipe requests this release; no authenticated source/build receipt for the installed C++ archives was retained. Compiler comments are not source attestation."
+  },
+  "noticeOrigin": {
+    "package": "libclang-rt-18-dev",
+    "sourcePackage": "llvm-toolchain-18",
+    "version": "1:18.1.8-20ubuntu8",
+    "scope": "Unabridged locally installed LLVM copyright and exceptions, full Apache 2.0 text and referenced local BSD text. This is notice evidence, not installed SDK archive correspondence."
+  },
+  "notices": {
+    "LICENSES/LLVM-Apache-2.0.txt": {
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "LICENSES/LLVM-RUNTIME-COPYRIGHT.txt": {
+      "bytes": 6897,
+      "sha256": "dc2a171c75ca72818f7f4312602f27cb0e4bf6d010a86e7073a3797cb228ddff"
+    },
+    "LICENSES/LLVM-BSD.txt": {
+      "bytes": 1499,
+      "sha256": "5d588eb3b157d52112afea935c88a7ff9efddc1e2d95a42c25d3b96ad9055008"
+    }
+  },
+  "observedSdkArchivePins": {
+    "target/lib/libunwind.a": {
+      "bytes": 130658,
+      "sha256": "af06b1ee5d30d38b76b0ba1268a100c00e5f0b820acfa15b01337883e69b3aaf"
+    },
+    "target/lib/libc++abi.a": {
+      "bytes": 692520,
+      "sha256": "13f7658a6df5496ac846d3935c105527f6273416d406d323958e4a83f181593d"
+    },
+    "target/lib/libc++.a": {
+      "bytes": 2304096,
+      "sha256": "b1480e6edcb7cffba5ea999cb13da0d40b0def4c215ead442649bba71d32414f"
+    }
+  },
+  "archiveMemberSelectionLimit": "Prior frontend evidence used final FILE symbols and definition overlap, not an archive-extraction trace. These pins do not certify member selection or source revision.",
+  "compilerRuntimeReference": "compiler-rt is covered by the retained LLVM notice record. Its host builtins are distinct from the three SDK C++ archives and are recorded by actual toolchain provenance when selected."
+}

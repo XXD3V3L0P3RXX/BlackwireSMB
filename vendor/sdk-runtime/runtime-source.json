@@ -1,0 +1,591 @@
+{
+  "schema": 1,
+  "upstream": "https://github.com/ps5-payload-dev/sdk",
+  "commit": "f5d40f02770e9b0001dd9e18056eca70b3da8b40",
+  "files": {
+    "crt/_start.S": {
+      "bytes": 996,
+      "sha256": "9695a7582af148272ab81b2c2bcc6c26460b1fc70bdc4c3e724ac5ae5750610c"
+    },
+    "crt/crt.c": {
+      "bytes": 4726,
+      "sha256": "f0c9e81e740b6beeda3dd4a62e22751603b310b258b7bb7c0875a4cbdcaa212e"
+    },
+    "crt/elf.h": {
+      "bytes": 2840,
+      "sha256": "ac0b9c99600cfb82031eb845b4f68512dbbf09c2bc42a09a4aaa19a052c98358"
+    },
+    "crt/kernel.c": {
+      "bytes": 41440,
+      "sha256": "16ca32ffc36309f2caa768d2f4e565f8d31186d7f8625de83bf3f1869e0c81c0"
+    },
+    "crt/kernel.h": {
+      "bytes": 4492,
+      "sha256": "cea69374188ff1cf6daf5730ac519dd9a83fa6781e125d90c5c1b06717010dc8"
+    },
+    "crt/kernel_iommu.c": {
+      "bytes": 5651,
+      "sha256": "ab2fe9327974f54249bdb0b3cf754e8ee236edaa57a06263489234034dbf40de"
+    },
+    "crt/kernel_iommu.h": {
+      "bytes": 764,
+      "sha256": "bd7b329afc9a9bf6c50e4406ede46c88b4e871fe4541280f8a7d7746757d9768"
+    },
+    "crt/kernel_procio.c": {
+      "bytes": 4610,
+      "sha256": "39875daba1d6cc99308a928aa5dfdb98a86e85113a5f28addd4e17aad533694e"
+    },
+    "crt/klog.c": {
+      "bytes": 2353,
+      "sha256": "d407003bf3ec08613fd57d18f57bbbdaae7b8c8c67f30c0d1f54288e01f719de"
+    },
+    "crt/klog.h": {
+      "bytes": 800,
+      "sha256": "19fc44e52797d1a1f9959f5f7e6dee6006f600486f4bae451db862510a2cbe11"
+    },
+    "crt/mdbg.c": {
+      "bytes": 3634,
+      "sha256": "5a3cba6021d77252c831c8aa994989604c867cb9b0c14c8757d73438c2cea233"
+    },
+    "crt/mdbg.h": {
+      "bytes": 861,
+      "sha256": "1813b77e063b8620b47942278984c1396cff1d9bc6fd49622660b33e4259389e"
+    },
+    "crt/nid.c": {
+      "bytes": 9120,
+      "sha256": "6bd670b05ec4a8816688e18cc4425353c2f764f574d0c7f3db5cc4e8c5b7a9dc"
+    },
+    "crt/nid.h": {
+      "bytes": 765,
+      "sha256": "f79fd2a5daacde8bae9e070d4bf8158b42b2fdd8fccd9ea5f868a7a099dcb365"
+    },
+    "crt/patch.c": {
+      "bytes": 2184,
+      "sha256": "a9cf1814874f3c2c4b337a23270a80ff159b2e6247f9781018bbe1def1845deb"
+    },
+    "crt/patch.h": {
+      "bytes": 767,
+      "sha256": "19398a4ac71942c6f361bc5eb12d634305ea7932f9d26bb14142cf666c5e4082"
+    },
+    "crt/payload.h": {
+      "bytes": 982,
+      "sha256": "e4803d043c38fbb60f2d027501d572db9b81a14af0b09b460129cbc84ecb617d"
+    },
+    "crt/rtld.c": {
+      "bytes": 10257,
+      "sha256": "98b2f3d1e35cdfe993decae673142ebe0b51a8a7ce587ae50ac6e9b19aa5f565"
+    },
+    "crt/rtld.h": {
+      "bytes": 3244,
+      "sha256": "c030e80e217cf8da475012e23a624afb099d24e2c5c97743ef1eaf0c8fc4be0b"
+    },
+    "crt/rtld_dlfcn.c": {
+      "bytes": 4096,
+      "sha256": "4ea97294c0b340ee815850d43ad7b120dbffe426edb07780f89a53d2bed84d19"
+    },
+    "crt/rtld_dlfcn.h": {
+      "bytes": 1011,
+      "sha256": "334901ae4debd1da1756c3fc2a5f8f68649af75cf0db3e02e94172824668c970"
+    },
+    "crt/rtld_payload.c": {
+      "bytes": 9838,
+      "sha256": "dae19a11e7e70deb5cb64674970e6d781e6247b21b39759def63e5eca725506b"
+    },
+    "crt/rtld_payload.h": {
+      "bytes": 865,
+      "sha256": "9d9b4c278e86740d2777dbf5647a3af2ba77e5e303dd97dfb0299f962f59476a"
+    },
+    "crt/rtld_so.c": {
+      "bytes": 15661,
+      "sha256": "f7444ca7a88e2b6d8ee487787211a7512e9f76fb20c3907f095ecb2e2f3fbba6"
+    },
+    "crt/rtld_so.h": {
+      "bytes": 871,
+      "sha256": "26489835d2ae74ec64e8c8adfd58fca4f318ccb0e2e590063321b49ea8caf756"
+    },
+    "crt/rtld_sprx.c": {
+      "bytes": 13664,
+      "sha256": "0cacf785e80ecdf89ad0f0fad07b8a9a5f7bf2a20ba109c61d20f1d8041f6bf4"
+    },
+    "crt/rtld_sprx.h": {
+      "bytes": 880,
+      "sha256": "c495fdd9e0cb3f0eef3a997cf64676ede7ca59b15deede1586ebffc0fd15f582"
+    },
+    "crt/syscall.c": {
+      "bytes": 1664,
+      "sha256": "7c2f8120c8e5059d387aaed0a144258c140a5ba5360f6f23da2a3442470e24b2"
+    },
+    "crt/syscall.h": {
+      "bytes": 1551,
+      "sha256": "463fc16da04c2b7b98a41cbf71e0901faa32a4a9a19421a52bc27dfb52186577"
+    },
+    "include/freebsd/_ctype.h": {
+      "bytes": 6142,
+      "sha256": "c36047093eaf127b3d51bec7b03bdc356a6b207be51ad65ea8669189bb6c1b51"
+    },
+    "include/freebsd/arpa/inet.h": {
+      "bytes": 6012,
+      "sha256": "5da0c355c4c5dd724809e107b362fef921ecf860ec107a55a3ccdde31588225f"
+    },
+    "include/freebsd/assert.h": {
+      "bytes": 3019,
+      "sha256": "d66ec78f56e38ea24b304e9168a20b7cba750a93658a6eb9ab8662517b5ede75"
+    },
+    "include/freebsd/ctype.h": {
+      "bytes": 4780,
+      "sha256": "65142b9f8347ced336de54a828541ef6381cd4bff82e192a0a2f5347c846c1e5"
+    },
+    "include/freebsd/errno.h": {
+      "bytes": 8437,
+      "sha256": "1fefa8eba3a0eaec642e0fca02f9a7e0535cc44b0b389fb90fd84e6e41ac3bb1"
+    },
+    "include/freebsd/fcntl.h": {
+      "bytes": 11295,
+      "sha256": "d41a582c3b731d1a4faffe12325f552df9be867b6bfbd6817e32d51eafd9927f"
+    },
+    "include/freebsd/ifaddrs.h": {
+      "bytes": 2155,
+      "sha256": "73ec5572055a1be79a3c3676e3df4c4f36313261468f22e98148b3bcc692001c"
+    },
+    "include/freebsd/limits.h": {
+      "bytes": 4830,
+      "sha256": "bb02d828e5ba08d401eab0eb2cde85871ce178dc65f04e02211f50c3252f09f0"
+    },
+    "include/freebsd/machine/_align.h": {
+      "bytes": 161,
+      "sha256": "f88e1971055e1785c9bf01ad17ee3aaba77b81f2d514e931ac30abcdd0f3eb10"
+    },
+    "include/freebsd/machine/_limits.h": {
+      "bytes": 163,
+      "sha256": "def93e9415d66750ae3c00ada3feaa1e61f8bf8524c7d491adc743869fe82acc"
+    },
+    "include/freebsd/machine/_types.h": {
+      "bytes": 161,
+      "sha256": "28a99920e25187f2db6bbf815b21e3c956a2d30cec62fef8343fcbf4f5abfd16"
+    },
+    "include/freebsd/machine/endian.h": {
+      "bytes": 161,
+      "sha256": "1f50385d15244a95cb2d5ad34c81667e6ec01124587f8d35b97578261aa8b72c"
+    },
+    "include/freebsd/machine/param.h": {
+      "bytes": 5812,
+      "sha256": "a8ca59296049f0fa4405916af67132bcf6eb0aaa846aec105c69692d6eb653e7"
+    },
+    "include/freebsd/machine/signal.h": {
+      "bytes": 160,
+      "sha256": "e79a3e9435c326a0a1c432f769704619459ae6be4077949f12625306cc243c21"
+    },
+    "include/freebsd/machine/trap.h": {
+      "bytes": 157,
+      "sha256": "17bb71d3633a364d03eba1fb323329b4ea8e3ee683654e79721828478f45d9af"
+    },
+    "include/freebsd/net/if.h": {
+      "bytes": 22129,
+      "sha256": "367d0a155e06e9537de3241a43fa85016f8cdace4a13f740e99b821a954daeba"
+    },
+    "include/freebsd/net/if_types.h": {
+      "bytes": 12450,
+      "sha256": "429c8e01c4925d7b1d59c83ba1cc4d961d78d3b5496537bf9b83dc4c08bc5321"
+    },
+    "include/freebsd/netdb.h": {
+      "bytes": 11013,
+      "sha256": "4111f5923eb0620e9ff3797f8f0b5034772ac5e0a3ac08093df8361cfe4ab7a3"
+    },
+    "include/freebsd/netinet/in.h": {
+      "bytes": 26328,
+      "sha256": "222715f1f521abb60748ef37da4919d2f0af9c6eb5561028c644ec054e329e47"
+    },
+    "include/freebsd/netinet6/in6.h": {
+      "bytes": 27212,
+      "sha256": "b6e07e834f8b4b1383d10006b8b8b06e403b3167291a639f31e7b50f0cd6f531"
+    },
+    "include/freebsd/netinet6/in6_var.h": {
+      "bytes": 30437,
+      "sha256": "224a47d92ffd8d6b9f29b99bf166f8a90000ddc4d12aa3cd1abeb4d10c8be6e3"
+    },
+    "include/freebsd/netinet6/nd6.h": {
+      "bytes": 16983,
+      "sha256": "ed8577e90694c0501528628fb0db348ae5d7cc5fd8f6cc171e26f05723dcf685"
+    },
+    "include/freebsd/pthread.h": {
+      "bytes": 12920,
+      "sha256": "b8c84af542d20ed52124d7aa7df65a3b0c50ce8030dc5f54af0465115750fa18"
+    },
+    "include/freebsd/runetype.h": {
+      "bytes": 3969,
+      "sha256": "2171252d2d1e1bd529bb7a50702c9a4044d9710953d2da9a52f923584e5fee21"
+    },
+    "include/freebsd/sched.h": {
+      "bytes": 8389,
+      "sha256": "84d333b2a249a3bb6ecf132024c014e9f83ac91c65ad2ce032106064c6484b21"
+    },
+    "include/freebsd/stdio.h": {
+      "bytes": 18220,
+      "sha256": "1e0b639eb07c7098f6618b782df76cef37356f1d8d3e1fb7fdeebae9f36b6618"
+    },
+    "include/freebsd/stdlib.h": {
+      "bytes": 11306,
+      "sha256": "13f957e42e795b6c364959cf239c63daf6cab204349fdae7b5be772babab6a82"
+    },
+    "include/freebsd/string.h": {
+      "bytes": 5470,
+      "sha256": "f87d89ae675a01333634a9965562778cbc26abce696ef304266f3a2efae98693"
+    },
+    "include/freebsd/strings.h": {
+      "bytes": 2546,
+      "sha256": "609dd67f6e79412d92874df5968ec8e359fbb62f85c658d36a1fe9eaebf24fe6"
+    },
+    "include/freebsd/sys/_callout.h": {
+      "bytes": 2763,
+      "sha256": "62800561235757d2cf1b21befe68470b746ec6c1193ae7ea986f82f663877382"
+    },
+    "include/freebsd/sys/_iovec.h": {
+      "bytes": 1998,
+      "sha256": "9d7e2dd57fca764186f12b0a1e635fc306a9992dffeabf2e66e13dfef4fe1436"
+    },
+    "include/freebsd/sys/_null.h": {
+      "bytes": 1752,
+      "sha256": "a99eb389e85e6670342c944eec802a42d65044c684100f1a4960a3778d34a97b"
+    },
+    "include/freebsd/sys/_pthreadtypes.h": {
+      "bytes": 3626,
+      "sha256": "116216248126e80b1b727666c3a63ff76dc25df52482053516af7753beb73d3f"
+    },
+    "include/freebsd/sys/_sigset.h": {
+      "bytes": 2536,
+      "sha256": "910da11ab45558cb313fc9095c2270a6ee5ed59dd7cbad4fcffb848a38030c5d"
+    },
+    "include/freebsd/sys/_sockaddr_storage.h": {
+      "bytes": 2460,
+      "sha256": "5682f60d2d95d9db5cae02ff4c860f4f5736747012d130cdffe30bb707d5a9fd"
+    },
+    "include/freebsd/sys/_stdint.h": {
+      "bytes": 2682,
+      "sha256": "67671ac35e1f81ecf45e65bc67c7f9cff646a35f1d42a13ac89319fac0d6161a"
+    },
+    "include/freebsd/sys/_timespec.h": {
+      "bytes": 2078,
+      "sha256": "ffbc661bc94d6cb7f792620195d27e632f8a8ffbdf50be34eee6ccc6043b32aa"
+    },
+    "include/freebsd/sys/_timeval.h": {
+      "bytes": 1936,
+      "sha256": "5be80e2278ab4e0f29e4fd8af30dc28159926f059f82513b68d4acab890c5074"
+    },
+    "include/freebsd/sys/_types.h": {
+      "bytes": 5059,
+      "sha256": "2f8550bf75580c2685100d3da694da2bd8fa162a19bc94055568bf580b75ce93"
+    },
+    "include/freebsd/sys/callout.h": {
+      "bytes": 6859,
+      "sha256": "f03b982f7043668333f339b52ba8699ef3a4fbb5ab617b2fe14704a29ae7201e"
+    },
+    "include/freebsd/sys/cdefs.h": {
+      "bytes": 29079,
+      "sha256": "4d57a1bc5c6cd4b0b0ae8d2d4d1486f868c03aeea02049610a49ce65a1f005b3"
+    },
+    "include/freebsd/sys/counter.h": {
+      "bytes": 2352,
+      "sha256": "5ab2bb8090c387007b2395f9d686cf1c7657aac1448f4ccf49eff32d71cb5a6d"
+    },
+    "include/freebsd/sys/errno.h": {
+      "bytes": 8437,
+      "sha256": "1fefa8eba3a0eaec642e0fca02f9a7e0535cc44b0b389fb90fd84e6e41ac3bb1"
+    },
+    "include/freebsd/sys/filio.h": {
+      "bytes": 3171,
+      "sha256": "1c8a92fd605842804709a3205bfda1a8b63179d2c70c9da721f34af834e3a540"
+    },
+    "include/freebsd/sys/ioccom.h": {
+      "bytes": 3591,
+      "sha256": "19f8ec31388e3587f4ffc71162618396c8b429aa85f74d9bbcf2a1f1afa4a62b"
+    },
+    "include/freebsd/sys/ioctl.h": {
+      "bytes": 2318,
+      "sha256": "f0166309a2157d2aee7cbc2b28cbcf930548ac214985a45e852caffb5bfa2e5a"
+    },
+    "include/freebsd/sys/limits.h": {
+      "bytes": 3801,
+      "sha256": "9e5af188cfbd9ca8d3d514f92e4b3ef218a018f66fab4d29f7c8fc81c0f248a4"
+    },
+    "include/freebsd/sys/mman.h": {
+      "bytes": 8634,
+      "sha256": "a6fb30d3211f8119fe67b67218a7176e563f5dedf5581e180828cbf30be484be"
+    },
+    "include/freebsd/sys/param.h": {
+      "bytes": 12372,
+      "sha256": "5320b88e72409c38ee5a5673783a9182e2e3136d0aedaa31c7af94dff286ca25"
+    },
+    "include/freebsd/sys/queue.h": {
+      "bytes": 27354,
+      "sha256": "fadeaf6c9cfd22f9dc436d58b3184ca98133f49f26c201395c7158abde3bb79a"
+    },
+    "include/freebsd/sys/select.h": {
+      "bytes": 3601,
+      "sha256": "705983f0088caabacf0d9ea3b5ec1550e96231a79a223f5945644fdfa78e0425"
+    },
+    "include/freebsd/sys/signal.h": {
+      "bytes": 16128,
+      "sha256": "8942fcbd8d9c99ad5ffce3ce78c65786c45d672322e92bc0bc1e181971b7367a"
+    },
+    "include/freebsd/sys/socket.h": {
+      "bytes": 22240,
+      "sha256": "5dc1783b68e9790d6b07fd694e6e1b05d0c1fe6e0c467c1d0dec76c2767d096c"
+    },
+    "include/freebsd/sys/sockio.h": {
+      "bytes": 8036,
+      "sha256": "d8841e082f0cf7a9067c5c8bd5be07ea31d91a66368e746dbb562083b7fa632e"
+    },
+    "include/freebsd/sys/syscall.h": {
+      "bytes": 12669,
+      "sha256": "9c59d208429135b2b1e35577ff287b273e33d82c1ec208b1c1ba06a542c6fea9"
+    },
+    "include/freebsd/sys/sysctl.h": {
+      "bytes": 44520,
+      "sha256": "fa9df23b70f08b8659d33a30be77f1760a218b3db6901f9d63f640c464f4658c"
+    },
+    "include/freebsd/sys/syslimits.h": {
+      "bytes": 3178,
+      "sha256": "109cc538df651767d5ce07b5f38be42e864fd0c53fdf2496c468f77eb0374f5f"
+    },
+    "include/freebsd/sys/time.h": {
+      "bytes": 14389,
+      "sha256": "af814fb3b76c2934b0fae7d29e6ce56f64853b344f4ce5dad209bd461aca7427"
+    },
+    "include/freebsd/sys/timespec.h": {
+      "bytes": 2479,
+      "sha256": "3541c41894e5357a509224cc4f168ad0d2d36fd12396e81c8cf949735d42cf33"
+    },
+    "include/freebsd/sys/tree.h": {
+      "bytes": 27495,
+      "sha256": "c5aebd8aea37d933f6bae1aa1c5b584abe639745c136f4a865e9efbbb6269ceb"
+    },
+    "include/freebsd/sys/ttycom.h": {
+      "bytes": 7029,
+      "sha256": "8256d487dcac6b7ffe0ddd1562e84a5c3264db6bbfcb6b0cbdd8602394a00521"
+    },
+    "include/freebsd/sys/types.h": {
+      "bytes": 10797,
+      "sha256": "8c3c5962287dd7f23683f8c77563f79010f5eb874280953d852e07dab7de6fdd"
+    },
+    "include/freebsd/sys/unistd.h": {
+      "bytes": 7543,
+      "sha256": "80305ed345b9b43186d57a736c456aceab0f9c8987e20f6cf57c5244e52e4959"
+    },
+    "include/freebsd/time.h": {
+      "bytes": 6699,
+      "sha256": "1d3518b38a3ac3cd40308702e42ab7939fcad4357f58d85f5e12d91860fc6665"
+    },
+    "include/freebsd/unistd.h": {
+      "bytes": 19016,
+      "sha256": "a69fe86ee9267af53ededa0b3013dd2e62bc835ca5a6cbde151f78389063f20b"
+    },
+    "include/freebsd/x86/_align.h": {
+      "bytes": 2494,
+      "sha256": "626914211771b4efe1e6605c1e1a3d99ff7e656c2957272551a84c4b3ad95520"
+    },
+    "include/freebsd/x86/_limits.h": {
+      "bytes": 4333,
+      "sha256": "46e8ac5bd498f07c0ad68452f4bc8675d6cb26fb375fd22251541cc9e30760de"
+    },
+    "include/freebsd/x86/_types.h": {
+      "bytes": 5814,
+      "sha256": "65976701a171449e759e8b53f491fb3df47a098f8d80eb1bda0213b5e19f4131"
+    },
+    "include/freebsd/x86/endian.h": {
+      "bytes": 4175,
+      "sha256": "786900a84764b9742e3050aafba4fc479d07c73a6b0c998bd93f8c2b0dba5ee6"
+    },
+    "include/freebsd/x86/signal.h": {
+      "bytes": 4350,
+      "sha256": "3fa59ba086a1f11e394d9a70cf4c8304d88cdbd6da277c708e6f49d9a585b3e9"
+    },
+    "include/freebsd/x86/trap.h": {
+      "bytes": 4052,
+      "sha256": "8096d4d52d80807026d02c4b88cba80090e3a14c1bac6bd5fe49994a67153d14"
+    },
+    "include/freebsd/xlocale/_ctype.h": {
+      "bytes": 6897,
+      "sha256": "44043cb01fa086f5b259478121db3be34961c03861fd9f42a9eda38ac343ca79"
+    },
+    "include/freebsd/xlocale/_string.h": {
+      "bytes": 2230,
+      "sha256": "6f24ae28a1a56883dd004b56738ff4fc809fe3485103ef1a0160b36982d5c873"
+    },
+    "include/freebsd/xlocale/_strings.h": {
+      "bytes": 2023,
+      "sha256": "b05d977c9ac2d8a76d94093f10b2e6aaf69e1be237baf3711b8798638b994d4b"
+    },
+    "include/freebsd/xlocale/_time.h": {
+      "bytes": 2352,
+      "sha256": "2f99046ab296d903a932c47e35285143b291b1f6263a1d8a8844d1dfe662672e"
+    },
+    "libc/arc4random.c": {
+      "bytes": 6401,
+      "sha256": "a5646bb0ddbb6ff7f2d71a1e35e79f4d519a184bb285a77bcf1d94d508b0a1ec"
+    },
+    "libc/assert.c": {
+      "bytes": 2221,
+      "sha256": "c75931a65f6a5492b47acb6cda9cb91bccf91c81f753218b57c6e35e23bdb72f"
+    },
+    "libc/mman.c": {
+      "bytes": 2570,
+      "sha256": "5288da12a3bde81ccbaf10c6b7bac5c23c80cbdf151c9cd4872c16d7e969acfe"
+    },
+    "libc/namespace.h": {
+      "bytes": 11739,
+      "sha256": "bb3951b1b5cc9af7afcf4ec0f02999cdf60d4ac1c4a568118662616580cd8cba"
+    },
+    "libc/netdb.c": {
+      "bytes": 14859,
+      "sha256": "e98d7906f4095125893e83efa1311a16873b1d193fba06e965ae498987fbe723"
+    },
+    "libc/strcasecmp.c": {
+      "bytes": 1418,
+      "sha256": "685cfc3d94cda15d722201275b5e5448d4ce4eea53d6767c27bf132aa375ba56"
+    },
+    "libc/syscalls.c": {
+      "bytes": 33673,
+      "sha256": "82bb957e859b7fcba00f6d777fe753a7e6fce7bac864f42f730b130fda187a77"
+    },
+    "libc/un-namespace.h": {
+      "bytes": 7073,
+      "sha256": "365b11097b26fc6a8ce3602fb99803f69c2df461023a2cc5fe2a7a627f43bd17"
+    }
+  },
+  "flags": {
+    "crt": [
+      "-target",
+      "x86_64-sie-ps5",
+      "-fPIC",
+      "-fno-plt",
+      "-fno-stack-protector",
+      "-fvisibility-nodllstorageclass=default",
+      "-O1",
+      "-ffreestanding",
+      "-fno-builtin",
+      "-nostdlib",
+      "-Wall",
+      "-Werror",
+      "-fms-extensions",
+      "-Wno-microsoft-anon-tag"
+    ],
+    "libc": [
+      "-target",
+      "x86_64-sie-ps5",
+      "-fPIC",
+      "-fno-plt",
+      "-fno-stack-protector",
+      "-fvisibility-nodllstorageclass=default",
+      "-O1",
+      "-nobuiltininc"
+    ],
+    "crtAssemblyExtra": [
+      "-masm=intel"
+    ]
+  },
+  "units": [
+    {
+      "group": "crt",
+      "name": "crt.c"
+    },
+    {
+      "group": "crt",
+      "name": "syscall.c"
+    },
+    {
+      "group": "crt",
+      "name": "klog.c"
+    },
+    {
+      "group": "crt",
+      "name": "nid.c"
+    },
+    {
+      "group": "crt",
+      "name": "kernel.c"
+    },
+    {
+      "group": "crt",
+      "name": "rtld.c"
+    },
+    {
+      "group": "crt",
+      "name": "rtld_so.c"
+    },
+    {
+      "group": "crt",
+      "name": "rtld_sprx.c"
+    },
+    {
+      "group": "crt",
+      "name": "rtld_payload.c"
+    },
+    {
+      "group": "crt",
+      "name": "rtld_dlfcn.c"
+    },
+    {
+      "group": "crt",
+      "name": "mdbg.c"
+    },
+    {
+      "group": "crt",
+      "name": "patch.c"
+    },
+    {
+      "group": "crt",
+      "name": "kernel_procio.c"
+    },
+    {
+      "group": "crt",
+      "name": "kernel_iommu.c"
+    },
+    {
+      "group": "crt",
+      "name": "_start.S"
+    },
+    {
+      "group": "libc",
+      "name": "arc4random.c"
+    },
+    {
+      "group": "libc",
+      "name": "syscalls.c"
+    },
+    {
+      "group": "libc",
+      "name": "strcasecmp.c"
+    },
+    {
+      "group": "libc",
+      "name": "assert.c"
+    },
+    {
+      "group": "libc",
+      "name": "mman.c"
+    },
+    {
+      "group": "libc",
+      "name": "netdb.c"
+    }
+  ],
+  "headerAliasesMaterialized": {
+    "include/freebsd/_semaphore.h": "include/freebsd/sys/_semaphore.h",
+    "include/freebsd/aio.h": "include/freebsd/sys/aio.h",
+    "include/freebsd/errno.h": "include/freebsd/sys/errno.h",
+    "include/freebsd/fcntl.h": "include/freebsd/sys/fcntl.h",
+    "include/freebsd/float.h": "include/freebsd/machine/float.h",
+    "include/freebsd/floatingpoint.h": "include/freebsd/machine/floatingpoint.h",
+    "include/freebsd/linker_set.h": "include/freebsd/sys/linker_set.h",
+    "include/freebsd/ncurses.h": "include/freebsd/curses.h",
+    "include/freebsd/poll.h": "include/freebsd/sys/poll.h",
+    "include/freebsd/sched.h": "include/freebsd/sys/sched.h",
+    "include/freebsd/stdarg.h": "include/freebsd/machine/stdarg.h",
+    "include/freebsd/stdatomic.h": "include/freebsd/sys/stdatomic.h",
+    "include/freebsd/stdint.h": "include/freebsd/sys/stdint.h",
+    "include/freebsd/syslog.h": "include/freebsd/sys/syslog.h",
+    "include/freebsd/ucontext.h": "include/freebsd/sys/ucontext.h"
+  },
+  "licensePolicy": "Retain all per-file notices; root GPL3+ does not replace BSD/MIT/ISC grants.",
+  "noSdkInstallationOrPrivateProofRequired": true
+}

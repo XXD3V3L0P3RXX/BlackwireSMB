@@ -1,0 +1,9 @@
+{
+  "applicationCategoryType": 66048,
+  "titleId": "PSBW50001",
+  "deeplinkUri": "http://127.0.0.1:5918/",
+  "localizedParameters": {
+    "defaultLanguage": "en-US",
+    "en-US": { "titleName": "Blackwire" }
+  }
+}
