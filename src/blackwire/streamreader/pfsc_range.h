@@ -7,6 +7,12 @@
 #define BW_PFSC_BLOCK 65536u
 #define BW_PFSC_TABLE_PAGE 4096u
 #define BW_PFSC_MAX_READ (1024u * 1024u)
+#ifndef BW_PFSC_READAHEAD
+#define BW_PFSC_READAHEAD (256u * 1024u)
+#endif
+#if BW_PFSC_READAHEAD > BW_PFSC_MAX_READ
+#error "PFSC read-ahead must fit one bounded source operation"
+#endif
 #define BW_PFSC_MAX_LOGICAL (8ULL << 40)
 
 /* Exact read-only range I/O. The caller owns a stable source generation and
@@ -23,7 +29,9 @@ enum bw_pfsc_result {
     BW_PFSC_IO = -3, BW_PFSC_CODEC = -4, BW_PFSC_RANGE = -5
 };
 
-/* Fixed workspace: two 64 KiB block buffers and one 4 KiB metadata page.
+/* Fixed workspace: two 64 KiB block buffers, one 4 KiB metadata page and
+ * a bounded physical batching window. Only consecutive decoded blocks within
+ * the current requested range grow a fetch. No unrelated blocks are fetched.
  * No allocation, mounts, writes, process operations or console dependencies.
  * Codec state and the caller's result buffer are external, additional storage.
  */
@@ -36,6 +44,10 @@ struct bw_pfsc {
     uint64_t decoded_index;
     size_t page_size;
     int ready, page_valid, decoded_valid;
+#if BW_PFSC_READAHEAD
+    uint64_t window_at;size_t window_size;
+    uint8_t window[BW_PFSC_READAHEAD];
+#endif
     uint8_t packed[BW_PFSC_BLOCK];
     uint8_t decoded[BW_PFSC_BLOCK];
     uint8_t page[BW_PFSC_TABLE_PAGE];

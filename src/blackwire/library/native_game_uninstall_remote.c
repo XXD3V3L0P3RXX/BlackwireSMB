@@ -124,7 +124,7 @@ static int gur_bind(struct gur *p,const struct bw_removed_source *s){
     if(map>=0&&!fstat(map,&st)&&S_ISREG(st.st_mode)&&pread(map,head,sizeof head,0)==sizeof head&&!memcmp(head,BW_MANIFEST_MAGIC,8)&&
        head[8]==BW_MANIFEST_VERSION&&head[9]==0&&head[10]==0&&head[11]==0&&!cp_fstatat(p->source.root,"blackwire.files",&named,AT_SYMLINK_NOFOLLOW)&&gur_same(&st,&named)&&
        !cp_fstatat(p->source.root,"eboot.bin",&boot,AT_SYMLINK_NOFOLLOW)&&S_ISREG(boot.st_mode)&&boot.st_size>0){
-        p->selection.source_kind=BW_PROVIDER_FOLDER;p->selection.source_policy=BW_PROVIDER_POLICY_V1;
+        p->selection.source_kind=p->request.identity.kind;p->selection.source_policy=BW_PROVIDER_POLICY_V1;
         strcpy(p->selection.source,b->source);strcpy(p->selection.game,b->game);strcpy(p->selection.title,b->title);strcpy(p->selection.run,p->request.operation);
         for(unsigned i=0;i<32;i++){snprintf(p->selection.binding_hex+2*i,3,"%02x",b->sha256[i]);snprintf(p->selection.prepared_record_hex+2*i,3,"%02x",p->request.prepared.record_sha256[i]);}
         p->selection.eboot_size=(uint64_t)boot.st_size;

@@ -22,7 +22,7 @@ static int rm_same(const struct stat *a,const struct stat *b){return rm_node(a,b
 static int rm_nonzero(const unsigned char *p,size_t n){unsigned a=0;for(size_t i=0;i<n;i++)a|=p[i];return a!=0;}
 static int rm_nonce(const char *p){if(!p||strnlen(p,33)!=32)return 0;unsigned n=0;for(unsigned i=0;i<32;i++){if(!strchr("0123456789abcdef",p[i]))return 0;n|=p[i]!='0';}return n!=0;}
 static int rm_identity(const struct bw_provider_binding *p){
-    if(!p||p->kind!=BW_PROVIDER_FOLDER||p->policy!=BW_PROVIDER_POLICY_V1||
+    if(!p||(p->kind!=BW_PROVIDER_FOLDER&&p->kind!=BW_PROVIDER_CONTAINER)||p->policy!=BW_PROVIDER_POLICY_V1||
        strnlen(p->binding.source,sizeof p->binding.source)>=sizeof p->binding.source||
        bw_manifest_validate_path(p->binding.source,strlen(p->binding.source))||
        strnlen(p->binding.title,10)!=9||memcmp(p->binding.title,"PPSA",4)||
@@ -31,7 +31,7 @@ static int rm_identity(const struct bw_provider_binding *p){
     for(unsigned i=4;i<9;i++)if(p->binding.title[i]<'0'||p->binding.title[i]>'9')return -1;
     char hex[65];for(unsigned i=0;i<32;i++)snprintf(hex+2*i,3,"%02x",p->binding.sha256[i]);return strcmp(hex,p->binding.game+10)?-1:0;
 }
-static int rm_identity_same(const struct bw_provider_binding *a,const struct bw_provider_binding *b){return !rm_identity(a)&&!rm_identity(b)&&!strcmp(a->binding.source,b->binding.source)&&!strcmp(a->binding.game,b->binding.game)&&!strcmp(a->binding.title,b->binding.title)&&!memcmp(a->binding.sha256,b->binding.sha256,32);}
+static int rm_identity_same(const struct bw_provider_binding *a,const struct bw_provider_binding *b){return !rm_identity(a)&&!rm_identity(b)&&a->kind==b->kind&&a->policy==b->policy&&!strcmp(a->binding.source,b->binding.source)&&!strcmp(a->binding.game,b->binding.game)&&!strcmp(a->binding.title,b->binding.title)&&!memcmp(a->binding.sha256,b->binding.sha256,32);}
 static void rm_put32(unsigned char *p,uint32_t v){for(unsigned i=0;i<4;i++)p[i]=(unsigned char)(v>>(8*i));}
 static uint32_t rm_get32(const unsigned char *p){uint32_t v=0;for(unsigned i=0;i<4;i++)v|=(uint32_t)p[i]<<(8*i);return v;}
 static int rm_encode(const struct bw_removed_source *p,unsigned char out[RM_WIRE]){

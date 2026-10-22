@@ -252,7 +252,7 @@ static int prepare(void *opaque,struct bw_share_config *config,const struct bw_n
     int connected=smb2_connect_share(source.smb,config->server,config->share,config->user);bw_share_clear(config);if(connected<0||current(guard))goto done;
     if(selection->identity.kind==BW_PROVIDER_CONTAINER){
         image=calloc(1,sizeof *image);if(!image)goto done;
-        if(bw_container_smb_open(image,source.smb,selection->identity.binding.source))goto done;
+        if(bw_container_smb_open_owned(image,&source.smb,selection->identity.binding.source))goto done;
         if(!bw_source_catalog_image_same(&selection->image,&image->admitted)||selection->container_kind!=image->container.kind){result=BW_BACKEND_SOURCE_CHANGED;goto done;}
     }else if(selection->identity.kind!=BW_PROVIDER_FOLDER)goto done;
     if(current(guard)||bw_source_provider_prepare(&provider,&selection->identity,&source,image,selection->run,BW_PROVIDER_MAX_LOCAL_BYTES,preparation_data_current,&lease))goto done;
@@ -475,7 +475,7 @@ static int play(void *opaque,const struct bw_native_play_selection *selected,int
     request.released=&released;
     if(current(guard)||bw_native_setup_idle(NULL))goto done;
 #ifdef BW_NATIVE_PRELOAD
-    if(selected->identity.kind==BW_PROVIDER_FOLDER){
+    if(selected->identity.kind==BW_PROVIDER_FOLDER||selected->identity.kind==BW_PROVIDER_CONTAINER){
         if(BW_LT_CALL(BW_LT_SELECT,bw_native_launch_admission_open(&ctx.context.startup,backend_data_root,&selected->identity,
                 &selected->prepared,selected->run,play_current_adapter,&ctx,&failure))||
            bw_native_launch_admission_selection(ctx.context.startup,&request.selection)){
@@ -900,7 +900,8 @@ static const char *reader_update_reason(const struct bw_native_prepared *prepare
 }
 static const char *source_build_reason(const struct bw_catalog_item *item){
 #ifdef BW_NATIVE_PRELOAD
-    if(bw_source_catalog_kind(item)!=BW_PROVIDER_FOLDER)return "Compressed sources are unavailable in this folder-only reader build.";
+    if(bw_source_catalog_kind(item)==BW_PROVIDER_CONTAINER&&item->state!=BW_CATALOG_CONTAINER_READY)
+        return "This compressed image format is unsupported or could not be verified.";
 #else
     (void)item;
 #endif
@@ -935,10 +936,10 @@ static void prepared_absence_poll(struct bw_native_backend *p){
     for(size_t i=0;i<p->library.catalog.count;i++){
         const struct bw_catalog_item *item=p->library.catalog.items+i;
         struct bw_native_prepared *cached=p->library.prepared+i;struct bw_provider_binding binding={0};
-        if(!bw_source_catalog_available(item)||bw_source_catalog_kind(item)!=BW_PROVIDER_FOLDER||
+        if(!bw_source_catalog_available(item)||
            cached->state!=BW_PREPARED_VALID||cached->prepared_policy||!nonce_valid(cached->run)||
            cached->retirement!=BW_RETIRE_NONE||removed_at(p,i)||registration_waiting(p,item->title_id)||
-           bw_provider_binding_init(&binding,&connection,item->source,item->title_id,BW_PROVIDER_FOLDER)||
+           bw_provider_binding_init(&binding,&connection,item->source,item->title_id,bw_source_catalog_kind(item))||
            !memchr(cached->game,0,sizeof cached->game)||strcmp(cached->game,binding.binding.game)||
            (p->removing.unknown&&!strcmp(p->removing.selected.identity.binding.game,cached->game)))continue;
         length=snprintf(path,sizeof path,"%s/%s",parent,binding.binding.game);
@@ -986,7 +987,7 @@ static int state(struct bw_native_backend *p,struct bw_native_response *out){
     }else bw_json_text(&json,"null");
     int early=0;
 #ifdef BW_NATIVE_PRELOAD
-    early=p->playing.selection.identity.kind==BW_PROVIDER_FOLDER;
+    early=p->playing.selection.identity.kind==BW_PROVIDER_FOLDER||p->playing.selection.identity.kind==BW_PROVIDER_CONTAINER;
 #endif
     int live_controller=p->active&&p->worker_kind==WORK_PLAY;
     bw_json_format(&json,",\"gamePid\":%d,\"readerPid\":%d,\"controllerPid\":%d,\"canClose\":%s,\"readerMode\":",
@@ -1197,7 +1198,7 @@ static int send_owned(struct bw_native_backend *p,const char *authority,const vo
     if(item==p->library.catalog.count||!bw_source_catalog_available(&p->library.catalog.items[item])){status=400;reply="{\"error\":\"Choose an available preserved source\"}";goto done;}
     if(registration_waiting(p,p->library.catalog.items[item].title_id)){reply="{\"error\":\"Registration cleanup is pending or needs attention; Send will not repeat it\"}";goto done;}
     if(removed_at(p,item)){reply="{\"error\":\"Restore this removed source before preparing it again\"}";goto done;}
-    if(source_build_reason(&p->library.catalog.items[item])){reply="{\"error\":\"Compressed sources are unavailable in this folder-only reader build.\"}";goto done;}
+    if(source_build_reason(&p->library.catalog.items[item])){reply="{\"error\":\"This compressed image format is unsupported or could not be verified.\"}";goto done;}
     if(p->library.prepared&&reader_update_reason(&p->library.prepared[item])){reply="{\"error\":\"The reader update is unresolved. Play and Send are blocked; startup files were kept.\"}";goto done;}
     if(p->library.prepared&&(p->library.prepared[item].state==BW_PREPARED_INVALID||p->library.prepared[item].state==BW_PREPARED_UNKNOWN)){reply="{\"error\":\"Refresh and inspect this console copy before preparing it again\"}";goto done;}
     if(p->library.prepared&&p->library.prepared[item].state==BW_PREPARED_VALID&&!p->library.prepared[item].startup_upgrade_required&&
@@ -1350,7 +1351,7 @@ static int start_play(struct bw_native_backend *p,const void *body,size_t size,c
     if(item==p->library.catalog.count||!bw_source_catalog_available(&p->library.catalog.items[item])){reply="{\"error\":\"Choose an available preserved source\"}";goto done;}
     if(registration_waiting(p,p->library.catalog.items[item].title_id)){reply="{\"error\":\"Registration cleanup is pending or needs attention; no launch or cleanup request was repeated\"}";goto done;}
     if(removed_at(p,item)){reply="{\"error\":\"Restore this removed source and Send files before starting it again\"}";goto done;}
-    if(source_build_reason(&p->library.catalog.items[item])){reply="{\"error\":\"Compressed sources are unavailable in this folder-only reader build.\"}";goto done;}
+    if(source_build_reason(&p->library.catalog.items[item])){reply="{\"error\":\"This compressed image format is unsupported or could not be verified.\"}";goto done;}
     if(p->library.prepared&&reader_update_reason(&p->library.prepared[item])){reply="{\"error\":\"The reader update is unresolved. Play and Send are blocked; startup files were kept.\"}";goto done;}
     int upgrade=p->library.prepared&&p->library.prepared[item].state==BW_PREPARED_VALID&&p->library.prepared[item].startup_upgrade_required;
     int present=p->library.prepared&&p->library.prepared[item].state==BW_PREPARED_VALID&&!upgrade&&!revalidation_required(p,&p->library.prepared[item]);

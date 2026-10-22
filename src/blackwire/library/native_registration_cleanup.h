@@ -48,7 +48,7 @@ struct bw_nrc_ticket;
  * retried by number; the joined caller must retain its CONTROL reservation. */
 #define BW_NRC_RELEASE_UNCONFIRMED (-2)
 /* Call immediately before the REAL registration mutation, after existing
- * prepared/source admission. Only FOLDER/V1 policy0 is initially supported.
+ * prepared/source admission. FOLDER or CONTAINER/V1 with policy0 is supported.
  * Require two actual app-dir+DB ABSENT observations and a fresh selection run;
  * preexisting MATCH/PENDING/unknown is never adopted. On success, fsynced
  * private intent exists and ticket owns held anchors. 0=ticket,1=inert/refused,

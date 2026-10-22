@@ -6,6 +6,7 @@
 
 #define BW_CACHE_BLOCK 65536u
 #define BW_CACHE_SLOTS 1024u
+#define BW_CACHE_BUCKETS 2048u
 #define BW_CACHE_BYTES ((size_t)BW_CACHE_SLOTS * BW_CACHE_BLOCK)
 
 typedef int (*bw_cache_loader)(void *opaque, uint32_t pak, uint64_t block,
@@ -17,6 +18,7 @@ struct bw_cache {
     struct bw_cache_entry *_entries;
     uint8_t *_storage;
     size_t _newest, _oldest;
+    uint32_t _buckets[BW_CACHE_BUCKETS], _free;
 
     uint64_t hits, misses, evictions, loaded_bytes;
     size_t allocation_bytes; /* Tracked payload storage + fixed entry metadata. */

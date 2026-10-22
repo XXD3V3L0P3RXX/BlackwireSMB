@@ -39,7 +39,7 @@ int bw_native_legacy_startup_upgrade(const char *base,const struct bw_provider_b
     const struct bw_native_prepared *prepared,unsigned *out){
     if(!out)return -1;*out=0;
     if(!base||!identity||!prepared||prepared->state!=BW_PREPARED_VALID||prepared->prepared_policy||
-        identity->kind!=BW_PROVIDER_FOLDER||strcmp(identity->binding.game,prepared->game))return -1;
+        (identity->kind!=BW_PROVIDER_FOLDER&&identity->kind!=BW_PROVIDER_CONTAINER)||strcmp(identity->binding.game,prepared->game))return -1;
     char root[1024];int n=snprintf(root,sizeof root,"%s/games/%s",base,prepared->game);if(n<0||(size_t)n>=sizeof root)return -1;
     struct bw_files files={0};int result=-1;unsigned upgrade=0;
 #ifndef BW_NATIVE_PRELOAD

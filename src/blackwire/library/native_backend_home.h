@@ -94,7 +94,7 @@ static int home_select(struct home_worker *h,struct bw_share_config *config){
         struct bw_catalog_item item;struct bw_native_prepared candidate={0};int eligible=0;
         pthread_mutex_lock(&p->lock);item=p->library.catalog.items[i];
         if(p->library.prepared)candidate=p->library.prepared[i];
-        eligible=!strcmp(item.title_id,title)&&bw_source_catalog_available(&item)&&bw_source_catalog_kind(&item)==BW_PROVIDER_FOLDER&&
+        eligible=!strcmp(item.title_id,title)&&bw_source_catalog_available(&item)&&
             p->library.prepared&&candidate.state==BW_PREPARED_VALID&&!candidate.prepared_policy&&!candidate.startup_upgrade_required&&
             !reader_update_reason(&candidate)&&!revalidation_required(p,&candidate)&&!removed_at(p,i)&&!registration_waiting(p,title);
         pthread_mutex_unlock(&p->lock);if(!eligible)continue;
@@ -103,7 +103,7 @@ static int home_select(struct home_worker *h,struct bw_share_config *config){
          * registration/root before counting, not title alone. This bounded
          * metadata selection does not grant LOCAL/source or map-SHA admission;
          * the retained owner below independently proves those once. */
-        if(bw_provider_binding_init(&identity,config,item.source,title,BW_PROVIDER_FOLDER)||
+        if(bw_provider_binding_init(&identity,config,item.source,title,bw_source_catalog_kind(&item))||
            bw_native_launch_selection(backend_data_root,&identity,&candidate,h->selected.run,&registered)||
            bw_native_registration_verify(backend_data_root,"/user/app","/system_data/priv/mms/app.db",&registered))continue;
         selected=i;chosen=identity;prepared=candidate;candidates++;
@@ -264,7 +264,8 @@ static void home_prepare_first_failure(struct home_prepare_failure *f,unsigned s
 }
 static int home_prepare_provision(struct bw_native_backend *p,const struct bw_native_prepared *prepared,unsigned *startup_invalid){
     if(startup_invalid)*startup_invalid=0;
-    if(!prepared||prepared->state!=BW_PREPARED_VALID||prepared->prepared_policy||p->sending.selection.identity.kind!=BW_PROVIDER_FOLDER){if(startup_invalid)*startup_invalid=1;return -1;}
+    if(!prepared||prepared->state!=BW_PREPARED_VALID||prepared->prepared_policy||
+       (p->sending.selection.identity.kind!=BW_PROVIDER_FOLDER&&p->sending.selection.identity.kind!=BW_PROVIDER_CONTAINER)){if(startup_invalid)*startup_invalid=1;return -1;}
     struct home_prepare h={.p=p,.identity=p->sending.selection.identity,.prepared=*prepared,.deadline=now()+120};
     pthread_mutex_lock(&p->lock);h.generation=p->generation;h.revision=p->settings_revision;pthread_mutex_unlock(&p->lock);
     char run[33];const char *failure=NULL;struct bw_nrl_owner *owner=NULL;int result=-1,unknown=0,step_result=0;
@@ -325,7 +326,7 @@ static int home_observation_current(void *opaque){
 }
 static int home_ready_observe(struct bw_native_backend *p,const struct bw_provider_binding *identity,
     const struct bw_native_prepared *prepared,const struct bw_setup_generation *settings){
-    if(!identity||!prepared||!settings||identity->kind!=BW_PROVIDER_FOLDER||prepared->state!=BW_PREPARED_VALID||prepared->prepared_policy||prepared->startup_upgrade_required)return -1;
+    if(!identity||!prepared||!settings||(identity->kind!=BW_PROVIDER_FOLDER&&identity->kind!=BW_PROVIDER_CONTAINER)||prepared->state!=BW_PREPARED_VALID||prepared->prepared_policy||prepared->startup_upgrade_required)return -1;
     pthread_mutex_lock(&p->lock);int refused=revalidation_required(p,prepared);pthread_mutex_unlock(&p->lock);
     if(refused||bw_preload_bundle_upgrade_workspace(backend_data_root,prepared->game)!=0)return -1;
     struct home_observation o={.p=p,.settings=*settings,.deadline=now()+20};

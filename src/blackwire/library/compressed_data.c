@@ -48,7 +48,7 @@ static int add(void *opaque,const char *path,const struct bw_pfs_inode *node) {
         length>BW_COMPRESSED_DATA_MAX_PATH_BYTES-p->path_bytes) {
         p->error=BW_COMPRESSED_DATA_LIMIT;return -1;
     }
-    if (bw_source_plan_add(p->plan,path,node->logical_size,0)) {
+    if (bw_source_plan_add(p->plan,path,node->logical_size,p->owner->image->admitted.smb2_mtime)) {
         p->error=BW_COMPRESSED_DATA_PLAN;return -1;
     }
     p->count++;p->path_bytes+=length;return 0;

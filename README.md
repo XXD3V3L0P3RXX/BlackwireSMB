@@ -1,5 +1,7 @@
 # Blackwire
 
+**Development branch:** PFS/PFSC compressed-source streaming and loading optimizations are being tested here. The published `v0.1.0-preview.1` download still supports extracted folders only. See the [development results and remaining checks](docs/COMPRESSED-DEVELOPMENT.md) before using a development build.
+
 Stream extracted PS5 games from an ordinary PC SMB share, with a smaller startup copy on the console.
 
 [Download preview](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.1.0-preview.1) · [Video](#video) · [Setup](docs/SETUP.md) · [Requirements](docs/REQUIREMENTS.md) · [Test results](docs/TESTING.md) · [Build from source](docs/BUILD.md)

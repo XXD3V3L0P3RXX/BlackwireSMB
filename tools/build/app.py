@@ -117,7 +117,7 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
     for row in commands:
         argv = [expand(value) for value in row["argv"]]
         if row["label"] == "compile-00":
-            argv.insert(1, '-DBW_RESIDENT_BUILD_ID="blackwire-v0.1.0-preview.1"')
+            argv.insert(1, '-DBW_RESIDENT_BUILD_ID="blackwire-compressed-loading-dev.1"')
         if row is link:
             argv = sdk_runtime.link_arguments(root, out, argv, runtime)
         if "-o" in argv:
@@ -142,7 +142,7 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
         raise ValueError("Packaging changed allocated ELF content")
     image_pin=pin(package)
     save(out/"embedding.json",{"reader":pin(image),"sourceManifestSha256":source_identity,
-        "generatedC":pin(embedded/"preload-image.c"),"folderOnly":True,"standaloneWeb":True,
+        "generatedC":pin(embedded/"preload-image.c"),"folderOnly":False,"standaloneWeb":True,
         "sourceRuntime":{"receipt":runtime["receiptPin"],"link":runtime_link},"nativeFrontendIncluded":False,
         "nativeAssetBundleIncluded":False,"rawApplication":pin(raw),"package":image_pin,"consoleActions":0})
     save(destination/"SHA256.json",{"Blackwire.elf":image_pin})

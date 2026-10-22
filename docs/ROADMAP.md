@@ -12,6 +12,8 @@ The standalone preview has an observed path for **Send → Ready → Games icon*
 
 ## Loading and performance
 
+Current development work is recorded in [compressed-source development](COMPRESSED-DEVELOPMENT.md): an indexed RAM cache and bounded PFSC batching have passed host comparisons. PS5 loading-time comparisons remain pending.
+
 - Compare the same game's menu and scene-loading intervals with the same selections; the historical reader comparison did not show shorter loading.
 - Expose useful delivered-byte, request-time, request-size and cache-hit counters where the resident can observe them.
 - Evaluate bounded read-ahead, startup-range caching and concurrency against correctness and memory limits.
@@ -20,7 +22,8 @@ The standalone preview has an observed path for **Send → Ready → Games icon*
 
 - Record startup, menu and gameplay results for more owned extracted backups.
 - Investigate failures using actual source/read evidence and preserve unknown outcomes.
-- Qualify compressed/container streaming separately; folder sources remain the preview path.
+- Qualify PFS/PFSC compressed streaming through Send, Blackwire Play, direct Games-tab launch and Uninstall. Folder sources remain the published preview path.
+- Add and independently test exFAT-based compressor output after the PFS/PFSC console path is qualified.
 
 ## Blackwire Dashboard
 

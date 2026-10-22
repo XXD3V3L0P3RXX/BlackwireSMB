@@ -97,9 +97,9 @@ static int removal_cache(struct bw_native_backend *p,struct bw_native_library *l
     if(!p->ops.removal_probe||!library->catalog.count)return 0;
     library->removal=calloc(library->catalog.count,sizeof *library->removal);if(!library->removal)return -1;
     for(size_t i=0;i<library->catalog.count;i++){
-        const struct bw_catalog_item *item=library->catalog.items+i;if(!bw_source_catalog_available(item)||bw_source_catalog_kind(item)!=BW_PROVIDER_FOLDER)continue;
+        const struct bw_catalog_item *item=library->catalog.items+i;if(!bw_source_catalog_available(item))continue;
         struct bw_provider_binding identity={0};struct bw_native_prepared absent={.state=BW_PREPARED_ABSENT};const struct bw_native_prepared *prepared=library->prepared?library->prepared+i:&absent;
-        if(bw_provider_binding_init(&identity,config,item->source,item->title_id,BW_PROVIDER_FOLDER)||p->ops.removal_probe(p->opaque,&identity,prepared,library->removal+i)){memset(library->removal+i,0,sizeof *library->removal);library->removal[i].reason="The exact owned-copy removal metadata is unavailable.";}
+        if(bw_provider_binding_init(&identity,config,item->source,item->title_id,bw_source_catalog_kind(item))||p->ops.removal_probe(p->opaque,&identity,prepared,library->removal+i)){memset(library->removal+i,0,sizeof *library->removal);library->removal[i].reason="The exact owned-copy removal metadata is unavailable.";}
     }return 0;
 }
 static const char *removal_status(unsigned state){return state==REMOVAL_RUNNING?"running":state==REMOVAL_DONE?"done":state==REMOVAL_ERROR?"error":state==REMOVAL_UNKNOWN?"unknown":"idle";}
@@ -150,9 +150,9 @@ static int removal_action(struct bw_native_backend *p,const char *owner,const vo
     pthread_mutex_lock(&p->lock);
     if(p->active||p->removing.unknown||!strcmp(p->removing.selected.operation,owner)||p->control_release_unknown||strcmp(p->external_nonce,owner)||p->phase!=BACKEND_READY||p->stale||p->setup_blocked||p->settings_status!=BW_SETUP_VALID||request.selected.library_generation!=p->generation||request.selected.settings_revision!=p->settings_revision||loaded!=BW_SETUP_VALID||!bw_native_setup_generation_equal(&connection,&p->settings_generation)||idle)goto done;
     size_t item=0;for(;item<p->library.catalog.count;item++)if(!strcmp(p->library.catalog.items[item].source,request.selected.source))break;
-    if(item==p->library.catalog.count||!p->library.removal||!bw_source_catalog_available(p->library.catalog.items+item)||bw_source_catalog_kind(p->library.catalog.items+item)!=BW_PROVIDER_FOLDER||registration_waiting(p,p->library.catalog.items[item].title_id)||!(restore?p->library.removal[item].can_restore:p->library.removal[item].can_uninstall))goto done;
+    if(item==p->library.catalog.count||!p->library.removal||!bw_source_catalog_available(p->library.catalog.items+item)||registration_waiting(p,p->library.catalog.items[item].title_id)||!(restore?p->library.removal[item].can_restore:p->library.removal[item].can_uninstall))goto done;
     struct bw_native_removal_selection selected={0};const struct bw_catalog_item *entry=p->library.catalog.items+item;
-    if((!restore&&strcmp(request.confirmed_title,entry->title_id))||bw_provider_binding_init(&selected.identity,&config,entry->source,entry->title_id,BW_PROVIDER_FOLDER))goto done;
+    if((!restore&&strcmp(request.confirmed_title,entry->title_id))||bw_provider_binding_init(&selected.identity,&config,entry->source,entry->title_id,bw_source_catalog_kind(entry)))goto done;
     if(p->library.prepared)selected.prepared=p->library.prepared[item];if(!restore&&selected.prepared.state!=BW_PREPARED_VALID)goto done;
     selected.connection=connection;memcpy(selected.operation,owner,33);if(!restore)memcpy(selected.confirmed_title,request.confirmed_title,10);
     if(p->joinable){if(pthread_join(p->worker,NULL)){status=503;goto done;}p->joinable=0;}

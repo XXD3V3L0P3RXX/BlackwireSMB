@@ -33,8 +33,8 @@ int bw_native_registration_verify(const char *base,const char *apps,const char *
     C(!strcmp(base,backend_data_root)&&!strcmp(apps,"/user/app")&&!strcmp(db,"/system_data/priv/mms/app.db"));registration_calls++;
     return (!strcmp(selected->source,"First")?(registered_mask&1):(registered_mask&2))?0:-1;
 }
-int bw_source_catalog_available(const struct bw_catalog_item *item){return item->state==BW_CATALOG_FOLDER;}
-enum bw_provider_kind bw_source_catalog_kind(const struct bw_catalog_item *item){(void)item;return BW_PROVIDER_FOLDER;}
+int bw_source_catalog_available(const struct bw_catalog_item *item){return item->state==BW_CATALOG_FOLDER||item->state==BW_CATALOG_CONTAINER_READY;}
+enum bw_provider_kind bw_source_catalog_kind(const struct bw_catalog_item *item){return item->state==BW_CATALOG_CONTAINER_READY?BW_PROVIDER_CONTAINER:BW_PROVIDER_FOLDER;}
 static void *home_worker(void *v){(void)v;C(0);return NULL;}
 static int worker_start(pthread_t *thread,void *(*entry)(void *),void *opaque){C(entry==home_worker&&opaque==&owner);(void)thread;queued++;return spawn_fail?-1:0;}
 static int text(struct bw_native_response *out,int status,const char *raw){out->status=status;out->type="application/json";out->size=strlen(raw);out->bytes=malloc(out->size+1);C(out->bytes);memcpy(out->bytes,raw,out->size+1);return 0;}
@@ -84,6 +84,8 @@ static void selection_tests(void){
     h=selection_fixture();registered_mask=3;C(home_select(&h,&config)&&!h.resolved);bw_share_clear(&config);done();
     h=selection_fixture();registered_mask=0;C(home_select(&h,&config)&&!h.resolved);bw_share_clear(&config);done();
     h=selection_fixture();owner.settings_revision++;C(home_select(&h,&config)&&!metadata_calls&&!registration_calls);bw_share_clear(&config);done();
+    h=selection_fixture();catalog[1].state=BW_CATALOG_CONTAINER_READY;
+    C(!home_select(&h,&config)&&h.resolved&&owner.playing.item==1&&h.selected.identity.kind==BW_PROVIDER_CONTAINER);bw_share_clear(&config);done();
 }
 int main(void){queue_tests();selection_tests();cleanup_tests();printf("{\"passed\":true,\"cases\":%u,\"checks\":%u,\"actualQueueLeaseAndSelection\":true,\"SonyWorkerReceiptAndRegistrationBoundariesModeled\":true}\n",cases,checks);return 0;}
 

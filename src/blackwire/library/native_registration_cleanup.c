@@ -104,7 +104,7 @@ static void put64(unsigned char *p,uint64_t n){for(unsigned i=0;i<8;i++)p[i]=(un
 static uint32_t get32(const unsigned char *p){uint32_t n=0;for(unsigned i=0;i<4;i++)n|=(uint32_t)p[i]<<(8*i);return n;}
 static uint64_t get64(const unsigned char *p){uint64_t n=0;for(unsigned i=0;i<8;i++)n|=(uint64_t)p[i]<<(8*i);return n;}
 static int subject_init(struct record *r,const struct context *c,const struct bw_reader_selection *s){
-    if(!s||s->source_kind!=BW_PROVIDER_FOLDER||s->source_policy!=BW_PROVIDER_POLICY_V1||s->prepared_policy||!title_valid(s->title)||!run_valid(s->run)||hex(s->prepared_record_hex,64,r->subject.prepared_record_sha256)||
+    if(!s||(s->source_kind!=BW_PROVIDER_FOLDER&&s->source_kind!=BW_PROVIDER_CONTAINER)||s->source_policy!=BW_PROVIDER_POLICY_V1||s->prepared_policy||!title_valid(s->title)||!run_valid(s->run)||hex(s->prepared_record_hex,64,r->subject.prepared_record_sha256)||
        bw_native_selected_root(s,r->subject.game)||bw_reader_selection_serialize(s,r->selection,sizeof r->selection,&r->selection_size)||!r->selection_size||r->selection_size>BW_READER_SELECTION_BYTES)return -1;
     memcpy(r->subject.title,s->title,10);memcpy(r->subject.run,s->run,33);cp_sha_bytes(r->selection,r->selection_size,r->subject.selection_sha256);
     return join(r->subject.source,c->games.path,r->subject.game);
@@ -505,7 +505,7 @@ static int removed_record_current(struct context *c,const struct record *r,const
     struct bw_removed_source actual={0};struct bw_removed_result status={0};struct bw_reader_selection selected;
     if(bw_removed_lookup(c->env.data_root,&removed->identity,&actual,&status)||status.state!=BW_REMOVED_COMMITTED||
        !removed_equal(&actual,removed)||bw_reader_selection_parse(&selected,r->selection,r->selection_size))return -1;
-    unsigned char binding[32];if(hex(selected.binding_hex,64,binding)||actual.identity.kind!=BW_PROVIDER_FOLDER||actual.identity.policy!=BW_PROVIDER_POLICY_V1||
+    unsigned char binding[32];if(hex(selected.binding_hex,64,binding)||(uint32_t)actual.identity.kind!=selected.source_kind||actual.identity.policy!=selected.source_policy||
        strcmp(selected.source,actual.identity.binding.source)||strcmp(r->subject.title,actual.identity.binding.title)||
        strcmp(r->subject.game,actual.identity.binding.game)||memcmp(binding,actual.identity.binding.sha256,32)||
        memcmp(r->subject.prepared_record_sha256,actual.prepared_sha256,32))return -1;

@@ -4,7 +4,7 @@
 #include "reader_selection.h"
 
 /* Internal, single joined Play owner. This is deliberately not a persisted
- * capability or a reader file-format change. A Ready FOLDER receipt seals the
+ * capability or a reader file-format change. A Ready folder/container receipt seals the
  * strict Send result; normal Play checks its bounded metadata and required
  * boot/module bytes once, then retains their named/held identities. It does
  * not walk the current PC tree or inspect every STREAM placeholder. */
@@ -20,6 +20,8 @@ int bw_native_launch_admission_current(struct bw_native_launch_admission *,
     const char *,const struct bw_provider_binding *,const struct bw_reader_selection *,
     struct bw_native_prepared *);
 /* Bounded source/param/boot/module checks on the already connected share.
+ * Containers validate their namespace and exact sealed image generation;
+ * unchanged remote startup bodies are not rehashed on every Play.
  * Durable generation is the Send seal, not a freshly reconstructed tree seal.
  * Unchanged early-reader per-request size/mtime + held/named fences remain. */
 int bw_native_launch_admission_source(struct bw_native_launch_admission *,

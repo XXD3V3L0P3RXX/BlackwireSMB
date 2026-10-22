@@ -149,6 +149,9 @@ static void uninstall_boundary_cases(void){
 int main(int argc,char **argv){
     program=argv[0];case_name="startup";CHECK(argc==2&&strlen(argv[1])<P);strcpy(suite,argv[1]);make(suite,0700);settings_cases();
     struct lifecycle_fixture t;struct bw_nrc_result r;struct bw_nrc_retirement_result rr;struct bw_native_reader_release release;
+    init_lifecycle(&t,"container-registration-normal-retirement");t.f.selected.source_kind=BW_PROVIDER_CONTAINER;
+    start(&t);release=release_of(&t);CHECK(!retire(&t,&release,&rr)&&rr.registration.state==BW_NRC_PENDING&&t.uninstall_calls==1);
+    CHECK(!retire(&t,&release,&rr)&&rr.registration.state==BW_NRC_ABSENT&&t.uninstall_calls==1);finish(&t);
     init_lifecycle(&t,"new-registration-normal-retirement");start(&t);release=release_of(&t);
     CHECK(!retire(&t,&release,&rr)&&rr.registration.state==BW_NRC_PENDING&&t.removes==1&&t.uninstall_calls==1);
     CHECK(!retire(&t,&release,&rr)&&rr.registration.state==BW_NRC_ABSENT&&t.removes==1&&t.uninstall_calls==1);finish(&t);

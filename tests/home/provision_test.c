@@ -18,6 +18,9 @@ static int prepare(void *v,struct bw_share_config *c,const struct bw_native_prep
 void bw_native_sensitive_clear(void *p,size_t n){memset(p,0,n);}
 void bw_native_job_observe(void*a,const struct bw_source_progress*b){(void)a;(void)b;}
 int bw_native_job_finish(const struct bw_native_job_token*t,enum bw_native_job_failure f){C(t==&owner.sending.token&&f==BW_JOB_SUCCESS);job_success++;return 0;}
+int bw_native_job_setup_message(const struct bw_native_job_token*t,const char*m){C(t==&owner.sending.token&&m&&strstr(m,"Startup files kept"));return 0;}
+int bw_native_job_reuse_prepared(const struct bw_native_job_token*t,uint32_t count,uint64_t bytes){C(t==&owner.sending.token&&count==prepared.local_count&&bytes==prepared.local_bytes);return 0;}
+int bw_native_job_finish_setup(const struct bw_native_job_token*t,int valid,int registered,const char*m){C(t==&owner.sending.token&&valid&&registered==(fault==0)&&m&&m[0]);job_success++;return 0;}
 int bw_native_launch_admission_open(struct bw_native_launch_admission **out,const char*root,const struct bw_provider_binding*identity,const struct bw_native_prepared*expected,const char*run,int(*guard)(void*),void*opaque,const char**error){
     C(!strcmp(root,backend_data_root)&&identity&&expected->state==BW_PREPARED_VALID&&strcmp(run,expected->run)&&guard&&!guard(opaque));(void)error;*out=(struct bw_native_launch_admission*)malloc(1);C(*out);return 0;
 }
@@ -44,12 +47,15 @@ static void reset(int mode){
 }
 int main(void){
     for(int mode=0;mode<=6;mode++){
-        reset(mode);C(!prepare_worker(&owner));C(copies==1&&job_success==1&&library_prepared.state==BW_PREPARED_VALID&&library_prepared.bytes_verified&&!owner.preparation_blocked&&!owner.active&&startup_closes==1);
+        reset(mode);C(!prepare_worker(&owner));C(copies==1&&job_success==1&&library_prepared.state==BW_PREPARED_VALID&&library_prepared.bytes_verified&&owner.preparation_blocked==(mode==2||mode==5||mode==6)&&!owner.active&&startup_closes==1);
         if(mode==0){C(bundles==1&&begins==1&&registers==1&&commits==1&&destroys==1&&owner.home_ready[0]==1&&!owner.control_release_unknown);}
         else{C(owner.home_ready[0]==2&&owner.home_setup_reason[0]);if(mode<=2)C(!begins&&!registers);if(mode==3)C(begins==1&&!registers);if(mode>=4)C(registers==1&&commits==1);C(owner.control_release_unknown==(mode==2||mode==5||mode==6));}
-        if(mode==4||mode==5)C(strstr(owner.home_setup_reason,"unconfirmed")&&!strstr(owner.home_setup_reason,"choose Play"));
+        if(mode==4||mode==5)C(strstr(owner.home_setup_reason,"Setup step")&&!strstr(owner.home_setup_reason,"choose Play"));
         C(!pthread_mutex_destroy(&owner.lock));
     }
-    reset(0);C(!home_prepare_provision(&owner,&prepared));C(!copies&&bundles==1&&registers==1&&owner.home_ready[0]==1);C(!pthread_mutex_destroy(&owner.lock));
+    reset(0);unsigned invalid=0;C(!home_prepare_provision(&owner,&prepared,&invalid));C(!invalid&&!copies&&bundles==1&&registers==1&&owner.home_ready[0]==1);C(!pthread_mutex_destroy(&owner.lock));
+    reset(0);struct bw_share_config container_config={0};strcpy(container_config.server,"192.0.2.20");strcpy(container_config.share,"OwnedBackups");
+    C(!bw_provider_binding_init(&owner.sending.selection.identity,&container_config,"Owned.ffpfsc","PPSA04734",BW_PROVIDER_CONTAINER));strcpy(prepared.game,owner.sending.selection.identity.binding.game);
+    C(!home_prepare_provision(&owner,&prepared,&invalid));C(!invalid&&!copies&&bundles==1&&registers==1&&owner.home_ready[0]==1);C(!pthread_mutex_destroy(&owner.lock));
     printf("{\"passed\":true,\"cases\":%u,\"checks\":%u,\"actualSendCompletionAndProvisionOrder\":true,\"sourceReceiptBundleAndSonyBoundariesModeled\":true}\n",cases,checks);return 0;
 }

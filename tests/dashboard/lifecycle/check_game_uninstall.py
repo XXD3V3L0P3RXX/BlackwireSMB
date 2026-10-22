@@ -22,7 +22,7 @@ sys.path.insert(0,str(HERE))
 import manifest_fixture as manifest
 def pin(p):
     body=p.read_bytes();return dict(bytes=len(body),sha256=hashlib.sha256(body).hexdigest())
-def fixture(area,scenario,streams=32):
+def fixture(area,scenario,streams=32,container=False):
     shared=scenario.startswith('shared-apps-0770-')
     if shared:scenario=scenario[len('shared-apps-0770-'):]
     data=area/'data';data.mkdir();source=area/'source';source.mkdir();meta=area/'metadata';meta.mkdir();(area/'game.log').write_text('')
@@ -30,7 +30,9 @@ def fixture(area,scenario,streams=32):
     (area/'manual-full').mkdir();(area/'manual-full/eboot.bin').write_bytes(bytes(range(256))*1024)
     param=b'{"titleId":"PPSA99999","contentId":"UP0000-PPSA99999_00-BLACKWIREFIXTURE0"}'
     contents={'eboot.bin':bytes(range(256))*1024,'sce_sys/param.json':param,'sce_module/libfixture.sprx':bytes(range(255,-1,-1))*2048,'startup.txt':b'prepared non-executable LOCAL data'}
-    fields=['192.0.2.1','FixtureShare','Fixture','PPSA99999'];binding=hashlib.sha256(b'BWBIND01'+b''.join(struct.pack('<I',len(s))+s.encode() for s in fields)).hexdigest();game='PPSA99999_'+binding
+    fields=['192.0.2.1','FixtureShare','Fixture','PPSA99999'];binding=hashlib.sha256(b'BWBIND01'+b''.join(struct.pack('<I',len(s))+s.encode() for s in fields)).hexdigest()
+    if container:binding=hashlib.sha256(b'Blackwire logical container source v1: unsigned contiguous D32 PFS\0'+bytes.fromhex(binding)).hexdigest()
+    game='PPSA99999_'+binding
     rows=[]
     for name,body in contents.items():
         p=source/name;p.write_bytes(body);os.utime(p,(1700000000,1700000000));rows.append(manifest.File(name,len(body),1700000000,manifest.LOCAL))
@@ -52,7 +54,7 @@ def fixture(area,scenario,streams=32):
         if scenario=='foreign-row':db.execute('INSERT INTO tbl_contentinfo VALUES (?,?)',('PPSA99999','foreign-content'))
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,required=True);args=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--container',action='store_true');args=parser.parse_args()
     out=args.output.resolve()
     if not out.is_relative_to(ROOT/'build/native-dashboard'):raise ValueError('Use a new scoped native-dashboard output')
     out.mkdir(parents=True,exist_ok=False);commands=[];deps=[]
@@ -96,7 +98,7 @@ def main():
     observations=[]
     for scenario in scenarios:
         with tempfile.TemporaryDirectory(prefix='blackwire-game-uninstall-') as tmp:
-            area=Path(tmp);fixture(area,scenario);observations.append(json.loads(run('case-'+scenario,[binary,area,scenario]).splitlines()[-1]))
+            area=Path(tmp);fixture(area,scenario,container=args.container);observations.append(json.loads(run('case-'+scenario,[binary,area,scenario,*(['container'] if args.container else [])]).splitlines()[-1]))
     sdk=Path('/opt/ps5-payload-sdk');native=[]
     for p in (LIB/'native_game_uninstall.c',LIB/'native_removed_sources.c'):
         obj=out/(p.stem+'.sdk.o');dep=obj.with_suffix('.d');deps.append(dep);run('sdk-'+p.stem,[sdk/'bin/prospero-clang',*common,'-MD','-MF',dep,'-c',p,'-o',obj]);native.append(obj)

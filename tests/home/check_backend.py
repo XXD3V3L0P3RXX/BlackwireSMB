@@ -32,7 +32,7 @@ static void *home_worker(void*);
 static int text(struct bw_native_response*,int,const char*);
 '''
 parts=[function(back,n) for n in ['static double now(','static int nonce_valid(','static int registration_waiting(','static int revalidation_required(','static int removed_at(','static const char *reader_update_reason(']]
-parts += [function(home,n) for n in ['static int home_lease(','static int home_app_current(','static int home_consumer_uid(','static int home_cleanup_lease(','static int home_idle_after_exit(','static int home_settings(','static int home_select(','static void home_consumed_retire_locked(','int bw_native_backend_home_claim(']]
+parts += [function(home,n) for n in ['static int home_lease(','static int home_app_current(','static int home_consumer_uid(','static int home_cleanup_lease(','static int home_idle_after_exit(','static int home_settings(','static int home_select(','static void home_consumed_retire_locked(','static int home_claim_deadline_current(','int bw_native_backend_home_claim(']]
 header=O/'backend-under-test.h';header.write_text(prefix+struct+'\n'+worker+'\n'+'\n'.join(parts))
 stub=O/'workspace.c';stub.write_text('int bw_preload_bundle_upgrade_workspace(const char*a,const char*b){(void)a;(void)b;return 0;}\n')
 files=[R/'backend_test.c',S/'library/home_protocol.c',S/'library/source_param.c',S/'library/source_identity.c',S/'library/source_binding.c',S/'library/source_profile.c',S/'streamreader/manifest.c',S/'library/home_session.c',S/'library/native_session.c',S/'streamreader/diagnostics/game_stop_identity.c',S/'streamreader/share_config.c',stub]

@@ -54,7 +54,7 @@ static void gu_progress(struct gu_plan *p,enum bw_game_uninstall_phase phase,con
 static void gu_init(struct gu_plan *p){p->data=p->games=p->scope=p->apps=p->root=p->state=p->ledger=p->send_lock=-1;}
 static int gu_provider(const struct bw_provider_binding *identity){
     const struct bw_source_binding *b=&identity->binding;
-    if(identity->kind!=BW_PROVIDER_FOLDER||identity->policy!=BW_PROVIDER_POLICY_V1||
+    if((identity->kind!=BW_PROVIDER_FOLDER&&identity->kind!=BW_PROVIDER_CONTAINER)||identity->policy!=BW_PROVIDER_POLICY_V1||
        strnlen(b->title,10)!=9||memcmp(b->title,"PPSA",4)||!strcmp(b->title,"PPSA99171")||!strcmp(b->title,"PPSA99170")||
        strnlen(b->game,75)!=74||memcmp(b->game,b->title,9)||b->game[9]!='_'||strnlen(b->source,sizeof b->source)>=sizeof b->source||bw_manifest_validate_path(b->source,strlen(b->source)))return -1;
     for(unsigned i=4;i<9;i++)if(b->title[i]<'0'||b->title[i]>'9')return -1;
@@ -111,7 +111,9 @@ static int gu_receipt(struct gu_plan *p,const unsigned char *r,size_t size,int c
     if(current){cp_sha_bytes(r,size,hash);if(memcmp(hash,p->r->prepared.record_sha256,32)||memcmp(r+16,p->r->prepared.run,32))return -1;}return 0;
 }
 static int gu_binding_json(struct gu_plan *p,struct bw_json *json){const struct bw_source_binding *b=&p->r->identity.binding;char hex[65];for(unsigned i=0;i<32;i++)snprintf(hex+2*i,3,"%02x",b->sha256[i]);
-    bw_json_text(json,"{\"version\":1,\"source\":");bw_json_string(json,b->source);bw_json_text(json,",\"game\":");bw_json_string(json,b->game);bw_json_text(json,",\"titleId\":");bw_json_string(json,b->title);bw_json_text(json,",\"bindingSha256\":");bw_json_string(json,hex);bw_json_text(json,"}\n");return json->bad?-1:0;}
+    bw_json_text(json,"{\"version\":1,\"source\":");bw_json_string(json,b->source);bw_json_text(json,",\"game\":");bw_json_string(json,b->game);bw_json_text(json,",\"titleId\":");bw_json_string(json,b->title);bw_json_text(json,",\"bindingSha256\":");bw_json_string(json,hex);
+    if(p->r->identity.kind==BW_PROVIDER_CONTAINER)bw_json_text(json,",\"sourceKind\":\"container\",\"sourcePolicy\":\"unsigned-contiguous-d32-pfs-v1\"");
+    bw_json_text(json,"}\n");return json->bad?-1:0;}
 static int gu_row_compare(const void *a,const void *b){const typeof(((struct gu_plan *)0)->rows[0]) *x=a,*y=b;return strcmp(x->path,y->path);}
 static int gu_find(struct gu_plan *p,const char *name,uint32_t *id,int prefix){size_t lo=0,hi=p->manifest.count;while(lo<hi){size_t m=(lo+hi)/2;if(strcmp(p->rows[m].path,name)<0)lo=m+1;else hi=m;}if(lo==p->manifest.count)return 0;
     if(prefix){size_t n=strlen(name);return !strncmp(p->rows[lo].path,name,n)&&p->rows[lo].path[n]=='/';}if(strcmp(p->rows[lo].path,name))return 0;*id=p->rows[lo].id;return 1;}
@@ -220,7 +222,7 @@ static int gu_journal_load(struct gu_plan *p){
     if(!loaded){unsigned char hash[32],paths_hash[32];const unsigned char *v=body;
         struct cp_sha h;cp_sha_init(&h);const char *paths[]={p->r->environment.data_root,p->r->environment.apps_root,p->r->environment.database};for(unsigned i=0;i<3;i++)cp_sha_update(&h,paths[i],strlen(paths[i])+1);cp_sha_final(&h,paths_hash);
         if(size!=GU_INTENT)loaded=-1;
-        else {cp_sha_bytes(body,GU_INTENT-32,hash);if((st.st_mode&07777)!=0600||memcmp(v,"BWGUR001",8)||gu_u32(v+8)!=1||gu_u32(v+12)!=GU_INTENT||gu_u32(v+16)!=BW_PROVIDER_FOLDER||gu_u32(v+20)!=BW_PROVIDER_POLICY_V1||memcmp(hash,v+GU_INTENT-32,32)||memcmp(v+24,b->sha256,32)||memcmp(v+56,p->r->prepared.record_sha256,32)||memcmp(v+88,p->r->operation,33)||memcmp(v+128,b->title,10)||memcmp(v+144,b->game,75)||!memchr(v+224,0,sizeof b->source)||strcmp((const char *)v+224,b->source)||!memchr(v+1568,0,128)||memcmp(v+1696,paths_hash,32))loaded=-1;
+        else {cp_sha_bytes(body,GU_INTENT-32,hash);if((st.st_mode&07777)!=0600||memcmp(v,"BWGUR001",8)||gu_u32(v+8)!=1||gu_u32(v+12)!=GU_INTENT||gu_u32(v+16)!=(uint32_t)p->r->identity.kind||gu_u32(v+20)!=BW_PROVIDER_POLICY_V1||memcmp(hash,v+GU_INTENT-32,32)||memcmp(v+24,b->sha256,32)||memcmp(v+56,p->r->prepared.record_sha256,32)||memcmp(v+88,p->r->operation,33)||memcmp(v+128,b->title,10)||memcmp(v+144,b->game,75)||!memchr(v+224,0,sizeof b->source)||strcmp((const char *)v+224,b->source)||!memchr(v+1568,0,128)||memcmp(v+1696,paths_hash,32))loaded=-1;
             else {memcpy(p->intent,body,GU_INTENT);memcpy(p->content,v+1568,128);}}}
     free(body);if(loaded<0)return -1;
     int cursor=v2_openat(p->ledger,".",O_RDONLY|O_DIRECTORY|O_NOFOLLOW,0);if(cursor<0)return -1;DIR *dir=fdopendir(cursor);if(!dir){close(cursor);return -1;}int bad=0;unsigned count=0;struct dirent *entry;
@@ -385,7 +387,7 @@ visible:rc=0;goto done;
     void *body=NULL;size_t size=0;struct stat st;int loaded=gu_read(p.state,"prepared.bin",384,&body,&size,&st);int bad=loaded||size!=384||(st.st_mode&07777)!=0600||gu_receipt(&p,body,size,1);if(!bad)memcpy(p.receipt,body,384);free(body);if(bad)goto done;
     struct bw_json json={.maximum=4096};bad=gu_binding_json(&p,&json)||gu_exact(p.state,"source.json",json.bytes,json.used,0644)||gu_exact(p.root,"blackwire.generation.owner",json.bytes,json.used,0644);free(json.bytes);if(bad)goto done;
     int parent=-1;char leaf[256],relative[1024];parent=v2_parent(p.anchor+4,p.root,"sce_sys/param.json",0,leaf,relative);if(parent<0)goto done;body=NULL;size=0;char title[10];bad=gu_read(parent,leaf,BW_SOURCE_PARAM_LIMIT,&body,&size,NULL)||bw_source_param_identity(body,size,title,p.content)||strcmp(title,identity->binding.title);free(body);if(close(parent))bad=1;if(bad)goto done;
-    struct bw_reader_selection selected={0};strcpy(selected.title,identity->binding.title);strcpy(selected.game,identity->binding.game);strcpy(selected.source,identity->binding.source);strcpy(selected.run,prepared->run);selected.source_kind=BW_PROVIDER_FOLDER;selected.source_policy=BW_PROVIDER_POLICY_V1;selected.manifest_count=gu_u32(p.receipt+268);
+    struct bw_reader_selection selected={0};strcpy(selected.title,identity->binding.title);strcpy(selected.game,identity->binding.game);strcpy(selected.source,identity->binding.source);strcpy(selected.run,prepared->run);selected.source_kind=identity->kind;selected.source_policy=BW_PROVIDER_POLICY_V1;selected.manifest_count=gu_u32(p.receipt+268);
     unsigned char header[40];int map=v2_openat(p.root,"blackwire.files",O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);struct stat first,after,named;
     if(map<0)goto done;bad=fstat(map,&first)||!S_ISREG(first.st_mode)||first.st_nlink!=1||first.st_uid!=geteuid()||(first.st_mode&07777)!=0644||first.st_size<40||(uint64_t)first.st_size!=gu_u64(p.receipt+280)||pread(map,header,sizeof header,0)!=(ssize_t)sizeof header||fstat(map,&after)||cp_fstatat(p.root,"blackwire.files",&named,AT_SYMLINK_NOFOLLOW)||!gu_same(&first,&after)||!gu_same(&after,&named);
     if(close(map))bad=1;if(bad||memcmp(header,"BWMAP002",8)||gu_u32(header+8)!=2||gu_u32(header+12)!=32||gu_u32(header+16)!=selected.manifest_count)goto done;selected.manifest_hash=gu_u64(header+32);

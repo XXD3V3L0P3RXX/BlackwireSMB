@@ -45,7 +45,8 @@ enum bp_source_stage {
     BP_SOURCE_EVICT_CLOSE=7,BP_SOURCE_DISCONNECT_CLOSE=8,
     BP_SOURCE_ENTRY_METADATA=9,BP_SOURCE_ENTRY_IDENTITY=10,
     BP_SOURCE_FINAL_METADATA=11,BP_SOURCE_FINAL_IDENTITY=12,
-    BP_SOURCE_SCOPE=13,BP_SOURCE_MAX_READ=14,BP_SOURCE_COUNTER=15,BP_SOURCE_FINAL_PATH=16
+    BP_SOURCE_SCOPE=13,BP_SOURCE_MAX_READ=14,BP_SOURCE_COUNTER=15,BP_SOURCE_FINAL_PATH=16,
+    BP_SOURCE_CONTAINER=17
 };
 struct bp_source_failure {
     uint64_t sequence;int64_t raw;int error;
@@ -73,7 +74,9 @@ void bp_source_progress(const struct bp_source *,struct bp_source_progress *);
 typedef int (*bp_current_fn)(void *); /* Pure; zero means current. */
 /* Bounded metadata-only admission. No cache, SMB context, network or thread
  * creation. Immutable map/selection are copied; explicit credentials are kept
- * privately only until connect/close and never exposed in a view. */
+ * privately only until connect/close and never exposed in a view. Folder and
+ * PFS/PFSC container selections bind distinct explicit provider identities;
+ * a container's map retains its preparation-time image mtime. */
 int bp_source_admit(struct bp_source **,const void *map,size_t map_size,
     const void *selection,size_t selection_size,const void *share,size_t share_size,
     bp_current_fn,void *);

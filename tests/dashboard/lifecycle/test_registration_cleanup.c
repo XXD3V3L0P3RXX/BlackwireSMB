@@ -172,7 +172,7 @@ static void fault_cases(void){
 static void acquisition_edges(void){
     struct fixture f;struct bw_nrc_ticket *t=NULL;struct bw_nrc_result r;char p[P];
     unsigned ids[]={99170,99171};for(unsigned i=0;i<2;i++){init(&f,i?"protect-current-dashboard":"protect-retired-dashboard");subject(&f,ids[i]);CHECK(bw_nrc_begin(&f.env,&f.selected,&f.ops,&t,&r)<0&&!t);CHECK(bw_nrc_reconcile(&f.env,f.selected.title,f.selected.run,&f.ops,&r)<0&&!f.uninstalls);}
-    init(&f,"container-inert");f.selected.source_kind=BW_PROVIDER_CONTAINER;CHECK(bw_nrc_begin(&f.env,&f.selected,&f.ops,&t,&r)<0&&!t);
+    init(&f,"unknown-provider-inert");f.selected.source_kind=99;CHECK(bw_nrc_begin(&f.env,&f.selected,&f.ops,&t,&r)<0&&!t);
     init(&f,"unsealed-record-inert");memset(f.selected.prepared_record_hex,'0',64);CHECK(bw_nrc_begin(&f.env,&f.selected,&f.ops,&t,&r)<0&&!t);
     init(&f,"record-body-mismatch");path(p,f.source,"sce_sys/param.json");replace(f.receipt,"short",5,0600);CHECK(bw_nrc_begin(&f.env,&f.selected,&f.ops,&t,&r)<0&&!t);
     init(&f,"source-param-change-during-register");CHECK(bw_nrc_begin(&f.env,&f.selected,&f.ops,&t,&r)==0);registered(&f);path(p,f.source,"sce_sys/param.json");replace(p,f.param,strlen(f.param),0644);struct bw_register_result reg={1,1,0,1,NULL,0,0};CHECK(bw_nrc_finish(t,0,&reg,&r)<0);CHECK(bw_nrc_ticket_destroy(t)==0);

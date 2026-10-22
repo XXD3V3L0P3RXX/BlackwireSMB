@@ -92,4 +92,4 @@ def verify_inputs(root, allow_source_changes=False):
     runtime = sdk_runtime.verify(root)
     return {"checkedFiles": count, "changedNativeSource": changed,
             "sourceRuntimeInputs": len(runtime["sources"]), "runtimeManifest": runtime["manifestPin"],
-            "compressedEarlyReader": False, "consoleContacted": False}
+            "compressedEarlyReader": bool(source.get("compressedEarlyReaderIncluded",False)), "consoleContacted": False}

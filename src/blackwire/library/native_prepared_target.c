@@ -99,7 +99,7 @@ int bw_native_prepared_inspect(const char *base,const struct bw_provider_binding
         bw_native_derived_snapshot_destroy(&snapshot);
     }
     int result=bw_native_send_inspect(base,identity,out);
-    if(!result&&out->state==BW_PREPARED_VALID&&identity->kind==BW_PROVIDER_FOLDER){
+    if(!result&&out->state==BW_PREPARED_VALID&&(identity->kind==BW_PROVIDER_FOLDER||identity->kind==BW_PROVIDER_CONTAINER)){
         unsigned upgrade=0;if(bw_native_legacy_startup_upgrade(base,identity,out,&upgrade)){out->state=BW_PREPARED_UNKNOWN;return -1;}
         out->startup_upgrade_required=upgrade;
     }

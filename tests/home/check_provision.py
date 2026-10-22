@@ -20,6 +20,7 @@ prefix='''#define BW_HOME_STARTUP 1
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <errno.h>
 static const char *backend_data_root="/fixture/blackwire";
 static const struct bw_nrc_environment registration_environment={NULL,"/user/app","/system_data/priv/mms/app.db"};
 enum {BACKEND_INITIAL,BACKEND_SCANNING,BACKEND_READY,BACKEND_NEEDS_SETUP,BACKEND_FAILED,BACKEND_CONFIG_CHANGED};
@@ -30,8 +31,9 @@ static int prepare(void*,struct bw_share_config*,const struct bw_native_prepare_
 static int registration_pending_refresh(struct bw_native_backend*);
 '''
 prep=home[home.index('struct home_prepare {'):home.index('\nstatic int home_prepare_lease(',home.index('struct home_prepare {'))]
-parts=[function(back,n) for n in ['static double now(','static int nonce_valid(','static int registration_waiting(','static void revalidation_clear(','static int prepared_valid(']]
-parts += [function(home,n) for n in ['static int home_prepare_lease(','static int home_prepare_control(','static int home_prepare_registration(','static int home_prepare_provision(']]
+parts=[function(back,n) for n in ['static double now(','static int nonce_valid(','static int registration_waiting(','static int revalidation_known(','static int revalidation_remember(','static void revalidation_clear(','static int prepared_valid(']]
+failure=home[home.index('struct home_prepare_failure {'):home.index('\nstatic void home_prepare_first_failure(')]
+parts += [failure]+[function(home,n) for n in ['static void home_prepare_first_failure(','static int home_prepare_lease(','static int home_prepare_control(','static int home_prepare_registration(','static int home_prepare_provision(']]
 parts += [function(back,'static void *prepare_worker(void *opaque){')]
 header=O/'provision-under-test.h';header.write_text(prefix+struct+'\n'+prep+'\n'+'\n'.join(parts))
 files=[R/'provision_test.c',S/'library/source_identity.c',S/'library/source_binding.c',S/'library/source_profile.c',S/'streamreader/manifest.c',S/'streamreader/share_config.c']

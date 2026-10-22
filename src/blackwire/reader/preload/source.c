@@ -4,6 +4,7 @@
 #include "source.h"
 #include "../../library/reader_selection.h"
 #include "../../library/source_binding.h"
+#include "../../streamreader/container_manifest.h"
 #include "../../streamreader/cache.h"
 #include "../../streamreader/copy_sha256.h"
 #include <time.h>
@@ -37,6 +38,8 @@ struct bp_source {
     struct bw_manifest map;
     void *map_bytes;uint32_t *lookup;size_t lookup_count;
     struct smb2_context *smb;struct bw_cache cache;struct bp_handle handles[BP_HANDLES];
+    struct bw_container *image;struct bw_container_manifest image_files;
+    uint64_t image_mtime;
     bp_current_fn current;void *opaque;uint64_t clock,network;int failed,ready;
     struct bp_connect_diagnostic connect_diagnostic;
     uint8_t *scratch;
@@ -123,7 +126,55 @@ static int remote_path(struct bp_source *p,uint32_t id,char out[2048],struct bw_
     if(bw_manifest_get(&p->map,id,row)||row->flags!=BW_MANIFEST_STREAM)return -1;
     int n=snprintf(out,2048,"%s/%s",p->binding.source,row->path);return n<0||n>=2048?-1:0;
 }
+/* Container metadata and decoded blocks share this DATA worker's exact image
+ * handle. Remote generation checks bracket the entire logical read, including
+ * cache hits. Decoder callbacks check cancellation in RAM between bounded
+ * payload calls; they do not multiply SMB stat requests for each PFSC block. */
+static int image_current(void *opaque){return current(opaque);}
+static int image_payload(void *opaque,uint64_t at,void *output,size_t size){
+    struct bp_source *p=opaque;struct bp_handle *h=&p->handles[0];
+    if(current(p)||!h->fh||size>BW_PFSC_MAX_READ||at>h->admitted.smb2_size||size>h->admitted.smb2_size-at)return -1;
+    uint32_t maximum=smb2_get_max_read_size(p->smb);if(!maximum)return poison(p,BP_SOURCE_MAX_READ);
+    for(size_t done=0;done<size;){
+        if(current(p))return -1;
+        uint32_t want=(uint32_t)(size-done);if(want>maximum)want=maximum;
+        if(want>p->performance.largest_pread_request)p->performance.largest_pread_request=want;
+        progress_begin(p,BP_SOURCE_PREAD);struct bp_stamp stamp=perf_begin(p,&p->performance.pread);
+        int got=smb2_pread(p->smb,h->fh,(uint8_t *)output+done,want,at+done);int error=errno;
+        perf_end(p,&p->performance.pread,stamp);progress_end(p,got,error,got<=0||(uint32_t)got>want);errno=error;
+        if(got<=0||(uint32_t)got>want)return poison(p,BP_SOURCE_PREAD);
+        if((uint64_t)got>UINT64_MAX-p->network)return poison(p,BP_SOURCE_COUNTER);
+        p->network+=(uint64_t)got;done+=(size_t)got;
+    }
+    return current(p);
+}
+static int image_fence(struct bp_source *p,int final){
+    struct bp_handle *h=&p->handles[0];struct smb2_stat_64 named,held;
+    unsigned ns=final?BP_SOURCE_FINAL_NAMED:BP_SOURCE_ENTRY_NAMED,hs=final?BP_SOURCE_FINAL_HELD:BP_SOURCE_ENTRY_HELD;
+    if(current(p)||!h->fh)return -1;
+    if(named_stat(p,p->binding.source,&named,ns))return poison(p,ns);
+    if(held_stat(p,h->fh,&held,hs))return poison(p,hs);
+    if(!stat_same(&named,&held)||!stat_same(&h->admitted,&held))return poison(p,final?BP_SOURCE_FINAL_IDENTITY:BP_SOURCE_ENTRY_IDENTITY);
+    return current(p);
+}
+static struct bp_handle *image_remote(struct bp_source *p,uint32_t id){
+    struct bp_handle *h=&p->handles[0];
+    if(!p->image){
+        if(named_stat(p,p->binding.source,&h->admitted,BP_SOURCE_ENTRY_NAMED))return poison(p,BP_SOURCE_ENTRY_NAMED),NULL;
+        if(h->admitted.smb2_type!=SMB2_TYPE_FILE||h->admitted.smb2_size<48||h->admitted.smb2_size>BW_PFS_MAX_VOLUME||h->admitted.smb2_mtime!=p->image_mtime)
+            return poison(p,BP_SOURCE_ENTRY_METADATA),NULL;
+        h->fh=open_file(p,p->binding.source);if(!h->fh)return poison(p,BP_SOURCE_OPEN),NULL;
+        if(image_fence(p,0))return NULL;
+        p->image=calloc(1,sizeof *p->image);if(!p->image)return poison(p,BP_SOURCE_CONTAINER),NULL;
+        struct bw_container_ops ops={image_payload,image_current};
+        if(bw_container_open(p->image,&ops,p,h->admitted.smb2_size)||
+           bw_container_manifest_bind(&p->image_files,p->image,&p->map)||image_fence(p,1))
+            return poison(p,BP_SOURCE_CONTAINER),NULL;
+    }else if(image_fence(p,0))return NULL;
+    h->id=id;return h;
+}
 static struct bp_handle *remote(struct bp_source *p,uint32_t id){
+    if(p->selected.source_kind==BW_PROVIDER_CONTAINER)return image_remote(p,id);
     char path[2048];struct bw_manifest_record row;
     if(current(p)||remote_path(p,id,path,&row))return NULL;
     struct bp_handle *slot=NULL,*victim=&p->handles[0];
@@ -172,6 +223,7 @@ static int scope_current(const struct bp_read_scope *scope,uint32_t id){
 static int remote_finish(const struct bp_read_scope *scope){
     if(!scope||scope_current(scope,scope->id))return -1;
     struct bp_source *p=scope->source;
+    if(p->selected.source_kind==BW_PROVIDER_CONTAINER)return image_fence(p,1);
 #if BP_METADATA_PROFILE == BP_METADATA_PROFILE_STRICT
     char path[2048];struct bw_manifest_record row;
     if(remote_path(p,scope->id,path,&row))return poison(p,BP_SOURCE_FINAL_PATH);
@@ -202,6 +254,15 @@ static int load(void *opaque,uint32_t id,uint64_t block,uint8_t *dest,size_t cap
     while(blocks<BP_COALESCE_BYTES/BW_CACHE_BLOCK&&block+blocks<=scope->last_block&&
           !bw_cache_contains(&p->cache,id,block+blocks))blocks++;
     size_t run=blocks*BW_CACHE_BLOCK;if(row.size-at<run)run=(size_t)(row.size-at);
+    if(p->selected.source_kind==BW_PROVIDER_CONTAINER){
+        if(id>=p->image_files.count||!p->image_files.files)return poison(p,BP_SOURCE_CONTAINER);
+        int decoded=bw_container_file_read(&p->image_files.files[id],at,p->scratch,run);
+        if(current(p))return -1;
+        if(decoded||scope_current(scope,id))return poison(p,BP_SOURCE_CONTAINER);
+        scope->staged_at=at;scope->staged_size=run;
+        count(&p->performance.coalesced_runs,1);count(&p->performance.coalesced_blocks,blocks);
+        memcpy(dest,p->scratch,n);*out_size=n;return 0;
+    }
     uint32_t maximum=smb2_get_max_read_size(p->smb);if(!maximum)return poison(p,BP_SOURCE_MAX_READ);
     size_t done=0;
     while(done<run){
@@ -233,11 +294,13 @@ int bp_source_admit(struct bp_source **out,const void *map,size_t map_size,
     struct bp_source *p=calloc(1,sizeof *p);struct bw_share_config config={0};
     if(!p)return -1;
     p->current=guard;p->opaque=opaque;
+    struct bw_provider_binding identity;
     if(bw_reader_selection_parse(&p->selected,selection,selection_size)||
-       p->selected.source_kind!=BW_PROVIDER_FOLDER||p->selected.source_policy!=BW_PROVIDER_POLICY_V1||
+       (p->selected.source_kind!=BW_PROVIDER_FOLDER&&p->selected.source_kind!=BW_PROVIDER_CONTAINER)||p->selected.source_policy!=BW_PROVIDER_POLICY_V1||
        bw_share_parse(&config,share,share_size)||!numeric_ipv4(config.server)||
-       bw_source_binding_resolve(&p->binding,&config,p->selected.source,p->selected.title)||
-       strcmp(p->binding.game,p->selected.game))goto fail;
+       bw_provider_binding_init(&identity,&config,p->selected.source,p->selected.title,(enum bw_provider_kind)p->selected.source_kind)||
+       strcmp(identity.binding.game,p->selected.game)||strcmp(identity.binding.game+10,p->selected.binding_hex))goto fail;
+    p->binding=identity.binding;
     p->map_bytes=malloc(map_size);if(!p->map_bytes)goto fail;memcpy(p->map_bytes,map,map_size);
     if(bw_manifest_open(&p->map,p->map_bytes,map_size)||p->map.count!=p->selected.manifest_count||
        p->map.checksum!=p->selected.manifest_hash)goto fail;
@@ -246,6 +309,9 @@ int bp_source_admit(struct bp_source **out,const void *map,size_t map_size,
     unsigned boot=0;
     for(uint32_t i=0;i<p->map.count;i++){
         struct bw_manifest_record row;if(bw_manifest_get(&p->map,i,&row))goto fail;
+        if(p->selected.source_kind==BW_PROVIDER_CONTAINER){
+            if(!i)p->image_mtime=row.mtime_sec;else if(row.mtime_sec!=p->image_mtime)goto fail;
+        }
         if(!strcmp(row.path,"eboot.bin")){
             if(row.flags!=BW_MANIFEST_LOCAL||row.size!=p->selected.eboot_size)goto fail;
             boot++;
@@ -379,6 +445,7 @@ int bp_source_disconnect(struct bp_source *p){
         if(p->smb){smb2_destroy_context(p->smb);p->smb=NULL;}
     }
     free(p->scratch);p->scratch=NULL;
+    bw_container_manifest_destroy(&p->image_files);free(p->image);p->image=NULL;
     bw_share_clear(&p->config);bw_cache_destroy(&p->cache);p->ready=0;p->failed=1;return result;
 }
 int bp_source_close(struct bp_source *p){if(!p)return 0;int result=bp_source_disconnect(p);free(p->lookup);free(p->map_bytes);memset(p,0,sizeof *p);free(p);return result;}

@@ -60,7 +60,7 @@ static int inspect_image(struct scan *scan,const struct candidate *candidate,str
     if(!image)return fail(scan->catalog,"catalog_image_allocation_failed");
     if(live(source)){bad=fail(scan->catalog,"catalog_image_scan_expired");goto done;}
     if(candidate->info.size<48||candidate->info.size>BW_PFS_MAX_VOLUME){result=BW_PFS_UNSUPPORTED;goto done;}
-    result=bw_container_smb_open(image,source->smb,candidate->source);
+    result=bw_container_smb_open_owned(image,&source->smb,candidate->source);
     if(result==BW_PFS_IO||result==BW_CONTAINER_STALE){bad=fail(scan->catalog,"catalog_image_generation_or_io_failed");goto done;}
     if(!listed_image(&candidate->info,&image->admitted)){bad=fail(scan->catalog,"catalog_image_listing_changed");goto done;}
     item->image=image->admitted;bw_source_catalog_image_hash(&item->image,item->image_sha256);

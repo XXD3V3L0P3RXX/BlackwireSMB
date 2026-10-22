@@ -18,14 +18,7 @@ static int image_same(const struct smb2_stat_64 *a,const struct smb2_stat_64 *b)
 }
 /* Exact provider LE metadata domain, not an invented durable receipt. */
 static void reader_image_generation(const struct bw_reader_data_admission *a,uint8_t out[32]) {
-    static const char domain[]="Blackwire immutable SMB image generation v1";
-    const struct smb2_stat_64 *s=&a->image;
-    uint64_t fields[]={s->smb2_type,s->smb2_ino,s->smb2_size,s->smb2_mtime,
-        s->smb2_mtime_nsec,s->smb2_ctime,s->smb2_ctime_nsec,a->identity.policy};
-    uint8_t row[64];for(unsigned i=0;i<8;i++)for(unsigned j=0;j<8;j++)row[8*i+j]=(uint8_t)(fields[i]>>(8*j));
-    struct cp_sha sha;cp_sha_init(&sha);cp_sha_update(&sha,domain,sizeof domain);
-    cp_sha_update(&sha,a->identity.binding.sha256,32);cp_sha_update(&sha,row,sizeof row);
-    cp_sha_update(&sha,a->map_sha256,32);cp_sha_final(&sha,out);
+    bw_provider_image_generation(&a->identity,&a->image,a->map_sha256,out);
 }
 static int legacy_preflight(const struct bw_reader_preflight *p,struct bw_native_prepared *out) {
     if(p&&p->error)*p->error="Invalid or cancelled launch request";
@@ -52,7 +45,7 @@ static int legacy_preflight(const struct bw_reader_preflight *p,struct bw_native
     provider=calloc(1,sizeof *provider);if(!provider)goto done;
     if(identity.kind==BW_PROVIDER_CONTAINER) {
         image=calloc(1,sizeof *image);
-        if(!image||p->current(p->opaque)||bw_container_smb_open(image,p->source->smb,identity.binding.source)||p->current(p->opaque))goto done;
+        if(!image||p->current(p->opaque)||bw_container_smb_open_owned(image,&p->source->smb,identity.binding.source)||p->current(p->opaque))goto done;
     }
     if(BW_LT_CALL(BW_LT_PC_SOURCE,bw_source_provider_prepare(provider,&identity,p->source,image,s->run,BW_PROVIDER_MAX_LOCAL_BYTES,p->current,p->opaque))||p->current(p->opaque))goto done;
     failure="The selected file map or startup executable changed";
@@ -290,9 +283,9 @@ int bw_reader_preflight_run(const struct bw_reader_preflight *p,struct bw_native
         struct bw_provider_binding identity;struct bw_reader_data_admission admission={0};
         const char *failure="The verified startup launch no longer matches its selected receipt; choose Send to repair it.";
         if(!p->data_current||!p->data_epoch||p->data_current(p->data_opaque)||
-           p->selected->source_kind!=BW_PROVIDER_FOLDER||p->selected->prepared_policy||
+           (p->selected->source_kind!=BW_PROVIDER_FOLDER&&p->selected->source_kind!=BW_PROVIDER_CONTAINER)||p->selected->prepared_policy||
            p->selected->prepared_game[0]||p->selected->provenance_hex[0]||
-           bw_provider_binding_init(&identity,p->connection,p->selected->source,p->selected->title,BW_PROVIDER_FOLDER)||
+           bw_provider_binding_init(&identity,p->connection,p->selected->source,p->selected->title,(enum bw_provider_kind)p->selected->source_kind)||
            bw_native_launch_admission_current(p->startup,p->data_root,&identity,p->selected,out)||
            bw_native_launch_admission_source(p->startup,p->connection,p->source,p->selected,admission.map_sha256,admission.generation_sha256,&failure)||
            p->current(p->opaque)||bw_native_launch_admission_current(p->startup,p->data_root,&identity,p->selected,out)){

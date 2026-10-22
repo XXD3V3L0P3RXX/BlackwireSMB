@@ -799,7 +799,7 @@ static void reader_preload_event(void *opaque,const char *next,const char *messa
 static int reader_preload_run(void) {
   char root[1024];struct bw_share_config config={0};struct bw_setup_generation observed={0};
   int n=snprintf(root,sizeof root,"/data/blackwire/games/%s",game_name);
-  if(n<0||(size_t)n>=sizeof root||reader_selection.source_kind!=BW_PROVIDER_FOLDER||
+  if(n<0||(size_t)n>=sizeof root||(reader_selection.source_kind!=BW_PROVIDER_FOLDER&&reader_selection.source_kind!=BW_PROVIDER_CONTAINER)||
      bw_native_setup_read("/data/blackwire",&config,&observed)!=BW_SETUP_VALID||
      !bw_native_setup_generation_equal(&reader_connection_generation,&observed)||reader_launch_current(NULL)) {
     bw_share_clear(&config);return failure("The selected early-reader connection or canonical preparation changed.");
@@ -849,7 +849,7 @@ static int connect_share(void) {
   int n=snprintf(root,sizeof root,"/data/blackwire/games/%s",game_name);
   int fast=0;
 #ifdef BW_NATIVE_PRELOAD
-  fast=reader_startup&&reader_early_active&&!bw_reader_has_prepared_target(&reader_selection)&&identity.kind==BW_PROVIDER_FOLDER;
+  fast=reader_startup&&reader_early_active&&!bw_reader_has_prepared_target(&reader_selection)&&(identity.kind==BW_PROVIDER_FOLDER||identity.kind==BW_PROVIDER_CONTAINER);
 #endif
   if(reader_startup&&!fast)goto done;
   if(n<0||(size_t)n>=sizeof root)goto done;
@@ -892,7 +892,7 @@ static int connect_share(void) {
     if (bw_derived_reader_source_smb_open(&reader_derived_source,&file_map,&public_connection,&selected,smb)) {
       note(reader_derived_source.error?reader_derived_source.error:"Derived STREAM source binding failed"); goto done;
     }
-  } else if (identity.kind==BW_PROVIDER_CONTAINER) {
+  } else if (!fast&&identity.kind==BW_PROVIDER_CONTAINER) {
     size_t map_size=0; const void *map=bw_files_manifest_bytes(&file_map,&map_size);
     if (bw_reader_container_open(&reader_container,smb,&admission,map,map_size,reader_launch_current,NULL)) {
       note("Fresh selected PC image or manifest generation changed"); goto done;
@@ -907,6 +907,14 @@ done:
 }
 
 static int check_eboot(void) {
+#ifdef BW_NATIVE_PRELOAD
+  if(reader_startup&&reader_early_active&&reader_selection.source_kind==BW_PROVIDER_CONTAINER){
+    /* The retained admission hashed the local boot file; container source()
+     * independently checked its current startup digest. Do not open the late
+     * reader's unused file-map/container owner for a second boot sample. */
+    uint8_t map[32];return bw_native_launch_admission_map_sha256(reader_startup,map);
+  }
+#endif
   char path[2048]; uint8_t local[32],remote_bytes[32]; struct stat st; int result=-1;
   if (reader_selection.source_kind==BW_PROVIDER_CONTAINER) {
     snprintf(path,sizeof path,"%seboot.bin",game_root); int fd=open(path,O_RDONLY|O_NOFOLLOW);
@@ -1743,7 +1751,7 @@ int bw_stream_run(void) {
 #endif
   if (load_config()) goto done;
 #ifdef BW_NATIVE_PRELOAD
-  reader_early_active=reader_selection.source_kind==BW_PROVIDER_FOLDER;
+  reader_early_active=reader_selection.source_kind==BW_PROVIDER_FOLDER||reader_selection.source_kind==BW_PROVIDER_CONTAINER;
 #endif
   status_write("preflight","Checking PC files and fixed cache");
   if (bw_native_setup_idle(NULL) || find_game()>0) { failure("Selected game is already running"); goto done; }

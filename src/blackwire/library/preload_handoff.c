@@ -157,14 +157,14 @@ static int ph_fresh_verify(struct ph_operation *p,const char *leaf,struct bw_pre
 }
 static int ph_publish(const struct bw_preload_handoff_request *r,struct bw_preload_handoff *o,int retained) {
     char selection[BW_READER_SELECTION_BYTES+1]={0},share[1024]={0};size_t selection_size=0,share_size=0;
-    struct bw_source_binding binding={0};struct ph_operation p={o,-1,-1,NULL,NULL,0};int entered=0,result=BW_PRELOAD_HANDOFF_REFUSED;
+    struct bw_provider_binding binding={0};struct ph_operation p={o,-1,-1,NULL,NULL,0};int entered=0,result=BW_PRELOAD_HANDOFF_REFUSED;
     if(!o||!ph_zero(o,sizeof *o)||!r||!r->root||!r->selection||!r->connection||!r->current||
        r->root[0]!='/'||strnlen(r->root,sizeof o->root)>=sizeof o->root||
-       r->selection->source_kind!=BW_PROVIDER_FOLDER||r->selection->source_policy!=BW_PROVIDER_POLICY_V1||
+       (r->selection->source_kind!=BW_PROVIDER_FOLDER&&r->selection->source_kind!=BW_PROVIDER_CONTAINER)||r->selection->source_policy!=BW_PROVIDER_POLICY_V1||
        bw_reader_selection_serialize(r->selection,selection,sizeof selection,&selection_size)||
        ph_encode_share(r->connection,share,&share_size)||
-       bw_source_binding_resolve(&binding,r->connection,r->selection->source,r->selection->title)||
-       strcmp(binding.game,r->selection->game))goto done;
+       bw_provider_binding_init(&binding,r->connection,r->selection->source,r->selection->title,(enum bw_provider_kind)r->selection->source_kind)||
+       strcmp(binding.binding.game,r->selection->game))goto done;
     const char *leaf=strrchr(r->root,'/');
     if(!leaf||strcmp(leaf+1,r->selection->prepared_policy?r->selection->prepared_game:r->selection->game))goto done;
     pid_t producer=0;

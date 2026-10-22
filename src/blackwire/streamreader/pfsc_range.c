@@ -78,9 +78,12 @@ int bw_pfsc_open(struct bw_pfsc *p, bw_pfsc_pread_fn read_source, void *source,
     return 0;
 }
 
-static int decode(struct bw_pfsc *p, uint64_t index) {
+static int decode(struct bw_pfsc *p, uint64_t index,uint64_t last_index) {
     uint64_t start, end;
     if (p->decoded_valid && p->decoded_index == index) return 0;
+#if BW_PFSC_READAHEAD
+    int sequential=p->decoded_valid&&index==p->decoded_index+1;
+#endif
     p->decoded_valid = 0;
     int result = table_entry(p, index, &start);
     if (result) return result;
@@ -88,7 +91,26 @@ static int decode(struct bw_pfsc *p, uint64_t index) {
     if (result) return result;
     if (start < p->data_start || end <= start || end > p->stored_size ||
         end - start > BW_PFSC_BLOCK) return BW_PFSC_FORMAT;
-    result = raw(p, start, p->packed, (size_t)(end - start));
+    size_t packed_size=(size_t)(end-start);
+#if BW_PFSC_READAHEAD
+    if(p->window_size&&start>=p->window_at&&start-p->window_at<=p->window_size&&
+       packed_size<=p->window_size-(size_t)(start-p->window_at)){
+        memcpy(p->packed,p->window+(size_t)(start-p->window_at),packed_size);result=0;
+    }else if(sequential&&index<last_index&&packed_size<=sizeof p->window){
+        p->window_size=0;
+        uint64_t last=index+(sizeof p->window/BW_PFSC_BLOCK)-1,fetch_end;
+        if(last>last_index)last=last_index;
+        result=table_entry(p,last+1,&fetch_end);if(result)return result;
+        if(fetch_end<end||fetch_end>p->stored_size||fetch_end-start>sizeof p->window)return BW_PFSC_FORMAT;
+        size_t fetch=(size_t)(fetch_end-start);
+        result=raw(p,start,p->window,fetch);
+        if(!result){p->window_at=start;p->window_size=fetch;memcpy(p->packed,p->window,packed_size);}
+    }else
+#endif
+    result = raw(p, start, p->packed, packed_size);
+#if !BW_PFSC_READAHEAD
+    (void)last_index;
+#endif
     if (result) return result;
     if (end - start == BW_PFSC_BLOCK) {
         memcpy(p->decoded, p->packed, BW_PFSC_BLOCK);
@@ -106,12 +128,13 @@ int bw_pfsc_read(struct bw_pfsc *p, uint64_t offset, void *output, size_t size) 
     if (!p || !p->ready || (!output && size)) return BW_PFSC_ARGUMENT;
     if (size > BW_PFSC_MAX_READ || !span(offset, size, p->logical_size))
         return BW_PFSC_RANGE;
+    uint64_t last=size?(offset+size-1u)/BW_PFSC_BLOCK:0;
     while (size) {
         size_t within = (size_t)(offset % BW_PFSC_BLOCK);
         size_t take = BW_PFSC_BLOCK - within;
         int result;
         if (take > size) take = size;
-        result = decode(p, offset / BW_PFSC_BLOCK);
+        result = decode(p, offset / BW_PFSC_BLOCK,last);
         if (result) return result;
         memcpy(dest, p->decoded + within, take);
         dest += take; offset += take; size -= take;

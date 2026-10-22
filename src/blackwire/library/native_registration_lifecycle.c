@@ -388,7 +388,7 @@ done:free(list);if(result&&out&&!out->reason)nrl_result(out,BW_NRC_UNKNOWN,"prev
 }
 int bw_nrl_begin(const struct bw_nrl_request *q,struct bw_nrl_owner **out,struct bw_nrc_result *r){
     if(out)*out=NULL;
-    if(!out||!r||!q||!q->selection||!q->current||!strcmp(q->selection->title,"PPSA99171")||!strcmp(q->selection->title,"PPSA99170")||q->selection->source_kind!=BW_PROVIDER_FOLDER||
+    if(!out||!r||!q||!q->selection||!q->current||!strcmp(q->selection->title,"PPSA99171")||!strcmp(q->selection->title,"PPSA99170")||(q->selection->source_kind!=BW_PROVIDER_FOLDER&&q->selection->source_kind!=BW_PROVIDER_CONTAINER)||
        q->selection->source_policy!=BW_PROVIDER_POLICY_V1||q->selection->prepared_policy)return -1;
     struct bw_nrl_owner *p=calloc(1,sizeof *p);struct bw_nrc_candidate *list=NULL;int rc=-1;if(!p)return -1;
     p->request=*q;p->selection=*q->selection;p->request.selection=&p->selection;p->phase=BW_NRL_REGISTER;

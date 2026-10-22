@@ -15,6 +15,7 @@
 struct bw_container_smb {
     struct bw_container container;
     struct smb2_context *smb;
+    struct smb2_context **transport_owner;
     struct smb2fh *handle;
     struct smb2_stat_64 admitted;
     char path[1024];
@@ -22,5 +23,10 @@ struct bw_container_smb {
     int failed,last_transport_error;
 };
 int bw_container_smb_open(struct bw_container_smb *,struct smb2_context *,const char *);
+/* Same worker owns *transport_owner through close. A failed synchronous SMB
+ * call can retain a destination: destroy/drain that context and clear the
+ * caller's pointer before returning failure or freeing any decoder workspace.
+ * The pointer itself must remain alive and exclusively owned through close. */
+int bw_container_smb_open_owned(struct bw_container_smb *,struct smb2_context **transport_owner,const char *);
 int bw_container_smb_close(struct bw_container_smb *);
 #endif

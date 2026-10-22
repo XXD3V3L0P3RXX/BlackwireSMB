@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the standalone Blackwire web resident and FOLDER reader, offline."""
+"""Build the standalone Blackwire web resident and folder/PFS/PFSC reader, offline."""
 from pathlib import Path
 from datetime import datetime, timezone
 import argparse, json, re, sys
@@ -48,13 +48,14 @@ def main():
     before={part:tree(ROOT/part) for part in ('src','vendor','tools','metadata','tests')}
     run=Runner(ROOT,out,sdk)
     save(out/'intent.json',{'atUtc':datetime.now(timezone.utc).isoformat(),'source':before,'checked':checked,
-        'standaloneWeb':True,'nativeFrontend':False,'folderOnly':True,'hostTestsRequested':args.host_tests,
+        'standaloneWeb':True,'nativeFrontend':False,'folderOnly':False,'hostTestsRequested':args.host_tests,
         'sdkBuildRequested':args.build,'consoleContacted':False,'deployed':False})
     try:
         source,slices=reader.prepare(ROOT,out)
         host=reader.host_tests(ROOT,out,source,run) if args.host_tests else None
         result={'passed':True,'standaloneWeb':True,'nativeFrontend':False,'hostTests':host,'sdkBuild':args.build,
-                'folderOnly':True,'consoleContacted':False,'deployed':False,'nativeRuntimeProved':False}
+                'folderOnly':False,'compressedFormats':['unsigned-contiguous-d32-pfs','pfsc-pfs','one-file-pfs-wrapper'],
+                'consoleContacted':False,'deployed':False,'nativeRuntimeProved':False}
         if args.build:
             run.run([sdk/'bin/prospero-clang','--version'],'sdk-compiler-version')
             dependency=deps.build(ROOT,out,sdk,run,args.jobs)

@@ -42,7 +42,7 @@ static int na_guard(struct bw_native_launch_admission *p){
         na_fail(p,"The launch selection or settings changed; choose Send to revalidate startup files."):0;
 }
 static int na_bound(const struct bw_provider_binding *a,const struct bw_provider_binding *b){
-    return a&&b&&a->kind==BW_PROVIDER_FOLDER&&b->kind==BW_PROVIDER_FOLDER&&a->policy==BW_PROVIDER_POLICY_V1&&b->policy==a->policy&&
+    return a&&b&&(a->kind==BW_PROVIDER_FOLDER||a->kind==BW_PROVIDER_CONTAINER)&&b->kind==a->kind&&a->policy==BW_PROVIDER_POLICY_V1&&b->policy==a->policy&&
         !memcmp(a->binding.sha256,b->binding.sha256,32)&&
         memchr(b->binding.source,0,sizeof b->binding.source)&&memchr(b->binding.game,0,sizeof b->binding.game)&&memchr(b->binding.title,0,sizeof b->binding.title)&&
         !strcmp(a->binding.source,b->binding.source)&&!strcmp(a->binding.game,b->binding.game)&&!strcmp(a->binding.title,b->binding.title);
@@ -127,7 +127,7 @@ int bw_native_launch_admission_open(struct bw_native_launch_admission **out,cons
     const struct bw_provider_binding *identity,const struct bw_native_prepared *expected,const char *run,
     int (*guard)(void *),void *opaque,const char **error){
     if(error)*error="The verified startup receipt is unavailable; choose Send to repair it.";
-    if(!out||*out||!base||!identity||identity->kind!=BW_PROVIDER_FOLDER||identity->policy!=BW_PROVIDER_POLICY_V1||
+    if(!out||*out||!base||!identity||(identity->kind!=BW_PROVIDER_FOLDER&&identity->kind!=BW_PROVIDER_CONTAINER)||identity->policy!=BW_PROVIDER_POLICY_V1||
        !expected||expected->state!=BW_PREPARED_VALID||expected->prepared_policy||expected->startup_upgrade_required||!ns_nonce(run)||!guard)return -1;
     if(pthread_mutex_trylock(&ns_mutex))return -1;
     struct bw_native_launch_admission *p=calloc(1,sizeof *p);int result=-1;struct bw_json json={.maximum=4096};
@@ -177,7 +177,7 @@ int bw_native_launch_admission_open(struct bw_native_launch_admission **out,cons
     struct bw_reader_selection *s=&p->selected;strcpy(s->source,identity->binding.source);strcpy(s->game,identity->binding.game);
     strcpy(s->title,identity->binding.title);strcpy(s->run,run);strcpy(s->binding_hex,identity->binding.game+10);
     for(unsigned i=0;i<32;i++)snprintf(s->prepared_record_hex+2*i,3,"%02x",p->prepared.record_sha256[i]);
-    s->source_kind=BW_PROVIDER_FOLDER;s->source_policy=BW_PROVIDER_POLICY_V1;s->manifest_count=p->manifest.count;s->manifest_hash=p->manifest.checksum;s->eboot_size=plan->cfg.eboot_size;
+    s->source_kind=identity->kind;s->source_policy=BW_PROVIDER_POLICY_V1;s->manifest_count=p->manifest.count;s->manifest_hash=p->manifest.checksum;s->eboot_size=plan->cfg.eboot_size;
     char serialized[BW_READER_SELECTION_BYTES+1];size_t serialized_size=0;
     if(bw_reader_selection_serialize(s,serialized,sizeof serialized,&serialized_size)||na_current(p))goto done;
     p->valid=1;*out=p;p=NULL;result=0;
@@ -196,13 +196,31 @@ int bw_native_launch_admission_current(struct bw_native_launch_admission *p,cons
         return na_fail(p,"The launch no longer matches its verified startup receipt.");
     if(out)*out=p->prepared;return 0;
 }
+static int na_source_current(void *opaque){return na_guard(opaque);}
+static int na_container_source(struct bw_native_launch_admission *p,struct bw_source_smb *source){
+    struct bw_container_smb *image=calloc(1,sizeof *image);
+    struct bw_container_manifest files={0};int result=-1;uint8_t generation[32];
+    if(!image||na_source_current(p)||bw_container_smb_open_owned(image,&source->smb,p->identity.binding.source)||
+       bw_container_manifest_bind(&files,&image->container,&p->manifest)||na_source_current(p))goto done;
+    bw_provider_image_generation(&p->identity,&image->admitted,p->map_sha256,generation);
+    if(memcmp(generation,p->generation,32)||bw_container_validate(&image->container)||na_current(p))goto done;
+    result=0;
+done:
+    bw_container_manifest_destroy(&files);
+    if(image){if(bw_container_smb_close(image))result=-1;free(image);}
+    return result;
+}
 int bw_native_launch_admission_source(struct bw_native_launch_admission *p,const struct bw_share_config *connection,
     struct bw_source_smb *source,const struct bw_reader_selection *selected,uint8_t map_sha[32],uint8_t generation[32],const char **error){
     const char *failure="The selected PC source or required startup metadata changed; choose Send to revalidate it.";
     if(error)*error=failure;struct bw_provider_binding identity;int result=-1;void *param=NULL;size_t size=0;
     if(!p||!connection||!source||!source->smb||!map_sha||!generation||source->error||
-       bw_provider_binding_init(&identity,connection,p->identity.binding.source,p->identity.binding.title,BW_PROVIDER_FOLDER)||
+       bw_provider_binding_init(&identity,connection,p->identity.binding.source,p->identity.binding.title,p->identity.kind)||
        !na_bound(&p->identity,&identity)||na_selected(p,selected)||na_current(p))goto done;
+    if(identity.kind==BW_PROVIDER_CONTAINER){
+        if(na_container_source(p,source)||na_current(p))goto done;
+        memcpy(map_sha,p->map_sha256,32);memcpy(generation,p->generation,32);p->source_checked=1;result=0;goto done;
+    }
     for(unsigned i=0;i<p->file_count;i++){
         struct na_file *file=&p->files[i];if(file->row==UINT32_MAX)continue;struct bw_manifest_record row;struct bw_source_info info;
         char path[2*BW_MANIFEST_MAX_PATH+2];if(bw_manifest_get(&p->manifest,file->row,&row))goto done;

@@ -99,6 +99,12 @@ int bw_preload_bundle_upgrade_checked(const struct bw_preload_bundle_upgrade_req
     if(cache_fault==1)cache_pending=1;
     if(fail_bundle){r->stage="bundle_fixture_exact_bytes_refused";r->reason="bundle_fixture_named_identity_differs";}return fail_bundle==2?-1:fail_bundle?-2:0;
 }
+int bw_preload_bundle_upgrade_controlled(const struct bw_preload_bundle_upgrade_request *upgrade,const struct bw_preload_bundle_control *control,struct bw_preload_bundle_result *r){
+    CHECK(upgrade&&control&&control->checkpoint&&r);
+    struct bw_preload_bundle_upgrade_request scoped=*upgrade;
+    scoped.bundle.current=control->checkpoint;scoped.bundle.opaque=control->opaque;
+    int result=bw_preload_bundle_upgrade_checked(&scoped,r);r->release_unknown=result==-2;return result;
+}
 int bw_nrl_begin(const struct bw_nrl_request *q,struct bw_nrl_owner **out,struct bw_nrc_result *r){
     CHECK(q&&q->selection&&live&&bundle_calls==1&&!register_calls&&!q->current(q->opaque,BW_NRL_REGISTER));CHECK(!((struct play_observer *)q->opaque)->context.control_log&&!cache_live);begin_calls++;
     if(fail_begin){*r=(struct bw_nrc_result){.state=BW_NRC_PENDING,.reason="Exact title cleanup is pending."};return -1;}
@@ -139,6 +145,7 @@ static void reset(void){
     owner.playing.selection.prepared.state=BW_PREPARED_VALID;memset(&selection,0,sizeof selection);strcpy(selection.run,"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
     strcpy(selection.title,"PPSA99999");strcpy(owner.external_nonce,"cccccccccccccccccccccccccccccccc");
     strcpy(owner.playing.selection.run,selection.run);
+    strcpy(owner.playing.dispatch,owner.external_nonce);
     static const char game[]="PPSA99999_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     strcpy(selection.game,game);strcpy(owner.playing.selection.identity.binding.game,game);
     strcpy(owner.playing.selection.identity.binding.title,"PPSA99999");

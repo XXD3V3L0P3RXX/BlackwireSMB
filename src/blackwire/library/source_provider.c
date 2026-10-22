@@ -35,15 +35,8 @@ static int image_current(void *opaque) {
     int result=p->image_ops.generation(p->image_source);
     return result||guard(p)?-1:0;
 }
-static void put64(uint8_t *out,uint64_t n) {for (unsigned i=0;i<8;i++) out[i]=(uint8_t)(n>>(8*i));}
 static void image_generation(const struct bw_source_provider *p,const struct smb2_stat_64 *stat,uint8_t out[32]) {
-    static const char domain[]="Blackwire immutable SMB image generation v1";
-    uint8_t row[64];const uint64_t fields[]={stat->smb2_type,stat->smb2_ino,stat->smb2_size,
-        stat->smb2_mtime,stat->smb2_mtime_nsec,stat->smb2_ctime,stat->smb2_ctime_nsec,p->identity.policy};
-    for (unsigned i=0;i<8;i++) put64(row+8*i,fields[i]);
-    struct cp_sha sha;cp_sha_init(&sha);cp_sha_update(&sha,domain,sizeof domain);
-    cp_sha_update(&sha,p->identity.binding.sha256,32);cp_sha_update(&sha,row,sizeof row);
-    cp_sha_update(&sha,p->container.map_sha256,32);cp_sha_final(&sha,out);
+    bw_provider_image_generation(&p->identity,stat,p->container.map_sha256,out);
 }
 struct observed {struct bw_source_provider *provider;bw_source_observer_fn prior;void *opaque;};
 static void observe(void *opaque,const struct bw_source_progress *progress) {

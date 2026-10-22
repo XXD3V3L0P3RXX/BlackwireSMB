@@ -10,4 +10,8 @@ struct bw_provider_binding {
 };
 int bw_provider_binding_init(struct bw_provider_binding *,const struct bw_share_config *,
     const char *source,const char *title,enum bw_provider_kind);
+struct smb2_stat_64;
+/* Canonical immutable image-generation seal, shared by preparation and launch.
+ * Hashing metadata does not itself verify an image or grant source authority. */
+void bw_provider_image_generation(const struct bw_provider_binding *,const struct smb2_stat_64 *,const uint8_t map_sha256[32],uint8_t out[32]);
 #endif

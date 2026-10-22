@@ -1,4 +1,4 @@
-"""Portable build of the source-derived, FOLDER-only early reader.
+"""Portable build of the source-derived folder and PFS/PFSC early reader.
 
 The retained source uses the STRICT identity policy and contiguous-read
 coalescer. No previous output, private proof, console file or SDK installation
@@ -16,6 +16,9 @@ CFILES = ["streamreader/manifest.c", "streamreader/cache.c", "streamreader/share
           "reader/preload/source.c", "reader/preload/first_read.c", "reader/preload/private_smb.c"]
 HOME_CFILES = ["library/home_protocol.c", "library/source_param.c", "reader/preload/home_client.c"]
 CFILES += HOME_CFILES
+CONTAINER_CFILES = ["library/source_identity.c", "streamreader/container_source.c", "streamreader/container_manifest.c",
+                    "streamreader/pfs_source.c", "streamreader/pfsc_range.c", "streamreader/pfsc_inflate.c"]
+CFILES += CONTAINER_CFILES
 FLAGS = ["AMPR_PACK_ENABLE=1", "AMPR_DIRECTORY_OVERLAY=1", "AMPR_PROCESS_READ_INTERCEPT=1",
          "AMPR_PROCESS_OPEN_INTERCEPT=1", "AMPR_PROCESS_AIO_INTERCEPT=1",
          "AMPR_PROCESS_SYNC_READ_INTERCEPT=1", "AMPR_DEBUG_LOG=0", "AMPR_COMMAND_LOG=0", "BP_METADATA_PROFILE=0",
@@ -46,7 +49,7 @@ def prepare(root, out):
         for path in (root / "src/blackwire" / folder).glob("*.h"):
             copy(path, source / "bw" / folder / path.name)
     slices = {}
-    for name in [*CFILES[:6], "library/home_protocol.c", "library/source_param.c"]:
+    for name in [*CFILES[:6], "library/home_protocol.c", "library/source_param.c", *CONTAINER_CFILES]:
         path = root / "src/blackwire" / name
         text = path.read_text()
         if name.endswith("reader_selection.c"):
@@ -60,6 +63,9 @@ def prepare(root, out):
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(text)
         slices[name] = {"original": pin(path), "compiled": pin(target)}
+    for path in (root / "src/blackwire/streamreader/vendor/miniz").iterdir():
+        if path.is_file():
+            copy(path, source / "bw/streamreader/vendor/miniz" / path.name)
     owned = root / "src/blackwire/reader/preload"
     for path in owned.iterdir():
         if path.suffix in (".c", ".h"):
@@ -232,7 +238,7 @@ $(OBJ)/nids/combined.o: $(COMBINED_OBJ) $(RENAME_MAP)
     if sorted(backing.values()) != [67108864, 402653184]:
         raise ValueError("Reader memory contract differs")
     image = native / "libSceAmpr.sprx"
-    result = {"folderOnly": True, "containerSelection": False, "image": pin(image),
+    result = {"folderOnly": False, "containerSelection": True, "image": pin(image),
               "publicProviders": provider_pins, "publicImports": imported, "privateRenames": RENAMES,
               "sourceRuntime": {"receipt": runtime["receiptPin"],
                                 "manifest": sdk_runtime.products(root, out, runtime)["runtimeManifest"]},
