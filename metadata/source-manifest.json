@@ -298,8 +298,8 @@
       "sha256": "0f6c64dda1456217dd67226c84fcbaeac625c3d28db8244e9465399171e1a79f"
     },
     "src/blackwire/library/native_backend.c": {
-      "bytes": 142046,
-      "sha256": "439109aac395576b95efb8d9ac66a4709098132eff9c3e2c88283dd98b14a9a6"
+      "bytes": 142176,
+      "sha256": "e3c2e0a15ebd1596663ce7f4a1be6b80efc9b9f3cc106a2f0e8933fd1589d315"
     },
     "src/blackwire/library/native_backend.h": {
       "bytes": 9720,
@@ -1267,7 +1267,7 @@
     },
     "tools/build/app.py": {
       "bytes": 9345,
-      "sha256": "11bc9c1ff90614b33e5dffb74835f652d9a8853315a2add725d7803a1c724d35"
+      "sha256": "404d9929e35b91c08a14f48c0711dee878b1edf24256d4d001af3feb1a3bcee9"
     },
     "tools/build/common.py": {
       "bytes": 4240,
@@ -1401,7 +1401,7 @@
     },
     "tests/dashboard/lifecycle/check_registration_lifecycle.py": {
       "bytes": 10093,
-      "sha256": "b43871c420ccafa41c6d228c4c9ae5ca9f6b4a6bb531973c514d536d02333035"
+      "sha256": "c3e226480a14d44a929840618ff92f07c24b648d8e281622d49a1b06686c1784"
     },
     "tests/dashboard/lifecycle/check_registration_observer.py": {
       "bytes": 4045,
@@ -1472,8 +1472,8 @@
       "sha256": "e420a3540fe055b9d337ec363439cdf5724a95ba78ef7c0d6d7ac9a0870f410b"
     },
     "tests/dashboard/lifecycle/test_idle_cache_callers.c": {
-      "bytes": 29765,
-      "sha256": "1b2764f40244bec4f6c46b37cddb163845b77815f78a90b463ed197e69086c75"
+      "bytes": 31215,
+      "sha256": "b396842d4bce0408013c214b6af4771ba79f227c0a97ba1f4254500f1575d420"
     },
     "tests/dashboard/lifecycle/test_idle_log_cache.c": {
       "bytes": 14264,
@@ -1528,8 +1528,8 @@
       "sha256": "9aa817f38ece20b4458b9662f2b1fc910ce5a8cde8252a5fa086ab9535166891"
     },
     "tests/dashboard/lifecycle/test_registration_backend.c": {
-      "bytes": 21009,
-      "sha256": "2f6ae689e3ca5ae689101a8324ca88262a6768b91784c6d359420ea9a470c703"
+      "bytes": 22459,
+      "sha256": "3acf1b325e67fc42c2f3e49db507d687163d9f339c07de1c2c7ef7b75a37cedc"
     },
     "tests/dashboard/lifecycle/test_registration_cleanup.c": {
       "bytes": 28398,
@@ -1686,5 +1686,13 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Host-verified experimental PFS/PFSC; console qualification pending"
+  "developmentQualification": "Host-verified experimental PFS/PFSC; console qualification pending",
+  "removedSourceIdentityRegression": {
+    "passed": true,
+    "routingCases": 66,
+    "focusedCacheCallerCases": 15,
+    "filesystemCases": 34,
+    "beforeFixFailed": true,
+    "consoleQualificationPending": true
+  }
 }

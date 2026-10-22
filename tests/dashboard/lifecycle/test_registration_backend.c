@@ -14,6 +14,7 @@ static int settings_status=BW_SETUP_VALID,query_mutation;
 static unsigned removed_cleanup,removed_observers,removed_manual_queries,removed_sources_queries;
 static int removed_observe_unknown,removed_source_unknown;
 static struct bw_removed_source removed_record;
+static char candidate_binding_game[75];
 static struct bw_nrl_owner *retained_registration;
 static const struct bw_nrl_request *borrowed_request;
 static struct bw_nrl_request copied_request;
@@ -75,7 +76,7 @@ int bw_nrl_retire(struct bw_nrl_owner *p,const struct bw_native_reader_release *
     *out=(struct bw_nrc_retirement_result){.registration={.state=pending_cleanup?BW_NRC_PENDING:BW_NRC_ABSENT}};return 0;
 }
 int bw_nrl_destroy(struct bw_nrl_owner **p){CHECK(p);if(*p){CHECK(*p==retained_registration);destroy_calls++;*p=NULL;retained_registration=NULL;borrowed_request=NULL;}return 0;}
-int bw_nrc_candidates(const struct bw_nrc_environment *e,struct bw_nrc_candidate *out,size_t cap,size_t *n){CHECK(e&&out&&cap&&n);*n=0;if(pending_cleanup||removed_cleanup){*n=1;strcpy(out[0].subject.title,"PPSA99999");strcpy(out[0].subject.game,removed_cleanup?removed_record.identity.binding.game:"fixture");strcpy(out[0].subject.run,selection.run);out[0].pending=out[0].retiring=!!pending_cleanup;}return 0;}
+int bw_nrc_candidates(const struct bw_nrc_environment *e,struct bw_nrc_candidate *out,size_t cap,size_t *n){CHECK(e&&out&&cap&&n);*n=0;if(pending_cleanup||removed_cleanup){*n=1;strcpy(out[0].subject.title,"PPSA99999");strcpy(out[0].subject.game,*candidate_binding_game?candidate_binding_game:removed_cleanup?removed_record.identity.binding.game:"fixture");strcpy(out[0].subject.run,selection.run);out[0].pending=out[0].retiring=!!pending_cleanup;}return 0;}
 int bw_removed_list(const char *data,struct bw_removed_source *out,size_t cap,size_t *n){CHECK(data&&out&&cap&&n);*n=0;if(removed_record.operation[0]){*n=1;*out=removed_record;}return 0;}
 int bw_nrl_absent_sources(const struct bw_nrc_environment *env,struct bw_nrc_remote *r,const struct bw_nrc_subject *s){CHECK(env&&env->apps_root&&env->database&&r&&s&&!r->connection.current(r->connection.opaque));removed_sources_queries++;return removed_source_unknown?-1:0;}
 int bw_sm_post(const struct bw_sm_connection *c,enum bw_sm_operation op,const char *path,struct bw_sm_reply *reply){CHECK(c&&c->current&&!c->current(c->opaque)&&op==BW_SM_MANUAL_LIST&&path&&reply);memset(reply,0,sizeof *reply);removed_manual_queries++;return 0;}
@@ -112,7 +113,7 @@ static void reset(void){
     bundle_calls=begin_calls=commit_calls=retire_calls=destroy_calls=observer_calls=idle_calls=0;
     fail_bundle=fail_begin=fail_commit=cancelled_reader=pending_cleanup=unqualified_close=new_game=change_reservation=log_busy=startup_changed=0;release_flags=7;
     settings_status=BW_SETUP_VALID;query_mutation=0;
-    removed_cleanup=removed_observers=removed_manual_queries=removed_sources_queries=0;removed_observe_unknown=removed_source_unknown=0;memset(&removed_record,0,sizeof removed_record);
+    removed_cleanup=removed_observers=removed_manual_queries=removed_sources_queries=0;removed_observe_unknown=removed_source_unknown=0;memset(&removed_record,0,sizeof removed_record);candidate_binding_game[0]=0;
     fail_open=fail_register=fail_reader=settings_changed=foreign_registration=0;
     last_error[0]=0;
 }
@@ -169,6 +170,25 @@ int main(void){
         if(mode==0||mode==3){CHECK(!result&&observed.absent&&!observed.pending&&!registration_waiting(&owner,"PPSA99999")&&owner.generation==generation+1&&removed_observers==1&&removed_manual_queries==2&&removed_sources_queries==1);CHECK(owner.removing.state==(mode?REMOVAL_UNKNOWN:REMOVAL_DONE));}
         else CHECK(result<0&&!observed.absent&&owner.removing.state==REMOVAL_UNKNOWN&&owner.generation==generation);
         CHECK(!pthread_mutex_destroy(&owner.dispatch_lock)&&!pthread_mutex_destroy(&owner.lock));cases++;
+    }
+    /* A removed folder copy does not own a newly prepared compressed copy
+     * of the same title. A real pending event must still block that title. */
+    for(unsigned pending=0;pending<2;pending++){
+        reset();owner.active=0;removed_cleanup=1;pending_cleanup=(int)pending;
+        removed_record.identity.kind=BW_PROVIDER_FOLDER;removed_record.identity.policy=BW_PROVIDER_POLICY_V1;
+        strcpy(removed_record.identity.binding.title,"PPSA99999");
+        strcpy(removed_record.identity.binding.game,"removed-folder-binding");
+        strcpy(removed_record.identity.binding.source,"Extracted fixture");
+        strcpy(removed_record.operation,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        strcpy(candidate_binding_game,"prepared-container-binding");
+        CHECK(!registration_pending_refresh(&owner));
+        CHECK(!!registration_waiting(&owner,"PPSA99999")==!!pending);
+        struct registration_observation_guard guard={0};
+        struct bw_native_cleanup_observation untouched={0};
+        CHECK(registration_observe_removed(&owner,&guard,&registration_environment,&untouched)==1);
+        CHECK(!untouched.pending&&!removed_observers&&!removed_manual_queries&&!removed_sources_queries);
+        CHECK(!register_calls&&!retire_calls&&!reader_calls);
+        CHECK(!pthread_mutex_destroy(&owner.lock));cases++;
     }
     printf("{\"passed\":true,\"cases\":%u,\"checks\":%u,\"actualDefaultPlayRouting\":true,\"admissionTransportModeled\":true}\n",cases,checks);return 0;
 }

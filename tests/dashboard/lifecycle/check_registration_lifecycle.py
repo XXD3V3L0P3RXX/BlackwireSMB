@@ -58,7 +58,7 @@ def main():
    run('actual-backend-build-'+src.stem,[*host,'-pthread','-DBW_NATIVE_SEND_HOST_TEST=1','-DBW_NATIVE_FS_HOST_TEST=1','-MD','-MF',dep,'-c',src,'-o',obj]);caller_objects.append(obj)
   run('actual-backend-link',['clang-18','-fsanitize=address,undefined',*caller_objects,*['-Wl,--wrap='+name for name in ('open','dup','close','fclose','fgets','clock_gettime')],'-Wl,--gc-sections','-pthread','-lm','-o',backend])
   caller_lines=run('actual-backend-routing',[backend]).splitlines();routing=json.loads(caller_lines[-2]);cache_callers=json.loads(caller_lines[-1])
-  if not(cache_callers['passed'] and cache_callers['retainedRoutingCases']==64 and cache_callers['focusedCallerCases']==15 and cache_callers['allCachesClosedBeforeHandoff'] and cache_callers['releaseUnknownRetained']):raise RuntimeError('Actual caller/lifetime scenarios changed')
+  if not(cache_callers['passed'] and cache_callers['retainedRoutingCases']==66 and cache_callers['focusedCallerCases']==15 and cache_callers['allCachesClosedBeforeHandoff'] and cache_callers['releaseUnknownRetained']):raise RuntimeError('Actual caller/lifetime scenarios changed')
  # Actual SDK production flags/paths, outputs only redirected. Newly linked
  # lifecycle/ledger/remote/transport use the same native_register compilation.
  native=[];cache_link=None

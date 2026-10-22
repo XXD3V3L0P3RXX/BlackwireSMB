@@ -64,3 +64,7 @@ Each evidence output must be new. Test fixtures contain no game material. The op
 6. Compare the same menu and scene selections against the folder release, using both reader counters and visible stopwatch times. Record failures as well as successes.
 
 Until those checks pass, compressed console playback and shorter PS5 loading times remain unverified. The working released build should not be replaced automatically.
+
+## Folder-to-container registration regression
+
+Live preparation exposed an old Removed record being matched to a new prepared copy by title alone. The development resident now also matches the exact source binding before blocking or observing that Removed owner. The focused regression first failed against the old implementation and passes with the repair; real pending events for the title remain blocked. This does not adopt or delete foreign registrations. The repair is awaiting console qualification.

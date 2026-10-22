@@ -360,7 +360,7 @@ static int registration_pending_refresh(struct bw_native_backend *p){
     p->registration_ledger_unknown=result!=0;
     if(!result){p->registration_pending_count=0;
         for(size_t i=0;i<count;i++){
-            unsigned removed_owner=0;for(size_t j=0;j<removed_count;j++)if(!strcmp(list[i].subject.title,removed[j].identity.binding.title)){removed_owner=1;break;}
+            unsigned removed_owner=0;for(size_t j=0;j<removed_count;j++)if(!strcmp(list[i].subject.title,removed[j].identity.binding.title)&&!strcmp(list[i].subject.game,removed[j].identity.binding.game)){removed_owner=1;break;}
             if(!list[i].pending&&!list[i].retiring&&!removed_owner)continue;
             size_t at=p->registration_pending_count++;memcpy(p->registration_pending[at].title,list[i].subject.title,10);
             memcpy(p->registration_pending[at].game,list[i].subject.game,75);memcpy(p->registration_pending[at].run,list[i].subject.run,33);
@@ -1576,7 +1576,7 @@ static int registration_observe_removed(struct bw_native_backend *p,struct regis
     if(!owners||!removed||bw_nrc_candidates(env,owners,BW_NRC_CANDIDATE_LIMIT,&count)||
        bw_removed_list(backend_data_root,removed,BW_REMOVED_LIMIT,&removed_count))goto done;
     for(size_t i=0;i<count;i++)if(!owners[i].pending&&!owners[i].retiring)for(size_t j=0;j<removed_count;j++)
-        if(!strcmp(owners[i].subject.title,removed[j].identity.binding.title)){
+        if(!strcmp(owners[i].subject.title,removed[j].identity.binding.title)&&!strcmp(owners[i].subject.game,removed[j].identity.binding.game)){
             memcpy(out->title,owners[i].subject.title,10);memcpy(out->run,owners[i].subject.run,33);out->pending=1;
             struct registration_removed_observation context={.guard=guard};
             context.remote.connection=(struct bw_sm_connection){0,registration_observation_current,guard};
