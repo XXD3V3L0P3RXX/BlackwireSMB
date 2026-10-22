@@ -39,7 +39,7 @@ static int na_same(const struct stat *a,const struct stat *b){
 static int na_guard(struct bw_native_launch_admission *p){
     double now=cp_now();
     return !p||p->failed||!p->guard||now<0||now>=p->deadline||p->guard(p->opaque)?
-        na_fail(p,"The launch selection or settings changed; choose Send to revalidate startup files."):0;
+        na_fail(p,"Startup verification was interrupted or exceeded its time limit. Check Blackwire status and retry."):0;
 }
 static int na_bound(const struct bw_provider_binding *a,const struct bw_provider_binding *b){
     return a&&b&&(a->kind==BW_PROVIDER_FOLDER||a->kind==BW_PROVIDER_CONTAINER)&&b->kind==a->kind&&a->policy==BW_PROVIDER_POLICY_V1&&b->policy==a->policy&&

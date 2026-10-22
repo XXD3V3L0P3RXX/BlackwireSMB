@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <float.h>
 #include <math.h>
+#include "launch_timing.h"
 
 struct home_worker {
     struct bw_native_backend *backend;
@@ -23,13 +24,13 @@ static void home_phase(struct home_worker *h,unsigned phase,const char *message)
 }
 static int home_lease(void *opaque){
     struct home_worker *h=opaque;struct bw_native_backend *p=h->backend;double at=now();
-    if(at<0||at>=h->deadline)return -1;
+    if(at<0||at>=h->deadline){BW_LT_COUNT(BW_LT_HOME_TIME_REFUSALS,1);return -1;}
     pthread_mutex_lock(&p->lock);
     int bad=!p->active||p->worker_kind!=WORK_PLAY||!p->home.active||!p->playing.home_adopted||p->generation!=h->generation||p->play_epoch!=h->epoch||
         p->settings_revision!=h->revision||p->stale||p->playing.changed||p->playing.close_requested||
         (p->home.claim.pid!=h->claim.pid||p->home.claim.deadline_us!=h->claim.deadline_us||memcmp(p->home.claim.nonce,h->claim.nonce,33)||memcmp(p->home.claim.map_sha256,h->claim.map_sha256,32))||bw_stop_identity_match(&p->home.birth,&h->birth)!=1||
         (h->resolved&&memcmp(&p->playing.selection,&h->selected,sizeof h->selected));
-    pthread_mutex_unlock(&p->lock);return bad?-1:0;
+    pthread_mutex_unlock(&p->lock);if(bad)BW_LT_COUNT(BW_LT_HOME_STATE_REFUSALS,1);return bad?-1:0;
 }
 static int home_app_current(void *opaque,const struct bw_native_session *game){(void)opaque;return bw_home_identity_current(game);}
 static int home_consumer_uid(void *opaque,pid_t pid,uid_t *out){(void)opaque;return bw_home_identity_uid(pid,out);}
@@ -124,34 +125,40 @@ static void *home_worker(void *opaque){
     if(!h)return NULL;h->backend=p;
     pthread_mutex_lock(&p->lock);h->claim=p->home.claim;h->birth=p->home.birth;h->generation=p->home.generation;h->epoch=p->home.epoch;h->revision=p->home.revision;h->selected=p->playing.selection;pthread_mutex_unlock(&p->lock);
     h->deadline=(double)h->claim.deadline_us/1000000.0;h->began=now();bw_native_session_ps5_ops(&h->process);
+    BW_LT_SCOPE(home_timing,h->selected.run,NULL);
     struct bw_share_config config={0};struct bw_reader_selection selected={0};uint8_t map[32];const char *failure=NULL;int result=-1,release_unknown=0;
     home_phase(h,1,"Connecting the game started from the PS5 dashboard.");
-    if(home_select(h,&config)){failure="The game could not be matched to exactly one prepared Blackwire source.";goto track;}
+    if(BW_LT_CALL(BW_LT_SELECT,home_select(h,&config))){failure="The game could not be matched to exactly one prepared Blackwire source.";goto track;}
     home_phase(h,2,"Checking the exact PS5 dashboard game and prepared source.");
-    if(home_startup_control(h,NULL)||bw_native_launch_admission_open(&h->startup,backend_data_root,&h->selected.identity,&h->selected.prepared,h->selected.run,home_lease,h,&failure)||
+    if(BW_LT_CALL(BW_LT_FINAL_AUTH,home_startup_control(h,NULL))||
+       BW_LT_CALL(BW_LT_LOCAL_PREFLIGHT,bw_native_launch_admission_open(&h->startup,backend_data_root,&h->selected.identity,&h->selected.prepared,h->selected.run,home_lease,h,&failure))||
        bw_native_launch_admission_selection(h->startup,&selected)||bw_native_launch_admission_map_sha256(h->startup,map)||memcmp(map,h->claim.map_sha256,32)){
         if(!failure)failure="The running game's file map differs from its prepared receipt.";goto track;
     }
     home_phase(h,3,"Checking the prepared game reader.");
     char root[BW_NRC_PATH_BYTES];int n=snprintf(root,sizeof root,"%s/games/%s",backend_data_root,selected.game);
     struct bw_preload_bundle_request bundle={root,home_lease,h,h->deadline};struct bw_preload_bundle_result checked={0};
-    if(n<0||(size_t)n>=sizeof root||bw_preload_bundle_verify_checked(&bundle,&checked)){
+    if(n<0||(size_t)n>=sizeof root||BW_LT_CALL(BW_LT_BUNDLE,bw_preload_bundle_verify_checked(&bundle,&checked))){
         release_unknown|=checked.release_unknown;failure="The dashboard reader needs setup. Start this game once from Blackwire Play; its startup files will be kept.";goto track;
     }
     home_phase(h,4,"Checking the current PC share for this game.");
-    if(home_source(h,&config,&selected)){failure="The current PC source could not be verified for this dashboard game.";goto track;}
+    if(BW_LT_CALL(BW_LT_PC_SOURCE,home_source(h,&config,&selected))){failure="The current PC source could not be verified for this dashboard game.";goto track;}
     home_phase(h,5,"Checking the game's existing dashboard registration.");
-    if(home_startup_control(h,&selected)||bw_native_registration_verify(backend_data_root,"/user/app","/system_data/priv/mms/app.db",&selected)||home_startup_control(h,&selected)){
+    if(BW_LT_CALL(BW_LT_FINAL_AUTH,home_startup_control(h,&selected))||
+       BW_LT_CALL(BW_LT_REGISTER,bw_native_registration_verify(backend_data_root,"/user/app","/system_data/priv/mms/app.db",&selected))||
+       BW_LT_CALL(BW_LT_FINAL_AUTH,home_startup_control(h,&selected))){
         failure="The PS5 dashboard registration no longer matches this prepared source.";goto track;
     }
     home_phase(h,6,"Starting the reader for the PS5 dashboard game.");
-    if(bw_home_session_publish(&h->session,root,&selected,&config)||home_startup_control(h,&selected)){
+    if(BW_LT_CALL(BW_LT_HANDOFF,bw_home_session_publish(&h->session,root,&selected,&config))||
+       BW_LT_CALL(BW_LT_FINAL_AUTH,home_startup_control(h,&selected))){
         failure="The game's private startup inputs could not be assigned safely.";goto track;
     }
     result=0;home_phase(h,7,"PS5 dashboard game connected. Reader startup inputs delivered.");
 track:
     bw_share_clear(&config);memset(map,0,sizeof map);
     if(bw_native_launch_admission_close(&h->startup))release_unknown=1;
+    BW_LT_LEAVE(home_timing,result);
     pthread_mutex_lock(&p->lock);
     if(failure){snprintf(p->playing.phase,sizeof p->playing.phase,"unknown");snprintf(p->playing.message,sizeof p->playing.message,"%s",failure);play_failure_locked(p,failure);}
     else{strcpy(p->playing.phase,"running");p->playing.launch_seen=1;p->playing.reader_started=1;if(p->playing.item<BW_CATALOG_MAX_ITEMS)p->home_ready[p->playing.item]=1;}

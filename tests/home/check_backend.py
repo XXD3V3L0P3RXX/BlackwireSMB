@@ -15,6 +15,7 @@ prefix='''#define BW_HOME_STARTUP 1
 #include "native_launch.h"
 #include "native_registration.h"
 #include "preload_bundle.h"
+#include "launch_timing.h"
 #include "startup_runtime_idle.h"
 #include <pthread.h>
 #include <time.h>

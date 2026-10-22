@@ -20,7 +20,8 @@ static const char *const stages[BW_LT_STAGE_COUNT]={
 static const char *const metrics[BW_LT_METRIC_COUNT]={
     "backend_guards","reader_guards","settings_reads","record_pins","local_hashes",
     "local_reads","local_hash_bytes","pc_hash_callbacks","pc_hash_bytes",
-    "source_requests","source_entries","source_content_bytes"
+    "source_requests","source_entries","source_content_bytes",
+    "home_time_refusals","home_state_refusals"
 };
 static int valid(const char *id){
     return id&&strnlen(id,33)==32&&strspn(id,"0123456789abcdef")==32&&strspn(id,"0")!=32;

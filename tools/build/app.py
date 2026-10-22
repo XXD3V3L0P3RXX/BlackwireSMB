@@ -41,6 +41,12 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
             ("native_backend.c", "native_prepared_target.c", "native_startup_hint.c") for s in argv):
             argv.insert(1, "-DBW_NATIVE_PRELOAD=1")
         if "-c" in argv:
+            # This TU hashes every required local startup file. Keep those
+            # exact checks while compiling their portable SHA loops at O2.
+            if argv[argv.index("-c") + 1].endswith("/library/native_send.c"):
+                if any(flag.startswith("-O") for flag in argv):
+                    raise ValueError("Startup verifier optimization already selected")
+                argv.insert(1, "-O2")
             argv[1:1] = ["-I", "{SMB_INCLUDE}", *source_flags(root, sdk)]
             if row["label"] == "compile-00":
                 argv[1:1] = ["-DBW_WEB_ONLY=1", "-I", "{DASHBOARD}/service", "-I", "{DASHBOARD}/local-removal"]
@@ -120,7 +126,7 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
     for row in commands:
         argv = [expand(value) for value in row["argv"]]
         if row["label"] == "compile-00":
-            argv.insert(1, '-DBW_RESIDENT_BUILD_ID="blackwire-compressed-loading-dev.4"')
+            argv.insert(1, '-DBW_RESIDENT_BUILD_ID="blackwire-compressed-loading-dev.5"')
         if row is link:
             argv = sdk_runtime.link_arguments(root, out, argv, runtime)
         if "-o" in argv:
