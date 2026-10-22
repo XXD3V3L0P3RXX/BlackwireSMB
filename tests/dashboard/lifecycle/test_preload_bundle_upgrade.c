@@ -86,6 +86,12 @@ static int execute(struct bw_preload_bundle_upgrade_request *q,int expected,unsi
  if(held_fault_fd>=0){CHECK(fd_count()==open_before+1);CHECK(!__real_close(held_fault_fd));held_fault_fd=-1;}CHECK(fd_count()==open_before);
  if(expected)CHECK(r.reason||expected==-2);else CHECK(!r.reason&&!strcmp(r.stage,"complete"));return result;}
 int main(int argc,char **argv){CHECK(argc==2);char file[2048];struct bw_preload_bundle_result r;
+ /* The development reader is admitted only at its exact independently
+  * observed digest and size; neither near-match may enter owned migration. */
+ uint8_t dev3_hash[32];CHECK(!pb_hex(pu_compressed_dev3.hex,dev3_hash));
+ CHECK(pu_previous_match(pu_compressed_dev3.size,dev3_hash));
+ CHECK(!pu_previous_match(pu_compressed_dev3.size+1,dev3_hash));
+ dev3_hash[0]^=1;CHECK(!pu_previous_match(pu_compressed_dev3.size,dev3_hash));
  struct bw_preload_bundle_upgrade_request q=fixture(argv[1],0);CHECK(!bw_preload_bundle_upgrade_workspace(q.data_root,q.game));execute(&q,0,1);CHECK(access(workspace,F_OK)<0&&errno==ENOENT);CHECK(!bw_preload_bundle_upgrade_workspace(q.data_root,q.game));CHECK(!bw_preload_bundle_verify_checked(&q.bundle,&r));
  q=fixture(argv[1],1);struct stat before,after;joined_path(file,current_root,"fakelib2/libSceAmpr.sprx");CHECK(!lstat(file,&before));execute(&q,0,1);CHECK(!lstat(file,&after)&&pb_same(&before,&after));
  for(unsigned state=0;state<3;state++){q=fixture(argv[1],state==2);if(state==0)CHECK(!mkdir(workspace,0700));else if(state==1)write_file(workspace,"foreign",7,0600);else CHECK(!symlink("/unrelated",workspace));CHECK(bw_preload_bundle_upgrade_workspace(q.data_root,q.game)==1);execute(&q,-1,state==2);}

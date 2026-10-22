@@ -120,7 +120,7 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
     for row in commands:
         argv = [expand(value) for value in row["argv"]]
         if row["label"] == "compile-00":
-            argv.insert(1, '-DBW_RESIDENT_BUILD_ID="blackwire-compressed-loading-dev.3"')
+            argv.insert(1, '-DBW_RESIDENT_BUILD_ID="blackwire-compressed-loading-dev.4"')
         if row is link:
             argv = sdk_runtime.link_arguments(root, out, argv, runtime)
         if "-o" in argv:
