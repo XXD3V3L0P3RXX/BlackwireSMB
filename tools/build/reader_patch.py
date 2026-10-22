@@ -58,6 +58,8 @@ def apply(root:Path):
     old=function(s,name);pos=old.index('{')+1;new=old[:pos]+'\n    if(job.bpRemote)return false;\n'+old[pos:];s=replace(s,old,new)
     name='static void* pack_worker_entry('
     old=function(s,name);new=replace(old,'    PackState& state = pack_state();','    (void)bp_worker_initialize();\n    PackState& state = pack_state();')
+    new=replace(new,'    (void)scePthreadSetprio(scePthreadSelf(), AMPR_EMU_PACK_WORKER_PRIORITY);',
+        '    const int bpPriority=bp_worker_priority(AMPR_EMU_PACK_WORKER_PRIORITY);\n    const int bpPriorityRc=scePthreadSetprio(scePthreadSelf(), bpPriority);\n    bp_worker_priority_report(AMPR_EMU_PACK_WORKER_PRIORITY,bpPriority,bpPriorityRc);')
     new=replace(new,'                return nullptr;','                lock.unlock(); bp_worker_finish(); return nullptr;')
     new=replace(new,'        int64_t returnValue = 0;','        bp_read_witness bpWitness{}; bool bpPublished=false;\n        int64_t returnValue = 0;')
     new=replace(new,'        const PipelineStep step = advance_virtual_read_aio(\n            job, *worker, *pipeline, &returnValue, &pipelineError);',

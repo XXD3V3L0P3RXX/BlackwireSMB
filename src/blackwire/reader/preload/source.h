@@ -90,6 +90,10 @@ int bp_source_connect(struct bp_source *);
  * Cache stage raw-1 means invalid backing, raw-2 entry calloc failure.
  * Normal connect/open keeps its original malloc-backed path. */
 int bp_source_connect_with_storage(struct bp_source *,void *,size_t);
+/* CPU-decoded containers must not outrank the PS5 dialog/UI threads. This
+ * worker-only choice observes admitted immutable state and performs no I/O.
+ * Folder sources retain the upstream I/O worker priority. */
+int bp_source_worker_priority(const struct bp_source *,int upstream);
 /* Single-worker scalar snapshot only: first failed existing operation survives
  * cleanup. Context NULL is raw0; state is a predicate bit mask with errno0.
  * Options are void setters: count returned calls, never checked success.

@@ -327,8 +327,11 @@ static const struct pb_pin pu_home_diag7c={"libSceAmpr.sprx",798432,
  * Retain the exact size/hash check when upgrading existing prepared games. */
 static const struct pb_pin pu_standalone_preview1={"libSceAmpr.sprx",798192,
     "d02f20f4ee8b1db1617e7b2c7ad4f76821e8b9da2523ac185a2e881ca33462be"};
+/* Exact independently read-back compressed dev.1/dev.2 DATA reader. */
+static const struct pb_pin pu_compressed_dev2={"libSceAmpr.sprx",828416,
+    "6e088f332d114f5f60c3baead9d549685d5e8e94d07c5e4970bdbaeca4fb66df"};
 static int pu_previous_match(uint64_t size,const uint8_t actual[32]){
-    const struct pb_pin *known[]={&pu_previous,&pu_public07,&pu_public09,&pu_public10a,&pu_live10a,&pu_reference348,&pu_home7944,&pu_home_diag7c,&pu_standalone_preview1};uint8_t expected[32];
+    const struct pb_pin *known[]={&pu_previous,&pu_public07,&pu_public09,&pu_public10a,&pu_live10a,&pu_reference348,&pu_home7944,&pu_home_diag7c,&pu_standalone_preview1,&pu_compressed_dev2};uint8_t expected[32];
     for(unsigned i=0;i<sizeof known/sizeof known[0];i++)
         if(size==known[i]->size&&!pb_hex(known[i]->hex,expected)&&!memcmp(actual,expected,32))return 1;
     return 0;

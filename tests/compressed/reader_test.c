@@ -72,7 +72,7 @@ static void put32(uint8_t *p,uint32_t n){for(unsigned i=0;i<4;i++)p[i]=(uint8_t)
 static void put64(uint8_t *p,uint64_t n){for(unsigned i=0;i<8;i++)p[i]=(uint8_t)(n>>(8*i));}
 static struct bp_source *open_source(const void *map,size_t map_size,const char *selection,size_t selection_size){
     static const char share[]="server=192.0.2.1\nshare=fixture\nuser=fixture\npassword=\n";
-    struct bp_source *p=NULL;CHECK(!bp_source_open(&p,map,map_size,selection,selection_size,share,sizeof share-1,guard,&canceled));return p;}
+    struct bp_source *p=NULL;CHECK(!bp_source_open(&p,map,map_size,selection,selection_size,share,sizeof share-1,guard,&canceled));unsigned before=preads+nstats+hstats;CHECK(bp_source_worker_priority(p,384)==700);CHECK(before==preads+nstats+hstats);return p;}
 int main(int argc,char **argv){
     CHECK(argc==4||argc==5);int refused=argc==5&&!strcmp(argv[4],"refuse");live_image=argv[2];
     int fd=open(argv[1],O_RDONLY|O_NOFOLLOW);CHECK(fd>=0);struct stat st,live;CHECK(!fstat(fd,&st)&&!stat(live_image,&live));

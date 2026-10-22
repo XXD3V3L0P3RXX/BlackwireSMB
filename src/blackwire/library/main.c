@@ -866,7 +866,7 @@ int main(void) {
   startup_mark("running.notify.before");
   notify("Blackwire is running");
   startup_mark("running.notify.after");
-#ifdef BW_WEB_ONLY
+#if defined(BW_WEB_ONLY) && !defined(BW_TEST_PC_BROWSER_ONLY)
   /* One ordinary Sony browser request after the listener/backend are ready.
    * The Media shortcut opens this same page; no native Dashboard is installed. */
   uint32_t browser_user;struct bw_reader_user_observation browser_user_observation;

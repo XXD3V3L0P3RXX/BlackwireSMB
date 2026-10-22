@@ -292,6 +292,12 @@ static void bp_runtime_source_progress(void*,const struct bp_source_progress *d,
     errno=saved;
 }
 // BP_LIVE_DIAGNOSTIC_END
+int bp_worker_priority(int upstream){return bp_source_worker_priority(source,upstream);}
+void bp_worker_priority_report(int upstream,int requested,int result){
+    const int saved=errno;
+    sce::Ampr::Emu::kernelDebugLogf("[BWREAD_SCHED1] upstream=%d requested=%d result=%d",upstream,requested,result);
+    errno=saved;
+}
 bool bp_worker_initialize(){
     unsigned expected=2;
     if(!metadata_ready.load()||!status.compare_exchange_strong(expected,3))return false;

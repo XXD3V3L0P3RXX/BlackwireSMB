@@ -1,6 +1,6 @@
 # Compressed streaming development
 
-The published `v0.1.0-preview.1` remains the working folder-only preview. This development branch adds a compressed source to the existing preparation and early-reader workflow. It has not yet established compressed-game startup or gameplay on a PS5.
+The published `v0.1.0-preview.1` remains the working folder-only preview. This development branch adds a compressed source to the existing preparation and early-reader workflow. GTA V and Resident Evil 7 reached visible gameplay from the supplied compressed images on the test console. A recurring system-dialog crash still prevents release qualification; shorter loading times have not been established by a controlled console comparison.
 
 ## Formats
 
@@ -63,8 +63,16 @@ Each evidence output must be new. Test fixtures contain no game material. The op
 5. Uninstall the owned PS5 prepared copy through its normal confirmation. Verify the PC image and saved data remain intact and the old PS5 icon is removed.
 6. Compare the same menu and scene selections against the folder release, using both reader counters and visible stopwatch times. Record failures as well as successes.
 
-Until those checks pass, compressed console playback and shorter PS5 loading times remain unverified. The working released build should not be replaced automatically.
+The observed gameplay does not complete this checklist. Clean launch/relaunch, removal and controlled loading-time comparisons still require qualification. The working released build should not be replaced automatically.
 
 ## Folder-to-container registration regression
 
-Live preparation exposed an old Removed record being matched to a new prepared copy by title alone. The development resident now also matches the exact source binding before blocking or observing that Removed owner. The focused regression first failed against the old implementation and passes with the repair; real pending events for the title remain blocked. This does not adopt or delete foreign registrations. The repair is awaiting console qualification.
+Live preparation exposed an old Removed record being matched to a new prepared copy by title alone. The development resident now also matches the exact source binding before blocking or observing that Removed owner. The focused regression first failed against the old implementation and passes with the repair; real pending events for the title remain blocked. This does not adopt or delete foreign registrations. Both compressed test copies became Ready after deploying the repair without copying their startup files again.
+
+## System-dialog scheduling trial
+
+Both compressed games continued playing after dismissing CE-108262-9. Kernel records identify `SceCdlgApp` (`NPXS40093`), its `sceCdlgWatchDog` thread and `Watchdog:55`; the reader counters report no failed reads in those captures. A GTA folder comparison with the identical reader SHA-256 completed dialog initialization and remained at its Continue prompt without that failure during a 130-second capture. This compares the initial launch stage, not equivalent full gameplay or menu timing.
+
+The upstream I/O worker uses priority 384. Compressed runs show sustained CPU use on that worker while the dialog main thread uses priority 610. Development build 3 tests priority 700 for container sources only, retaining upstream folder priority and affinity. It logs the requested priority and the actual setter result. Scheduling contention is a hypothesis until an equivalent compressed launch passes on hardware; the trial does not suppress the dialog or its watchdog.
+
+The diagnostic resident leaves the PS5 browser closed when loaded. Tests send the ordinary Play request from the PC; the Media shortcut can still open the PS5 page explicitly. Existing prepared copies can receive the trial reader through the normal upgrade from the exact read-back development-2 reader size and hash. Unknown predecessors remain refused.

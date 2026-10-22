@@ -450,6 +450,9 @@ int bp_source_disconnect(struct bp_source *p){
 }
 int bp_source_close(struct bp_source *p){if(!p)return 0;int result=bp_source_disconnect(p);free(p->lookup);free(p->map_bytes);memset(p,0,sizeof *p);free(p);return result;}
 uint64_t bp_source_network_bytes(const struct bp_source *p){return p?p->network:0;}
+int bp_source_worker_priority(const struct bp_source *p,int upstream){
+    return p&&p->ready&&!p->failed&&p->selected.source_kind==BW_PROVIDER_CONTAINER?700:upstream;
+}
 uint64_t bp_source_cache_hits(const struct bp_source *p){return p?p->cache.hits:0;}
 void bp_source_performance(const struct bp_source *p,struct bp_source_performance *out){
     if(!out)return;if(!p){memset(out,0,sizeof *out);return;}*out=p->performance;

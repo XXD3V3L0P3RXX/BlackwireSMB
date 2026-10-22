@@ -103,7 +103,7 @@ static void fixture(void){
     selected.manifest_hash=bw_manifest_fnv1a64(map+40,map_size-40);selected.source_kind=1;selected.source_policy=1;
     CHECK(!bw_reader_selection_serialize(&selected,selection,sizeof selection,&selection_size));bw_share_clear(&cfg);
 }
-static struct bp_source *open_source(void){struct bp_source *p=NULL;CHECK(!bp_source_open(&p,map,map_size,selection,selection_size,share,sizeof share-1,guard,&canceled));CHECK(p);return p;}
+static struct bp_source *open_source(void){struct bp_source *p=NULL;CHECK(!bp_source_open(&p,map,map_size,selection,selection_size,share,sizeof share-1,guard,&canceled));CHECK(p);unsigned before=reads+opens+stat_calls+fstat_calls;CHECK(bp_source_worker_priority(p,384)==384);CHECK(before==reads+opens+stat_calls+fstat_calls);return p;}
 static void set_stream_size(uint64_t size){
     stream_size=size;for(unsigned i=2;i<20;i++)put64(map+40+i*32+16,size+i-2);
     selected.manifest_hash=bw_manifest_fnv1a64(map+40,map_size-40);put64(map+32,selected.manifest_hash);

@@ -282,8 +282,8 @@
       "sha256": "de58ef1b68bb1430e77a99a1eee3c0936f0ffec0de3ae9ca7be048402ac1fda4"
     },
     "src/blackwire/library/main.c": {
-      "bytes": 40817,
-      "sha256": "df12a08d6ff5901b70cd23820ab23bdcba247bdf6a79174e5e4274e0a889f22c"
+      "bytes": 40860,
+      "sha256": "d2cb757532fcb03e6cfe3b2bf1618c03d7a76110eb53c01de08de9cf3f6465b0"
     },
     "src/blackwire/library/Makefile": {
       "bytes": 246,
@@ -606,8 +606,8 @@
       "sha256": "8a00abc182be715d47d6786e098c23d49a555a41f534300477c6693dce5dd0a8"
     },
     "src/blackwire/library/preload_bundle.c": {
-      "bytes": 46892,
-      "sha256": "01b6a8a9714d12162759a5773daf1a7bec8ce4b21459982259d394c04d14ab3a"
+      "bytes": 47133,
+      "sha256": "5d4d6c3019eedaea7834245dfa017a6ee88aed189239b944fd4a4c4589a68bad"
     },
     "src/blackwire/library/preload_bundle.h": {
       "bytes": 5611,
@@ -862,20 +862,20 @@
       "sha256": "b58a998a4f1a5f69ce83f9048d00a4110d6cc510595afdfd2210c2f111016e7c"
     },
     "src/blackwire/reader/preload/runtime.cpp": {
-      "bytes": 23943,
-      "sha256": "ff2cfa2daf212daab8e14d9c1dd47e8855490536733d6bdcb2523a3e25ab706a"
+      "bytes": 24266,
+      "sha256": "3b75b182e53c39df486f9f606c966d68f773fa1bf36e2ad3f1491ff0913e5efe"
     },
     "src/blackwire/reader/preload/runtime.h": {
-      "bytes": 1454,
-      "sha256": "e2b7bba710bc042cc2f599245d8caa1903d24335987bc949d5bff9a8da18ffcb"
+      "bytes": 1563,
+      "sha256": "1b89396058d3ce6972c85eebf40f871da6e988a88419d8755f8922ab83912659"
     },
     "src/blackwire/reader/preload/source.c": {
-      "bytes": 28872,
-      "sha256": "9292dbff580365db0ff0bd5c6afb111bc8358801ec694ea6553abb98a021142f"
+      "bytes": 29045,
+      "sha256": "61f8e084dda092acd3e0d63eb8bab2bcfee0cb89e50f1bd6ed1477d61d2d336f"
     },
     "src/blackwire/reader/preload/source.h": {
-      "bytes": 7814,
-      "sha256": "501bc893b3e1b167e0680da7ce8bb1cb4e5c9385e98670b98b668d8d40624d91"
+      "bytes": 8102,
+      "sha256": "4599b0397c060ddb41a954f2a1702963e34488f66e02a262839c97e9e4a5c218"
     },
     "src/blackwire/streamreader/asset_prepare.h": {
       "bytes": 4842,
@@ -1266,8 +1266,8 @@
       "sha256": "18c6bab82ca3bfe1bbe28ed2998cbe8a4fc2c8462697974170afbea8d58e6d29"
     },
     "tools/build/app.py": {
-      "bytes": 9345,
-      "sha256": "404d9929e35b91c08a14f48c0711dee878b1edf24256d4d001af3feb1a3bcee9"
+      "bytes": 9558,
+      "sha256": "6c07393d25bc45878ae6e5ddaca9e5716c0c1715b8753bbfe9959b83a300bf55"
     },
     "tools/build/common.py": {
       "bytes": 4240,
@@ -1290,8 +1290,8 @@
       "sha256": "4fc32adadb4d4137779d72b51254c50b9823db8b3119092f9f229b2ff595e0c5"
     },
     "tools/build/reader_patch.py": {
-      "bytes": 11859,
-      "sha256": "cd399e75986d8024c33b45fb36667a93dbb91240916301111a87a8027dc8c72c"
+      "bytes": 12211,
+      "sha256": "9e1f535624d2cb59c22ed0f1df33340df9dfb29a8adde70bf0b88763594c05df"
     },
     "tools/build/sdk_runtime.py": {
       "bytes": 11202,
@@ -1652,8 +1652,8 @@
       "sha256": "93e5f9dce4372104d563f0bcde4fae493888ef69518297abf7b33eec7aa76fa0"
     },
     "tests/reader/source_test.c": {
-      "bytes": 30888,
-      "sha256": "d209924e5a98763191d3eb69f90b04e01dd22884c24d019179592b10255311fe"
+      "bytes": 31034,
+      "sha256": "dc4cda68fbfaef12d14cb12e86380b4bcc716b9e152c7c48785ee93462378a33"
     },
     "tests/compressed/check_reader.py": {
       "bytes": 2392,
@@ -1672,8 +1672,8 @@
       "sha256": "1dc4db809c6b5c8b099727b064643173bccf3c5061130a98e1691ee79f08816f"
     },
     "tests/compressed/reader_test.c": {
-      "bytes": 11126,
-      "sha256": "127624192e55b1a0e3ec8b23512d75b4d9bf9dc226d7a739ef97d9501a2b65af"
+      "bytes": 11244,
+      "sha256": "114c0fde2b8e834c1ce31ce2a2720b811890b2b62a63e6615836900dca4dd755"
     },
     "tests/reader/cache_equivalence.c": {
       "bytes": 3400,

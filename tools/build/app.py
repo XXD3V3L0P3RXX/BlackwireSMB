@@ -30,6 +30,9 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
         # Preserve the accepted standalone Media path in the resident entry.
         if row["label"] == "compile-00":
             argv.insert(1, "-DBW_MEDIA_PUBLIC_TRIAL=1")
+            # Diagnostic development runs launch games from the PC browser.
+            # The PS5 Media shortcut remains available when explicitly opened.
+            argv.insert(1, "-DBW_TEST_PC_BROWSER_ONLY=1")
         # Only these existing translation units consume the startup broker.
         # Other translation units retain their original compile flags.
         if row["label"] in ("compile-00", "compile-01"):
@@ -117,7 +120,7 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
     for row in commands:
         argv = [expand(value) for value in row["argv"]]
         if row["label"] == "compile-00":
-            argv.insert(1, '-DBW_RESIDENT_BUILD_ID="blackwire-compressed-loading-dev.2"')
+            argv.insert(1, '-DBW_RESIDENT_BUILD_ID="blackwire-compressed-loading-dev.3"')
         if row is link:
             argv = sdk_runtime.link_arguments(root, out, argv, runtime)
         if "-o" in argv:

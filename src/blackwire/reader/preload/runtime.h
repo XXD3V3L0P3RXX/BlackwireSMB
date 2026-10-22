@@ -13,6 +13,8 @@ bool bp_metadata_prepare();
 bool bp_runtime_metadata_ready();
 /* Source-owned Ampr worker calls. No SMB or allocation in open/match. */
 bool bp_worker_initialize();
+int bp_worker_priority(int upstream);
+void bp_worker_priority_report(int upstream,int requested,int result);
 void bp_worker_finish();
 bool bp_runtime_ready();
 bool bp_runtime_failed();
