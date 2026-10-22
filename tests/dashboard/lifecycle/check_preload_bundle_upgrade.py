@@ -94,7 +94,7 @@ def main():
     linked=out/'bundle-image.sdk.o';run('sdk-bundle-image-link',[sdk/'bin/ld.lld','-r',out/'preload_bundle.sdk.o',image_obj,'-o',linked])
     backend_imports=run('sdk-backend-imports',['nm','-u',out/'native_backend.sdk.o'])
     reader_imports=run('sdk-reader-imports',['nm','-u',out/'native-reader.sdk.o'])
-    if 'bw_preload_bundle_upgrade_checked' not in backend_imports or 'bw_preload_bundle_upgrade_workspace' not in backend_imports:raise ValueError('Backend does not call upgrade/workspace guards')
+    if 'bw_preload_bundle_upgrade_controlled' not in backend_imports or 'bw_preload_bundle_upgrade_workspace' not in backend_imports:raise ValueError('Backend does not call controlled upgrade/workspace guards')
     if 'bw_preload_bundle_verify_checked' not in reader_imports or 'bw_preload_bundle_install' in reader_imports:raise ValueError('Reader second check is not verify-only')
     external={}
     for dep in dependencies:
