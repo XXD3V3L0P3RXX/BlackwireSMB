@@ -50,3 +50,11 @@ This is development work and is not part of the published folder-only preview.
 The SDK build, reader host checks, two-source selection/settings checks, and
 web form tests are recorded in the build outputs. Live qualification of the
 combined library and the updated payload is still required before release.
+
+## Library refresh and console controls (development 9)
+
+The main library has a visible Refresh library button. It uses the existing authenticated POST /api/refresh operation to rescan both configured shares; merely polling the combined catalog does not discover moved source files. The button reports scanning, completion and refusal, and stays blocked with a visible explanation while a game or file operation is active. No source files or console registrations are moved or removed by the UI.
+
+The PS5 browser is identified by its PlayStation user agent or the console loopback Media URL. It shows controller hints instead of PC keyboard instructions. Square opens Details through the standard gamepad mapping. Native Circle history Back dismisses a confirmation, Details, Settings or Help before requesting window.close at the library. A same-page history entry avoids navigating away before panels close; an initial WebKit popstate does not close the page. Native Circle owns Back when that history path is available, avoiding duplicate gamepad/history consumption. Controller navigation can reach the visible refresh and header controls. PC keyboard behavior stays available in PC browsers.
+
+Offline checks exercise the actual embedded page, authenticated one-shot refresh, removed-source results, refused refresh without replay, blocked-game explanations, console/PC hints, initial popstate, panel Back, root close and duplicate Circle avoidance. Physical PS5 Circle behavior still needs an on-console check of the deployed build.

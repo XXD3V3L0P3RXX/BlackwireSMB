@@ -54,6 +54,11 @@ class SharedUiTests(unittest.TestCase):
                                  str(ROOT / "desk/index.html")], text=True, capture_output=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_visible_rescan_and_console_specific_hints_and_back(self):
+        result = subprocess.run(["node", str(ROOT / "desk/tests/library_controls_dom_harness.js"),
+                                 str(ROOT / "desk/index.html")], text=True, capture_output=True, encoding="utf-8")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_dashboard_setup_failure_keeps_prepared_play_without_resending(self):
         self.behavior('''
 const c=catalogFixture(),item=c.items[0];item.startupReady=true;item.canPlay=true;item.canSend=false;

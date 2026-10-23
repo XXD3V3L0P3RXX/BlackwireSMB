@@ -132,6 +132,7 @@
 .check{display:flex;gap:16px;justify-content:space-between;margin-top:8px}
 .check strong{font-weight:500}
 .empty{color:var(--muted);margin:16px 0;font-size:14px}
+.refresh-status{margin:0 0 12px;color:var(--muted);font-size:13px}
 .bad{color:var(--red)}.ok{color:var(--green)}
 .preparation-indeterminate .bar span{width:24%!important;animation:production-progress 1.8s ease-in-out infinite alternate}
 @keyframes production-progress{from{transform:translateX(0)}to{transform:translateX(310%)}}
@@ -180,11 +181,13 @@
         <button class="tab" role="tab" id="filter-not-ready" data-f="notready" aria-controls="games" type="button" aria-selected="false">Not ready</button>
       </div>
       <span class="count" id="resultCount"></span>
+      <button id="refreshLibrary" class="btn btn-ghost small" type="button" disabled>Refresh library</button>
       <div class="search"><input id="search" placeholder="Search games" autocomplete="off"><span class="x" id="clearSearch" role="button" tabindex="0" aria-label="Clear search">×</span></div>
     </div>
+    <p id="libraryRefreshStatus" class="refresh-status" role="status" aria-live="polite" hidden></p>
     <div class="rail" id="games" data-layout="carousel" aria-label="Game covers" aria-describedby="controllerHint"></div>
     <p id="empty" class="empty" hidden></p>
-    <div class="hint" id="controllerHint"><kbd>←</kbd> <kbd>→</kbd> browse &nbsp; <kbd>Enter</kbd> main action &nbsp; <kbd>D</kbd> details</div>
+    <div class="hint" id="controllerHint"><span id="keyboardHint" hidden><kbd>←</kbd> <kbd>→</kbd> browse &nbsp; <kbd>Enter</kbd> main action &nbsp; <kbd>D</kbd> details</span><span id="consoleHint" hidden>D-pad: browse · ✕: select · □: details · ○: back / close browser</span></div>
   </div>
 </main>
 
@@ -220,7 +223,7 @@
   <p><b>Network:</b> use wired Ethernet and keep the PC awake while playing.</p>
   <details class="library-options"><summary>Library options</summary>
     <div class="advanced-tabs"><button class="tab" id="filter-pc" role="tab" type="button" aria-controls="games">PC</button><button class="tab" id="filter-console" role="tab" type="button" aria-controls="games">Console</button><button class="tab" id="filter-removed" role="tab" type="button" aria-controls="games">Removed</button></div>
-    <div class="row"><button id="layoutCarousel" class="btn btn-ghost small" type="button" aria-pressed="true">Carousel</button><button id="layoutGrid" class="btn btn-ghost small" type="button" aria-pressed="false">Grid</button><button id="refreshLibrary" class="btn btn-ghost small" type="button">Refresh library</button><button id="reloadSetup" class="btn btn-ghost small" type="button" hidden>Refresh connection</button></div>
+    <div class="row"><button id="layoutCarousel" class="btn btn-ghost small" type="button" aria-pressed="true">Carousel</button><button id="layoutGrid" class="btn btn-ghost small" type="button" aria-pressed="false">Grid</button><button id="reloadSetup" class="btn btn-ghost small" type="button" hidden>Refresh connection</button></div>
     <div id="checks"></div><p id="note" role="status" aria-live="polite">Checking Blackwire…</p>
   </details>
   <div class="row"><button class="btn btn-ghost" type="button" id="closeHelp">Close</button></div>
@@ -508,10 +511,13 @@
         }
         return watch;
       }
-      function browserHandoff(location,navigator) {
+      function consoleBrowser(location,navigator) {
         var host=String(location && location.hostname || "").toLowerCase();
-        var eligible=host === "127.0.0.1" || host === "::1" || host === "[::1]"
+        return host === "127.0.0.1" || host === "::1" || host === "[::1]"
           || /\bPlayStation\b/i.test(String(navigator && navigator.userAgent || ""));
+      }
+      function browserHandoff(location,navigator) {
+        var eligible=consoleBrowser(location,navigator);
         var accepted=null, attempted=Object.create(null), attempts=0, visible=false;
         var streamObserved=false, initialRun="", latestRun="", visibleRun="";
         return {
@@ -674,7 +680,7 @@
         function pressed(index) {var button=buttons[index];return button && (button.pressed === true || typeof button.value === "number" && button.value >= .5);}
         if (pad && pad.connected !== false && pad.mapping === "standard" && buttons && buttons.length >= 16) {
           command=pressed(14) ? "ArrowLeft" : pressed(15) ? "ArrowRight" : pressed(12) ? "ArrowUp" : pressed(13) ? "ArrowDown"
-            : pressed(0) ? "Confirm" : pressed(1) ? "Back" : "";
+            : pressed(0) ? "Confirm" : pressed(1) ? "Back" : pressed(2) ? "Details" : "";
           if (!command && axes && axes.length >= 2 && typeof axes[0] === "number" && isFinite(axes[0]) && typeof axes[1] === "number" && isFinite(axes[1]))
             command=axes[0] < -.65 ? "ArrowLeft" : axes[0] > .65 ? "ArrowRight" : axes[1] < -.65 ? "ArrowUp" : axes[1] > .65 ? "ArrowDown" : "";
         }
@@ -813,7 +819,7 @@
       }
       var api = { dashboardLibrary:dashboardLibrary,libraryGames:libraryGames,dashboardBody:dashboardBody,dashboardAccepted:dashboardAccepted,dashboardPost:dashboardPost,dashboardWatch:dashboardWatch,dashboardBusy:dashboardBusy,browserHandoff:browserHandoff,
         preparationPanel:preparationPanel,preparationNotifications:preparationNotifications,validPreparation:validPreparation,
-        failure:failure, canRefresh:canRefresh, elapsedLabel:elapsedLabel, sessionPanel:sessionPanel, sessionNotice:sessionNotice, active: active, activeJobs: activeJobs, connection:connection, readState:readState, readAppState:readAppState, setupPresentation:setupPresentation, setupBody:setupBody, setupResult:setupResult, preparationBody:preparationBody, playBody:playBody, dashboardLaunch:dashboardLaunch, orderedGames:orderedGames, controllerStep:controllerStep, ready:ready, matches: matches, counts:counts, actions: actions, saveSetup:saveSetup };
+        failure:failure, canRefresh:canRefresh, consoleBrowser:consoleBrowser, runningGameReason:runningGameReason, elapsedLabel:elapsedLabel, sessionPanel:sessionPanel, sessionNotice:sessionNotice, active: active, activeJobs: activeJobs, connection:connection, readState:readState, readAppState:readAppState, setupPresentation:setupPresentation, setupBody:setupBody, setupResult:setupResult, preparationBody:preparationBody, playBody:playBody, dashboardLaunch:dashboardLaunch, orderedGames:orderedGames, controllerStep:controllerStep, ready:ready, matches: matches, counts:counts, actions: actions, saveSetup:saveSetup };
       root.BlackwireView = api;
       if (typeof module !== "undefined" && module.exports) module.exports = api;
     })(typeof window !== "undefined" ? window : globalThis);
@@ -847,6 +853,11 @@
       var pending = null;
       var operationWatch = null;
       var browserHandoff = view.browserHandoff(window.location,window.navigator);
+      var consoleClient = view.consoleBrowser(window.location,window.navigator);
+      var consoleHistoryBack = false;
+      var libraryRefresh = null;
+      document.getElementById("keyboardHint").hidden=consoleClient;
+      document.getElementById("consoleHint").hidden=!consoleClient;
       var dismissedSessionKey = "";
       var notice = null;
       var preparationIssue = null;
@@ -1297,7 +1308,17 @@
         document.getElementById("settingsDot").style.background=statusFresh && saved && link.online && !setup.busy && setup.phase !== "error" ? "var(--green)" : "var(--amber)";
         document.getElementById("settingsConnection").className="conn-state"+(statusFresh && saved && link.online && !setup.busy && setup.phase !== "error" ? "" : " is-warning");
         text(document.getElementById("savedPasswordHint"),saved && settings.passwordSaved === true ? "A password is saved. Type a new one only if you changed it on the PC." : "Use the account password that can read the share.");
-        control(document.getElementById("refreshLibrary"),statusFresh && (value.dashboardRequired ? !pending : view.canRefresh(value,pending)));
+        var refreshing=(value.library || {}).phase === "scanning" || libraryRefresh && libraryRefresh.pending;
+        var refreshButton=document.getElementById("refreshLibrary"),refreshStatus=document.getElementById("libraryRefreshStatus");
+        var refreshMessage=!statusFresh ? "Connect to Blackwire to refresh the library." : refreshing ? "Checking shared folders for added, moved or removed games…"
+          : view.active(value.stream || {}) ? view.runningGameReason(value,"refresh the library")
+          : view.dashboardBusy(value) || view.activeJobs(value).length ? "Wait for the current game operation before refreshing."
+          : setup.busy ? "Wait for the PC connection check before refreshing." : libraryRefresh && libraryRefresh.error || "";
+        if(!refreshMessage && libraryRefresh && !libraryRefresh.pending && (value.library || {}).generation > libraryRefresh.generation)
+          refreshMessage=(value.library || {}).phase === "ready" && !(value.library || {}).stale ? "Library updated." : "Library refresh failed. Check the PC connection and try again.";
+        control(refreshButton,statusFresh && view.canRefresh(value,pending));
+        text(refreshButton,refreshing ? "Refreshing…" : "Refresh library");text(refreshStatus,refreshMessage);refreshStatus.hidden=!refreshMessage;
+        refreshButton.setAttribute("aria-describedby",refreshMessage ? "libraryRefreshStatus" : "");
         var supported=setup.supported === true;
         var editable=statusFresh && supported && setup.editable && !setup.busy && !setupPosting && !pending && !nativeSaveOperation && !view.dashboardBusy(value);
         var accountChanged=typeof settings.user === "string" && smbUser.value.trim() !== settings.user;
@@ -1495,8 +1516,10 @@
           }
         }).catch(function (error) {
           if (automatic) automatic.failed(error);
+          if(url === "/api/refresh" && libraryRefresh)libraryRefresh.error=error.message;
           notice = { text: error.message, kind:"bad" };
         }).then(function () {
+          if(url === "/api/refresh" && libraryRefresh)libraryRefresh.pending=false;
           pending = null;
           if (state) show(state);
           load();
@@ -1601,6 +1624,7 @@
         controls.push(document.getElementById("closeDetails"));return controls;
       }
       function libraryNavigation(key) {
+        if(consoleClient && key === "Back") {consoleBack();return true;}
         var auxiliary=auxiliaryControls();
         if(auxiliary) {
           if(key === "Back") {if(document.getElementById("setupPanel").open)closeSettings();else closeHelp();return true;}
@@ -1611,7 +1635,21 @@
           return false;
         }
         var focused=document.activeElement, card=cards[selectedName];
-        if (!card || !focused) return false;
+        if (!focused) return false;
+        if(!detailsOpen && ["INPUT","TEXTAREA","SELECT"].indexOf(focused.tagName) === -1) {
+          var headerControls=["connectionChip","openSetup","openHelp"].map(function (id) {return document.getElementById(id);});
+          var railControls=["filter-all","filter-ready","filter-not-ready","refreshLibrary","search"].map(function (id) {return document.getElementById(id);}).filter(function (button) {return !button.disabled && button.getAttribute("aria-disabled") !== "true";});
+          var headerAt=headerControls.indexOf(focused),railAt=railControls.indexOf(focused);
+          if(headerAt !== -1 || railAt !== -1) {
+            var group=headerAt !== -1 ? headerControls : railControls,at=headerAt !== -1 ? headerAt : railAt;
+            if(key === "ArrowLeft" || key === "ArrowRight") {group[(at+(key === "ArrowRight" ? 1 : -1)+group.length)%group.length].focus();return true;}
+            if(card && (key === "ArrowDown" || key === "ArrowUp")) {
+              if(headerAt !== -1 || key === "ArrowUp")focusActions();else card.select.focus();return true;
+            }
+          }
+        }
+        if (!card) return false;
+        if(key === "Details" && !detailsOpen) {setDetailsOpen(true,true);return true;}
         if(detailsOpen) {
           if(key === "Back") {if(removalConfirmation)cancelRemoval(true);else setDetailsOpen(false,true);return true;}
           if(removalConfirmation && (key === "ArrowLeft" || key === "ArrowRight")) {
@@ -1625,6 +1663,7 @@
         }
         var onHero=focused === document.getElementById("heroPrimary") || focused === document.getElementById("heroDetails");
         if(onHero) {
+          if(key === "ArrowUp") {document.getElementById("connectionChip").focus();return true;}
           if(key === "ArrowDown" || key === "Back") {card.select.focus();return true;}
           if(key === "ArrowLeft" || key === "ArrowRight") {document.getElementById(focused === document.getElementById("heroPrimary") ? "heroDetails" : "heroPrimary").focus();return true;}
           return false;
@@ -1632,6 +1671,7 @@
         var onCover=games.contains(focused) || focused === document.body;
         var inActions=card.details.contains(focused);
         if (!onCover && !inActions) return false;
+        if(onCover && layout === "carousel" && key === "ArrowDown") {document.getElementById("filter-all").focus();return true;}
         if(onCover && layout === "carousel" && key === "ArrowUp") {
           var primary=document.getElementById("heroPrimary");
           (primary.getAttribute("aria-disabled") !== "true" ? primary : document.getElementById("heroDetails")).focus();return true;
@@ -1653,6 +1693,31 @@
           else card.select.focus();
         } else return false;
         return true;
+      }
+      function consoleBack() {
+        if(removalConfirmation)cancelRemoval(true);
+        else if(detailsOpen)setDetailsOpen(false,true);
+        else if(document.getElementById("setupPanel").open)closeSettings();
+        else if(!document.getElementById("helpOverlay").hidden)closeHelp();
+        else {try {window.close();}catch(error){ /* The native browser can still be closed with its own controls. */ }}
+      }
+      // PS5 Circle navigates browser history rather than sending Escape.
+      // One same-page entry lets each press dismiss a panel before closing.
+      if(consoleClient && window.history && typeof window.history.pushState === "function" && typeof window.history.replaceState === "function") {
+        var consolePath=window.location.pathname;
+        var consoleEntry=function (level) {return {blackwireConsole:consolePath,level:level};};
+        try {
+          if(!window.history.state || window.history.state.blackwireConsole !== consolePath || window.history.state.level !== 1) {
+            window.history.replaceState(consoleEntry(0),"",window.location.href);
+            window.history.pushState(consoleEntry(1),"",window.location.href);
+          }
+          window.addEventListener("popstate",function (event) {
+            if(!event.state || event.state.blackwireConsole !== consolePath || event.state.level !== 0)return;
+            consoleBack();
+            try {window.history.pushState(consoleEntry(1),"",window.location.href);}catch(error){}
+          });
+          consoleHistoryBack=true;
+        }catch(error){ /* Gamepad Back and the native browser remain available. */ }
       }
       document.addEventListener("keydown",function (event) {
         var auxiliary=auxiliaryControls();
@@ -1679,6 +1744,7 @@
         if (pads) for(var i=0;i<Math.min(pads.length,4);i++) if(pads[i] && pads[i].connected !== false && pads[i].mapping === "standard") {pad=pads[i];break;}
         controllerState=view.controllerStep(controllerState,pad,now);
         if (controllerState.action && !document.hidden && (!document.hasFocus || document.hasFocus()) && now-keyboardAt > 600
+          && !(consoleHistoryBack && controllerState.action === "Back")
           && focused && ["INPUT","TEXTAREA","SELECT"].indexOf(focused.tagName) === -1) {
           if (!libraryNavigation(controllerState.action) && controllerState.action === "Confirm" && focused.tagName === "BUTTON"
             && !focused.disabled && focused.getAttribute("aria-disabled") !== "true") focused.click();
@@ -1761,8 +1827,9 @@
         search.focus();
       });
       document.getElementById("refreshLibrary").addEventListener("click", function () {
-        if (state && state.dashboardRequired) {load();return;}
-        if (state && view.canRefresh(state,pending)) requestAction("/api/refresh", {}, "Reading the PC library…");
+        if (!statusFresh || !state || !view.canRefresh(state,pending))return;
+        libraryRefresh={generation:(state.library || {}).generation || 0,pending:true,error:""};
+        requestAction("/api/refresh", {}, "Reading the PC library…");
       });
       renderSetup();
       load();
