@@ -35,6 +35,9 @@ async function check() {
   app=page(fixture({canPlay:false,playReason:'The reader update could not be checked.'}));await settle();
   assert(app.get('heroPrimary').disabled);assert.strictEqual(app.get('heroReason').textContent,'The reader update could not be checked.');
   app.get('heroPrimary').click();assert.strictEqual(app.postCount(),0);
+  assert(app.get('heroReason').className.includes('blocked'),'A disabled action must expose its reason without clicking its status');
+  assert.strictEqual(app.get('heroPrimary').getAttribute('aria-describedby'),'heroReason');
+  assert.strictEqual(app.get('heroStatus').getAttribute('aria-expanded'),'true');
   app.get('heroDetails').click();assert(!app.get('selectedGame').hidden);assert(app.get('librarySurface').inert);
   app.get('closeDetails').click();assert(app.get('selectedGame').hidden);
 
@@ -52,6 +55,26 @@ async function check() {
   assert.strictEqual(app.focused(),app.get('closeHelp'));assert(app.key('Tab').prevented);
   app.key('Escape');assert(app.get('helpOverlay').hidden);assert.strictEqual(app.focused(),app.get('openHelp'));
   assert.strictEqual(app.postCount(),0);
+
+  // Both PC Play and adopted PS5 home-screen sessions name the active game.
+  for(const pcLaunch of [false,true]) {
+    const c=fixture({startupReady:false,canPlay:false,canSend:false,sendReason:'Wait for the current operation to finish.'});
+    const liveId='pc:PPSA90002:'+'c'.repeat(64),binding='PPSA90002_'+'c'.repeat(64);
+    c.items.push({id:liveId,title:'Project Racer',titleId:'PPSA90002',source:'Racer/PPSA90002.ffpfsc',kind:1,startupReady:true,canPlay:false,canSend:false,playReason:'',sendReason:'',cover:'/api/dashboard/cover?id='+liveId});
+    if(pcLaunch)Object.assign(c.operation,{active:true,phase:'running',action:'play',id:'b'.repeat(32),itemId:liveId,title:'Project Racer',message:'Game launched.',
+      preparation:{jobId:'',jobState:'',message:'',observed:false,phase:0,files:0,filesTotal:0,bytes:0,bytesTotal:0,ready:false}});
+    const running=nativeState();running.stream={phase:'running',game:'Racer/PPSA90002.ffpfsc',sourceBinding:binding,runId:'b'.repeat(32),canClose:true,gamePid:123,readerPid:123};
+    app=page(c,[running,clone(running),clone(running)]);await settle();
+    app.get('search').value='Project game';app.get('search').fire('input');
+    assert.strictEqual(app.get('heroStatusLabel').textContent,'Not ready');
+    assert.strictEqual(app.get('heroReason').textContent,'Close Project Racer to send files.');
+    assert(!app.get('heroReason').hidden&&app.get('heroReason').className.includes('blocked'));
+    assert(app.get('heroPrimary').disabled);app.get('heroPrimary').click();assert.strictEqual(app.postCount(),0);
+    app.get('heroStatus').click();assert(app.get('heroReason').className.includes('blocked'),'The required explanation must stay visible');
+  }
+  app=page(fixture({startupReady:false,canPlay:false,canSend:true}));await settle();
+  assert(!app.get('heroPrimary').disabled&&app.get('heroReason').hidden);
+  assert(!app.get('heroReason').className.includes('blocked'));assert.strictEqual(app.postCount(),0);
 
   // Filtering away the selected source cannot leave a stale live Hero action.
   app.get('search').value='No matching game';app.get('search').fire('input');assert(app.get('heroCopy').hidden);

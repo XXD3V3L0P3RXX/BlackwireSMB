@@ -1,6 +1,6 @@
 # Two shared folders
 
-The development build `blackwire-two-sources-dev.7` can scan two SMB shares on
+The development build `blackwire-two-sources-dev.8` can scan two SMB shares on
 the same PC, using the same sign-in details. The second share is optional.
 
 For separate extracted and compressed libraries, use this layout:
@@ -33,6 +33,12 @@ or oversized artwork uses the existing placeholder.
 Normal Finish setup recognizes the exact readers installed by compressed
 development 5 and two-source development 6. Their bytes and sizes are pinned;
 unknown or altered libraries remain refused. Existing startup files are kept.
+
+When a game blocks Send files, the selected game now shows the running title
+and the action needed, for example: "Close MX vs ATV Legends to send files."
+Blocked-action explanations are visible automatically beside the selected
+game's status, without opening the status badge. The existing session guard
+still prevents preparation while another game is active.
 
 Keeping compressed games in one folder and extracted games in the other is a
 useful arrangement. Moving a PC source changes its identity; this feature does
