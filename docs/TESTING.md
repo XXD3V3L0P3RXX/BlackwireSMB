@@ -1,10 +1,40 @@
 # Observed results and limits
 
-This preview's test record distinguishes copied files, a running game process, a visible menu, gameplay and user-confirmed controls. Reaching a main/start menu counts as a startup pass; a process or loading screen alone does not.
+This record distinguishes copied files, a running game process, a visible menu, gameplay and user-confirmed controls. Reaching a main/start menu counts as a startup pass; a process or loading screen alone does not. Results belong to their exact resident/reader pair.
 
 No title-specific compatibility blocker has been identified in testing so far. The limited coverage below does not establish that every title or every stage of a title will work.
 
-## Current update
+## Compressed and two-share preview
+
+`v0.2.0-preview.1` packages the tested `blackwire-two-sources-dev.11` runtime without changing its bytes. Its runtime source commit is `f490e1917a1f1393d0948b24b9d93d03eee9e95b`; later release changes are documentation and packaging.
+
+| Artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| Current standalone Blackwire ELF | 5738856 | b9189c87cdb88d3ad0fccc947d0d007185bb0cfa1b39e8edb585c96347411fd9 |
+| Embedded page | 150929 | d1d033c7b35d31fbab2a67c14dce3d215f775104dd4329ef7aa16789b545c28c |
+| Embedded per-game reader | 831168 | c9d069b520c367c971e52432a053d7105a7019cb19ee97185120bffb6190e025 |
+
+| Check | Observed result and scope |
+| --- | --- |
+| Build and source stability | Full source SDK build, 144 successful commands, unchanged inputs across the build. No console is contacted by the builder. |
+| UI regression suite | 90 checks passed, including actual-page refresh, refusal without replay, running-title explanations, console/PC hints, legacy Back events and duplicate-channel handling. Synthetic window-close behavior is not proof of Sony browser behavior. |
+| Exact deployment | Stored ELF and served page matched the candidate bytes. Saved two-share settings and the reader were unchanged. No console restart was performed for this UI update. |
+| Native root Circle | User confirmed a fresh Media launch followed by Circle returned to the PS5 dashboard. |
+| Native Details Circle | User confirmed Details closed and the library stayed open. Physical Settings/Help checks were not repeated. |
+| Extra Close browser button | User selected it with X; it stayed open. This control is not qualified. Use Circle; button removal is planned for the next build. |
+| Library refresh | The authenticated rescan progressed through scanning to a new catalog. A removed PC source was absent; a separate local console copy remained correctly visible. No game preparation or registration was manually reconnected. |
+| Running-game blockers | PC and PS5 pages named the running RE4 session in the disabled Send/Refresh reasons. No blocked Send was submitted. |
+| Bounded startup observation | A 150-second replacement capture, excluding the first two seconds of backlog, contained no new Watchdog:55, BWREAD_FAIL1, Fatal trap, SIGSYS or SIGBUS markers. This covers resident replacement/idle UI, not gameplay. |
+
+The same reader was introduced in two-source development 7. Both SMB shares appeared together, seven prepared copies became Ready with their valid startup files reused, and GTA/RE7 covers were decoded from their compressed images. GTA reached Continue and RE7 reached Start Game. Each 150-second initial-launch capture had zero watchdog or reader-failure markers. The operator was away from the controller; full gameplay and literal Games-tile launch were not qualified on that reader. The current UI observation had nine Ready entries among thirteen total; Ready counts alone do not qualify gameplay.
+
+Earlier `blackwire-compressed-loading-dev.5` used reader SHA-256 `135148e2de73b5b54d6f18dbfb95c1f2cd2d7d7e3e6dac60b756e844e6cbc684`. With Game Compressor stopped, the user confirmed RE7 controllable gameplay after Continue/save loading and GTA driving after a PC-browser Play request, both without the system error. The user then confirmed driving without the error after a literal GTA Games-tab launch. RE7 dashboard launching was also reported to work; it has a less detailed contemporaneous capture record than GTA's explicit tile test. These are earlier gameplay observations, not new gameplay passes on the current combined-library reader.
+
+The background Game Compressor comparison supports CPU contention as a contributor to the earlier common-dialog failure. It does not establish RAM exhaustion or a sole cause. Format refusals, exact test methods, host measurements and remaining hardware checks are documented in [compressed-source results](COMPRESSED-DEVELOPMENT.md) and [two-share results](TWO-SOURCES-DEVELOPMENT.md).
+
+## Folder-only preview
+
+The following records belong to `v0.1.0-preview.1` and its earlier working binaries. They are retained as historical evidence rather than current-package gameplay qualification.
 
 | Artifact | Bytes | SHA-256 |
 | --- | ---: | --- |
@@ -61,7 +91,7 @@ Routine resident status does not expose a game-to-controller data witness for ev
 
 ## Earlier results
 
-Earlier web-only builds reached a Hot Wheels race and GTA Story Mode loading at 90%. Earlier development reader/resident versions reached RE7 gameplay, a full Hot Wheels round, MK11's start screen and an NFS race. MX reached a loading/startup screen; a completed menu is not confirmed. A full local GTA copy worked; streamed GTA menu/gameplay remains unconfirmed. These observations belong to their actual versions and do not qualify every title on this preview.
+Earlier web-only builds reached a Hot Wheels race and GTA Story Mode loading at 90%. Earlier development reader/resident versions reached RE7 gameplay, a full Hot Wheels round, MK11's start screen and an NFS race. MX reached a loading/startup screen; a completed menu is not confirmed. A full local GTA copy worked; streamed GTA menu/gameplay was not confirmed for those folder-only artifacts. Later compressed GTA gameplay is recorded separately above. These observations belong to their actual versions and do not qualify every title on this preview.
 
 ## Performance
 
@@ -69,7 +99,7 @@ First preparation depends on game size and file count and can take several minut
 
 In one historical wired NFS comparison, Play to the first menu took 44.42 seconds and later loading to a drivable car took about 140 seconds. A later reader comparison took 55 seconds and about 142 seconds. It did not establish an improvement. Gameplay was reported as normal while menu and scene loading remained slower.
 
-There is no universal speed claim. This preview does not establish compatibility for all games, firmware, Wi-Fi networks, altered global libraries, compressed/container sources or console-crash recovery.
+There is no universal speed claim. This preview does not establish compatibility for all games, firmware, Wi-Fi networks, altered global libraries, arbitrary container layouts or console-crash recovery. The indexed cache and PFSC batching have host measurements; those are not PS5 load-time benchmarks.
 
 ## Release verification
 

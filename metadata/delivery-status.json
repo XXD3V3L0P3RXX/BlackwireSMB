@@ -1,50 +1,45 @@
 {
-  "kind": "blackwire-preview-delivery/1",
+  "kind": "blackwire-preview-delivery/2",
   "product": "Blackwire",
-  "version": "v0.1.0-preview.1",
+  "version": "v0.2.0-preview.1",
   "readyToPublish": true,
+  "publicationPendingChecks": false,
   "binaryIncludedInSourceRepository": false,
-  "nativeFrontendIncluded": false,
   "selectedApplication": {
-    "bytes": 5706512,
-    "sha256": "c4897f0078b8854d1c345587198bc33210d6d80c8c61d3fb290e9e8ff1c1f577"
+    "bytes": 5738856,
+    "sha256": "b9189c87cdb88d3ad0fccc947d0d007185bb0cfa1b39e8edb585c96347411fd9"
   },
   "selectedReader": {
-    "bytes": 798192,
-    "sha256": "d02f20f4ee8b1db1617e7b2c7ad4f76821e8b9da2523ac185a2e881ca33462be"
+    "bytes": 831168,
+    "sha256": "c9d069b520c367c971e52432a053d7105a7019cb19ee97185120bffb6190e025"
   },
+  "runtimeSourceCommit": "f490e1917a1f1393d0948b24b9d93d03eee9e95b",
   "sourceBuildPassed": true,
-  "sourceManifest": {
-    "bytes": 68840,
-    "sha256": "340290bbfbc48617b525c71ed4df244156b37a158b307bd69ae25da73aaa6a9a"
-  },
-  "buildManifest": {
-    "bytes": 9521,
-    "sha256": "a49fe2954ceb06b27bb424727996d63d4a8c0e79ce30656382c57f7ffa4233a1"
-  },
-  "relinkManifest": {
-    "bytes": 976,
-    "sha256": "a464c3f65412c5c48670942585fdc0abeb7cb1d4d9f16131feeb30b4b8b0c864"
-  },
   "publicationTarget": "https://github.com/XXD3V3L0P3RXX/BlackwireSMB",
   "knownLimits": [
-    "Loading performance varies; no all-game or zero-lag promise.",
-    "Updated ordinary Uninstall recovery passed host checks; hardware deletion remains unqualified.",
-    "Fresh-start automatic Media registration is not integrated; explicit same-ELF setup is documented."
+    "Extra Close browser button fails; use Circle. Removal planned for next build.",
+    "Earlier gameplay and current-reader initial menus have separate artifact identities.",
+    "Controlled PS5 loading benchmarks, broad coverage and hardware removal remain open.",
+    "Background CPU contention is a contributor; a sole system-dialog failure cause is not established."
   ],
   "excluded": [
-    "settings and credentials",
+    "credentials and settings",
     "private logs and captures",
-    "game files, game artwork assets and saves",
-    "console system libraries and keys",
-    "native Dashboard application",
-    "custom ShadowMount helper"
+    "game content and saves",
+    "external console libraries and keys",
+    "native Dashboard app",
+    "custom Media helper"
   ],
-  "documentationMedia": {
-    "screenshotsIncluded": false,
-    "readmeImagesEmbedded": false,
-    "video": "https://youtu.be/xIPHo9kespo",
-    "runtimeLogoRetained": true
+  "sourceManifest": {
+    "bytes": 71501,
+    "sha256": "8794a3d6d93a4743abf868595f3a77ac055294f397c243ee31f5dfbd898310f5"
   },
-  "publicationAuthor": "XXD3V3L0P3RXX"
+  "buildManifest": {
+    "bytes": 2887,
+    "sha256": "a89047a7cc3077d5fb8da27158351a5bbb7ae2586dd20889fb387fd97442be01"
+  },
+  "relinkManifest": {
+    "bytes": 1037,
+    "sha256": "8b973366057c51672986f9ecd669c00d918c6b7e0e6ea15a0f637bb89cd8426e"
+  }
 }

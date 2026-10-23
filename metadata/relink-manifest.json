@@ -1,31 +1,35 @@
 {
   "kind": "blackwire-public-relink-summary/1",
   "passed": true,
-  "files": 170,
-  "stripObjectCopies": 158,
+  "stripObjectCopies": 163,
+  "files": 175,
   "archive": {
-    "bytes": 7674712,
-    "sha256": "33eeeb80f9855254daaf29c9bda115ab653ef857ce12c29e01cba6084d338a5c"
+    "bytes": 7776636,
+    "sha256": "3e49070e35da1e2a2e858be931d9ae560ead3c9f6e1be672ea8c5cdaa1523c10"
   },
-  "application": {
-    "bytes": 5706512,
-    "sha256": "c4897f0078b8854d1c345587198bc33210d6d80c8c61d3fb290e9e8ff1c1f577"
+  "originalPackage": {
+    "bytes": 5738856,
+    "sha256": "b9189c87cdb88d3ad0fccc947d0d007185bb0cfa1b39e8edb585c96347411fd9"
   },
-  "reader": {
-    "bytes": 798192,
-    "sha256": "d02f20f4ee8b1db1617e7b2c7ad4f76821e8b9da2523ac185a2e881ca33462be"
+  "cleanMaterialRelinkPackage": {
+    "bytes": 5738856,
+    "sha256": "b9189c87cdb88d3ad0fccc947d0d007185bb0cfa1b39e8edb585c96347411fd9"
   },
-  "byteIdenticalRelinkPackage": true,
   "allocatedExecutableBytesIdentical": true,
   "runtimeRelocationSemanticsUnchanged": true,
-  "privateMarkers": 0,
+  "byteIdenticalRelinkPackage": true,
   "originalRawObjectsPreserved": true,
-  "rawPrivateObjectsIncluded": false,
+  "privateMarkers": 0,
+  "fullCleanBuildPlusFocusedRepair": false,
   "consoleContacted": false,
+  "published": false,
   "asset": "Blackwire-relink-materials.tar.gz",
-  "linkRecipe": "Blackwire-relink/application-link.json",
-  "sourceManifest": {
-    "bytes": 68840,
-    "sha256": "340290bbfbc48617b525c71ed4df244156b37a158b307bd69ae25da73aaa6a9a"
-  }
+  "rawPrivateObjectsIncluded": false,
+  "stripRecipe": [
+    "llvm-objcopy-18",
+    "--strip-debug",
+    "{INPUT}",
+    "{OUTPUT}"
+  ],
+  "linkRecipe": "Blackwire-relink/application-link.json"
 }

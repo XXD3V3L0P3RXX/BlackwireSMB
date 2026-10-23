@@ -2,9 +2,11 @@
 
 The ordinary flow is **Send files → Ready → PS5 Games icon**. Keep the Blackwire resident running and the PC share online throughout play. Use the [tested runtime](REQUIREMENTS.md), and check the [preview's results and limits](TESTING.md).
 
+`v0.2.0-preview.1` accepts extracted folders and the supported PFS/PFSC compressed layouts. Read the [format limits](COMPRESSED-DEVELOPMENT.md#formats); a `.ffpfsc` suffix alone is insufficient.
+
 ## Windows shared folder
 
-1. Put complete extracted games in separate folders below a parent such as `D:\PS5Games\<Game>`. Preserve each game's original files, names and directory structure.
+1. Put complete extracted games in separate folders below a parent such as `D:\PS5Games\<Game>`. Supported compressed images can stay in a separate parent such as `D:\Compressed\<Game>\<Title>.ffpfsc`. Preserve the source files and directory structure.
 2. On your trusted LAN, use the Windows Private network profile and enable File and printer sharing. Connect the PC and PS5 by wired Ethernet where possible. Keep the PC awake.
 3. Choose an account with an account password. A Windows Hello PIN is not an SMB password. Blackwire does not create a Windows account.
 4. Open the parent folder's **Properties → Sharing → Advanced Sharing**, enable sharing, and choose a share name such as `PS5Games`. Enter that share name in Blackwire, rather than the Windows drive path.
@@ -13,6 +15,19 @@ The ordinary flow is **Send files → Ready → PS5 Games icon**. Keep the Black
 7. Choose **Save and check connection**. **Refresh connection status** observes that check without saving again. The displayed connection result records the last check; it is not a continuous reachability guarantee.
 
 There is no Blackwire Python, Node or background service to install on the PC. Fresh configuration fields are blank. Saved nonsecret values can be displayed later, with a fixed `********` marker for a saved password. Password bytes are not returned to the browser.
+
+## Optional second share
+
+Share both parent folders on the same PC and give the same account read access to both. For example:
+
+| Blackwire setting | Share name | Example PC folder |
+| --- | --- | --- |
+| Shared folder name | `PS5Games` | `D:\PS5Games` |
+| Second shared folder | `PS5Compressed` | `D:\Compressed` |
+
+Enter share names, not drive paths. Save and check connection reads both shares before saving; a failed check keeps the previous configuration. Leave the second field blank to use one share. Existing single-share settings still work. Separate servers or separate credentials per share are not supported.
+
+Each copy retains its own share, path and preparation identity. Equal titles in different shares remain separate sources. A sibling folder outside the configured shares is not automatically reachable. Moving an existing source changes its identity; refresh the library and follow the selected copy's preparation status.
 
 ## Load the console resident
 
@@ -25,6 +40,18 @@ There is no Blackwire Python, Node or background service to install on the PC. F
 A completed Send includes the per-game reader and registration checks. If files are retained but setup is incomplete, the page can offer **Finish setup** or **Finish setup and play**. Follow the selected game's status; retained files do not automatically grant Ready. An unchanged, valid Ready game uses bounded startup checks rather than a complete new source-tree scan.
 
 The selected game card shows its preparation progress, current session and any error. Game-operation notices stay with that card rather than appearing as floating notifications across the page.
+
+## Refresh and console controls
+
+Use **Refresh library** beside the filters after adding, moving or removing PC source files. It rescans both configured shares and reports scanning, completion or a refusal. It is separate from Refresh connection status, which checks connectivity. A local console game can still appear as a console entry after its PC source is removed.
+
+If Send files or Refresh is blocked by a running game, the page names that game, for example **Close Resident Evil 4 to send files**. Close it normally and allow session status to settle. A disabled action is not permission to resend or remove its preparation manually.
+
+The PS5 page shows controller hints; the PC page keeps keyboard hints. Circle was confirmed to close Details and, at the main library, return to the PS5 dashboard. The extra Close browser button does not work in the tested console browser; use Circle. It is scheduled for removal in the next build. A browser that retained development-9/10 history must be fully closed and reopened once; reloading the page alone does not clear those entries.
+
+## Background payloads during testing
+
+Keep unnecessary background payloads closed while comparing behavior. In the recorded test, the separately running Game Compressor used about 96% of one CPU core while idle. After it was stopped, unchanged-reader comparison launches completed without the earlier common-dialog watchdog error. This supports CPU contention as a contributor; it does not establish RAM exhaustion or a universal fix. See the [comparison record](COMPRESSED-DEVELOPMENT.md#background-compressor-comparison).
 
 ## Optional Media shortcut setup
 

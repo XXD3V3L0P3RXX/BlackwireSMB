@@ -1,6 +1,6 @@
 {
   "kind": "standalone-source-export-files/1",
-  "version": "v0.1.0-preview.1",
+  "version": "v0.2.0-preview.1",
   "files": {
     ".editorconfig": {
       "bytes": 215,
@@ -14,41 +14,17 @@
       "bytes": 724,
       "sha256": "a5b0a960063e992dc3a4cc3c8fc3e6fa59a1354330b895993ae2d46844b12941"
     },
+    "CHANGELOG.md": {
+      "bytes": 3919,
+      "sha256": "8030c1635d376a1fd937e3963e9a439554129cdd5ef03c73ab709aed89c3d181"
+    },
     "CONTRIBUTING.md": {
-      "bytes": 2257,
-      "sha256": "ad98e89872bb6c3fbfe2fe4f9d008c0f83083128575ae0452bd2cac0fae5875d"
+      "bytes": 2691,
+      "sha256": "723c4f89c9679209df95c3f845dbfc849224a420624ac0d9f96434e63bcc68ef"
     },
     "CREDITS.md": {
       "bytes": 2552,
       "sha256": "554f3a8cee90e1cd5177445e484917940425f6b7f7491ec34465e4fa17db4acd"
-    },
-    "docs/BUILD.md": {
-      "bytes": 4088,
-      "sha256": "6b3dddd3ff382e0f700cb85f6c4b6a63a2f0a61f65f0bf2b5fb990e2fb4155d2"
-    },
-    "docs/PREPARATION.md": {
-      "bytes": 5325,
-      "sha256": "d0b53f77d8ba12adb35aa2adb3a7971e7b4dd726feba78c77342f6e2e7285628"
-    },
-    "docs/REQUIREMENTS.md": {
-      "bytes": 3446,
-      "sha256": "54a94d8b974955d9580888245e427df3b221b01ff4b0dc5ef0eaaed43d74bc8f"
-    },
-    "docs/ROADMAP.md": {
-      "bytes": 2320,
-      "sha256": "d1ef5f4e56bba58938123c4d533549fe398da164493a191dc0fde1ac395fd098"
-    },
-    "docs/SETUP.md": {
-      "bytes": 7433,
-      "sha256": "c9fe9b2a026e6a71f6033dc30771a3d4b04fb8c3e14dbb81d6f1e0f645d15ce2"
-    },
-    "docs/STATUS.md": {
-      "bytes": 3427,
-      "sha256": "1e19bfcb42d10a220bfe24b08e6115d4df53563c9bfecad9c8dafc499b77e687"
-    },
-    "docs/TESTING.md": {
-      "bytes": 8367,
-      "sha256": "ac046ee318206e3352ddb7c0c24e7eccf5784b15ab81ef15d5cf750e2a69cbb4"
     },
     "LICENSE": {
       "bytes": 35823,
@@ -102,21 +78,77 @@
       "bytes": 211,
       "sha256": "625acc88af4ba3f817d459b85bf266d3d4ada48b7c549a3429fbbe46624f8b7b"
     },
+    "NOTICE.md": {
+      "bytes": 1129,
+      "sha256": "d5b36e1bb6857b803447f470b52cc6127ca061031f1b7210e52bc2f0f7f4ee50"
+    },
+    "README.md": {
+      "bytes": 10423,
+      "sha256": "fb60ebb7e03abbeb125770eedbc644043684758f9363585efe903cb7a6c09b7b"
+    },
+    "SECURITY.md": {
+      "bytes": 1186,
+      "sha256": "6c92d59d516e5bf1043f652743c73b05737a07bdbfbabb74dc5ac4c7d215923c"
+    },
+    "THIRD_PARTY_NOTICES.md": {
+      "bytes": 2058,
+      "sha256": "6b3f6ce2c5f53d0cd910310e0c6e7529aba95777ad2af39c94e00ab915a388da"
+    },
+    "docs/BUILD.md": {
+      "bytes": 5551,
+      "sha256": "99f7b07cf4b06f509820306e77fdde4ec87556fae135a3f89a9bad90f83608f3"
+    },
+    "docs/COMPRESSED-DEVELOPMENT.md": {
+      "bytes": 16113,
+      "sha256": "28fdf5e9522b412ad8528b0615438219830943d23035241f2e28e13095fdf371"
+    },
+    "docs/PREPARATION.md": {
+      "bytes": 6310,
+      "sha256": "66573a6ce59802bf48f9ae2f872b72fc62e1007de9085f5b0b30f0ee4f8cd7df"
+    },
+    "docs/REQUIREMENTS.md": {
+      "bytes": 4416,
+      "sha256": "4936f1a19e55f0146a25046e48ad88cc8c3d2a430e5047df84beab8ac15c3ac1"
+    },
+    "docs/ROADMAP.md": {
+      "bytes": 3137,
+      "sha256": "17deae7e1795579137df126a31459b6f81c1edd6f3a24e045cbebeb4c87038ed"
+    },
+    "docs/SETUP.md": {
+      "bytes": 10272,
+      "sha256": "ece8b352bb5d07a014ff895f165994721c1278975738a31fb7d5968666bd7761"
+    },
+    "docs/STATUS.md": {
+      "bytes": 3915,
+      "sha256": "125e360bb77cfe28f81f2c95aef93ae3d9357d4b385696bbee8a4023fb40d8d5"
+    },
+    "docs/TESTING.md": {
+      "bytes": 12764,
+      "sha256": "5b43988777f086f298b5faa0d68cac0fbcc5dc3cf2a9d434a6a6dc8879444139"
+    },
+    "docs/TWO-SOURCES-DEVELOPMENT.md": {
+      "bytes": 5520,
+      "sha256": "f9730e8062a9d992df81e422e7629a7d2ecff912b5ee426e1d1949b520cc295a"
+    },
+    "metadata/build-commands.json": {
+      "bytes": 176479,
+      "sha256": "66e2370dd0b71e7a97743468e70c44bfc07f88a31701d49a1df16ce433b95fab"
+    },
     "metadata/build-manifest.json": {
-      "bytes": 9521,
-      "sha256": "a49fe2954ceb06b27bb424727996d63d4a8c0e79ce30656382c57f7ffa4233a1"
+      "bytes": 2887,
+      "sha256": "a89047a7cc3077d5fb8da27158351a5bbb7ae2586dd20889fb387fd97442be01"
     },
     "metadata/delivery-status.json": {
-      "bytes": 1765,
-      "sha256": "8b081d385b3996ce7b1df5a30f4f177bd9abd9dcf368ef8e08826f564563841b"
+      "bytes": 1682,
+      "sha256": "8a98cc670113e912d86b98deebfb007aab3c0aba08c54188572b20fba599dc39"
     },
     "metadata/dependencies.json": {
       "bytes": 71090,
       "sha256": "35e608bc3a3bd8374e31ba63611697c7d3eef58e0fbcdd1f6d5b19490fc08945"
     },
     "metadata/export-inputs.json": {
-      "bytes": 141192,
-      "sha256": "6961e9b2f0a8217e508deb12615b88c23ac012c5349a0bdabcdb6d687a5b825c"
+      "bytes": 143726,
+      "sha256": "c392e3a3b88c448f0a6c235291693079104d33007bb9208a89ab537af054d44a"
     },
     "metadata/license-inputs.json": {
       "bytes": 2208,
@@ -127,32 +159,28 @@
       "sha256": "0624961687d4decc30c387f97c6263114b346098a57727f989c9294367e35eb5"
     },
     "metadata/relink-manifest.json": {
-      "bytes": 976,
-      "sha256": "a464c3f65412c5c48670942585fdc0abeb7cb1d4d9f16131feeb30b4b8b0c864"
+      "bytes": 1037,
+      "sha256": "8b973366057c51672986f9ecd669c00d918c6b7e0e6ea15a0f637bb89cd8426e"
     },
     "metadata/sdk-reference.json": {
       "bytes": 155000,
-      "sha256": "39897b5cf904abc5af62520750b76d034af4193bdd902665298c8b5488e1687a"
+      "sha256": "56aa5f0c50ef7437e807a7261d325d739122eaf50a49a26adce3ae641aea65ae"
     },
     "metadata/source-manifest.json": {
-      "bytes": 68840,
-      "sha256": "340290bbfbc48617b525c71ed4df244156b37a158b307bd69ae25da73aaa6a9a"
+      "bytes": 71501,
+      "sha256": "8794a3d6d93a4743abf868595f3a77ac055294f397c243ee31f5dfbd898310f5"
     },
-    "NOTICE.md": {
-      "bytes": 1129,
-      "sha256": "d5b36e1bb6857b803447f470b52cc6127ca061031f1b7210e52bc2f0f7f4ee50"
+    "metadata/source-runtime-build.json": {
+      "bytes": 18411,
+      "sha256": "013191ff64e582ab142a345f2e12ac7956a520cd1111e4562eb19a0be66bf4c3"
     },
-    "README.md": {
-      "bytes": 8243,
-      "sha256": "68816b0540cdf2fc6ded522c8417b0447721c28af3ffccc8831c39732235726e"
+    "metadata/ui-test-results.json": {
+      "bytes": 1110,
+      "sha256": "5eee5e2a9756aa3d9a61321119358d64d2a4691e2575229780de017837428815"
     },
     "payloads.json": {
-      "bytes": 886,
-      "sha256": "0543196abfbcf3f5141670af796ae200670ec6f17d4c4e1aff297071c4a60d91"
-    },
-    "SECURITY.md": {
-      "bytes": 1186,
-      "sha256": "6c92d59d516e5bf1043f652743c73b05737a07bdbfbabb74dc5ac4c7d215923c"
+      "bytes": 920,
+      "sha256": "d7784ae8775d26164018fdb022c183d85338afe18957737deea3614a31e077d5"
     },
     "src/blackwire/dashboard/local-removal/local_removal.c": {
       "bytes": 36185,
@@ -195,8 +223,8 @@
       "sha256": "c92044e521f7338301e544c8ca4b3cbacf01f17c9efc6bf3e3990d6057919173"
     },
     "src/blackwire/dashboard/service/dashboard_service.c": {
-      "bytes": 65475,
-      "sha256": "4c1c4da7a4c1248a498eb9c4c7d1cec5ba2141556da2729aa1dba3df84b55636"
+      "bytes": 65828,
+      "sha256": "24197c22d76ba4470ef17421b74361f6eee15781cb89ab9c88648d2c8bd22c3c"
     },
     "src/blackwire/dashboard/service/dashboard_service.h": {
       "bytes": 6854,
@@ -271,8 +299,8 @@
       "sha256": "1cfb44add29f594b5058642357d7595381014f696bcacc3cca4c00b85f215b99"
     },
     "src/blackwire/desk/index.html": {
-      "bytes": 141067,
-      "sha256": "0e3efe1e8bba33feee55a56828af5662536464102a69ba4062fe9838b7bf6a80"
+      "bytes": 150929,
+      "sha256": "d1d033c7b35d31fbab2a67c14dce3d215f775104dd4329ef7aa16789b545c28c"
     },
     "src/blackwire/desk/tests/browser_handoff_harness.js": {
       "bytes": 12691,
@@ -281,6 +309,10 @@
     "src/blackwire/desk/tests/exact_preview_dom_harness.js": {
       "bytes": 4950,
       "sha256": "55f0e0bb850ddbfd6fd7d2a31af7484306875b0a513506867a4187fcd82971b5"
+    },
+    "src/blackwire/desk/tests/library_controls_dom_harness.js": {
+      "bytes": 7192,
+      "sha256": "e775a8a1f4aa5b2b4cca88845d5fb2d7fc7c12871a2d4aed292a5a0555c6a0ae"
     },
     "src/blackwire/desk/tests/library_dom_harness.js": {
       "bytes": 4895,
@@ -295,28 +327,32 @@
       "sha256": "17f8dd2995ca6f5b43038a0623246f3488d73e758ad74c1ec30afff1086deb80"
     },
     "src/blackwire/desk/tests/redesign_dom_harness.js": {
-      "bytes": 4790,
-      "sha256": "ba88e374cec2bc716cb1d3b4d3fde83a700da2360f558f80b23d5b302ef0ff95"
+      "bytes": 7087,
+      "sha256": "a180b4d0435d274b41c47d2e12b18a4985c9354a16d15ad9e6088ea3d3e2d462"
     },
     "src/blackwire/desk/tests/removal_dom_harness.js": {
       "bytes": 5528,
       "sha256": "e75bc2af75a736187e4cc3f1fc683983d4a9bdd2dc518cd998e6a0458b4ac034"
     },
     "src/blackwire/desk/tests/setup_dom_harness.js": {
-      "bytes": 17420,
-      "sha256": "24d4f821bacf5615f2641d54f8a280b4f84a61d5b131088987edaf5502adb6dc"
+      "bytes": 20056,
+      "sha256": "d16eaae20431b7fb8dc8b329173b1e7aed51ecaadc2b747b0549f1450f85cc8a"
     },
     "src/blackwire/desk/tests/test_preview_fixture.py": {
       "bytes": 6261,
       "sha256": "f528f296a7c4d7755784da5adfe38969cac8b298adcf96f922cd0dd313c0ff6e"
     },
     "src/blackwire/desk/tests/test_ui.py": {
-      "bytes": 63992,
-      "sha256": "0cd8cfeaea165374cd453a4f5a3e4517b19e38a7ac34aafd6a67db161c698a2f"
+      "bytes": 66646,
+      "sha256": "002646ec5aeff14126cb04a7cd1e593de218ffd246c7f437f28ad104f1bc8621"
     },
     "src/blackwire/desk/tests/verify_combined_browser.js": {
       "bytes": 8483,
       "sha256": "b037b87711461063f406e5639270474970062c35391c775c8054cd6700af8a9b"
+    },
+    "src/blackwire/library/Makefile": {
+      "bytes": 246,
+      "sha256": "864238ad72c33c3fb8e2b851bc1099dc36606e60a4dddef009f93df8b9804b05"
     },
     "src/blackwire/library/batch_metadata.c": {
       "bytes": 7377,
@@ -327,8 +363,8 @@
       "sha256": "9f1263cf843d5bfa225f1ca6aa3aa1e6067b4f81df34c0f5e32c0b4f7408ebae"
     },
     "src/blackwire/library/compressed_data.c": {
-      "bytes": 9918,
-      "sha256": "9fcd4b860bdffde3ae80338391eb83eb8a5403621b965a3ec3017d67f0ba4ebb"
+      "bytes": 9953,
+      "sha256": "b44b9ab9a22af78671520aacebb65d61773863b7f2aa24a7badd989d27929a45"
     },
     "src/blackwire/library/compressed_data.h": {
       "bytes": 3870,
@@ -427,20 +463,16 @@
       "sha256": "32bb8713f985ff06ac976e2c4d296ef5da54d5bc62b1e0edb1f2e38b9629d924"
     },
     "src/blackwire/library/launch_timing.c": {
-      "bytes": 8447,
-      "sha256": "693cf901ba32040fa1d0171aa9ee5bffdf6cabfb1c26968b852c5d8725a90dde"
+      "bytes": 8495,
+      "sha256": "c0df5f8a9554a582dac08c6b61f5f9a007d7d02c43de7316fff51ef4bac1bf8b"
     },
     "src/blackwire/library/launch_timing.h": {
-      "bytes": 3343,
-      "sha256": "de58ef1b68bb1430e77a99a1eee3c0936f0ffec0de3ae9ca7be048402ac1fda4"
+      "bytes": 3399,
+      "sha256": "5b78f0592be110d2d3b451a245658f0de277b76a88ba5d745e026d7447703341"
     },
     "src/blackwire/library/main.c": {
-      "bytes": 40817,
-      "sha256": "df12a08d6ff5901b70cd23820ab23bdcba247bdf6a79174e5e4274e0a889f22c"
-    },
-    "src/blackwire/library/Makefile": {
-      "bytes": 246,
-      "sha256": "864238ad72c33c3fb8e2b851bc1099dc36606e60a4dddef009f93df8b9804b05"
+      "bytes": 40860,
+      "sha256": "d2cb757532fcb03e6cfe3b2bf1618c03d7a76110eb53c01de08de9cf3f6465b0"
     },
     "src/blackwire/library/media_public_trial.c": {
       "bytes": 11482,
@@ -451,20 +483,20 @@
       "sha256": "0f6c64dda1456217dd67226c84fcbaeac625c3d28db8244e9465399171e1a79f"
     },
     "src/blackwire/library/native_backend.c": {
-      "bytes": 141915,
-      "sha256": "ea581f939d482ee1a3c7296fdede32289b4ce86e45dfa5c5870f81a007f01649"
+      "bytes": 147661,
+      "sha256": "0e2849cf556cc87e7d8d0f2f48e01ff14c4470f871e848a63c0b45296b6692bd"
     },
     "src/blackwire/library/native_backend.h": {
       "bytes": 9720,
       "sha256": "744da4fd68a2da76bbfa02740820ba94383f12c1dbf7be67889faff1c69f2c11"
     },
     "src/blackwire/library/native_backend_home.h": {
-      "bytes": 29980,
-      "sha256": "445de65f2933951762cc52e56efd190c366ca9a6cc4a0bbf150c6d26028b192e"
+      "bytes": 30760,
+      "sha256": "13391e7dc5e70689c051d62959a16e3d8af929c2b6cd99957255476150404b79"
     },
     "src/blackwire/library/native_backend_removal.h": {
-      "bytes": 19222,
-      "sha256": "9c721a7c5e83eb60cac97cea9bd2a4191c348576b283732285b1a22b6ea53903"
+      "bytes": 18928,
+      "sha256": "949c8f342e70e5b86218307d119df83bf2f728d8afb0cec66c0980884ebf62f8"
     },
     "src/blackwire/library/native_batch_context.c": {
       "bytes": 20303,
@@ -539,16 +571,16 @@
       "sha256": "031b53ac5a163204bd88af43023e2de3a45075b85dc0bd70671a049e9881d86e"
     },
     "src/blackwire/library/native_game_uninstall.c": {
-      "bytes": 51488,
-      "sha256": "3075f1ad005e1714f126af0323bd0e23b1e4423f50d98d480231e99424ab1d2a"
+      "bytes": 51695,
+      "sha256": "cf9b845a0f2f6b897511deabf3c494de359839e5449f837f3f24724e88495651"
     },
     "src/blackwire/library/native_game_uninstall.h": {
       "bytes": 5998,
       "sha256": "7d636e12fa066f34235e2e20624bafef73cba83b69c8166f778c247a83400733"
     },
     "src/blackwire/library/native_game_uninstall_remote.c": {
-      "bytes": 36871,
-      "sha256": "d3b21cfb602a2897c974fa332cb066454add5ffca6d001d009ab90cf7c9ab567"
+      "bytes": 36877,
+      "sha256": "452d4e9b749002ec2502b3aafd0c6250c0a4383a95f6027028791047b55c6198"
     },
     "src/blackwire/library/native_game_uninstall_remote.h": {
       "bytes": 1072,
@@ -575,12 +607,12 @@
       "sha256": "0790e0b1d228b5b16f72c66ff3dc6c10fdf10b0f37601685fba6648b1467ed35"
     },
     "src/blackwire/library/native_launch_admission.c": {
-      "bytes": 16720,
-      "sha256": "5c3a5865645a27e242fcb25dc35e70de0563434251b8f151d1649f419d409fcc"
+      "bytes": 17933,
+      "sha256": "0c9471baa9682324153f6a11ce77df3ed8041a4f44271ffe83a9ccde41260ff8"
     },
     "src/blackwire/library/native_launch_admission.h": {
-      "bytes": 2323,
-      "sha256": "f0d69c90d037ce2411e7347a0e69b15bef6a958a8444653e2d9edbcbe0675233"
+      "bytes": 2476,
+      "sha256": "b8fa4cd4bf0d420262dab4bc1ea99b4deca9263871098a64f70dd1baa3e1fd3a"
     },
     "src/blackwire/library/native_owned_registration.c": {
       "bytes": 22809,
@@ -595,8 +627,8 @@
       "sha256": "4c51c29ee8690aba8a549b5c161223674713fc6ac0c5ac83f293e9b8ebd8299d"
     },
     "src/blackwire/library/native_prepared_target.c": {
-      "bytes": 7807,
-      "sha256": "1ed7d15c1e78335d4ead7ed0123df9c8a092d034827724b6313f8bdf8197e327"
+      "bytes": 7848,
+      "sha256": "a2cf1bf78682a592000f1d10746981e1a574bbe6064cca2195282309c6c488c1"
     },
     "src/blackwire/library/native_prepared_target.h": {
       "bytes": 722,
@@ -631,16 +663,16 @@
       "sha256": "0146b705bad52e85ed718141cf01a4a3c3ed51a553c3af27e1d17e931b50081d"
     },
     "src/blackwire/library/native_registration_cleanup.c": {
-      "bytes": 54627,
-      "sha256": "591aaa9607d11035ea460c32bcd9abd6e4ff0761a27e4e76af4812f39f0a1af2"
+      "bytes": 54681,
+      "sha256": "40035a7053c6048cefd8a7f7a6ff6713ababc14854a1bbbb41a884e656e057e4"
     },
     "src/blackwire/library/native_registration_cleanup.h": {
-      "bytes": 7137,
-      "sha256": "3ab9dbdadb16e5ab535a44cd7b762cf25d9975acb9e95dfd62f939121c9ceab4"
+      "bytes": 7140,
+      "sha256": "ca1597082fcc182cd13f61da9e2d4ed7decd5a94e97d9f1c7542e9e2349f0479"
     },
     "src/blackwire/library/native_registration_lifecycle.c": {
-      "bytes": 33879,
-      "sha256": "b35a9638b96ee891fc1b291b93d86010a54b588bb0c547c17af850c418cb843e"
+      "bytes": 33931,
+      "sha256": "ec4846395d686c1ba4ce19f2cba129ba5e0f62aa7da15c4521b5c624d65069ef"
     },
     "src/blackwire/library/native_registration_lifecycle.h": {
       "bytes": 4425,
@@ -659,28 +691,28 @@
       "sha256": "de0f1cb7126f8a610c847b8afe343d3097817258e8f9df273b6dc075b644660a"
     },
     "src/blackwire/library/native_removal_request.c": {
-      "bytes": 2117,
-      "sha256": "44185c761a2464d3f08b26e9ae1b1ed68f007a919086fc055fd6858e9ebd7f20"
+      "bytes": 2543,
+      "sha256": "06a18d9a0473e50f71cb915d5af46c0c60365eeceed271878846c4bbfe18f8a1"
     },
     "src/blackwire/library/native_removal_request.h": {
       "bytes": 530,
       "sha256": "49400de55c4d85f1df174a6f4075539197ae31d88031ff3079ea61c23d5c7284"
     },
     "src/blackwire/library/native_removed_sources.c": {
-      "bytes": 16443,
-      "sha256": "69f307cd005620ca0b731f30a4f1c9379c8046d1a89b09adefa77faf786d7d70"
+      "bytes": 16517,
+      "sha256": "0e9cf42c684d1d251b3dd04c8b99c004ab463e4af5dc8ce93a48445e1fe09f16"
     },
     "src/blackwire/library/native_removed_sources.h": {
       "bytes": 2384,
       "sha256": "7cf978a3b5014a1054eaf7ebefb42a00dc05800d18d29ea8e5ebd2b3af5c715e"
     },
     "src/blackwire/library/native_request.c": {
-      "bytes": 6326,
-      "sha256": "3f00d5894f5d8902ee6100029e3c929a4a97029b734f81c25379359502faebc1"
+      "bytes": 6942,
+      "sha256": "1b0f2b551e53c75dacc0ab7b046906c4ff9c20107cef1f1ee3c84e0a523546ab"
     },
     "src/blackwire/library/native_request.h": {
-      "bytes": 874,
-      "sha256": "36585510c421b81e70218577fd83cd880c159747273895371a8e5b83a583d946"
+      "bytes": 922,
+      "sha256": "c3cde98b8f689e83723cd32801b6e677953f464e2cc35057cad2ccf7970f73bb"
     },
     "src/blackwire/library/native_send.c": {
       "bytes": 35978,
@@ -703,16 +735,16 @@
       "sha256": "d1c8c613a1c01daeee276c4a98f2b9c33a10b4bdbcb3a4676f819e18c403825d"
     },
     "src/blackwire/library/native_setup.c": {
-      "bytes": 10241,
-      "sha256": "3e16eb9ccde483d6eba441cbc7c629fbbe41df607cad7caec753063260cba2d7"
+      "bytes": 10373,
+      "sha256": "15e8a4480123ab35390bb4ced269797710df75c3edd7669b16423368feea3b07"
     },
     "src/blackwire/library/native_setup.h": {
       "bytes": 1376,
       "sha256": "a5f298b4b466f312549e3cee5eaf42baab3b9a3edfba94cd7f09fb89eb61ef60"
     },
     "src/blackwire/library/native_startup_hint.c": {
-      "bytes": 3915,
-      "sha256": "bf747039927b01e698d6873e0599f5f639817a6737c19894037fa00dd89db1bf"
+      "bytes": 3956,
+      "sha256": "f0ea88fe3b98089b66ee2ca37a141ce561367336167b52828f59da62ccd6ec73"
     },
     "src/blackwire/library/native_startup_hint.h": {
       "bytes": 463,
@@ -759,16 +791,16 @@
       "sha256": "8a00abc182be715d47d6786e098c23d49a555a41f534300477c6693dce5dd0a8"
     },
     "src/blackwire/library/preload_bundle.c": {
-      "bytes": 46559,
-      "sha256": "79851b22c2677767de7b45fb8931affcae0625fb9a206d1498df7f07e5a97e00"
+      "bytes": 47871,
+      "sha256": "b5990be838484ec746a62eace8ba076ba5fc738629ff8ef1af406ff3c0932277"
     },
     "src/blackwire/library/preload_bundle.h": {
       "bytes": 5611,
       "sha256": "1ab6520775aabdce5cfd8649261e8fe371afe4f9d149f59f3b221003e01bf496"
     },
     "src/blackwire/library/preload_handoff.c": {
-      "bytes": 18542,
-      "sha256": "33550dd70edc3f8775cfbd58a34fd816e72694d379d40e193109e4079e0ac379"
+      "bytes": 18652,
+      "sha256": "82bf5a3fdfc1fb4767c879abedf0c107d8dc1755c0433688047caa4ec7f5245b"
     },
     "src/blackwire/library/preload_handoff.h": {
       "bytes": 6001,
@@ -791,8 +823,8 @@
       "sha256": "b9703d278a46480c41f6fce79acf6beab089cca0ae5aefb409ef62e21e7befeb"
     },
     "src/blackwire/library/reader_preflight.c": {
-      "bytes": 28452,
-      "sha256": "1e8d1556fee98a5044e87e40dc71c7828f661dec6b82f55b76ddb18d01acf887"
+      "bytes": 27989,
+      "sha256": "fde7051b57e6ce9cdab29b2c996c65e0a05988488bdd0f253721e948f6ea87b5"
     },
     "src/blackwire/library/reader_preflight.h": {
       "bytes": 3764,
@@ -867,12 +899,12 @@
       "sha256": "6dd351eb2c5c29bf8b6df143f5f093a8aef8bc55ae69b892863e767f106798af"
     },
     "src/blackwire/library/source_catalog.c": {
-      "bytes": 16023,
-      "sha256": "6c84647ea6d985335d272805a5e1c6d495526ec2f285e360763d10a7f7de61a9"
+      "bytes": 18628,
+      "sha256": "9f330d0e04c1f96fffd0b37b460f42046de06fee3c556d1d2e807fb27bb25586"
     },
     "src/blackwire/library/source_catalog.h": {
-      "bytes": 2362,
-      "sha256": "344f793bdfafa6c7b6de50c3fe2007143b9707218227a744d88dd0e3a90c6146"
+      "bytes": 3032,
+      "sha256": "51c61533b680adffbf4c3cbfc9fe4b6ec829bd98e873f3639c3e0d565bf722ad"
     },
     "src/blackwire/library/source_directory.c": {
       "bytes": 2581,
@@ -883,12 +915,12 @@
       "sha256": "aaa6f36b4fb967bc5089be4f7e6c0954876b53eab8543a5d8855fb4caa961a73"
     },
     "src/blackwire/library/source_identity.c": {
-      "bytes": 1036,
-      "sha256": "9bfc3e04b16b88d5bb67b16948ef3ae44d24ddcea97c9d61d091dcfe13940f1b"
+      "bytes": 3004,
+      "sha256": "cc558fb7f1c746b3c9ad5ece8daf6027b8c52909b5f8c6109b8273bbb6727420"
     },
     "src/blackwire/library/source_identity.h": {
-      "bytes": 486,
-      "sha256": "ef45030a3d359398c9e32f9da9707e7a737614e3768242a0f725896bf1ab60fe"
+      "bytes": 1221,
+      "sha256": "3c713e78b1734e3502d53019bbb1348a80c0b839d42ba8ef6263e29af9603d40"
     },
     "src/blackwire/library/source_param.c": {
       "bytes": 16358,
@@ -923,8 +955,8 @@
       "sha256": "62fc973feaf74c077f9594727dc9faf7dc88a433898f7e407a52dedd51aa9bfc"
     },
     "src/blackwire/library/source_provider.c": {
-      "bytes": 9400,
-      "sha256": "283f44a6aa7caff7f842473069c7807933e6f269492dd672fb228007b87bbff0"
+      "bytes": 8792,
+      "sha256": "5bceb4beb3fdf8887fecd28b09e10b38b602fdeb3a258ecdc2ee4f1eb87d027e"
     },
     "src/blackwire/library/source_provider.h": {
       "bytes": 3167,
@@ -991,8 +1023,8 @@
       "sha256": "4d2c70db3ad4dacc03b55bd55a61cf754d1c510ea232e9b5bee200d85e90a99e"
     },
     "src/blackwire/reader/native-reader.c": {
-      "bytes": 111071,
-      "sha256": "6438063469d2535d7360d0766cca0f5c48c5234deb9a4ab35bad2074004e970c"
+      "bytes": 111939,
+      "sha256": "3346be2cbbf7edddbab384c59fc10cd355a7c2c47010f6df4d5d7f960344b239"
     },
     "src/blackwire/reader/preload/first_read.c": {
       "bytes": 1309,
@@ -1015,20 +1047,20 @@
       "sha256": "b58a998a4f1a5f69ce83f9048d00a4110d6cc510595afdfd2210c2f111016e7c"
     },
     "src/blackwire/reader/preload/runtime.cpp": {
-      "bytes": 23943,
-      "sha256": "ff2cfa2daf212daab8e14d9c1dd47e8855490536733d6bdcb2523a3e25ab706a"
+      "bytes": 24266,
+      "sha256": "3b75b182e53c39df486f9f606c966d68f773fa1bf36e2ad3f1491ff0913e5efe"
     },
     "src/blackwire/reader/preload/runtime.h": {
-      "bytes": 1454,
-      "sha256": "e2b7bba710bc042cc2f599245d8caa1903d24335987bc949d5bff9a8da18ffcb"
+      "bytes": 1563,
+      "sha256": "1b89396058d3ce6972c85eebf40f871da6e988a88419d8755f8922ab83912659"
     },
     "src/blackwire/reader/preload/source.c": {
-      "bytes": 24298,
-      "sha256": "2010425492e98ad9968d98104ef4e45788c7941251c0852d394138a9540019f8"
+      "bytes": 30136,
+      "sha256": "7e1ccca9e083e99e73de9fd3159d5288b8e84a51724ce9f28ed8a1d5d04fd904"
     },
     "src/blackwire/reader/preload/source.h": {
-      "bytes": 7632,
-      "sha256": "3de0703d3e7420925e6a84fdaad812b1fb55d6bfcb14e979840cc49b880a6e48"
+      "bytes": 8102,
+      "sha256": "4599b0397c060ddb41a954f2a1702963e34488f66e02a262839c97e9e4a5c218"
     },
     "src/blackwire/streamreader/asset_prepare.h": {
       "bytes": 4842,
@@ -1055,40 +1087,40 @@
       "sha256": "4142af56dde072c2d36700c25cf532537feee5c0bf238aa4e4569169b37d3d79"
     },
     "src/blackwire/streamreader/cache.c": {
-      "bytes": 4596,
-      "sha256": "24b67a0f394aef0cb4bf2ffdc6690bafd72ba0881ed85214d0d66c35b704dcff"
+      "bytes": 5800,
+      "sha256": "4b268b52b9d3a6ee7cc8126a83de67f6414f0d469552bad5e1669b1888ffff18"
     },
     "src/blackwire/streamreader/cache.h": {
-      "bytes": 2510,
-      "sha256": "c62bba19c8235bb61cffd1398aab89bde7b0d6a97ad4567e1047022693f70347"
+      "bytes": 2589,
+      "sha256": "7e23a29977230ede90acf638066dd07a20296f9f84ecd696276093835e56bf44"
     },
     "src/blackwire/streamreader/container_cache.h": {
       "bytes": 966,
       "sha256": "38d6e7c227a14680edc70a5ecce6ce49959648c5bc491e250e5b449d797c0662"
     },
     "src/blackwire/streamreader/container_manifest.c": {
-      "bytes": 3303,
-      "sha256": "d171673b1b886bf6a8a3cedcee895bae1bc5ecf6f478e55a76f4681967710544"
+      "bytes": 3395,
+      "sha256": "b76b63d92406224a4b84eb2a40f0ff8f988667b3c019cee22d28b5395f2b58b1"
     },
     "src/blackwire/streamreader/container_manifest.h": {
       "bytes": 1264,
       "sha256": "084adfd7de0137079aa9d45158ec543a56abee4174a76830021feeb3a9a5960a"
     },
     "src/blackwire/streamreader/container_smb.c": {
-      "bytes": 2907,
-      "sha256": "e300aeb1caa4974d515cb3ffc41dfaaa7aa00cd5edccd17248fb3d7b9316c825"
+      "bytes": 3759,
+      "sha256": "8b9c636e5527331100a330ead7fac2b9ac5b11d2dca0866fa3a7b75361b36adf"
     },
     "src/blackwire/streamreader/container_smb.h": {
-      "bytes": 1028,
-      "sha256": "50d89727b35ac7b2b1191e9a2aa5ddd5c503e12d4733f52cb93486eedc45f3d1"
+      "bytes": 1493,
+      "sha256": "f8e5a9c09199cf41a51b0e10025de5acf87264d6c675f41811312749452434f3"
     },
     "src/blackwire/streamreader/container_source.c": {
-      "bytes": 6629,
-      "sha256": "cbcf37456f596c2b8e76cfe396d25cc43a924a56d613860b0a0f336194d089e4"
+      "bytes": 7584,
+      "sha256": "66ca1cc29012667dd5e04473d744e18499db1f43bd530dbb1401649a0bdbff6c"
     },
     "src/blackwire/streamreader/container_source.h": {
-      "bytes": 2079,
-      "sha256": "3768fc349c1ab4e9583a4ce3ec6c1c76c48ae5ec19f43455396ed3be552e8fec"
+      "bytes": 2400,
+      "sha256": "d8dcc3a1322ec9096634f47bccdcbc939b24443d048f5e40ba3279233830f889"
     },
     "src/blackwire/streamreader/copy_fs.h": {
       "bytes": 12266,
@@ -1183,12 +1215,12 @@
       "sha256": "44dbd76a73e35045e5801a4b951b0cd87eaabc3064e249d73032ca18021bf530"
     },
     "src/blackwire/streamreader/pfsc_range.c": {
-      "bytes": 4917,
-      "sha256": "3829d23809f86d18a52a1b230ff964974daa6bb3e11962b69528ef77d9ab2fb6"
+      "bytes": 6046,
+      "sha256": "ffe79bd2c68d588ba1d034cc819d4b0d87f7912ed23d5c91aea8b0812c341f0d"
     },
     "src/blackwire/streamreader/pfsc_range.h": {
-      "bytes": 1970,
-      "sha256": "b6642fd2ca199bd24f1d5544e0ee997679adec21c48bff23b38fe37b82366e28"
+      "bytes": 2422,
+      "sha256": "33491f55e4e0fc51d53b75b31fd1fead42488e74de1fb9a9659e9f2d343c80a8"
     },
     "src/blackwire/streamreader/preparation_receipt.h": {
       "bytes": 1817,
@@ -1219,12 +1251,12 @@
       "sha256": "1716d51e60621334f58a2e384f36db86cb6f66f9f72b0f7bfb4c34d632f79a8f"
     },
     "src/blackwire/streamreader/share_config.c": {
-      "bytes": 3971,
-      "sha256": "e591d9310f880eed68de112e68a39b678012508f966096fe94b9682b9a139a06"
+      "bytes": 5717,
+      "sha256": "c458ab1ff548591bc7ac06b3e775fa53c35fc93638032b924203bc946abbc8de"
     },
     "src/blackwire/streamreader/share_config.h": {
-      "bytes": 483,
-      "sha256": "4cd15a2e8edeed02fe66efeef60db6b1d0f0fb3be57b741e3aed5cbb5c3d43ab"
+      "bytes": 821,
+      "sha256": "91a5e7b9ad66ba2066fc95c459b5dcdf539d55b445324cd5b7a9b5144b1b1b89"
     },
     "src/blackwire/streamreader/smb_diagnostics.h": {
       "bytes": 3253,
@@ -1306,6 +1338,34 @@
       "bytes": 12292,
       "sha256": "011a9240f8993ad2eb356832706d1d7c2821a6bcbc4457e192e546f816862696"
     },
+    "tests/compressed/catalog_cover_test.c": {
+      "bytes": 5372,
+      "sha256": "d083bb1d7bbf9fcbf4202a7f52b01ceec876eeebc42f3042c84591d1a5867e67"
+    },
+    "tests/compressed/check_catalog_covers.py": {
+      "bytes": 3532,
+      "sha256": "b05f8ef7d2272ad3087b52ee72e90bcce096ff6b33a9ecae8e884fe17a606648"
+    },
+    "tests/compressed/check_reader.py": {
+      "bytes": 2392,
+      "sha256": "72461e50fe406b42799dfe48637a239b1b5cb5767dc08e40fb3a29cc4f01bd25"
+    },
+    "tests/compressed/check_synthetic.py": {
+      "bytes": 3785,
+      "sha256": "4fd73a949a2b32bdfcb568a58ce1146703285e2fe22de5ad28af5417b949244f"
+    },
+    "tests/compressed/container_compare.c": {
+      "bytes": 4914,
+      "sha256": "1dc4db809c6b5c8b099727b064643173bccf3c5061130a98e1691ee79f08816f"
+    },
+    "tests/compressed/fixtures.py": {
+      "bytes": 4442,
+      "sha256": "11c38b6860b199e99e52fc658428bc8a144dffbadb1cae9125f0a0cf047c025c"
+    },
+    "tests/compressed/reader_test.c": {
+      "bytes": 18419,
+      "sha256": "f24a1b252013f6ae98428c69001c7e2d0ce3d92b7a2426af1f991c5ed31125b9"
+    },
     "tests/dashboard/lifecycle/check_dashboard_removal_service.py": {
       "bytes": 6582,
       "sha256": "251168f3e9e10e810592b9a3c18a94c60f483b2f64ac8cb9a46e33c5d3a626d8"
@@ -1315,12 +1375,12 @@
       "sha256": "85400e6d9ecff4e27001da16f8f40d885840593c557dc757035137f1b5bf0eab"
     },
     "tests/dashboard/lifecycle/check_game_removal_backend.py": {
-      "bytes": 6002,
-      "sha256": "240d71208919d82a74d79e1b2562321859ca8660b1126f959490077e2e9882a1"
+      "bytes": 6596,
+      "sha256": "1533847ee1a4ca92a8a167e357a8eba04a5b5b944490ec6ddddfd59bcd8c1552"
     },
     "tests/dashboard/lifecycle/check_game_uninstall.py": {
-      "bytes": 11486,
-      "sha256": "f3bc70b8ea0b257e0974474f7a60d6b9d1adf094e93d64d494185425cceb9684"
+      "bytes": 11779,
+      "sha256": "7611e185a807cbe5b8e54cd2208f2a08a4643600ac1a9606ad015fc253e8240b"
     },
     "tests/dashboard/lifecycle/check_game_uninstall_remote.py": {
       "bytes": 11175,
@@ -1359,12 +1419,12 @@
       "sha256": "d5b7c190e69bf73d6bce41bb26d05381727016466ccc1faea8fc6d03186030a5"
     },
     "tests/dashboard/lifecycle/check_preload_bundle_upgrade.py": {
-      "bytes": 10573,
-      "sha256": "55743f64ecade0279476d2ce6610df899a5301b5f8df247b6da41d6d8407ddd5"
+      "bytes": 10587,
+      "sha256": "d0ca16dde85aeee19994ef765499a4b5a9b4de6cd21bde7a4ed6251869ff448a"
     },
     "tests/dashboard/lifecycle/check_preload_bundle_upgrade_backend.py": {
-      "bytes": 5710,
-      "sha256": "d86f0c1df9700c069e9b7c6be182848570e52be558cbb49a4b69cac4ce79c854"
+      "bytes": 7584,
+      "sha256": "5863b883a78eeaa6f36820e566af46d4dcf2ce009104eeeff9c03796bbfa35bb"
     },
     "tests/dashboard/lifecycle/check_preload_reader_uninstall.py": {
       "bytes": 13261,
@@ -1380,7 +1440,7 @@
     },
     "tests/dashboard/lifecycle/check_registration_lifecycle.py": {
       "bytes": 10093,
-      "sha256": "b43871c420ccafa41c6d228c4c9ae5ca9f6b4a6bb531973c514d536d02333035"
+      "sha256": "c3e226480a14d44a929840618ff92f07c24b648d8e281622d49a1b06686c1784"
     },
     "tests/dashboard/lifecycle/check_registration_observer.py": {
       "bytes": 4045,
@@ -1431,8 +1491,8 @@
       "sha256": "ec3a39297817befcd228698c79d1a321d2b3ed66cacf43850a02af36781f62d6"
     },
     "tests/dashboard/lifecycle/test_game_uninstall.c": {
-      "bytes": 17505,
-      "sha256": "61017752ad94e6cec9d6795a50512f177c4ca459a79621c740179fd59234fc67"
+      "bytes": 17556,
+      "sha256": "1a8e3b080491827b39d70f7aaba8c32bda9874d995237f9f40a6d7d07f314cf2"
     },
     "tests/dashboard/lifecycle/test_game_uninstall_io.h": {
       "bytes": 639,
@@ -1451,8 +1511,8 @@
       "sha256": "e420a3540fe055b9d337ec363439cdf5724a95ba78ef7c0d6d7ac9a0870f410b"
     },
     "tests/dashboard/lifecycle/test_idle_cache_callers.c": {
-      "bytes": 29220,
-      "sha256": "b8e183687fe9d65f5975b108d022cb9965696c3a715542ab2a9939551c6d4ed2"
+      "bytes": 31215,
+      "sha256": "b396842d4bce0408013c214b6af4771ba79f227c0a97ba1f4254500f1575d420"
     },
     "tests/dashboard/lifecycle/test_idle_log_cache.c": {
       "bytes": 14264,
@@ -1483,12 +1543,12 @@
       "sha256": "09e39301d34729054eb9c80078e89fa9f11c886e9f97135906f1f07a744b7403"
     },
     "tests/dashboard/lifecycle/test_preload_bundle_upgrade.c": {
-      "bytes": 16120,
-      "sha256": "7f35ae448813ec96c7939945e3aa7774568ff6ed9f57d5fcaddb8d8308cc6e38"
+      "bytes": 17089,
+      "sha256": "172804df081c931d8e9e5a950f9b00a903e8223bc7e73c94749b1f377968c916"
     },
     "tests/dashboard/lifecycle/test_preload_bundle_upgrade_backend.c": {
-      "bytes": 20531,
-      "sha256": "3b84485a76a0f377131d15fe88710737dbbc79c694c3b57685348fe23f29f62d"
+      "bytes": 20872,
+      "sha256": "2ce86ac198e293a732f5cb9426d8911e4bb985261f6d13c51d2d92655847c5f7"
     },
     "tests/dashboard/lifecycle/test_preload_reader_selector.c": {
       "bytes": 5121,
@@ -1507,12 +1567,12 @@
       "sha256": "9aa817f38ece20b4458b9662f2b1fc910ce5a8cde8252a5fa086ab9535166891"
     },
     "tests/dashboard/lifecycle/test_registration_backend.c": {
-      "bytes": 21009,
-      "sha256": "2f6ae689e3ca5ae689101a8324ca88262a6768b91784c6d359420ea9a470c703"
+      "bytes": 22459,
+      "sha256": "3acf1b325e67fc42c2f3e49db507d687163d9f339c07de1c2c7ef7b75a37cedc"
     },
     "tests/dashboard/lifecycle/test_registration_cleanup.c": {
-      "bytes": 28410,
-      "sha256": "ef6984cc0e9924631a8ff05cefeacce72c11bf1752994685543b285e4fa8fe90"
+      "bytes": 28398,
+      "sha256": "125679d2e45324e03b75e8d9791a0f1b95a5fd785062530957d3f83267bf90ab"
     },
     "tests/dashboard/lifecycle/test_registration_cleanup_io.h": {
       "bytes": 790,
@@ -1523,8 +1583,8 @@
       "sha256": "7078337aeb0b3b89a03f0f2b076bc58d9d18479f6fa85acf737552d17a815ae7"
     },
     "tests/dashboard/lifecycle/test_registration_lifecycle.c": {
-      "bytes": 22044,
-      "sha256": "27831acb3cd3b78423c24eafdcd14e5e1d53e90f22e95e05a29e6e7c6113a947"
+      "bytes": 22397,
+      "sha256": "7ec8d7b0325514eee424e8bc2a02920c62cbbb159b669be86358b12cf0946b66"
     },
     "tests/dashboard/lifecycle/test_registration_observer.c": {
       "bytes": 5550,
@@ -1550,25 +1610,29 @@
       "bytes": 491,
       "sha256": "c0c1782ca2ae2c9f9f10c4d197a3e722134c7e6c26b4082a353f9a056871e5b7"
     },
+    "tests/home/README.md": {
+      "bytes": 1521,
+      "sha256": "cbfe47ed0f30df328a7a15831d0d2279ea38d697428a56017c505ef0639cb46d"
+    },
     "tests/home/backend_test.c": {
-      "bytes": 10771,
-      "sha256": "a4186ee7239ba160058034ec6ee06c345d01bfb609d1a34866bf2ccb79232859"
+      "bytes": 12028,
+      "sha256": "2329e616edea829882ea6b7419cc6dfdeb96714bb1a009a9972cc8768d6e02df"
     },
     "tests/home/check_backend.py": {
-      "bytes": 3898,
-      "sha256": "ef774a2e9ae703bce4cb9ed65f7a5213b7cf9b82e685b9f84f0c604c832cadc7"
+      "bytes": 4095,
+      "sha256": "b23a8c344e8585644e3e97116564c26d35131910edc2b1056dc1a831ddbcece6"
     },
     "tests/home/check_main.py": {
       "bytes": 2239,
       "sha256": "3422a6201d32ebd9f6f8887526512a916be45645b77e6b79245cc923dcdbdb10"
     },
     "tests/home/check_provision.py": {
-      "bytes": 3651,
-      "sha256": "4743f93115abef4d2c4ef71b6cd8165723263a79a982128ca91aeebbc11e1558"
+      "bytes": 3907,
+      "sha256": "74ffbd505f31eecc89e2588110b085f4f71f2d2d691d3427677982eaa76fa2fd"
     },
     "tests/home/check_session.py": {
-      "bytes": 1531,
-      "sha256": "df356bdcd6158653cb1fa5dafd62746286830fbad0cffd7c8f6d599872dd637b"
+      "bytes": 1588,
+      "sha256": "5c39891978bb7380c58005ba3f6e67924f7f01eb6688ee43bfaf97453a0e842b"
     },
     "tests/home/home_test.c": {
       "bytes": 12481,
@@ -1579,12 +1643,8 @@
       "sha256": "9fd61efbcbf0e7011722efa4bd93b3a99daa8b3e40a854f1d9e127add856d36c"
     },
     "tests/home/provision_test.c": {
-      "bytes": 6846,
-      "sha256": "5e93bc8d2c6b1a1bd4c006b20ebd6416372959feaf79449a66ff08aabc6ad854"
-    },
-    "tests/home/README.md": {
-      "bytes": 1521,
-      "sha256": "cbfe47ed0f30df328a7a15831d0d2279ea38d697428a56017c505ef0639cb46d"
+      "bytes": 7979,
+      "sha256": "2ec4aa90be67b51eed663b5f85d067ebc6b3410612b0c429118adbb0ec43cccb"
     },
     "tests/home/support.py": {
       "bytes": 787,
@@ -1594,9 +1654,17 @@
       "bytes": 1775,
       "sha256": "cccc75c9db790a8a0b78f74aa23f9f6bd1f37c33438f0c5dcab5ce1e11fe2426"
     },
+    "tests/reader/cache_equivalence.c": {
+      "bytes": 3400,
+      "sha256": "642f2cdffd52739e520cece47730ffa2d1b9ad811e77b117a2989103b9f440fa"
+    },
     "tests/reader/cache_storage_test.c": {
       "bytes": 5925,
       "sha256": "c1d5361b13f09a3a86eea4802dea0f679aa1a3f0ab0898424a4049023045178d"
+    },
+    "tests/reader/check_cache_equivalence.py": {
+      "bytes": 2446,
+      "sha256": "5ff8caa6d0191eccc3d46fa3251d780c7fde4881b8dc3ba72aeb057091630294"
     },
     "tests/reader/check_home.py": {
       "bytes": 10392,
@@ -1631,24 +1699,32 @@
       "sha256": "93e5f9dce4372104d563f0bcde4fae493888ef69518297abf7b33eec7aa76fa0"
     },
     "tests/reader/source_test.c": {
-      "bytes": 30888,
-      "sha256": "d209924e5a98763191d3eb69f90b04e01dd22884c24d019179592b10255311fe"
+      "bytes": 31034,
+      "sha256": "dc4cda68fbfaef12d14cb12e86380b4bcc716b9e152c7c48785ee93462378a33"
     },
-    "THIRD_PARTY_NOTICES.md": {
-      "bytes": 2058,
-      "sha256": "6b3f6ce2c5f53d0cd910310e0c6e7529aba95777ad2af39c94e00ab915a388da"
+    "tests/sources/check_two_shares.py": {
+      "bytes": 4949,
+      "sha256": "1c3120aa3506dc8d0c05e6161612deca92009ea5bd9158ea93fa6db27f2f74e4"
+    },
+    "tests/sources/two_shares_test.c": {
+      "bytes": 11917,
+      "sha256": "466acd2be8d64905cb224ec1bb7ff6eb20d68427e8ec3866ceea414a288ff700"
+    },
+    "tools/build.py": {
+      "bytes": 5162,
+      "sha256": "d8c251f408f7c3511f5a9b8acb7521560a09d3a8d69b605ac26b31409725cadb"
     },
     "tools/build/app-recipe.json": {
       "bytes": 65850,
       "sha256": "18c6bab82ca3bfe1bbe28ed2998cbe8a4fc2c8462697974170afbea8d58e6d29"
     },
     "tools/build/app.py": {
-      "bytes": 9336,
-      "sha256": "9922b1768d1fe91fcfbc8f6208daa0459878ce48d071f50ef0914deb3d853e44"
+      "bytes": 9969,
+      "sha256": "83dd8508517906f779ba7a70686ccbc2af7a1515b2d0f8d2b5ce6a170085ea02"
     },
     "tools/build/common.py": {
-      "bytes": 4190,
-      "sha256": "9870759de8c3794a3b09d378626b05ac977cfc73dba4208fd48e0f2b41efb588"
+      "bytes": 4240,
+      "sha256": "27c6dc35f3db2eaff68a53cf9e55b2e9a6991739e40ea64d5b138025558cb58a"
     },
     "tools/build/deps.py": {
       "bytes": 1743,
@@ -1663,20 +1739,16 @@
       "sha256": "4c9ee4a7eb3e46a2621fa27d389b6c06f8f3bbc8fe5ef8c9e561dafda472d96a"
     },
     "tools/build/reader.py": {
-      "bytes": 16089,
-      "sha256": "33e14d83591485bef7328004a321a815cbcf4e60c74fd393ab39fcccef9562a3"
+      "bytes": 16553,
+      "sha256": "4fc32adadb4d4137779d72b51254c50b9823db8b3119092f9f229b2ff595e0c5"
     },
     "tools/build/reader_patch.py": {
-      "bytes": 11859,
-      "sha256": "cd399e75986d8024c33b45fb36667a93dbb91240916301111a87a8027dc8c72c"
+      "bytes": 12211,
+      "sha256": "9e1f535624d2cb59c22ed0f1df33340df9dfb29a8adde70bf0b88763594c05df"
     },
     "tools/build/sdk_runtime.py": {
       "bytes": 11202,
       "sha256": "1a1b0312b36edcbe6e6fe0fdd08b49d4e3e53c14297358c66ba18e6dd985cf66"
-    },
-    "tools/build.py": {
-      "bytes": 5048,
-      "sha256": "aa56cb6303d5b0ef1f52fccbc1bc3a15625c04a83ced79dc983cc7b8dea3546b"
     },
     "tools/smb-transport-tests/README.md": {
       "bytes": 5091,
@@ -1694,6 +1766,10 @@
       "bytes": 734,
       "sha256": "458ae0cece321495a4757f1c0aed87a9b54bd7d0fb76b74bceeaa5c9291b0d28"
     },
+    "tools/verify_container.py": {
+      "bytes": 1997,
+      "sha256": "3cfaf277276538922da2cfc8fbda2642cc73a899fc344f3509c7858e358b4dbd"
+    },
     "vendor/ampr/.gitattributes": {
       "bytes": 258,
       "sha256": "39d6dec9588760cbfe4e15e4d01b8c2190e8eb2e0f70644dcc955084f8322566"
@@ -1706,6 +1782,18 @@
       "bytes": 501,
       "sha256": "3cacaed293b28f40064477176d5a4bf50d269d68515b77e0913e6e8c225dc172"
     },
+    "vendor/ampr/LICENSE": {
+      "bytes": 35823,
+      "sha256": "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809"
+    },
+    "vendor/ampr/Makefile": {
+      "bytes": 12027,
+      "sha256": "a287d13082989d15b67189d9dccc8b7d0a361a4f121f5d58c95f804a5af02eb8"
+    },
+    "vendor/ampr/README.md": {
+      "bytes": 83,
+      "sha256": "56235c779e45097a67712575eaf009ecfad11d80323d73cc33868f4fe62aaf1c"
+    },
     "vendor/ampr/docs/AMPR_PACK_DISTRIBUTION_README_EN.md": {
       "bytes": 1610,
       "sha256": "2c92847f59c56cb02528e6e7b915a8bcdf88c369004c578d87fb6d8b3122d8b8"
@@ -1714,6 +1802,10 @@
       "bytes": 2575,
       "sha256": "3f1a5ee69ebe9050b4867a4f1e6106eb2bec4637a768035e84590146761ba371"
     },
+    "vendor/ampr/docs/ASSET_PACKS.md": {
+      "bytes": 39132,
+      "sha256": "9226cd9dc97ba4febebfd78c1f7fec67290ebe0a9bdc2114e51f6c6d7cf9c3fb"
+    },
     "vendor/ampr/docs/ASSET_PACK_WORKFLOW_EN.md": {
       "bytes": 32712,
       "sha256": "5f42f2c3ec59ace09786bce50bb139ec9cb3cc69ab1d56193181eb2984e1402f"
@@ -1721,10 +1813,6 @@
     "vendor/ampr/docs/ASSET_PACK_WORKFLOW_RU.md": {
       "bytes": 53328,
       "sha256": "0da34cedcedd06274dbd78a0407ba027b9fd591771b297797cc1ba90e50a5616"
-    },
-    "vendor/ampr/docs/ASSET_PACKS.md": {
-      "bytes": 39132,
-      "sha256": "9226cd9dc97ba4febebfd78c1f7fec67290ebe0a9bdc2114e51f6c6d7cf9c3fb"
     },
     "vendor/ampr/include/ampr.h": {
       "bytes": 3964,
@@ -1874,18 +1962,6 @@
       "bytes": 988,
       "sha256": "cf822b643af57a24a6027d7f10a4502fcddc5c2424ce842bfbcb3d3a43b7933e"
     },
-    "vendor/ampr/LICENSE": {
-      "bytes": 35823,
-      "sha256": "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809"
-    },
-    "vendor/ampr/Makefile": {
-      "bytes": 12027,
-      "sha256": "a287d13082989d15b67189d9dccc8b7d0a361a4f121f5d58c95f804a5af02eb8"
-    },
-    "vendor/ampr/msbuild/libSceAmpr/libSceAmpr.vcxproj": {
-      "bytes": 13996,
-      "sha256": "27e6e6af7313508d2317786ccbfa7b559f0ab8b46816e2fd7491891a7d729d57"
-    },
     "vendor/ampr/msbuild/Prospero.App.props": {
       "bytes": 313,
       "sha256": "a7e1558bb18cc49ada10cb1ff2b24106e6f3bed06717dd735b551a1cc2fc50da"
@@ -1893,6 +1969,14 @@
     "vendor/ampr/msbuild/Prospero.Common.props": {
       "bytes": 3629,
       "sha256": "46ba9fea3a32d686d18668c70bf395c77636e9a337e8609ecf1fb937df863522"
+    },
+    "vendor/ampr/msbuild/libSceAmpr/libSceAmpr.vcxproj": {
+      "bytes": 13996,
+      "sha256": "27e6e6af7313508d2317786ccbfa7b559f0ab8b46816e2fd7491891a7d729d57"
+    },
+    "vendor/ampr/ps5/crt/README.md": {
+      "bytes": 703,
+      "sha256": "15fc118910812593b071dbb18adf92cf34cc283e819c9bbd93e024f81d30ef58"
     },
     "vendor/ampr/ps5/crt/crtbeginS.c": {
       "bytes": 2276,
@@ -1910,9 +1994,9 @@
       "bytes": 290,
       "sha256": "91d3f87e7157b5e418330abcc979a6197f921ed000b9316f37dbd33ebef838f8"
     },
-    "vendor/ampr/ps5/crt/README.md": {
-      "bytes": 703,
-      "sha256": "15fc118910812593b071dbb18adf92cf34cc283e819c9bbd93e024f81d30ef58"
+    "vendor/ampr/ps5/include/sce/README.md": {
+      "bytes": 640,
+      "sha256": "434ec6bd0be37384d420283831cb5146f3b264a0fda3a297837e7fe46199d9ca"
     },
     "vendor/ampr/ps5/include/sce/_fs.h": {
       "bytes": 4469,
@@ -1934,6 +2018,10 @@
       "bytes": 611,
       "sha256": "c2c3a9dada6eb17c50320a245af88faa385f78c622daff96cab35f71c2312648"
     },
+    "vendor/ampr/ps5/include/sce/kernel.h": {
+      "bytes": 263,
+      "sha256": "bec4b7e2f060cde03275a4cbb0ccefd6eaf13c98f9812f6c5a867834dfd0065c"
+    },
     "vendor/ampr/ps5/include/sce/kernel/equeue.h": {
       "bytes": 1736,
       "sha256": "ed1e9f8bd1ec3d835099fb9ce8f7d2962e7e8b78f3e52e070fc817674f0e98be"
@@ -1941,14 +2029,6 @@
     "vendor/ampr/ps5/include/sce/kernel/semaphore.h": {
       "bytes": 779,
       "sha256": "9d3b2c732fbde3f188b6c80aff3b9d125e44613cbf3efa51f01725576c4f2775"
-    },
-    "vendor/ampr/ps5/include/sce/kernel.h": {
-      "bytes": 263,
-      "sha256": "bec4b7e2f060cde03275a4cbb0ccefd6eaf13c98f9812f6c5a867834dfd0065c"
-    },
-    "vendor/ampr/ps5/include/sce/README.md": {
-      "bytes": 640,
-      "sha256": "434ec6bd0be37384d420283831cb5146f3b264a0fda3a297837e7fe46199d9ca"
     },
     "vendor/ampr/ps5/include/sce/sys/dmem.h": {
       "bytes": 4534,
@@ -1958,17 +2038,13 @@
       "bytes": 1620,
       "sha256": "35ddd1608c96aa8cfe7667aed578b7e201e5c66cc0b6a4db4dba5f7d70fdffb1"
     },
-    "vendor/ampr/ps5/prx/prx.script": {
-      "bytes": 5954,
-      "sha256": "65489782e0cb1b8e1b59832166412713e7fcaadab10991e9530ce5bb8507916f"
-    },
     "vendor/ampr/ps5/prx/README.md": {
       "bytes": 376,
       "sha256": "149c321bba5d1fc9122715e898aff60d50013463fa59b4e3e20f5305937c0060"
     },
-    "vendor/ampr/README.md": {
-      "bytes": 83,
-      "sha256": "56235c779e45097a67712575eaf009ecfad11d80323d73cc33868f4fe62aaf1c"
+    "vendor/ampr/ps5/prx/prx.script": {
+      "bytes": 5954,
+      "sha256": "65489782e0cb1b8e1b59832166412713e7fcaadab10991e9530ce5bb8507916f"
     },
     "vendor/ampr/src/ampr_debug_log.cpp": {
       "bytes": 36138,
@@ -2090,14 +2166,6 @@
       "bytes": 984,
       "sha256": "5d00e312e7ee2db1eb635aabc44639d0c3dd00a862d8e0270305fb7cc7286f49"
     },
-    "vendor/ampr/third_party/lz4/lib/lz4.c": {
-      "bytes": 120974,
-      "sha256": "acecb7244d92b0e5ef27c6bda601847c6a5b0c99c9474ddd4957a3d02c0f9a38"
-    },
-    "vendor/ampr/third_party/lz4/lib/lz4.h": {
-      "bytes": 46898,
-      "sha256": "9a1de32919a47dcb02575dd1b2650563eb73b7e0d91a4f846192becc78d1e7c3"
-    },
     "vendor/ampr/third_party/lz4/LICENSE": {
       "bytes": 658,
       "sha256": "5c3a531b92d858389aa4191445b12b0c6788f2887a9caea57aafe17b62763881"
@@ -2105,6 +2173,14 @@
     "vendor/ampr/third_party/lz4/README.ampr.md": {
       "bytes": 449,
       "sha256": "908effe4a17864337b748a72b35bb49df1490eed0ea31235acfd8333d08f7b3f"
+    },
+    "vendor/ampr/third_party/lz4/lib/lz4.c": {
+      "bytes": 120974,
+      "sha256": "acecb7244d92b0e5ef27c6bda601847c6a5b0c99c9474ddd4957a3d02c0f9a38"
+    },
+    "vendor/ampr/third_party/lz4/lib/lz4.h": {
+      "bytes": 46898,
+      "sha256": "9a1de32919a47dcb02575dd1b2650563eb73b7e0d91a4f846192becc78d1e7c3"
     },
     "vendor/ampr/tools/ampr_pack.example.toml": {
       "bytes": 5889,
@@ -2206,13 +2282,53 @@
       "bytes": 304,
       "sha256": "ce007323998c708c0716093b1a0cdd356b5e208f0e3c13f22af59882597037e9"
     },
+    "vendor/libsmb2/CMakeLists.txt": {
+      "bytes": 10029,
+      "sha256": "7f3c8387d34554bda4533fe4184c93656ccb659e9fa4aa2c40c6c6bf62ae16be"
+    },
+    "vendor/libsmb2/COPYING": {
+      "bytes": 895,
+      "sha256": "749c710c2b3d5c95906c785f28af9abbe4ce909311e72eb72eee5c6873e2fa6f"
+    },
+    "vendor/libsmb2/LICENCE-LGPL-2.1.txt": {
+      "bytes": 26530,
+      "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551"
+    },
+    "vendor/libsmb2/Makefile.am": {
+      "bytes": 262,
+      "sha256": "a303c50a76e6e465bb042785fe40fec35f2e2cb2f342d3fabcd681ef801b0ffb"
+    },
+    "vendor/libsmb2/Makefile.platform": {
+      "bytes": 3811,
+      "sha256": "b9b78dbb4e6486c2fe64b5df743ddf2843068ec3835cdb62e627b30a5cd1008a"
+    },
+    "vendor/libsmb2/README": {
+      "bytes": 15813,
+      "sha256": "ad43ebb701972d9146eb4ab40d3ccecf83586dc070d237d6b8cb51fc2821ce4a"
+    },
+    "vendor/libsmb2/Xbox 360/libsmb2.sln": {
+      "bytes": 1844,
+      "sha256": "6ddca01ca961ffbec187de78de91c30317f0d87e36df86a2f1885863eb2a0093"
+    },
+    "vendor/libsmb2/Xbox 360/libsmb2.vcxproj": {
+      "bytes": 17819,
+      "sha256": "a9f1be0b9d871def8f139e05bd8033024cdffab6a92f2583445632975e9c84c7"
+    },
+    "vendor/libsmb2/Xbox 360/libsmb2.vcxproj.filters": {
+      "bytes": 8610,
+      "sha256": "006d23c7c164cd57ddc4624707316fdb2b7d68f6e46d39fd4132ca0bc80188e9"
+    },
+    "vendor/libsmb2/Xbox/libsmb2.sln": {
+      "bytes": 1454,
+      "sha256": "819a42a305f3662132b4f86c1f69637ae1903bf3ecf2616e21aa3ef3b9df129b"
+    },
+    "vendor/libsmb2/Xbox/libsmb2.vcproj": {
+      "bytes": 11673,
+      "sha256": "968158bb6704336fac4be8e7c08da7144675c25eead012c72a60f8911f540ce3"
+    },
     "vendor/libsmb2/bootstrap": {
       "bytes": 26,
       "sha256": "0b99069043ddb0a44132248ac135ce21497fd155003aaef88f8b5150f00fe844"
-    },
-    "vendor/libsmb2/cmake/config.h.cmake": {
-      "bytes": 4410,
-      "sha256": "4d358830f10c10cfce0dd2bcd6f937e1d2279864f02f3a64e8e2b6983bcd96df"
     },
     "vendor/libsmb2/cmake/ConfigureChecks.cmake": {
       "bytes": 2530,
@@ -2222,10 +2338,6 @@
       "bytes": 1004,
       "sha256": "ee71f3bbdfa7001841a2bef9181970439f3bdd2926fac2ff8a403090b2847735"
     },
-    "vendor/libsmb2/cmake/libsmb2.pc.cmake": {
-      "bytes": 340,
-      "sha256": "7f54272480d98052f83dabca81fadf045316d47c5de34d5c57871e05bf28d1ec"
-    },
     "vendor/libsmb2/cmake/Modules/FindGSSAPI.cmake": {
       "bytes": 802,
       "sha256": "295d610a9144fba50b65fe7187d5b6292c49c3e0916467b50bb9edb16c003a17"
@@ -2234,9 +2346,13 @@
       "bytes": 1118,
       "sha256": "bb66d2598eb43d61aea7077b434c8758bd2581856c52413ec9a1f5e08e97a2fd"
     },
-    "vendor/libsmb2/CMakeLists.txt": {
-      "bytes": 10029,
-      "sha256": "7f3c8387d34554bda4533fe4184c93656ccb659e9fa4aa2c40c6c6bf62ae16be"
+    "vendor/libsmb2/cmake/config.h.cmake": {
+      "bytes": 4410,
+      "sha256": "4d358830f10c10cfce0dd2bcd6f937e1d2279864f02f3a64e8e2b6983bcd96df"
+    },
+    "vendor/libsmb2/cmake/libsmb2.pc.cmake": {
+      "bytes": 340,
+      "sha256": "7f54272480d98052f83dabca81fadf045316d47c5de34d5c57871e05bf28d1ec"
     },
     "vendor/libsmb2/component.mk": {
       "bytes": 114,
@@ -2245,10 +2361,6 @@
     "vendor/libsmb2/configure.ac": {
       "bytes": 4762,
       "sha256": "6a9f19c8aebae8e8e772846b2d530a29781bc766e0e987287a69ee63d8d9d43d"
-    },
-    "vendor/libsmb2/COPYING": {
-      "bytes": 895,
-      "sha256": "749c710c2b3d5c95906c785f28af9abbe4ce909311e72eb72eee5c6873e2fa6f"
     },
     "vendor/libsmb2/examples/CMakeLists.txt": {
       "bytes": 762,
@@ -2262,17 +2374,21 @@
       "bytes": 2403,
       "sha256": "87882cf069edc50486513011dd39757907337b749bc90aa2da8bfb1ad2ae6475"
     },
-    "vendor/libsmb2/examples/picow/main.cpp": {
-      "bytes": 3355,
-      "sha256": "8da44f2d5117a6c65d1defead9acc546b7f6438e34df2f58efd521a07055953b"
-    },
     "vendor/libsmb2/examples/picow/README.md": {
       "bytes": 267,
       "sha256": "cd5177bc3e6e7ddf92e65e8e5f9e707fcec26192c69939899f015f39774b6464"
     },
+    "vendor/libsmb2/examples/picow/main.cpp": {
+      "bytes": 3355,
+      "sha256": "8da44f2d5117a6c65d1defead9acc546b7f6438e34df2f58efd521a07055953b"
+    },
     "vendor/libsmb2/examples/picow/smb-ls-sync.c": {
       "bytes": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "vendor/libsmb2/examples/smb2-CMD-FIND.c": {
+      "bytes": 12481,
+      "sha256": "26f7f39176fb8f1f3fa40a8c0885ac6f84b737ae9ecb8c7640b69a1d64323e7c"
     },
     "vendor/libsmb2/examples/smb2-cat-async.c": {
       "bytes": 5747,
@@ -2281,10 +2397,6 @@
     "vendor/libsmb2/examples/smb2-cat-sync.c": {
       "bytes": 3693,
       "sha256": "bf6a35ff0ceb3eecb6aaa656baa3d17f17fdca0f2c193cb6e10755a037ce1517"
-    },
-    "vendor/libsmb2/examples/smb2-CMD-FIND.c": {
-      "bytes": 12481,
-      "sha256": "26f7f39176fb8f1f3fa40a8c0885ac6f84b737ae9ecb8c7640b69a1d64323e7c"
     },
     "vendor/libsmb2/examples/smb2-ftruncate-sync.c": {
       "bytes": 3205,
@@ -2358,6 +2470,10 @@
       "bytes": 185,
       "sha256": "df78ec962e24fe55aa61af4e66d6b7ad51091a3700dec6463cc412ab4cc88f6f"
     },
+    "vendor/libsmb2/include/Makefile.am": {
+      "bytes": 302,
+      "sha256": "a449ad4db1a4002c9a9fd23336749a690bf88fd7bc3fdc8df45be3923ab6823f"
+    },
     "vendor/libsmb2/include/amiga_os/config.h": {
       "bytes": 4096,
       "sha256": "0378367f9a07bbc1317e2fa5d23779a17dfb1b2b9ba41e0bb133f5a4ea2717a8"
@@ -2378,21 +2494,21 @@
       "bytes": 26040,
       "sha256": "20e103358712321c36d7fd606c66aac435e49f86eff454b253193629aa4fc582"
     },
-    "vendor/libsmb2/include/Makefile.am": {
-      "bytes": 302,
-      "sha256": "a449ad4db1a4002c9a9fd23336749a690bf88fd7bc3fdc8df45be3923ab6823f"
-    },
     "vendor/libsmb2/include/module.modulemap": {
       "bytes": 470,
       "sha256": "98fd41d682efaf96f693a81d984d0eb322a0bd6cb89bcf1c46ca505db4d0ae35"
     },
-    "vendor/libsmb2/include/picow/config.h": {
-      "bytes": 4141,
-      "sha256": "0226bb8eee4c36284653ca2acbded7092cc44350595efb7d399c57ae1645a338"
-    },
     "vendor/libsmb2/include/picow/FreeRTOSConfig.h": {
       "bytes": 5962,
       "sha256": "2a481b1d0faf333f9473727c5acdcd437e3d4b7b642cedaac06b7855846e0f4d"
+    },
+    "vendor/libsmb2/include/picow/README.md": {
+      "bytes": 288,
+      "sha256": "d6ce9072fa21ad2583503294be4f84878e3c3d9de9f350051860ce040cf7f7eb"
+    },
+    "vendor/libsmb2/include/picow/config.h": {
+      "bytes": 4141,
+      "sha256": "0226bb8eee4c36284653ca2acbded7092cc44350595efb7d399c57ae1645a338"
     },
     "vendor/libsmb2/include/picow/lwipopts.h": {
       "bytes": 759,
@@ -2401,10 +2517,6 @@
     "vendor/libsmb2/include/picow/lwipopts_examples_common.h": {
       "bytes": 3417,
       "sha256": "c4a1f36f99b5c4a594be5625de0be24c33f054ac62a35d679b08293ecdebbbca"
-    },
-    "vendor/libsmb2/include/picow/README.md": {
-      "bytes": 288,
-      "sha256": "d6ce9072fa21ad2583503294be4f84878e3c3d9de9f350051860ce040cf7f7eb"
     },
     "vendor/libsmb2/include/portable-endian.h": {
       "bytes": 9211,
@@ -2450,13 +2562,37 @@
       "bytes": 37487,
       "sha256": "6044a3e59b1ee3647d2feb288871635ff6e679d3650ac9e2b98982923b665ff5"
     },
+    "vendor/libsmb2/include/xbox 360/config.h": {
+      "bytes": 4147,
+      "sha256": "8ad4ceea937ad1a2332e71efba7b83e5b8e4d926963448a6b49d0aed43698da8"
+    },
     "vendor/libsmb2/include/xbox/config.h": {
       "bytes": 4141,
       "sha256": "466d1fe011ede17baf54619632ac879a1431b3bf5a8bab107aca464438d1ae33"
     },
-    "vendor/libsmb2/include/xbox 360/config.h": {
-      "bytes": 4147,
-      "sha256": "8ad4ceea937ad1a2332e71efba7b83e5b8e4d926963448a6b49d0aed43698da8"
+    "vendor/libsmb2/lib/CMakeLists.txt": {
+      "bytes": 6738,
+      "sha256": "ee81145d420f7127c1d5f458d1e0ee1da0442665c6dddb0f77b8b9a79aefec00"
+    },
+    "vendor/libsmb2/lib/Makefile.AMIGA": {
+      "bytes": 1582,
+      "sha256": "63c85a0a050d726349fbe74d95bb348a6d4ab8a8c860f2944e7f90bdb3f7d8af"
+    },
+    "vendor/libsmb2/lib/Makefile.AMIGA_AROS": {
+      "bytes": 1870,
+      "sha256": "70900852e651adfa7652b2503f752241a094302c1ae713d92c3b4c1e7f6c5ea1"
+    },
+    "vendor/libsmb2/lib/Makefile.AMIGA_OS3": {
+      "bytes": 1989,
+      "sha256": "5d46d767d7a6cafbdf745fa49b480ec69033f8a7421235a569d05d148666d6bf"
+    },
+    "vendor/libsmb2/lib/Makefile.PS3_PPU": {
+      "bytes": 3035,
+      "sha256": "839b3e1d72880987df475a51db3a585f31d239e1a7aef8c06bdf58093e0221f1"
+    },
+    "vendor/libsmb2/lib/Makefile.am": {
+      "bytes": 1570,
+      "sha256": "67cc686a88ea648cd30f1501106935fe5d87cf3ce5745a52a45f934ca2eda7db"
     },
     "vendor/libsmb2/lib/aes.c": {
       "bytes": 18827,
@@ -2485,10 +2621,6 @@
     "vendor/libsmb2/lib/asn1-ber.h": {
       "bytes": 6541,
       "sha256": "adec716b9688234ab0246a57609b318051cf66ec5e91117202a486542e3da26b"
-    },
-    "vendor/libsmb2/lib/CMakeLists.txt": {
-      "bytes": 6738,
-      "sha256": "ee81145d420f7127c1d5f458d1e0ee1da0442665c6dddb0f77b8b9a79aefec00"
     },
     "vendor/libsmb2/lib/compat.c": {
       "bytes": 14666,
@@ -2546,26 +2678,6 @@
       "bytes": 2819,
       "sha256": "6dc77e99262eb21cbb34943ac53a74c48c39335f74133d242ecb852cea25bcc7"
     },
-    "vendor/libsmb2/lib/Makefile.am": {
-      "bytes": 1570,
-      "sha256": "67cc686a88ea648cd30f1501106935fe5d87cf3ce5745a52a45f934ca2eda7db"
-    },
-    "vendor/libsmb2/lib/Makefile.AMIGA": {
-      "bytes": 1582,
-      "sha256": "63c85a0a050d726349fbe74d95bb348a6d4ab8a8c860f2944e7f90bdb3f7d8af"
-    },
-    "vendor/libsmb2/lib/Makefile.AMIGA_AROS": {
-      "bytes": 1870,
-      "sha256": "70900852e651adfa7652b2503f752241a094302c1ae713d92c3b4c1e7f6c5ea1"
-    },
-    "vendor/libsmb2/lib/Makefile.AMIGA_OS3": {
-      "bytes": 1989,
-      "sha256": "5d46d767d7a6cafbdf745fa49b480ec69033f8a7421235a569d05d148666d6bf"
-    },
-    "vendor/libsmb2/lib/Makefile.PS3_PPU": {
-      "bytes": 3035,
-      "sha256": "839b3e1d72880987df475a51db3a585f31d239e1a7aef8c06bdf58093e0221f1"
-    },
     "vendor/libsmb2/lib/md4.h": {
       "bytes": 1509,
       "sha256": "bf8b13f1b40b9dc00dc4d85d0b5105713af2f983fe1a46f95b5fe9be8a0cdce8"
@@ -2594,6 +2706,10 @@
       "bytes": 34204,
       "sha256": "f35ef08293707ecb9c5ecd3a9302d13723af2ed8c079a31f129e5b92266f4757"
     },
+    "vendor/libsmb2/lib/ps2/TODO": {
+      "bytes": 243,
+      "sha256": "304e8f1c772310bc714314df1cb6b0c59b1e98c6bcf3a8e9260fcc0c68738b8e"
+    },
     "vendor/libsmb2/lib/ps2/imports.lst": {
       "bytes": 1112,
       "sha256": "3267bd069208c7246e13d77e9f18dcd7c1f89d8a175165960100f4d8a1eec784"
@@ -2617,10 +2733,6 @@
     "vendor/libsmb2/lib/ps2/smb2man.c": {
       "bytes": 1299,
       "sha256": "67bea83e5768c7a07b122aca97ea5bc139ca3b89defa8e50856332dd790bcf9e"
-    },
-    "vendor/libsmb2/lib/ps2/TODO": {
-      "bytes": 243,
-      "sha256": "304e8f1c772310bc714314df1cb6b0c59b1e98c6bcf3a8e9260fcc0c68738b8e"
     },
     "vendor/libsmb2/lib/sha-private.h": {
       "bytes": 900,
@@ -2786,18 +2898,6 @@
       "bytes": 295,
       "sha256": "b1f4a68da69a61e76d6a7b285c954595587ae6577c4067eef97bc0959362f1a6"
     },
-    "vendor/libsmb2/LICENCE-LGPL-2.1.txt": {
-      "bytes": 26530,
-      "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551"
-    },
-    "vendor/libsmb2/Makefile.am": {
-      "bytes": 262,
-      "sha256": "a303c50a76e6e465bb042785fe40fec35f2e2cb2f342d3fabcd681ef801b0ffb"
-    },
-    "vendor/libsmb2/Makefile.platform": {
-      "bytes": 3811,
-      "sha256": "b9b78dbb4e6486c2fe64b5df743ddf2843068ec3835cdb62e627b30a5cd1008a"
-    },
     "vendor/libsmb2/packaging/RPM/libsmb2.spec.in": {
       "bytes": 3322,
       "sha256": "2650c6c44dca39454a85634745eb04c5f621cdf9aa65c44eea7fa0d89a02a4ca"
@@ -2806,9 +2906,13 @@
       "bytes": 3030,
       "sha256": "6e83e174bdd196078ac69bc34858c33945f63ec354b8f7e54562b166282fc68a"
     },
-    "vendor/libsmb2/README": {
-      "bytes": 15813,
-      "sha256": "ad43ebb701972d9146eb4ab40d3ccecf83586dc070d237d6b8cb51fc2821ce4a"
+    "vendor/libsmb2/tests/Makefile.am": {
+      "bytes": 825,
+      "sha256": "20158ef9a5ed239793a72d8902bfd6567499e6dea19f7476e226b6378aef786f"
+    },
+    "vendor/libsmb2/tests/README": {
+      "bytes": 790,
+      "sha256": "299b7f1641b889802b97c9654ebaa426076a35eeca42286abb0a808e36834d1f"
     },
     "vendor/libsmb2/tests/aes128ccm-test.c": {
       "bytes": 3781,
@@ -2821,10 +2925,6 @@
     "vendor/libsmb2/tests/ld_sockerr.c": {
       "bytes": 1703,
       "sha256": "de1ec937c0c826e6f5f0ddf8dbaa05734796071e96ea3414fca00b8a48889d28"
-    },
-    "vendor/libsmb2/tests/Makefile.am": {
-      "bytes": 825,
-      "sha256": "20158ef9a5ed239793a72d8902bfd6567499e6dea19f7476e226b6378aef786f"
     },
     "vendor/libsmb2/tests/ntlmssp_generate_blob.c": {
       "bytes": 4678,
@@ -2845,10 +2945,6 @@
     "vendor/libsmb2/tests/prog_rmdir.c": {
       "bytes": 3077,
       "sha256": "ae37f32c81c3524e169876cb4b07d99b48fb9d3883c68e9077adcefdc7cc5ed2"
-    },
-    "vendor/libsmb2/tests/README": {
-      "bytes": 790,
-      "sha256": "299b7f1641b889802b97c9654ebaa426076a35eeca42286abb0a808e36834d1f"
     },
     "vendor/libsmb2/tests/smb2-dcerpc-coder-test.c": {
       "bytes": 29544,
@@ -2918,37 +3014,9 @@
       "bytes": 5059,
       "sha256": "f240a8558accda5fd7a410d1791d51f286117092ee4fe39442ec317c0c1439e6"
     },
-    "vendor/libsmb2/Xbox/libsmb2.sln": {
-      "bytes": 1454,
-      "sha256": "819a42a305f3662132b4f86c1f69637ae1903bf3ecf2616e21aa3ef3b9df129b"
-    },
-    "vendor/libsmb2/Xbox/libsmb2.vcproj": {
-      "bytes": 11673,
-      "sha256": "968158bb6704336fac4be8e7c08da7144675c25eead012c72a60f8911f540ce3"
-    },
-    "vendor/libsmb2/Xbox 360/libsmb2.sln": {
-      "bytes": 1844,
-      "sha256": "6ddca01ca961ffbec187de78de91c30317f0d87e36df86a2f1885863eb2a0093"
-    },
-    "vendor/libsmb2/Xbox 360/libsmb2.vcxproj": {
-      "bytes": 17819,
-      "sha256": "a9f1be0b9d871def8f139e05bd8033024cdffab6a92f2583445632975e9c84c7"
-    },
-    "vendor/libsmb2/Xbox 360/libsmb2.vcxproj.filters": {
-      "bytes": 8610,
-      "sha256": "006d23c7c164cd57ddc4624707316fdb2b7d68f6e46d39fd4132ca0bc80188e9"
-    },
-    "vendor/sdk-runtime/arc4random.c": {
-      "bytes": 6715,
-      "sha256": "e297485af1aa7b78880bc2b3add5290070c3d213512da0543ec0c3acaf057c5a"
-    },
     "vendor/sdk-runtime/LICENSE": {
       "bytes": 35823,
       "sha256": "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809"
-    },
-    "vendor/sdk-runtime/namespace.h": {
-      "bytes": 12011,
-      "sha256": "d95e3735a43a328ba9b80c6e2f2a5cfcc707eef36f1cab5f1d74a06455513fab"
     },
     "vendor/sdk-runtime/NOTICE.md": {
       "bytes": 4149,
@@ -2957,6 +3025,14 @@
     "vendor/sdk-runtime/README.md": {
       "bytes": 1909,
       "sha256": "4be5c24bf36149fa52c54c4f6af72a61880f3256303392bf9237c3d9e98e9663"
+    },
+    "vendor/sdk-runtime/arc4random.c": {
+      "bytes": 6715,
+      "sha256": "e297485af1aa7b78880bc2b3add5290070c3d213512da0543ec0c3acaf057c5a"
+    },
+    "vendor/sdk-runtime/namespace.h": {
+      "bytes": 12011,
+      "sha256": "d95e3735a43a328ba9b80c6e2f2a5cfcc707eef36f1cab5f1d74a06455513fab"
     },
     "vendor/sdk-runtime/runtime-source.json": {
       "bytes": 19995,

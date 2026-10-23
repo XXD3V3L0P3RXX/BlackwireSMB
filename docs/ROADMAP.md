@@ -1,6 +1,6 @@
 # Blackwire roadmap
 
-The standalone preview has an observed path for **Send → Ready → Games icon**, repeated Hot Wheels direct launch, and an explicitly installed blue Media entry. The latest update adds the revised game-card interface and has completed retained-file GTA setup recovery on console. See [testing](TESTING.md) for the exact scope. Work below remains planned unless that record marks it verified.
+`v0.2.0-preview.1` adds supported PFS/PFSC compressed sources, two shares, compressed artwork, library refresh and PS5 control repairs. Earlier compressed testing reached GTA and RE7 gameplay; current combined-reader tests reached both initial menus. Circle is confirmed for the library and Details. See [testing](TESTING.md) and the [changelog](../CHANGELOG.md) for version-specific scope. Work below remains planned unless those records mark it verified.
 
 ## Standalone setup and reliability
 
@@ -8,11 +8,12 @@ The standalone preview has an observed path for **Send → Ready → Games icon*
 - Broaden fresh-install, missing-resident, normal-exit, Uninstall and crash/restart qualification.
 - Extend hardware checks for deleted-copy status and the updated ordinary Uninstall recovery.
 - Keep incomplete operations actionable without blind retries.
+- Remove the redundant Close browser button; retain the confirmed native Circle exit. Complete physical Settings/Help controller checks and add an interaction guard to initial history-event handling.
 - Publish reproducible source/build records, checksums, notices and relinking material alongside each preview.
 
 ## Loading and performance
 
-Current development work is recorded in [compressed-source development](COMPRESSED-DEVELOPMENT.md): an indexed RAM cache and bounded PFSC batching have passed host comparisons. PS5 loading-time comparisons remain pending.
+The indexed 64 MiB payload cache, bounded PFSC batching and reduced unchanged-source launch verification are included in this preview. Host comparisons are recorded in [compressed-source results](COMPRESSED-DEVELOPMENT.md). Controlled PS5 loading-time comparisons remain pending; the cache budget was not increased.
 
 - Compare the same game's menu and scene-loading intervals with the same selections; the historical reader comparison did not show shorter loading.
 - Expose useful delivered-byte, request-time, request-size and cache-hit counters where the resident can observe them.
@@ -22,7 +23,7 @@ Current development work is recorded in [compressed-source development](COMPRESS
 
 - Record startup, menu and gameplay results for more owned extracted backups.
 - Investigate failures using actual source/read evidence and preserve unknown outcomes.
-- Qualify PFS/PFSC compressed streaming through Send, Blackwire Play, direct Games-tab launch and Uninstall. Folder sources remain the published preview path.
+- Extend the current combined-library reader's qualification through full gameplay, repeat Blackwire Play and Games-tab launches, missing-share handling and hardware Uninstall. Earlier-reader gameplay is recorded separately.
 - Add and independently test exFAT-based compressor output after the PFS/PFSC console path is qualified.
 
 ## Blackwire Dashboard

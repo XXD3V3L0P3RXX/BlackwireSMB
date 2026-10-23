@@ -22,7 +22,7 @@ Keep ShadowMount's API and per-game library overlay enabled. The observed setup 
 
 ## PC, network and console space
 
-- An awake PC with complete extracted game folders and a readable SMB share.
+- An awake PC with complete extracted game folders or supported PFS/PFSC images and a readable SMB share. A second share is optional; both must use the same server and credentials.
 - An SMB account with a password and read permission at both sharing and filesystem layers. A Windows Hello PIN is not an account password.
 - Wired Ethernet for the observed streaming results. Wi-Fi and other network arrangements are not qualified here.
 - Console space for real startup data, preparation metadata and the working cache. Sparse files retain large logical lengths without allocating their entire contents.
@@ -32,6 +32,10 @@ Python, Node, WSL, a native Dashboard and recording tools are development tools 
 
 ## Reader and format scope
 
-The selected reader keeps STRICT identity validation, a contiguous-read coalescer, one worker and a 64 MiB payload cache. Extracted folder sources are the supported preview path. Compressed/container early streaming and experimental reader-performance changes are excluded.
+The selected reader keeps STRICT identity validation, a contiguous-read coalescer, one worker and a 64 MiB payload cache. `v0.2.0-preview.1` adds an indexed cache and bounded PFSC batching without increasing that payload-cache budget. Extracted folders and supported unsigned contiguous D32 PFS/PFSC layouts are accepted. exFAT-based compressor output, signed/encrypted PFS, scattered extents, wide inode layouts and individually compressed inner files remain unsupported. See [format scope](COMPRESSED-DEVELOPMENT.md#formats).
+
+The two-share configuration uses the same PC/server and sign-in details. Both shares need only read access; Blackwire does not need to write into the PC library. No compressor payload needs to run on the PS5 merely to stream an already supported compressed image.
+
+Avoid unnecessary background workload when testing. A separate Game Compressor payload was observed consuming nearly a CPU core while idle. This is a measured CPU-contention finding, not a confirmed out-of-memory diagnosis. Firmware compatibility remains limited to the recorded profile; a successful test does not qualify every system or title.
 
 Check [testing](TESTING.md) for the exact resident/reader identities and observed titles. A successful build, prepared copy, started process or main menu does not prove later gameplay for every game.

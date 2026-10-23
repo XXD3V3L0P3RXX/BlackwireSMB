@@ -1,6 +1,6 @@
 # Compressed streaming development
 
-The published `v0.1.0-preview.1` remains the working folder-only preview. This development branch adds a compressed source to the existing preparation and early-reader workflow. GTA V and Resident Evil 7 reached visible gameplay from the supplied compressed images on the test console. After identifying an unrelated background Game Compressor process consuming a CPU core and stopping it, the same reader completed four clean initial launches. Full gameplay, dashboard launches and shorter loading times still require controlled console qualification.
+`v0.2.0-preview.1` adds supported compressed sources to the existing preparation and early-reader workflow; `v0.1.0-preview.1` remains the earlier folder-only baseline. GTA V and Resident Evil 7 reached controllable gameplay on compressed development 5, and GTA passed a literal Games-icon driving test. The later combined-library reader reached both initial menus; full gameplay was not repeated on that exact reader. Controlled PS5 loading-time benchmarks, wider coverage and hardware removal checks remain open. The investigation and version-specific results below preserve failed as well as successful tests.
 
 ## Formats
 
@@ -10,7 +10,7 @@ An extension is not proof of format support. Compressor versions can also produc
 
 The original image remains on the SMB share. Preparation enumerates logical files, copies startup data onto the PS5 and creates sparse placeholders there. Streamed reads use exact map IDs bound to the image's logical files; those IDs are not assumed to equal PFS inode numbers. No PC decompression server or write access to the share is required.
 
-The folder containing a compressed image must be reachable inside the selected SMB share. A sibling outside the share is not automatically exposed. Keep existing share permissions and source files intact while testing a separate source configuration.
+The folder containing a compressed image must be reachable inside one of the configured SMB shares. The optional second share can expose a separate compressed parent on the same PC with the same credentials. A sibling outside both shares is not automatically exposed. See [two-share setup](SETUP.md#optional-second-share).
 
 ## Loading changes
 
@@ -63,7 +63,7 @@ Each evidence output must be new. Test fixtures contain no game material. The op
 5. Uninstall the owned PS5 prepared copy through its normal confirmation. Verify the PC image and saved data remain intact and the old PS5 icon is removed.
 6. Compare the same menu and scene selections against the folder release, using both reader counters and visible stopwatch times. Record failures as well as successes.
 
-The observed gameplay does not complete this checklist. Clean launch/relaunch, removal and controlled loading-time comparisons still require qualification. The working released build should not be replaced automatically.
+The observed gameplay does not complete this checklist. Qualify each newly packaged reader separately; earlier gameplay does not qualify every later build. Broader repeat launches, missing-share behavior, hardware removal and controlled loading-time comparisons remain open.
 
 ## Folder-to-container registration regression
 
@@ -114,4 +114,14 @@ The corrected source passed these host checks:
 
 PFS metadata caching invalidates a page before filling it and marks it valid only after a complete callback. Namespace validation is committed only after a complete walk; traversal scratch is discarded on failure. The repair retains those rules, signing, immutable-generation checks, cache sizes, worker affinity and priority.
 
-These checks do not establish a linked or installed repair. The console comparison above used development 3 without this source change. Development 4 now contains the repair and the exact guarded upgrade from the independently read-back development 3 reader. Its complete reader/resident SDK build, import checks, memory-layout checks and load-preserving packaging passed. The new reader is staged for controlled hardware qualification; the public folder-only release remains unchanged.
+At this investigation stage, those host checks did not establish an installed repair: the comparison used development 3, and development 4 staged the cancellation repair and exact guarded upgrade. Its complete SDK build, import checks, memory-layout checks and load-preserving packaging passed. Later console results are recorded below rather than attributed retroactively to that stage.
+
+## Later console results and released scope
+
+Compressed development 5 passed user-controlled RE7 gameplay and GTA driving after PC-browser launches without the earlier system error. A subsequent literal GTA Games-tab launch also reached driving without the error. Its reader SHA-256 was `135148e2de73b5b54d6f18dbfb95c1f2cd2d7d7e3e6dac60b756e844e6cbc684`.
+
+The two-share reader introduced in development 7 is `c9d069b520c367c971e52432a053d7105a7019cb19ee97185120bffb6190e025`. It combined extracted and compressed shares, decoded both compressed covers, reused valid startup files through known reader upgrades, and reached GTA Continue and RE7 Start Game. The operator was away from the controller, so those runs are initial-menu results. This same reader is embedded in the current development-11 release artifact; its recent controls checks are not new gameplay tests.
+
+One earlier live resident replacement was followed by a console power-off. The same binary subsequently ran after recovery; the cause of that power-off was not established. Later idle UI replacements completed without restarting the console. These results do not qualify arbitrary hot replacement, interrupted-session recovery or an update while a game is active.
+
+`v0.2.0-preview.1` packages the tested development-11 ELF with the two-share reader. Current binary hashes, user-confirmed Circle behavior, the failed extra Close browser control and remaining limits are recorded in [testing](TESTING.md#compressed-and-two-share-preview) and the [changelog](../CHANGELOG.md). No controlled PS5 percentage speedup or universal system-error fix is claimed.

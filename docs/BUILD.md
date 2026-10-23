@@ -1,6 +1,6 @@
 # Build Blackwire
 
-The ordinary builder produces the standalone web resident and embedded FOLDER reader as `Blackwire.elf`. It builds corresponding runtime/dependency source offline and does not install, load or contact a console. The native Dashboard interface and assets are excluded.
+The ordinary builder produces the standalone web resident and embedded folder/PFS/PFSC reader as `Blackwire.elf`. It builds corresponding runtime/dependency source offline and does not install, load or contact a console. The native Dashboard interface and assets are excluded.
 
 ## Toolchain
 
@@ -26,7 +26,17 @@ These commands describe the public recipe; they do not assert that every listed 
 
 ## Current preview build record
 
-A complete clean source build passed for the backend and approved web interface. The current release ELF subsequently received a focused interface-only repair to the closing `main` tag so modal controls remain interactive. The backend and embedded reader are unchanged by that repair. The current ELF has its own recorded identity; it is not the same binary as the earlier clean-build artifact or the prior resident's GTA recovery observation. See the [current checks](TESTING.md#current-update) and [prior recovery result](TESTING.md#gta-recovery-on-the-prior-resident).
+`v0.2.0-preview.1` packages the exact `blackwire-two-sources-dev.11` binary built from runtime source commit `f490e1917a1f1393d0948b24b9d93d03eee9e95b`. A full source SDK build passed all 144 commands and verified unchanged build inputs from start to finish. The packaged ELF is 5,738,856 bytes, SHA-256 `b9189c87cdb88d3ad0fccc947d0d007185bb0cfa1b39e8edb585c96347411fd9`. The reader is 831,168 bytes, SHA-256 `c9d069b520c367c971e52432a053d7105a7019cb19ee97185120bffb6190e025`.
+
+The release commit adds documentation, catalog and provenance records after that runtime commit. It does not rebuild or patch the tested executable. The internal build ID therefore remains `blackwire-two-sources-dev.11`; use the release manifest and checksums to identify the distributed package. The reader is byte-identical to the combined-library development-7 reader; the subsequent changes are in the resident's embedded UI and build label.
+
+Ninety UI checks passed against the actual embedded page. The exact page was read back from the console after loading this ELF. The user confirmed root Circle exit and Details dismissal; the separate Close browser button failed and remains a documented limitation. See [current console observations](TESTING.md#compressed-and-two-share-preview).
+
+The public package includes corresponding source and relinking material for the current binary. Earlier release records remain available under their original Git tag. When building modified source, use a new output directory and record a new artifact identity rather than treating a rebuild as the tested binary.
+
+## Earlier folder-only preview build
+
+`v0.1.0-preview.1` used a complete clean source baseline followed by a focused interface-only closing-tag repair. Its backend and embedded reader were unchanged by that repair. Those earlier identities, modal checks and retained-file GTA recovery are preserved in the [folder-only test record](TESTING.md#folder-only-preview) and [prior recovery result](TESTING.md#gta-recovery-on-the-prior-resident).
 
 ## Source identity and relinking
 
