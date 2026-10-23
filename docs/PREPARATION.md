@@ -2,7 +2,7 @@
 
 ## Send files and Ready
 
-**Send files** plans the selected extracted source, copies and verifies real startup files, creates sparse streamed entries with the original logical lengths, and publishes the preparation index and receipt. It then sets up the per-game reader and ordinary PS5 registration before reporting Ready. Executables, modules and required startup data use real console blocks; bulk assets remain on the PC.
+**Send files** plans the selected extracted folder or supported compressed image, copies and verifies real startup files, creates sparse streamed entries with the original logical lengths, and publishes the preparation index and receipt. It then sets up the per-game reader and ordinary PS5 registration before reporting Ready. Executables, modules and required startup data use real console blocks; bulk assets remain on the PC.
 
 The first preparation can take several minutes or longer. Game size, file count, source storage and network conditions all matter. Record file/byte progress and preparation time separately from the game's own loading. Unknown totals remain indeterminate rather than implying zero work.
 
@@ -11,6 +11,10 @@ Ready means the selected preparation and registration passed their checks. It is
 If files are still valid but reader/icon setup is incomplete, Blackwire keeps those files and can offer **Finish setup** or **Finish setup and play**. A failed startup-data check can require actual repair. Refresh observes the current exact selection and registration; it does not blindly install a game or clear uncertain ownership.
 
 Progress, session updates and errors appear with the selected game card. If setup fails, keep its detailed stage and reason when reporting the issue; an error for one game does not mean another game's preparation failed.
+
+While a game is running, Send files remains blocked and the selected card names the session that must be closed. Close the named game normally before starting preparation. **Refresh library** rescans the configured shares after source changes; it does not automatically repeat a failed Send or resolve uncertain registration ownership.
+
+Two shares can be combined in one library, with each copy bound to its own server/share/path identity. The normal guarded reader upgrade recognizes exact known previous reader binaries and retains valid startup files. It does not accept unknown predecessor bytes or reconnect a moved source by title alone. A prepared compressed image uses its sealed generation and logical map for bounded launch validation; required local startup checks remain active.
 
 ## Launch from the Games area
 
@@ -26,7 +30,7 @@ When status checks positively establish that the exact prepared folder is gone, 
 
 An older completed registration history can otherwise block a fresh copy's setup or Uninstall. The focused recovery verifies the same source and fresh preparation, confirms that the old app registration and manual membership are absent, and records completion of that old event while retaining its history. Active games, unresolved operations, uncertain observations and foreign sources continue to refuse the action.
 
-The prior recovery resident completed one ordinary GTA **Finish setup** on console using its retained files, with no source-file recopy or manual registration repair. The current interface-only repair retains that backend and embedded reader. The same recovery path for ordinary Uninstall passed host tests; its hardware test remains pending. See the [attributed GTA recovery result](TESTING.md#gta-recovery-on-the-prior-resident) and [current update checks](TESTING.md#current-update).
+The earlier folder-only recovery resident completed one ordinary GTA **Finish setup** on console using retained files, with no source-file recopy or manual registration repair. Its later modal repair retained that backend and reader; those are historical artifact-specific results. The current combined-library reader also completed known-reader Finish setup with startup files retained. Ordinary Uninstall recovery has host coverage; updated hardware deletion qualification remains pending. See the [earlier GTA recovery result](TESTING.md#gta-recovery-on-the-prior-resident) and [current observations](TESTING.md#compressed-and-two-share-preview).
 
 ## Sparse storage
 

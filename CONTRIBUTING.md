@@ -16,6 +16,8 @@ Use synthetic fixtures and neutral project names. Do not submit game content, sy
 
 Include focused checks for changed behavior, relevant documentation and a truthful list of checks run and not run. See [build instructions](docs/BUILD.md); keep the standalone resident and reader build usable from a clean checkout without private research folders or previous output.
 
+Add user-visible fixes, additions and known limitations to [CHANGELOG.md](CHANGELOG.md). Attribute console results to their actual resident and reader versions; do not carry an earlier gameplay result forward as a new test of a later build. For loading or system-dialog reports, include the source format, launch route, background payload names and separately measured preparation/menu/gameplay stages, with private details removed.
+
 ## Licensing and attribution
 
 Original Blackwire integration is GPL-3.0-or-later. Preserve imported notices and record upstream URL/revision, local changes and required build transformations. Credit does not replace applicable corresponding-source and static-library relinking obligations. See [notices](THIRD_PARTY_NOTICES.md) and [credits](CREDITS.md).

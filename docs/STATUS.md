@@ -1,25 +1,30 @@
 # Preview status
 
-**v0.1.0-preview.1** is the standalone web-interface preview of Blackwire. It runs as one `Blackwire.elf`; a separate Blackwire PC service, native Dashboard installer and Media helper are not required.
+**v0.2.0-preview.1** adds supported PFS/PFSC compressed sources, two SMB shares, compressed artwork, library refresh and console-control repairs to the standalone web product. It runs as one `Blackwire.elf`; no Blackwire PC service, native Dashboard installer or Media helper is required. See the [changelog](../CHANGELOG.md).
 
-The current resident (`c4897f00…`) includes the revised web layout, with game-operation messages and progress kept on the selected game card, and a focused modal-control repair. Live browser checks confirmed Details Back, Settings Cancel, Help Close and outside-click dismissal for all three dialogs. Uninstall opened the correctly named confirmation, and Cancel returned without removing the game. Exact artifact identities and check scope are recorded in [testing](TESTING.md#current-update).
+## Current package
 
-A normal GTA **Finish setup** completed on the prior resident (`a59e5cda…`), reused the retained startup files with zero source-copy bytes, and reached Ready. The current interface repair leaves that backend and embedded reader unchanged. The earlier action establishes setup recovery on its recorded binary; it is not a GTA gameplay result.
+The release preserves the exact tested `blackwire-two-sources-dev.11` runtime. The ELF SHA-256 is `b9189c87cdb88d3ad0fccc947d0d007185bb0cfa1b39e8edb585c96347411fd9`; its embedded reader is `c9d069b520c367c971e52432a053d7105a7019cb19ee97185120bffb6190e025`. Documentation and packaging changes do not change that binary. Full identities and evidence scope are in [testing](TESTING.md#compressed-and-two-share-preview).
 
-The earlier working resident/reader pair recorded in [testing](TESTING.md#working-resident-and-reader) has two observed Hot Wheels direct home-screen launches and user-confirmed gameplay. The blue Blackwire Media entry opened its page after the explicit same-ELF SDK action. Fresh RE7 Send and direct-launch adoption were observed; the visible result for that run is not yet confirmed.
+- Both configured shares appeared in one live library. Known earlier prepared readers completed normal Finish setup while retaining valid startup files. GTA and RE7 covers came from compressed images.
+- The current combined-library reader reached GTA's Continue prompt and RE7's Start Game screen. Earlier compressed development 5 passed user-controlled gameplay for both and a literal GTA Games-icon driving test. Those earlier gameplay checks are not new gameplay qualification of this package.
+- Live Refresh rescanned the shares. A removed PC source disappeared while a separate legitimate local-console entry remained visible.
+- Running-game Send/Refresh blockers were visible in both PC and PS5 pages and named the actual running game.
+- The user confirmed Circle returns from the main library to the PS5 dashboard and closes Details while keeping the library open.
+- Ninety UI tests and the complete 144-command SDK build passed. A bounded startup capture after replacement had no new watchdog, reader-failure or fatal-signal markers in its observed window; this is not a gameplay result.
 
-Preparation now includes reader and registration setup before Ready. An unchanged valid prepared source can be observed on Refresh without automatically resending its startup files. The resident and PC share remain required during streaming and direct Games-icon launches.
+## Known issues and next work
 
-The focused recovery update distinguishes a new preparation from an older completed registration history. It continues only after independently confirming that the older registration is absent. Its ordinary Uninstall path and missing-copy status handling passed focused host checks; their updated hardware qualification remains pending. Source files, saved data and historical ownership evidence are preserved by the reconciliation itself.
+- The extra Close browser button still stayed open on PS5. Use Circle. Removing the redundant button is the next UI change; it is not removed from this binary.
+- Circle in Settings/Help has offline coverage; the physical checks recorded here cover the library and Details.
+- `.ffpfsc` is not a universal format guarantee. Unsupported layouts are listed in [format scope](COMPRESSED-DEVELOPMENT.md#formats).
+- Both shares must use the same server and account. Moving a source changes its identity; Blackwire does not reconnect a different copy by title alone.
+- Controlled loading-time benchmarks, broader title/firmware coverage, hardware compressed-copy Uninstall, missing-resident behavior and crash/restart recovery need more testing.
+- A separate idle Game Compressor payload consumed about 96% of a CPU core. Stopping it preceded clean comparison launches. CPU contention is a supported contributor, while the complete system-dialog failure cause remains open. RAM exhaustion was not established.
+- Automatic Media registration on fresh ELF startup is not integrated. Use the optional [authenticated setup action](SETUP.md#optional-media-shortcut-setup) while idle. The qualified fallback is a public SDK batch scan that can refresh existing applications' metadata.
 
-## Remaining preview limits
+The previous `v0.1.0-preview.1` release remains the extracted-folder baseline. Its retained-file GTA setup recovery, modal checks and Hot Wheels gameplay stay attributed to their original binaries in [testing](TESTING.md#folder-only-preview).
 
-- Automatic Media registration on fresh ELF startup is not integrated. Use the optional [authenticated setup action](SETUP.md#optional-media-shortcut-setup) while idle.
-- The qualified Media fallback is a normal public SDK batch scan. It can refresh other registered applications' metadata.
-- Extracted folders, the qualified process profile, stock ShadowMountPlus configuration and wired SMB are the observed path. Other titles and environments need their own results.
-- Loading can be slow. Broader game coverage, missing-resident behavior and crash/restart recovery are not fully qualified.
-- Exact current-build and earlier gameplay observations are attributed separately in the [test record](TESTING.md).
+The full native **Blackwire Dashboard** remains a separate product in development. This release contains the web interface and shared resident/reader functions. See the [roadmap](ROADMAP.md#blackwire-dashboard).
 
-The native **Blackwire Dashboard** is in development as a separate product. See the [roadmap](ROADMAP.md#blackwire-dashboard). This preview contains the web interface and shared resident/reader functions, without the native cover frontend or its assets.
-
-Build provenance and dependency records live under [metadata](../metadata/). Preserve them with the source and applicable relinking material. No game files, saved data, credentials, external console system modules or private research captures belong in the release.
+Build provenance and dependency records live under [metadata](../metadata/). Preserve them with corresponding source, notices and relinking material. Game content, saved data, credentials, external console system modules and private captures are excluded from the release.
