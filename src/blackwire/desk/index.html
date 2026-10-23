@@ -1626,7 +1626,7 @@
         controls.push(document.getElementById("closeDetails"));return controls;
       }
       function libraryNavigation(key,inputKind) {
-        if(consoleClient && key === "Back") {consoleBack(inputKind || "keyboard");return true;}
+        if(consoleClient && key === "Back")return consoleBack(inputKind || "keyboard");
         var auxiliary=auxiliaryControls();
         if(auxiliary) {
           if(key === "Back") {if(document.getElementById("setupPanel").open)closeSettings();else closeHelp();return true;}
@@ -1701,34 +1701,26 @@
         // Consume each channel once, while allowing a second press on that channel.
         var now=Date.now();
         if(channel !== "button" && consoleBackGesture && now-consoleBackGesture.at < 350 && !consoleBackGesture.channels[channel]) {
-          consoleBackGesture.channels[channel]=true;return;
+          consoleBackGesture.channels[channel]=true;return consoleBackGesture.consumed;
         }
-        consoleBackGesture={at:now,channels:{}};consoleBackGesture.channels[channel]=true;
+        var consumes=!!removalConfirmation || detailsOpen || document.getElementById("setupPanel").open || !document.getElementById("helpOverlay").hidden;
+        consoleBackGesture={at:now,channels:{},consumed:consumes};consoleBackGesture.channels[channel]=true;
         if(removalConfirmation)cancelRemoval(true);
         else if(detailsOpen)setDetailsOpen(false,true);
         else if(document.getElementById("setupPanel").open)closeSettings();
         else if(!document.getElementById("helpOverlay").hidden)closeHelp();
         else {try {window.close();}catch(error){ /* The native browser can still be closed with its own controls. */ }}
+        // At the library, leave the native Circle/Escape action uncancelled.
+        return consumes;
       }
-      // PS5 Circle navigates browser history rather than sending Escape.
-      // Distinct fragment URLs work even when WebKit omits popstate.state.
-      if(consoleClient && window.history && typeof window.history.pushState === "function" && typeof window.history.replaceState === "function") {
-        var consolePath=window.location.pathname;
-        var consoleEntry=function (level) {return {blackwireConsole:consolePath,level:level};};
-        var consoleBase=window.location.href.replace(/#.*$/,"");
-        var consoleActiveUrl=consoleBase+(window.location.hash === "#setup" ? "#setup" : "#blackwire");
-        var consoleBackUrl=consoleBase+"#blackwire-back";
-        try {
-          if(!window.history.state || window.history.state.blackwireConsole !== consolePath || window.history.state.level !== 1) {
-            window.history.replaceState(consoleEntry(0),"",consoleBackUrl);
-            window.history.pushState(consoleEntry(1),"",consoleActiveUrl);
-          }
-          window.addEventListener("popstate",function (event) {
-            if(window.location.hash !== "#blackwire-back" && (!event.state || event.state.blackwireConsole !== consolePath || event.state.level !== 0))return;
-            consoleBack("history");
-            try {window.history.pushState(consoleEntry(1),"",consoleActiveUrl);}catch(error){}
-          });
-        }catch(error){ /* Gamepad Back and the native browser remain available. */ }
+      // Keep the ordinary browser's single root entry. Extra synthetic entries
+      // can make a native-opened window refuse close() and trap native Back.
+      if(consoleClient) {
+        var consoleLoadedAt=Date.now();
+        window.addEventListener("popstate",function () {
+          if(Date.now()-consoleLoadedAt < 1500)return; // Initial WebKit event.
+          consoleBack("history");
+        });
       }
       document.getElementById("closeConsoleBrowser").addEventListener("click",function () {if(consoleClient)consoleBack("button");});
       document.addEventListener("keydown",function (event) {

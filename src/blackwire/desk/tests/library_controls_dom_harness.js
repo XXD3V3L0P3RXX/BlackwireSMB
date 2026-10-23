@@ -42,42 +42,45 @@ async function check() {
   assert(app.get('refreshLibrary').disabled);assert.strictEqual(app.get('libraryRefreshStatus').textContent,'Close Project game to refresh the library.');
   app.get('refreshLibrary').click();assert.strictEqual(app.postCount(),0);
 
-  // Native Circle is a same-page history Back. Initial WebKit popstate and polls
-  // must not close a new page; each Back dismisses only the innermost panel.
-  app=createPage([nativeState(),nativeState()],'5918','',[fixture(),fixture()],ps5);await settle();
+  // Never add a root history entry or cancel native Circle at the library.
+  // A native-opened window may refuse script close when history has >1 entries.
+  const clock={now:1000};const consoleOptions={...ps5,clock,closeRequiresSingleHistory:true};
+  app=createPage([nativeState(),nativeState()],'5918','',[fixture(),fixture()],consoleOptions);await settle();
   assert(app.get('keyboardHint').hidden&&!app.get('consoleHint').hidden);
-  assert.strictEqual(app.historyLength(),2);await app.initialPop();await app.poll();assert.strictEqual(app.closeCount(),0);
-  app.get('heroDetails').click();assert(!app.get('selectedGame').hidden);
-  await app.back();assert(app.get('selectedGame').hidden);assert.strictEqual(app.closeCount(),0);
+  assert.strictEqual(app.historyLength(),1);await app.initialPop();await app.poll();assert.strictEqual(app.closeCount(),0);
+  clock.now=3000;app.get('heroDetails').click();assert(!app.get('selectedGame').hidden);
+  assert(app.key('Escape').prevented);assert(app.get('selectedGame').hidden);assert.strictEqual(app.closeCount(),0);
   app.get('openSetup').click();app.get('shareName').value='Draft share';app.get('shareName').fire('input');
-  await app.back();assert(app.get('settingsOverlay').hidden);assert.strictEqual(app.get('shareName').value,'Draft share');
-  app.get('openHelp').click();await app.back();assert(app.get('helpOverlay').hidden);
-  assert.strictEqual(app.historyLength(),2,'Repeated panel Back must not grow browser history');
-  await app.back();assert.strictEqual(app.closeCount(),1);assert.strictEqual(app.postCount(),0);
+  assert(app.key('Escape').prevented);assert(app.get('settingsOverlay').hidden);assert.strictEqual(app.get('shareName').value,'Draft share');
+  app.get('openHelp').click();assert(app.key('Escape').prevented);assert(app.get('helpOverlay').hidden);
+  assert.strictEqual(app.historyLength(),1,'Panels must not add synthetic root entries');
+  assert(!app.key('Escape').prevented,'Native Circle must remain uncancelled at the library');
+  assert.strictEqual(app.closeCount(),1);assert(app.windowClosed());assert.strictEqual(app.postCount(),0);
 
-  // The loopback Media link uses console controls even without a PlayStation UA.
-  app=createPage([nativeState()],'5918','',[fixture()],{hostname:'127.0.0.1',closeThrows:true});await settle();
-  assert(app.get('keyboardHint').hidden&&!app.get('consoleHint').hidden);
-  await app.back();assert.strictEqual(app.closeCount(),1);assert.strictEqual(app.postCount(),0);
+  // Native Back can omit state; the initial WebKit event must not close a page.
+  clock.now=1000;app=createPage([nativeState()],'5918','',[fixture()],consoleOptions);await settle();
+  clock.now=3000;app.get('heroDetails').click();await app.initialPop();assert(app.get('selectedGame').hidden);
+  await app.initialPop();assert.strictEqual(app.closeCount(),1);assert(app.windowClosed());
   const pad={mapping:'standard',connected:true,buttons:Array.from({length:16},()=>({pressed:false})),axes:[0,0]};
-  app=createPage([nativeState()],'5918','',[fixture()],{...ps5,pad});await settle();
+  clock.now=1000;app=createPage([nativeState()],'5918','',[fixture()],{...consoleOptions,pad});await settle();clock.now=3000;
   app.get('games').children[0].children[0].focus();pad.buttons[2].pressed=true;await app.runTimers(80);
   assert(!app.get('selectedGame').hidden,'Square opens Details without a server action');
   pad.buttons[2].pressed=false;await app.runTimers(80);pad.buttons[1].pressed=true;await app.runTimers(80);
-  assert(app.get('selectedGame').hidden,'Direct Circle must work when no native history event is delivered');
-  await app.back(null);assert(app.get('selectedGame').hidden);assert.strictEqual(app.closeCount(),0,'Gamepad and native Back from one press must not also exit');assert.strictEqual(app.postCount(),0);
+  assert(app.get('selectedGame').hidden,'Direct Circle works without a native history event');
+  await app.initialPop();assert.strictEqual(app.closeCount(),0,'One press must not dismiss Details and also exit');
   app.get('games').children[0].children[0].focus();app.key('ArrowDown');
   assert.strictEqual(app.focused(),app.get('filter-all'));
   app.key('ArrowRight');app.key('ArrowRight');app.key('ArrowRight');
-  assert.strictEqual(app.focused(),app.get('refreshLibrary'),'Refresh is reachable from the covers with navigation controls');
-  app=createPage([nativeState()],'5918','',[fixture()],ps5);await settle();
-  app.get('heroDetails').click();await app.back(null);assert(app.get('selectedGame').hidden);
-  await app.back(null);assert.strictEqual(app.closeCount(),1,'Native Back must work without popstate.state');
-  app=createPage([nativeState()],'5918','',[fixture()],ps5);await settle();
+  assert.strictEqual(app.focused(),app.get('refreshLibrary'),'Refresh is reachable from the covers');
+  app=createPage([nativeState()],'5918','',[fixture()],consoleOptions);await settle();
   app.get('heroDetails').click();assert(app.key(undefined,{keyCode:27}).prevented);assert(app.get('selectedGame').hidden);
-  assert(app.key('BrowserBack').prevented);assert.strictEqual(app.closeCount(),1);
-  app=createPage([nativeState()],'5918','',[fixture()],ps5);await settle();
-  assert(!app.get('closeConsoleBrowser').hidden);app.get('closeConsoleBrowser').click();assert.strictEqual(app.closeCount(),1);assert.strictEqual(app.postCount(),0);
+  assert(!app.key('BrowserBack').prevented);assert.strictEqual(app.closeCount(),1);assert(app.windowClosed());
+  app=createPage([nativeState()],'5918','',[fixture()],consoleOptions);await settle();
+  assert(!app.get('closeConsoleBrowser').hidden);app.get('closeConsoleBrowser').click();assert.strictEqual(app.closeCount(),1);assert(app.windowClosed());assert.strictEqual(app.postCount(),0);
+  app=createPage([nativeState()],'5918','',[fixture()],{hostname:'127.0.0.1',closeThrows:true});await settle();
+  assert(app.get('keyboardHint').hidden&&!app.get('consoleHint').hidden);
+  assert(!app.key('Escape').prevented,'Even a refused close() must not block the native exit');
+  assert.strictEqual(app.postCount(),0);
   console.log(JSON.stringify({passed:true,cases:6,actualEmbeddedPage:true,consoleContacted:false}));
 }
 check().catch(error=>{console.error(error);process.exitCode=1;});
