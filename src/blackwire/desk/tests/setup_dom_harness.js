@@ -70,7 +70,7 @@ function createPage(states, port='5918', hash='', dashboardStates=null, options=
         assert(dashboardStates.length,'Unexpected dashboard poll');const value=dashboardStates.shift();
         return value instanceof Error ? Promise.reject(value) : Promise.resolve(reply(value));
       }
-      if(url==='/api/dashboard/action') {
+      if(url==='/api/dashboard/action' || url==='/api/refresh') {
         assert(replies.length,'Unexpected action request');const value=replies.shift();
         if(value instanceof Error)return Promise.reject(value);
         if(typeof value==='function')return value();
@@ -81,6 +81,12 @@ function createPage(states, port='5918', hash='', dashboardStates=null, options=
       }
       throw new Error('Unexpected request: '+url);
     }};
+  context.location.href='http://'+context.location.hostname+':'+port+'/'+hash;
+  let historyEntries=[{state:null}],historyIndex=0;
+  context.history={get state(){return historyEntries[historyIndex].state;},get length(){return historyEntries.length;},
+    replaceState(state){historyEntries[historyIndex]={state:clone(state)};},
+    pushState(state){historyEntries=historyEntries.slice(0,historyIndex+1);historyEntries.push({state:clone(state)});historyIndex++;}};
+  context.navigator.getGamepads=()=>options.pad ? [options.pad] : [];
   context.window=context;
   vm.createContext(context);
   const initial = {
@@ -90,6 +96,9 @@ function createPage(states, port='5918', hash='', dashboardStates=null, options=
   };
   vm.runInContext(script('blackwire-view-model')+'\n'+script('blackwire-app'),context);
   return {elements,calls,replies,initial,states,preferences,closeCount:()=>closeCount,get:id=>elements.get(id),focused:()=>document.activeElement,postCount:()=>calls.filter(call=>call.options?.method==='POST').length,
+    historyLength:()=>context.history.length,
+    async back(){assert(historyIndex>0,'No previous history entry');historyIndex--;for(const listener of windowListeners.popstate || [])listener({state:context.history.state});await settle();},
+    async initialPop(){for(const listener of windowListeners.popstate || [])listener({state:context.history.state});await settle();},
     key(key,extra={}) {
       const event={key,repeat:false,shiftKey:false,prevented:false,preventDefault(){this.prevented=true;},...extra};
       for(const listener of documentListeners.keydown || [])listener(event);
