@@ -155,6 +155,7 @@
     <button class="chip" id="connectionChip" type="button" title="Open settings"><span class="dot" id="connectionDot"></span><span id="connection">Checking Blackwire</span></button>
     <button class="btn btn-ghost small" id="openSetup">⚙ Settings</button>
     <button class="link" id="openHelp">Help</button>
+    <button class="btn btn-ghost small" id="closeConsoleBrowser" type="button" hidden>Close browser</button>
   </header>
 
   <section class="hero" id="libraryStage" data-layout="carousel">
@@ -854,10 +855,11 @@
       var operationWatch = null;
       var browserHandoff = view.browserHandoff(window.location,window.navigator);
       var consoleClient = view.consoleBrowser(window.location,window.navigator);
-      var consoleHistoryBack = false;
+      var consoleBackGesture = null;
       var libraryRefresh = null;
       document.getElementById("keyboardHint").hidden=consoleClient;
       document.getElementById("consoleHint").hidden=!consoleClient;
+      document.getElementById("closeConsoleBrowser").hidden=!consoleClient;
       var dismissedSessionKey = "";
       var notice = null;
       var preparationIssue = null;
@@ -1623,8 +1625,8 @@
         if(card && !card.restoreGroup.hidden && !card.restore.disabled && card.restore.getAttribute("aria-disabled") !== "true")controls.push(card.restore);
         controls.push(document.getElementById("closeDetails"));return controls;
       }
-      function libraryNavigation(key) {
-        if(consoleClient && key === "Back") {consoleBack();return true;}
+      function libraryNavigation(key,inputKind) {
+        if(consoleClient && key === "Back") {consoleBack(inputKind || "keyboard");return true;}
         var auxiliary=auxiliaryControls();
         if(auxiliary) {
           if(key === "Back") {if(document.getElementById("setupPanel").open)closeSettings();else closeHelp();return true;}
@@ -1637,7 +1639,7 @@
         var focused=document.activeElement, card=cards[selectedName];
         if (!focused) return false;
         if(!detailsOpen && ["INPUT","TEXTAREA","SELECT"].indexOf(focused.tagName) === -1) {
-          var headerControls=["connectionChip","openSetup","openHelp"].map(function (id) {return document.getElementById(id);});
+          var headerControls=["connectionChip","openSetup","openHelp","closeConsoleBrowser"].map(function (id) {return document.getElementById(id);}).filter(function (button) {return !button.hidden;});
           var railControls=["filter-all","filter-ready","filter-not-ready","refreshLibrary","search"].map(function (id) {return document.getElementById(id);}).filter(function (button) {return !button.disabled && button.getAttribute("aria-disabled") !== "true";});
           var headerAt=headerControls.indexOf(focused),railAt=railControls.indexOf(focused);
           if(headerAt !== -1 || railAt !== -1) {
@@ -1694,7 +1696,14 @@
         } else return false;
         return true;
       }
-      function consoleBack() {
+      function consoleBack(channel) {
+        // A single controller press can also cause a keyboard or history event.
+        // Consume each channel once, while allowing a second press on that channel.
+        var now=Date.now();
+        if(channel !== "button" && consoleBackGesture && now-consoleBackGesture.at < 350 && !consoleBackGesture.channels[channel]) {
+          consoleBackGesture.channels[channel]=true;return;
+        }
+        consoleBackGesture={at:now,channels:{}};consoleBackGesture.channels[channel]=true;
         if(removalConfirmation)cancelRemoval(true);
         else if(detailsOpen)setDetailsOpen(false,true);
         else if(document.getElementById("setupPanel").open)closeSettings();
@@ -1702,38 +1711,45 @@
         else {try {window.close();}catch(error){ /* The native browser can still be closed with its own controls. */ }}
       }
       // PS5 Circle navigates browser history rather than sending Escape.
-      // One same-page entry lets each press dismiss a panel before closing.
+      // Distinct fragment URLs work even when WebKit omits popstate.state.
       if(consoleClient && window.history && typeof window.history.pushState === "function" && typeof window.history.replaceState === "function") {
         var consolePath=window.location.pathname;
         var consoleEntry=function (level) {return {blackwireConsole:consolePath,level:level};};
+        var consoleBase=window.location.href.replace(/#.*$/,"");
+        var consoleActiveUrl=consoleBase+(window.location.hash === "#setup" ? "#setup" : "#blackwire");
+        var consoleBackUrl=consoleBase+"#blackwire-back";
         try {
           if(!window.history.state || window.history.state.blackwireConsole !== consolePath || window.history.state.level !== 1) {
-            window.history.replaceState(consoleEntry(0),"",window.location.href);
-            window.history.pushState(consoleEntry(1),"",window.location.href);
+            window.history.replaceState(consoleEntry(0),"",consoleBackUrl);
+            window.history.pushState(consoleEntry(1),"",consoleActiveUrl);
           }
           window.addEventListener("popstate",function (event) {
-            if(!event.state || event.state.blackwireConsole !== consolePath || event.state.level !== 0)return;
-            consoleBack();
-            try {window.history.pushState(consoleEntry(1),"",window.location.href);}catch(error){}
+            if(window.location.hash !== "#blackwire-back" && (!event.state || event.state.blackwireConsole !== consolePath || event.state.level !== 0))return;
+            consoleBack("history");
+            try {window.history.pushState(consoleEntry(1),"",consoleActiveUrl);}catch(error){}
           });
-          consoleHistoryBack=true;
         }catch(error){ /* Gamepad Back and the native browser remain available. */ }
       }
+      document.getElementById("closeConsoleBrowser").addEventListener("click",function () {if(consoleClient)consoleBack("button");});
       document.addEventListener("keydown",function (event) {
+        var eventKey=typeof event.key === "string" ? event.key : "";
+        if(!eventKey || eventKey === "Unidentified")eventKey=({8:"Backspace",13:"Enter",27:"Escape",37:"ArrowLeft",38:"ArrowUp",39:"ArrowRight",40:"ArrowDown",166:"BrowserBack"})[event.keyCode] || "";
+        if(consoleClient && ["INPUT","TEXTAREA","SELECT"].indexOf((document.activeElement || {}).tagName) === -1 && ["BrowserBack","GoBack","Backspace","Esc"].indexOf(eventKey) !== -1)eventKey="Escape";
         var auxiliary=auxiliaryControls();
-        if(auxiliary && event.key === "Tab" && auxiliary.length) {
+        if(auxiliary && eventKey === "Tab" && auxiliary.length) {
           var auxiliaryAt=auxiliary.indexOf(document.activeElement);
           auxiliary[(auxiliaryAt+(event.shiftKey ? -1 : 1)+auxiliary.length)%auxiliary.length].focus();event.preventDefault();return;
         }
-        if(detailsOpen && event.key === "Tab") {
+        if(detailsOpen && eventKey === "Tab") {
           var controls=detailsControls(),at=controls.indexOf(document.activeElement);
           controls[(at+(event.shiftKey ? -1 : 1)+controls.length)%controls.length].focus();event.preventDefault();return;
         }
-        if(!auxiliary && !detailsOpen && (event.key === "d" || event.key === "D") && ["INPUT","TEXTAREA","SELECT"].indexOf((document.activeElement || {}).tagName) === -1 && cards[selectedName]) {setDetailsOpen(true,true);event.preventDefault();return;}
-        if (event.key.indexOf("Arrow") === 0 || event.key === "Enter" || event.key === " ") keyboardAt=Date.now();
-        var key=event.key === "Enter" || event.key === " " ? "Confirm" : event.key === "Escape" ? "Back" : event.key;
+        if(!auxiliary && !detailsOpen && (eventKey === "d" || eventKey === "D") && ["INPUT","TEXTAREA","SELECT"].indexOf((document.activeElement || {}).tagName) === -1 && cards[selectedName]) {setDetailsOpen(true,true);event.preventDefault();return;}
+        if (eventKey.indexOf("Arrow") === 0 || eventKey === "Enter" || eventKey === " ") keyboardAt=Date.now();
+        var key=eventKey === "Enter" || eventKey === " " ? "Confirm" : eventKey === "Escape" ? "Back" : eventKey;
+        if(event.repeat && key === "Back") {event.preventDefault();return;}
         if (event.repeat && key === "Confirm" && (games.contains(document.activeElement) || selectedGame.contains(document.activeElement))) {event.preventDefault();return;}
-        if (libraryNavigation(key)) event.preventDefault();
+        if (libraryNavigation(key,"keyboard")) event.preventDefault();
       });
       document.getElementById("previousGame").addEventListener("click",function () {if(this.getAttribute("aria-disabled") !== "true")moveGame(-1);});
       document.getElementById("nextGame").addEventListener("click",function () {if(this.getAttribute("aria-disabled") !== "true")moveGame(1);});
@@ -1744,9 +1760,8 @@
         if (pads) for(var i=0;i<Math.min(pads.length,4);i++) if(pads[i] && pads[i].connected !== false && pads[i].mapping === "standard") {pad=pads[i];break;}
         controllerState=view.controllerStep(controllerState,pad,now);
         if (controllerState.action && !document.hidden && (!document.hasFocus || document.hasFocus()) && now-keyboardAt > 600
-          && !(consoleHistoryBack && controllerState.action === "Back")
-          && focused && ["INPUT","TEXTAREA","SELECT"].indexOf(focused.tagName) === -1) {
-          if (!libraryNavigation(controllerState.action) && controllerState.action === "Confirm" && focused.tagName === "BUTTON"
+          && focused && (controllerState.action === "Back" || ["INPUT","TEXTAREA","SELECT"].indexOf(focused.tagName) === -1)) {
+          if (!libraryNavigation(controllerState.action,"gamepad") && controllerState.action === "Confirm" && focused.tagName === "BUTTON"
             && !focused.disabled && focused.getAttribute("aria-disabled") !== "true") focused.click();
         }
         setTimeout(controllerTick,80);

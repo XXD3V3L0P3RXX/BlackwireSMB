@@ -16,6 +16,7 @@ async function check() {
   const old=fixture(),empty=catalog();empty.catalogGeneration++;
   let app=createPage([ready,scanning,updated],'5918','',[old,clone(old),empty]);await settle();
   assert(!app.get('keyboardHint').hidden&&app.get('consoleHint').hidden);
+  assert(app.get('closeConsoleBrowser').hidden);
   assert.strictEqual(app.get('games').children.length,1);
   app.replies.push({status:202,body:{ok:true,message:'Reading the PC library'}});
   app.get('refreshLibrary').click();app.get('refreshLibrary').click();await settle();
@@ -63,12 +64,20 @@ async function check() {
   app.get('games').children[0].children[0].focus();pad.buttons[2].pressed=true;await app.runTimers(80);
   assert(!app.get('selectedGame').hidden,'Square opens Details without a server action');
   pad.buttons[2].pressed=false;await app.runTimers(80);pad.buttons[1].pressed=true;await app.runTimers(80);
-  assert(!app.get('selectedGame').hidden,'The native Circle history event owns Back; do not consume the same press twice');
-  await app.back();assert(app.get('selectedGame').hidden);assert.strictEqual(app.closeCount(),0);assert.strictEqual(app.postCount(),0);
+  assert(app.get('selectedGame').hidden,'Direct Circle must work when no native history event is delivered');
+  await app.back(null);assert(app.get('selectedGame').hidden);assert.strictEqual(app.closeCount(),0,'Gamepad and native Back from one press must not also exit');assert.strictEqual(app.postCount(),0);
   app.get('games').children[0].children[0].focus();app.key('ArrowDown');
   assert.strictEqual(app.focused(),app.get('filter-all'));
   app.key('ArrowRight');app.key('ArrowRight');app.key('ArrowRight');
   assert.strictEqual(app.focused(),app.get('refreshLibrary'),'Refresh is reachable from the covers with navigation controls');
+  app=createPage([nativeState()],'5918','',[fixture()],ps5);await settle();
+  app.get('heroDetails').click();await app.back(null);assert(app.get('selectedGame').hidden);
+  await app.back(null);assert.strictEqual(app.closeCount(),1,'Native Back must work without popstate.state');
+  app=createPage([nativeState()],'5918','',[fixture()],ps5);await settle();
+  app.get('heroDetails').click();assert(app.key(undefined,{keyCode:27}).prevented);assert(app.get('selectedGame').hidden);
+  assert(app.key('BrowserBack').prevented);assert.strictEqual(app.closeCount(),1);
+  app=createPage([nativeState()],'5918','',[fixture()],ps5);await settle();
+  assert(!app.get('closeConsoleBrowser').hidden);app.get('closeConsoleBrowser').click();assert.strictEqual(app.closeCount(),1);assert.strictEqual(app.postCount(),0);
   console.log(JSON.stringify({passed:true,cases:6,actualEmbeddedPage:true,consoleContacted:false}));
 }
 check().catch(error=>{console.error(error);process.exitCode=1;});
