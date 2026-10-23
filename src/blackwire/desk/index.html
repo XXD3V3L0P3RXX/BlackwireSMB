@@ -45,7 +45,7 @@
   .s-play i{background:var(--green);animation:pulse 1.4s infinite} .s-play{color:var(--green)}
   @keyframes pulse{50%{opacity:.35}}
   .reason{margin:10px 0 0;color:var(--muted);font-size:14px;max-width:520px;display:none}
-  .reason.open{display:block}
+  .reason.open,.reason.blocked{display:block}
   .actions{display:flex;gap:12px;margin-top:26px;align-items:center}
   .btn{font:inherit;font-weight:650;font-size:18px;padding:14px 34px;border-radius:12px;border:2px solid transparent;cursor:pointer}
   .btn-primary{background:#f2f5f4;color:#05070a}
@@ -160,7 +160,7 @@
     <div id="heroCopy" hidden><div class="hero-tags" id="heroTags"><span class="tag" id="heroSource"></span><span class="tag" id="heroStorage" hidden></span></div>
     <h1 id="heroTitle"></h1>
     <button class="status" id="heroStatus" type="button" aria-expanded="false" aria-controls="heroReason"><i aria-hidden="true"></i><span id="heroStatusLabel"></span></button>
-    <p class="reason" id="heroReason" hidden></p></div>
+    <p class="reason" id="heroReason" role="status" aria-live="polite" hidden></p></div>
     <div class="progress" id="preparationStatus" hidden>
       <div class="progress-top"><span id="preparationDetail"></span><span id="preparationPercent"></span></div>
       <div class="bar" id="preparationTrack" role="progressbar" aria-label="Startup file preparation"><span id="preparationFill" style="width:0%"></span></div>
@@ -238,6 +238,15 @@
     (function (root) {
       var activePhases = ["preflight", "launching", "running", "closing", "unknown"];
       function active(session) { return (session || {}).phase === "preparing" || activePhases.indexOf((session || {}).phase) !== -1; }
+      function runningGameReason(state,action) {
+        var stream=state.stream || {};
+        var matches=libraryGames(state).filter(function (game) {
+          var binding=game.sourceBinding || (/^pc:PPSA[0-9]{5}:[0-9a-f]{64}$/.test(game.dashboardId || "") ? game.dashboardId.slice(3).replace(":","_") : "");
+          return stream.sourceBinding ? binding === stream.sourceBinding : (game.source || game.name) === stream.game;
+        });
+        var title=matches.length === 1 && matches[0].title || "the running game";
+        return stream.phase === "closing" ? "Wait for " + title + " to close before continuing." : "Close " + title + " to " + action + ".";
+      }
       function activeJobs(state) {
         return (state.jobs || []).filter(function (job) { return job.state === "queued" || job.state === "running"; });
       }
@@ -762,13 +771,13 @@
         var issue=failure(state,game);
         var busyReason = pending ? "Wait for the current request to finish."
           : jobs.length ? "Preparing " + jobs[0].name + "."
-          : running ? (selected ? "This game is already active." : "Close the active game first.") : "";
+          : running ? (selected ? "This game is already active." : runningGameReason(state,"continue")) : "";
         var closing = selected && running && (typeof session.canClose === "boolean" ? session.canClose : session.gamePid > 0 && session.readerPid > 0);
         var legacy = typeof game.canPrepare === "undefined";
         var startupReady = startupFilesReady(game);
         var showPrepare = !startupReady && !closing, showPlay = startupReady || closing;
         var canPrepare = showPrepare && (game.canPrepare === true || legacy && game.onConsole === true && game.canPlay === true);
-        var prepareReason = busyReason || (canPrepare ? "" : game.preparationReason || compatibility.reason
+        var prepareReason = (running && !pending && !jobs.length ? runningGameReason(state,"send files") : busyReason) || (canPrepare ? "" : game.preparationReason || compatibility.reason
           || (legacy ? "Refresh Blackwire before preparing this source." : "Preparation is not available for this source."));
         var playReason = closing ? (pending ? busyReason : session.phase === "unknown" && session.canClose !== true ? "The current session could not be checked." : "")
           : busyReason || (startupReady && (game.canPlay === true || game.canStart === true) ? "" : game.playReason || compatibility.reason || "Prepare this game before playing.");
@@ -788,12 +797,12 @@
         var operation=state.dashboardWatch || state.dashboard && state.dashboard.operation;
         var preparing=preparationBusyReason(state);
         var busy=pending ? pending.action === "send" ? "Preparing " + (pending.title || pending.name) + ". Wait for the request to finish." : "Wait for the current request to finish." : state.dashboardUnavailable ? "Refresh the dashboard connection before continuing."
-          : preparing || (dashboardBusy(state) ? operation && operation.message || "Wait for the current dashboard operation." : activeJobs(state).length ? "Wait for the current file preparation." : running ? "Close the active game first." : "");
+          : preparing || (running ? runningGameReason(state,"continue") : dashboardBusy(state) ? operation && operation.message || "Wait for the current dashboard operation." : activeJobs(state).length ? "Wait for the current file preparation." : "");
         var closingReason=pending ? busy : state.dashboardUnavailable ? busy : "";
         var showPrepare=!game.removed && game.kind === 1 && !startupFilesReady(game) && !close, showPlay=!game.removed && (game.kind !== 1 || startupFilesReady(game) || close);
         var ownPreparation=preparationPanel(state,pending), ownSending=ownPreparation.visible && ownPreparation.busy && ownPreparation.itemId === game.dashboardId;
         return {prepareLabel:ownSending ? "Preparing…" : game.setupOnly === true ? "Finish setup" : "Send files",showPrepare:showPrepare,showPlay:showPlay,canPrepare:showPrepare && !busy && game.canPrepare,
-          prepareReason:game.kind === 1 ? busy || (game.canPrepare ? "" : game.preparationReason || "Preparation is unavailable.") : "",
+          prepareReason:game.kind === 1 ? (running && !pending && !preparing && !state.dashboardUnavailable ? runningGameReason(state,"send files") : busy) || (game.canPrepare ? "" : game.preparationReason || "Preparation is unavailable.") : "",
           playLabel:close ? stream.gamePid > 0 ? "Close game" : "Cancel launch" : game.kind === 1 && game.startupReady && game.dashboardLaunchReady === false ? "Finish setup and play" : "Play",close:close,
           canPlay:close ? !closingReason : showPlay && !busy && game.canPlay,
           playReason:close ? closingReason : busy || (game.canPlay ? "" : game.playReason || "This source is not available to launch."),playRoute:"/api/dashboard/action",
@@ -1027,6 +1036,11 @@
         control(primary,!!(action && action.enabled));
         primary.setAttribute("data-action",action ? action.kind : "none");
         text(reason,action && action.reason || "");reason.hidden=!action || !action.reason;
+        var blocked=!!(action && !action.enabled && action.reason),expanded=String(reason.className || "").indexOf(" open") !== -1;
+        reason.className="reason"+(blocked ? " blocked" : expanded ? " open" : "");
+        primary.setAttribute("aria-describedby",blocked ? "heroReason" : "");
+        primary.setAttribute("title",action && action.reason || "");
+        document.getElementById("heroStatus").setAttribute("aria-expanded",String(blocked || expanded));
         control(document.getElementById("heroDetails"),!!card);
       }
       function moveGame(step) {
@@ -1561,6 +1575,7 @@
       document.getElementById("heroDetails").addEventListener("click",function () {setDetailsOpen(true,true);});
       document.getElementById("heroStatus").addEventListener("click",function () {
         var reason=document.getElementById("heroReason"),open=reason.className.indexOf("open") === -1;
+        if(reason.className.indexOf("blocked") !== -1)return;
         reason.className="reason"+(open ? " open" : "");this.setAttribute("aria-expanded",String(open));
       });
       document.getElementById("pwToggle").addEventListener("click",function () {
