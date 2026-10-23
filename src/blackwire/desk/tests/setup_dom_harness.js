@@ -55,7 +55,7 @@ function createPage(states, port='5918', hash='', dashboardStates=null, options=
   const reply = value => ({ok:true,status:200,json:()=>Promise.resolve(clone(value))});
   let closeCount=0;
   const context = {document,navigator:{userAgent:options.userAgent || ''},location:{port,pathname:'/',hash,hostname:options.hostname || '192.0.2.20'},console,
-    close(){closeCount++;if(options.closeThrows)throw new Error('Close refused by browser');},
+    close(){closeCount++;if(options.closeThrows)throw new Error('Close refused by browser');if(!options.closeRequiresSingleHistory || historyEntries.length===1)context.closed=true;},
     localStorage:{getItem:key=>preferences.get(key) ?? null,setItem:(key,value)=>preferences.set(key,value)},
     getComputedStyle:()=>({gridTemplateColumns:Array(options.columns || 6).fill('220px').join(' ')}),
     addEventListener(type,listener){(windowListeners[type] ||= []).push(listener);},setTimeout(fn,delay){const id=nextTimer++;timers.set(id,{fn,delay});return id;},
@@ -82,6 +82,8 @@ function createPage(states, port='5918', hash='', dashboardStates=null, options=
       throw new Error('Unexpected request: '+url);
     }};
   context.location.href='http://'+context.location.hostname+':'+port+'/'+hash;
+  context.closed=false;
+  context.Date=class extends Date {static now(){return options.clock ? options.clock.now : Date.now();}};
   let historyEntries=[{state:null,url:context.location.href}],historyIndex=0;
   function historyUrl(url){if(url){context.location.href=url;context.location.hash=url.includes('#') ? '#'+url.split('#')[1] : '';}}
   context.history={get state(){return historyEntries[historyIndex].state;},get length(){return historyEntries.length;},
@@ -97,7 +99,7 @@ function createPage(states, port='5918', hash='', dashboardStates=null, options=
   };
   vm.runInContext(script('blackwire-view-model')+'\n'+script('blackwire-app'),context);
   return {elements,calls,replies,initial,states,preferences,closeCount:()=>closeCount,get:id=>elements.get(id),focused:()=>document.activeElement,postCount:()=>calls.filter(call=>call.options?.method==='POST').length,
-    historyLength:()=>context.history.length,
+    historyLength:()=>context.history.length,windowClosed:()=>context.closed,
     async back(eventState){assert(historyIndex>0,'No previous history entry');historyIndex--;historyUrl(historyEntries[historyIndex].url);for(const listener of windowListeners.popstate || [])listener({state:eventState===undefined ? context.history.state : eventState});await settle();},
     async initialPop(){for(const listener of windowListeners.popstate || [])listener({state:context.history.state});await settle();},
     key(key,extra={}) {
