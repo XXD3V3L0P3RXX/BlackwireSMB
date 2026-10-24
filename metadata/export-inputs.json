@@ -20,8 +20,8 @@
       "sha256": "7a02b133c7036a7474614a6f9a7fc373dab927a987e0ddc0654c9a15d8c01891"
     },
     "CHANGELOG.md": {
-      "bytes": 4451,
-      "sha256": "498e5c1265d34995b4c20965f11d4720102ea597fdb415275ab62110e98044cb"
+      "bytes": 4593,
+      "sha256": "5ba0e86f3266acd0bd473274837c7007fe91fb310426317d3a872830dd2a0302"
     },
     "CONTRIBUTING.md": {
       "bytes": 2975,
@@ -88,8 +88,8 @@
       "sha256": "d5b36e1bb6857b803447f470b52cc6127ca061031f1b7210e52bc2f0f7f4ee50"
     },
     "README.md": {
-      "bytes": 10832,
-      "sha256": "33100742cad3bc06c383abd607d73587c1c0de82ceac95159e8a61f02497304e"
+      "bytes": 11782,
+      "sha256": "abca58ac0b372b7bc8a50825fd6006cdbc40e0f803559155b4e1b2b3bc12deb8"
     },
     "SECURITY.md": {
       "bytes": 1186,
@@ -108,8 +108,8 @@
       "sha256": "28fdf5e9522b412ad8528b0615438219830943d23035241f2e28e13095fdf371"
     },
     "docs/DIAGNOSTICS.md": {
-      "bytes": 7405,
-      "sha256": "5fab5af455f4890d04c99942daa65b72ed1f2389394441965696d75d658115b2"
+      "bytes": 7583,
+      "sha256": "ba0357b74aaedd14175f1fbcdb43639ea3e51075cfcde9574cfd969390bb8575"
     },
     "docs/PREPARATION.md": {
       "bytes": 6310,

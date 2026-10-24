@@ -4,7 +4,7 @@ This optional test build investigates missing compressed candidates and the repo
 
 - [GitHub diagnostic release](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.2.0-preview.1-sendlog.1)
 - [Etawen diagnostic release](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB/releases/tag/v0.2.0-preview.1-sendlog.1)
-- Download **Blackwire-SendLog.elf**. Both hosts provide identical files, source, relinking materials and SHA-256 checksums.
+- Choose **Blackwire-SendLog.elf** for this diagnostic. **Blackwire.elf** on the same download page is the unchanged working release for normal use or rollback. Load only one resident. Source and relinking materials are provided or linked in the release notes, with SHA-256 checksums for the downloads.
 
 ## Install and reproduce once
 

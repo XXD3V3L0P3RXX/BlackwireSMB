@@ -2,9 +2,20 @@
 
 Stream PS5 games from an ordinary PC SMB share, with a smaller startup copy on the console. Supports extracted folders and the tested PFS/PFSC compressed layouts, including supported `.ffpfsc` images.
 
-[Download v0.2.0-preview.1](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.2.0-preview.1) · [Etawen mirror](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB) · [Changelog](CHANGELOG.md) · [Video](#video) · [Setup](docs/SETUP.md) · [Requirements](docs/REQUIREMENTS.md) · [Test results](docs/TESTING.md) · [Build from source](docs/BUILD.md)
+[Download working and logging ELFs](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.2.0-preview.1-sendlog.1) · [Etawen mirror](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB) · [Changelog](CHANGELOG.md) · [Video](#video) · [Setup](docs/SETUP.md) · [Requirements](docs/REQUIREMENTS.md) · [Test results](docs/TESTING.md) · [Build from source](docs/BUILD.md)
 
-Blackwire runs as a single `Blackwire.elf` on a compatible jailbroken PS5. Its web interface works in the PS5 browser and a LAN browser. The game runs on the PS5; bulk game files stay on the PC. An ordinary Windows shared folder is enough—there is no Blackwire PC service to install.
+## Downloads
+
+Choose one of these two ELF files. Load only one Blackwire resident at a time.
+
+| Build | Download | Use |
+| --- | --- | --- |
+| Working release | [Blackwire.elf](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/download/v0.2.0-preview.1-sendlog.1/Blackwire.elf) | The unchanged v0.2.0-preview.1 release for normal use. |
+| Diagnostic logging | [Blackwire-SendLog.elf](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/download/v0.2.0-preview.1-sendlog.1/Blackwire-SendLog.elf) | The same reader with extra Send/setup logging for investigating failures. |
+
+Both ELFs are together on the [download page](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.2.0-preview.1-sendlog.1). See [diagnostic instructions](docs/DIAGNOSTICS.md) for collecting logs and returning to the normal build. Sources, relinking materials and checksums are provided alongside the downloads or linked in the release notes.
+
+Blackwire runs as a single resident ELF on a compatible jailbroken PS5. Its web interface works in the PS5 browser and a LAN browser. The game runs on the PS5; bulk game files stay on the PC. An ordinary Windows shared folder is enough—there is no Blackwire PC service to install.
 
 ## Optional Send-files diagnostic
 
