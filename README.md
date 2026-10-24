@@ -6,6 +6,10 @@ Stream PS5 games from an ordinary PC SMB share, with a smaller startup copy on t
 
 Blackwire runs as a single `Blackwire.elf` on a compatible jailbroken PS5. Its web interface works in the PS5 browser and a LAN browser. The game runs on the PS5; bulk game files stay on the PC. An ordinary Windows shared folder is enough—there is no Blackwire PC service to install.
 
+## Optional Send-files diagnostic
+
+Investigating missing compressed games or setup step 7? The separate **v0.2.0-preview.1-sendlog.1** test build adds detailed logging. [Download and follow the diagnostic instructions](docs/DIAGNOSTICS.md). It retains the released reader and does not replace the normal preview or Payload Manager catalog.
+
 ## v0.2.0-preview.1
 
 - Stream supported PFS/PFSC compressed images without a PC decompression service.

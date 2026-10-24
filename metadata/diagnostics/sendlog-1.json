@@ -1,0 +1,73 @@
+{
+  "kind": "blackwire-send-diagnostic/1",
+  "version": "v0.2.0-preview.1-sendlog.1",
+  "baseRelease": "v0.2.0-preview.1",
+  "baseCommit": "b5f9b9077318b872073dbef0e4bd302bc5505b5a",
+  "runtimeBuildId": "blackwire-v0.2.0-preview.1-sendlog.1",
+  "artifact": "Blackwire-SendLog.elf",
+  "application": {
+    "bytes": 5738984,
+    "sha256": "f1c7d855dbd2392d20c38cad30819da58dd06ca5ffa0d926c24f0a9344680487"
+  },
+  "reader": {
+    "bytes": 831168,
+    "sha256": "c9d069b520c367c971e52432a053d7105a7019cb19ee97185120bffb6190e025"
+  },
+  "loggingSource": {
+    "src/blackwire/library/send_diagnostic.h": {
+      "bytes": 1643,
+      "sha256": "6a268771bb85ba52ea78edf25c0be9d56562f41d8654f56a1f468bc30b9083be"
+    },
+    "src/blackwire/library/preload_bundle.c": {
+      "bytes": 48398,
+      "sha256": "68a8fac23fb84b3e8fc0489376dadd80f862941e6f9a5e989d8cbc63cea5b99b"
+    },
+    "src/blackwire/library/native_backend_home.h": {
+      "bytes": 31929,
+      "sha256": "dcdb0258891740679e9618f4f3b7560c0a96ca0967291628105b4b11915ae4a3"
+    },
+    "src/blackwire/library/native_job.c": {
+      "bytes": 13018,
+      "sha256": "d58c9d5661919db539ae5259a2cbe7f538d7c88c90403853035db2c3cdb7dd5a"
+    },
+    "tools/build/app.py": {
+      "bytes": 9977,
+      "sha256": "463054813872c757a0b098367796dacc66c3659a0c9057716555603aa33690b5"
+    }
+  },
+  "baseSourceManifestRetained": true,
+  "buildRequiresAllowSourceChanges": true,
+  "buildPassed": true,
+  "sourceBeforeAfterMatch": true,
+  "commands": 160,
+  "rebuildFromDiagnosticTag": true,
+  "hostChecks": {
+    "loggerErrnoAndBounds": true,
+    "actualDirectoryFailureAndNullRequest": true,
+    "addressAndUndefinedSanitizers": true,
+    "collectorCredentialExclusion": true,
+    "collectorLiveReadOnlyCapture": true
+  },
+  "hardware": {
+    "freshSend": "Resident Evil 4",
+    "elapsedSeconds": 176.672,
+    "startupBytes": 390025586,
+    "preparedEntries": 25,
+    "startupReady": true,
+    "dashboardReady": true,
+    "step7Seconds": 0.448,
+    "step7FailureReproduced": false,
+    "gameplayTested": false,
+    "flatShareImages": 3,
+    "shadowMountPlus": "1.7beta7"
+  },
+  "logPath": "/data/blackwire/send-diagnostic.log",
+  "logLimitBytes": 1048576,
+  "readerChanged": false,
+  "normalCatalogUnchanged": true,
+  "limitations": [
+    "Send/setup logging only; no new format support or discovery parser.",
+    "Reported step-7 failure has not reproduced with the three local test games.",
+    "No throughput or gameplay claim for this diagnostic."
+  ]
+}

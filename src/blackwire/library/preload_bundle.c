@@ -5,6 +5,7 @@
 #define BW_COPY_HOST_TEST
 #endif
 #include "preload_bundle.h"
+#include "send_diagnostic.h"
 #include "../streamreader/copy_fs.h"
 #include "../streamreader/copy_sha256.h"
 #include <dirent.h>
@@ -31,6 +32,7 @@ struct pb_operation {
 };
 static int pb_fail(struct pb_operation *p,const char *reason,int error) {
     if(p->diagnostic&&!p->diagnostic->reason){
+        bw_send_log("bundle-failure","stage=%s reason=%s library=%s root=%s errno=%d",p->stage?p->stage:"",reason,p->library?p->library:"",p->request&&p->request->root?p->request->root:"",error);
         p->diagnostic->stage=p->stage;p->diagnostic->reason=reason;
         p->diagnostic->library=p->library;p->diagnostic->system_error=error;
     }
@@ -68,15 +70,19 @@ static int pb_same(const struct stat *a,const struct stat *b) {
         a->st_mtim.tv_sec==b->st_mtim.tv_sec&&a->st_mtim.tv_nsec==b->st_mtim.tv_nsec&&
         a->st_ctim.tv_sec==b->st_ctim.tv_sec&&a->st_ctim.tv_nsec==b->st_ctim.tv_nsec;
 }
+static int pb_directory_fail(struct pb_operation *p,const char *path,const char *call,const char *reason,int error){
+    bw_send_log("directory-failure","stage=%s call=%s path=%s reason=%s errno=%d",p->stage?p->stage:"",call,path,reason,error);
+    return pb_fail(p,reason,error);
+}
 static int pb_dir(struct pb_operation *p,const char *path,int fd,const struct stat *expected) {
     char resolved[PATH_MAX];struct stat named,held;
     if(pb_guard(p))return -1;
-    if(!realpath(path,resolved))return pb_fail(p,"reader_directory_resolution_failed",errno);
-    if(strcmp(path,resolved))return pb_fail(p,"reader_directory_path_changed",0);
-    if(lstat(path,&named))return pb_fail(p,"reader_directory_named_stat_failed",errno);
-    if(!S_ISDIR(named.st_mode))return pb_fail(p,"reader_directory_type_differs",0);
-    if(fstat(fd,&held))return pb_fail(p,"reader_directory_held_stat_failed",errno);
-    if(!pb_node(&named,&held)||!pb_node(expected,&held))return pb_fail(p,"reader_directory_identity_changed",0);
+    if(!realpath(path,resolved))return pb_directory_fail(p,path,"realpath","reader_directory_resolution_failed",errno);
+    if(strcmp(path,resolved))return pb_directory_fail(p,path,"canonical-path","reader_directory_path_changed",0);
+    if(lstat(path,&named))return pb_directory_fail(p,path,"lstat","reader_directory_named_stat_failed",errno);
+    if(!S_ISDIR(named.st_mode))return pb_directory_fail(p,path,"directory-type","reader_directory_type_differs",0);
+    if(fstat(fd,&held))return pb_directory_fail(p,path,"fstat","reader_directory_held_stat_failed",errno);
+    if(!pb_node(&named,&held)||!pb_node(expected,&held))return pb_directory_fail(p,path,"identity","reader_directory_identity_changed",0);
     return pb_guard(p);
 }
 static int pb_paths(struct pb_operation *p) {
@@ -87,15 +93,17 @@ static int pb_paths(struct pb_operation *p) {
     return p->folder<0?0:pb_dir(p,path,p->folder,&p->folder_identity);
 }
 static int pb_open_directory(struct pb_operation *p,const char *path,struct stat *identity) {
+    bw_send_log("directory-open","stage=%s path=%s",p->stage?p->stage:"",path);
     char resolved[PATH_MAX];struct stat named,held;
-    if(!realpath(path,resolved))return pb_fail(p,"reader_directory_resolution_failed",errno);
-    if(strcmp(path,resolved))return pb_fail(p,"reader_directory_path_changed",0);
-    if(lstat(path,&named))return pb_fail(p,"reader_directory_named_stat_failed",errno);
-    if(!S_ISDIR(named.st_mode))return pb_fail(p,"reader_directory_type_differs",0);
+    if(!realpath(path,resolved))return pb_directory_fail(p,path,"realpath","reader_directory_resolution_failed",errno);
+    if(strcmp(path,resolved))return pb_directory_fail(p,path,"canonical-path","reader_directory_path_changed",0);
+    if(lstat(path,&named))return pb_directory_fail(p,path,"lstat","reader_directory_named_stat_failed",errno);
+    if(!S_ISDIR(named.st_mode))return pb_directory_fail(p,path,"directory-type","reader_directory_type_differs",0);
     int fd=open(path,O_RDONLY|O_DIRECTORY|O_NOFOLLOW);
-    if(fd<0)return pb_fail(p,"reader_directory_open_failed",errno);
-    if(fstat(fd,&held)) {pb_fail(p,"reader_directory_held_stat_failed",errno);pb_close(p,fd,"reader_directory_close_failed");return -1;}
-    if(!pb_node(&named,&held)) {pb_fail(p,"reader_directory_identity_changed",0);pb_close(p,fd,"reader_directory_close_failed");return -1;}
+    if(fd<0)return pb_directory_fail(p,path,"open","reader_directory_open_failed",errno);
+    if(fstat(fd,&held)) {pb_directory_fail(p,path,"fstat","reader_directory_held_stat_failed",errno);pb_close(p,fd,"reader_directory_close_failed");return -1;}
+    if(!pb_node(&named,&held)) {pb_directory_fail(p,path,"identity","reader_directory_identity_changed",0);pb_close(p,fd,"reader_directory_close_failed");return -1;}
+    bw_send_log("directory-open-ok","stage=%s path=%s dev=%llu ino=%llu mode=%o uid=%lu gid=%lu",p->stage?p->stage:"",path,(unsigned long long)held.st_dev,(unsigned long long)held.st_ino,(unsigned)held.st_mode,(unsigned long)held.st_uid,(unsigned long)held.st_gid);
     *identity=held;return fd;
 }
 static int pb_entries(struct pb_operation *p,int fd) {

@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "stripObjectCopies": 163,
+  "files": 175,
+  "archive": {
+    "bytes": 7782433,
+    "sha256": "b754d97e4a87fc18d2af9d53d379b1b9bf13baf96d485f50fac1b0dc621b8178"
+  },
+  "originalPackage": {
+    "bytes": 5738984,
+    "sha256": "f1c7d855dbd2392d20c38cad30819da58dd06ca5ffa0d926c24f0a9344680487"
+  },
+  "cleanMaterialRelinkPackage": {
+    "bytes": 5738984,
+    "sha256": "f1c7d855dbd2392d20c38cad30819da58dd06ca5ffa0d926c24f0a9344680487"
+  },
+  "allocatedExecutableBytesIdentical": true,
+  "runtimeRelocationSemanticsUnchanged": true,
+  "byteIdenticalRelinkPackage": true,
+  "originalRawObjectsPreserved": true,
+  "privateMarkers": 0,
+  "fullCleanBuildPlusFocusedRepair": false,
+  "consoleContacted": false,
+  "published": false
+}

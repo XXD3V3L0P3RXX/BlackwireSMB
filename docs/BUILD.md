@@ -49,3 +49,7 @@ Retain the complete corresponding source, build transformations, dependency/runt
 Before shipping, verify a clean-export build, exact source/binary hashes, packaged-byte privacy and license obligations. Host tests, compiler success and hardware qualification establish different things. A rebuild of tested source is not automatically a byte-identical or hardware-tested artifact.
 
 Vendored AMPR Git attributes disable text conversion so clones and source archives preserve the recorded file hashes. This packaging-only change does not alter runtime source. Its original and packaged attribute hashes are recorded in the build manifest.
+
+## Optional logging diagnostic
+
+The optional `v0.2.0-preview.1-sendlog.1` release has [separate diagnostic instructions](DIAGNOSTICS.md), including the exact artifact identity, build command, log collection and rollback. The normal preview remains unchanged.
