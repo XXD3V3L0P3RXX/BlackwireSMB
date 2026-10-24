@@ -4,6 +4,29 @@ Stream PS5 games from an ordinary PC SMB share, with a smaller startup copy on t
 
 [Download working and logging ELFs](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.2.0-preview.1-sendlog.1) · [Etawen mirror](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB) · [Changelog](CHANGELOG.md) · [Video](#video) · [Setup](docs/SETUP.md) · [Requirements](docs/REQUIREMENTS.md) · [Test results](docs/TESTING.md) · [Build from source](docs/BUILD.md)
 
+## Tested environment
+
+**Verified firmware scope: the 13.00 family, process-layout profile `0x13000040`.** This is the only firmware profile covered by our console testing. Firmware 10.01 and other profiles are currently unverified. A matching ShadowMountPlus version alone does not establish firmware compatibility.
+
+Our latest recorded console setup is from **October 24, 2026**:
+
+| Component | Recorded setup |
+| --- | --- |
+| PS5 firmware | 13.00 family (`0x13000040`) |
+| Jailbreak / hypervisor chain | [Byepervisor Reborn](https://github.com/PS5Dev/Byepervisor-Reborn), reported by the operator; exact deployed build and initial jailbreak entry point have not been recorded. |
+| Kstuff | Kstuff-lite `v1.11` |
+| ShadowMountPlus | Stock `1.7beta7`, used in the latest diagnostic retest |
+| ELF loader | elfldr `v0.27` in the latest captured payload inventory |
+| ShadowMount library scan depth | `scan_depth=2` |
+| External runtime libraries | The [required five-file set](docs/REQUIREMENTS.md#external-shadowmount-libraries) at `/data/shadowmount/fakelib` |
+| Network | Wired Ethernet with an SMB share on an awake PC |
+
+Byepervisor Reborn is the hypervisor-exploit stage of a jailbreak chain; the reported name does not identify the initial entry point or its version. Blackwire requires a working jailbreak with Kstuff active before it is loaded.
+
+Earlier baseline tests used ShadowMountPlus `1.7-beta5fix1` and elfldr `v0.26`; their results remain attributed to that earlier environment. The latest test inventory also records PS5 Payload Manager `0.6.3`, BFpilot `v0.4.4` and shsrv `v0.20`. Those are loading, file-management and development helpers, not additional game-streaming requirements.
+
+Check the external runtime files before starting **Send files**. In the current preview, a missing `/data/shadowmount/fakelib` can cause setup step 7 to fail after startup files have already transferred. An empty directory is insufficient: the required files must match the documented sizes and hashes. See [requirements](docs/REQUIREMENTS.md) and [test results](docs/TESTING.md) for prerequisites and the scope of each observation.
+
 ## Downloads
 
 Choose one of these two ELF files. Load only one Blackwire resident at a time.
@@ -66,7 +89,7 @@ The catalog points to the published preview ELF and supplies its SHA-256 checksu
 ## Quick start
 
 1. Share a parent folder containing complete extracted game folders or supported compressed images on your PC. You can share a separate compressed folder and enter it as the optional second SMB share. Give the same SMB account read access to both and keep the PC awake. Follow the [share guide](docs/SETUP.md#windows-shared-folder).
-2. Start your usual working jailbreak environment with Kstuff and stock ShadowMountPlus `1.7-beta5fix1`. Set ShadowMount's **Library scan depth to 2** (`scan_depth=2`) for the layout in this guide, then load `Blackwire.elf`. See the [scan-root explanation](docs/SETUP.md#shadowmount-discovery) and [requirements](docs/REQUIREMENTS.md).
+2. Start the [recorded compatible jailbreak/runtime environment](#tested-environment), including Kstuff and stock ShadowMountPlus (`1.7beta7` in the latest retest). Set ShadowMount's **Library scan depth to 2** (`scan_depth=2`) for the layout in this guide, then load `Blackwire.elf`. See the [scan-root explanation](docs/SETUP.md#shadowmount-discovery) and [requirements](docs/REQUIREMENTS.md).
 3. Open `http://<PS5-address>:5918/` in a LAN browser, or `http://127.0.0.1:5918/` in the PS5 browser. In Settings, enter the PC address, share name, optional second share and SMB account, then choose **Save and check connection**. Both shares must pass the check before a two-share configuration is saved.
 4. Select a game and choose **Send files**. Wait for its preparation and registration to finish and show **Ready**.
 5. **Recommended:** return to the regular PS5 **Games** dashboard and start the prepared game from its icon. Web **Play** is also available. **Blackwire must remain running, and the PC share must stay online.**

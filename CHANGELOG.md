@@ -2,6 +2,12 @@
 
 Changes are grouped by published preview. A build pass, initial menu and controllable gameplay are recorded separately in [testing](docs/TESTING.md).
 
+## Documentation update — October 24, 2026
+
+- Make the tested 13.00-family firmware profile, runtime payload versions, operator-reported jailbreak chain and optional helper tools visible in the README. Keep unrecorded build/entry-point details explicit.
+- Distinguish the latest ShadowMountPlus 1.7beta7 retest from the earlier 1.7-beta5fix1 baseline and state that 10.01 and other firmware profiles remain unverified.
+- Explain the external runtime-library prerequisite and the missing-directory step-7 failure before the Send-files instructions. This documentation update does not change either ELF or claim to fix the separate missing-image discovery report.
+
 ## v0.2.0-preview.1-sendlog.1 — optional diagnostic
 
 - Offer the unchanged working ELF and optional logging ELF together on one download page; no pull request or merge is required to use either.

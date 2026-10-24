@@ -1,14 +1,18 @@
 # Runtime requirements and tested scope
 
-Use your usual working jailbreak environment with **Kstuff active** before loading Blackwire. Blackwire is not a jailbreak or Kstuff installer. The observed environment used Kstuff-lite `v1.11`, elfldr `v0.26`, and **stock ShadowMountPlus `1.7-beta5fix1`**. A modified ShadowMount or separate Media helper is not required for the verified working path.
+Use a working jailbreak environment with **Kstuff active** before loading Blackwire. Blackwire is not a jailbreak or Kstuff installer. The [README's tested-environment table](../README.md#tested-environment) records the firmware, reported jailbreak chain, payload versions and helper tools together.
 
-The qualified process-layout profile is **`0x13000040`**. Version names alone do not establish compatible code, and other firmware profiles are not qualified by this preview.
+The only console-qualified process-layout profile is the **13.00 family (`0x13000040`)**. Firmware **10.01 and other profiles are unverified**. Matching a payload version or successfully copying startup files does not establish firmware compatibility.
+
+The October 24, 2026 diagnostic retest used stock ShadowMountPlus **`1.7beta7`**. Its captured payload inventory records Kstuff-lite **`v1.11`** and elfldr **`v0.27`**. The operator reports **Byepervisor Reborn** as part of the jailbreak chain; its exact deployed build and the initial jailbreak entry point/version have not been recorded. Byepervisor Reborn is a hypervisor-exploit stage, so its name alone does not specify the complete jailbreak chain.
+
+Earlier baseline observations used stock ShadowMountPlus **`1.7-beta5fix1`** and elfldr **`v0.26`**. Those historical results remain recorded in [testing](TESTING.md); they do not qualify other firmware profiles or every combination of runtime files. A modified ShadowMount or separate Media helper is not required for the verified working path.
 
 Set ShadowMount's **Library scan depth to 2** (`scan_depth=2`) for the folder layout in the setup guide. This is the value confirmed in the tested console's configuration. Depth is relative to each configured scan root; see [ShadowMount discovery](SETUP.md#shadowmount-discovery).
 
 ## External ShadowMount libraries
 
-The tested setup has these exact global files at `/data/shadowmount/fakelib`. Obtain them through the compatible runtime's normal distribution; these external console/runtime libraries are **not bundled with Blackwire**.
+**Check this prerequisite before Send files:** the tested setup has these exact global files at `/data/shadowmount/fakelib`. The current preview can report `reader_directory_named_stat_failed` with `errno=2` at setup step 7 if this path is missing, after startup files have already transferred. Creating an empty folder does not supply the required libraries. Obtain them through the compatible runtime's normal distribution; these external console/runtime libraries are **not bundled with Blackwire**.
 
 | File | Bytes | SHA-256 |
 | --- | ---: | --- |
