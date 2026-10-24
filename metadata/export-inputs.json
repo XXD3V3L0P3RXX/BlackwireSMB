@@ -20,8 +20,8 @@
       "sha256": "7a02b133c7036a7474614a6f9a7fc373dab927a987e0ddc0654c9a15d8c01891"
     },
     "CHANGELOG.md": {
-      "bytes": 3919,
-      "sha256": "8030c1635d376a1fd937e3963e9a439554129cdd5ef03c73ab709aed89c3d181"
+      "bytes": 4451,
+      "sha256": "498e5c1265d34995b4c20965f11d4720102ea597fdb415275ab62110e98044cb"
     },
     "CONTRIBUTING.md": {
       "bytes": 2975,
@@ -88,8 +88,8 @@
       "sha256": "d5b36e1bb6857b803447f470b52cc6127ca061031f1b7210e52bc2f0f7f4ee50"
     },
     "README.md": {
-      "bytes": 10491,
-      "sha256": "60f65b1bd0f7ba7eb010794e151462be7c148acf1757fec5c966c802b1f6656b"
+      "bytes": 10832,
+      "sha256": "33100742cad3bc06c383abd607d73587c1c0de82ceac95159e8a61f02497304e"
     },
     "SECURITY.md": {
       "bytes": 1186,
@@ -100,12 +100,16 @@
       "sha256": "6b3f6ce2c5f53d0cd910310e0c6e7529aba95777ad2af39c94e00ab915a388da"
     },
     "docs/BUILD.md": {
-      "bytes": 5551,
-      "sha256": "99f7b07cf4b06f509820306e77fdde4ec87556fae135a3f89a9bad90f83608f3"
+      "bytes": 5811,
+      "sha256": "1155dd71220654da257cc75dfd6ea031ec43af2a953674c85414109152c4fcaa"
     },
     "docs/COMPRESSED-DEVELOPMENT.md": {
       "bytes": 16113,
       "sha256": "28fdf5e9522b412ad8528b0615438219830943d23035241f2e28e13095fdf371"
+    },
+    "docs/DIAGNOSTICS.md": {
+      "bytes": 7405,
+      "sha256": "5fab5af455f4890d04c99942daa65b72ed1f2389394441965696d75d658115b2"
     },
     "docs/PREPARATION.md": {
       "bytes": 6310,
@@ -124,8 +128,8 @@
       "sha256": "17deae7e1795579137df126a31459b6f81c1edd6f3a24e045cbebeb4c87038ed"
     },
     "docs/SETUP.md": {
-      "bytes": 10272,
-      "sha256": "ece8b352bb5d07a014ff895f165994721c1278975738a31fb7d5968666bd7761"
+      "bytes": 10536,
+      "sha256": "90b1358c789fcf43480beb8fca835b6dc54cc46031281f81d5ed06c472ffd787"
     },
     "docs/STATUS.md": {
       "bytes": 3915,
@@ -1591,6 +1595,10 @@
       "bytes": 491,
       "sha256": "c0c1782ca2ae2c9f9f10c4d197a3e722134c7e6c26b4082a353f9a056871e5b7"
     },
+    "tests/diagnostics/test_collect_diagnostics.py": {
+      "bytes": 1986,
+      "sha256": "6f6ceb3eaf52f2df0d701cecca8173457509db6eb937123cf8a1d3a471fa3532"
+    },
     "tests/home/README.md": {
       "bytes": 1521,
       "sha256": "cbfe47ed0f30df328a7a15831d0d2279ea38d697428a56017c505ef0639cb46d"
@@ -1730,6 +1738,10 @@
     "tools/build/sdk_runtime.py": {
       "bytes": 11202,
       "sha256": "1a1b0312b36edcbe6e6fe0fdd08b49d4e3e53c14297358c66ba18e6dd985cf66"
+    },
+    "tools/diagnostics/collect-diagnostics.py": {
+      "bytes": 3039,
+      "sha256": "64791cd6906efe45876c38912022ffbbba8ce2ba6c352e1ae9b3e0153386290b"
     },
     "tools/smb-transport-tests/README.md": {
       "bytes": 5091,

@@ -96,3 +96,7 @@ Discovery depth is relative to each configured scan root: depth 2 reaches `/data
 Keep the selected game, operation status and detailed setup stage/reason. If a copy's valid files remain, use **Finish setup** when offered; the updated resident has completed that GTA recovery without copying the files again. If the prepared folder is positively gone, normal status checks can return the source to **Send files** when safe. Unknown or interrupted operations still need their actual status resolved.
 
 Refresh can rediscover files and observe a known preparation; it cannot turn missing files, an uncertain mutation or an unresolved reader update into a safe success. Do not delete journals or registrations to bypass a refusal. Ordinary streamed-copy Uninstall preserves the PC originals and saved data; see [preparation and removal](PREPARATION.md#uninstall-and-restore). Hardware qualification of the updated old-registration Uninstall recovery is still pending.
+
+## Diagnostic preparation failures
+
+The optional `v0.2.0-preview.1-sendlog.1` release has [separate diagnostic instructions](DIAGNOSTICS.md), including the exact artifact identity, build command, log collection and rollback. The normal preview remains unchanged.

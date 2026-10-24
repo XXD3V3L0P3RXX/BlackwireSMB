@@ -2,6 +2,13 @@
 
 Changes are grouped by published preview. A build pass, initial menu and controllable gameplay are recorded separately in [testing](docs/TESTING.md).
 
+## v0.2.0-preview.1-sendlog.1 — optional diagnostic
+
+- Add bounded Send/setup logs with setup stages, directory paths and error numbers.
+- Provide installation, collection and rollback instructions plus an optional read-only summary collector.
+- Preserve the v0.2.0-preview.1 game reader and normal download/catalog. No compatibility or speed fix is claimed.
+- Fresh RE4 setup passed on the diagnostic; the reported step-7 failure remains unreproduced with our three-file flat-share test. See [diagnostics](docs/DIAGNOSTICS.md).
+
 ## v0.2.0-preview.1
 
 ### Added
