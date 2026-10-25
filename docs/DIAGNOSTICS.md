@@ -1,5 +1,7 @@
 # Send-files diagnostic build
 
+**Testing the repaired formats and step 7? Use [v0.3.0-beta.1 and its test instructions](BETA-TESTING.md).** That beta includes these bounded setup logs plus both repairs. The older SendLog build documented below preserves the original reader and original failure behavior for comparison.
+
 This optional test build investigates missing compressed candidates and the reported **Send files / Finish setup step-7 failure**. It adds detailed preparation logging to the v0.2.0-preview.1 standalone web resident. It does **not** claim to fix those reports, add compressed formats, or improve loading speed. The normal release and Payload Manager catalog remain on v0.2.0-preview.1.
 
 - [GitHub diagnostic release](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.2.0-preview.1-sendlog.1)

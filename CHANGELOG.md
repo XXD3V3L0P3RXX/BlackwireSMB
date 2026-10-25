@@ -2,7 +2,9 @@
 
 Changes are grouped by published preview. A build pass, initial menu and controllable gameplay are recorded separately in [testing](docs/TESTING.md).
 
-## Unreleased — self-contained reader setup and exFAT
+## v0.3.0-beta.1 — MkPFS exFAT and self-contained reader setup
+
+- Publish the standalone test beta with bounded Send/setup diagnostics and [one-attempt test instructions](docs/BETA-TESTING.md). Keep existing preview downloads and the normal Payload Manager catalog unchanged.
 
 - Remove setup step 7's hidden dependency on a particular `/data/shadowmount/fakelib` pack. Install and hash-check the reader embedded in Blackwire without opening or changing the global directory.
 - Preserve qualified optional game companions and recognized legacy five-file private bundles. Retain strict refusal for unknown or altered files, path changes, expired authority and uncertain operation outcomes.

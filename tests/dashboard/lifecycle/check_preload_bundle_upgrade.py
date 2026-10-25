@@ -63,7 +63,7 @@ def main():
         +'const struct bw_preload_image bw_preload_embedded_image={image_bytes,sizeof image_bytes,{'+array(hashlib.sha256(current).digest())+'},"'+'6'*64+'",10000};\n')
     host=out/'host-upgrade'
     run('host-build',[args.cc,'-std=gnu11','-Wall','-Wextra','-Werror','-Wno-misleading-indentation','-Wno-unused-function',
-        '-O1','-g','-fsanitize=address,undefined','-fno-sanitize-recover=all','-fno-omit-frame-pointer','-I',unit/'library',
+        '-O1','-g','-fsanitize=address,undefined','-fno-sanitize-recover=all','-fno-omit-frame-pointer','-I',unit/'library','-I',LIB,
         '-DBW_PRELOAD_GLOBAL_ROOT="'+str(globals_dir)+'"',HERE/'test_preload_bundle_upgrade.c',image,
         '-pthread','-Wl,--wrap=close','-Wl,--wrap=closedir','-Wl,--wrap=write','-Wl,--wrap=fsync','-Wl,--wrap=renameat','-Wl,--wrap=clock_gettime','-o',host])
     # Linux temporary filesystem supplies real POSIX modes/nlink/fine times;
@@ -73,7 +73,7 @@ def main():
     if not(result['passed'] and result['actualFilesystem'] and result['sameWorker'] and result['cases']>=40):raise RuntimeError('Migration fixture scope changed')
     baseline=out/'host-bundle-diagnostics'
     run('host-retained-bundle-build',[args.cc,'-std=gnu11','-Wall','-Wextra','-Werror','-Wno-misleading-indentation','-Wno-unused-function',
-        '-O1','-g','-fsanitize=address,undefined','-fno-sanitize-recover=all','-fno-omit-frame-pointer','-I',unit/'library',
+        '-O1','-g','-fsanitize=address,undefined','-fno-sanitize-recover=all','-fno-omit-frame-pointer','-I',unit/'library','-I',LIB,
         '-DBW_PRELOAD_GLOBAL_ROOT="'+str(globals_dir)+'"',HERE/'test_preload_bundle.c',image,
         '-pthread','-Wl,--wrap=close','-Wl,--wrap=write','-Wl,--wrap=fsync','-o',baseline])
     with tempfile.TemporaryDirectory(prefix='blackwire-bundle-diagnostics-') as tmp:

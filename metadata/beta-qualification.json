@@ -1,0 +1,64 @@
+{
+  "kind": "blackwire-beta-qualification/1",
+  "version": "v0.3.0-beta.1",
+  "buildId": "blackwire-v0.3.0-beta.1",
+  "application": {
+    "bytes": 5772536,
+    "sha256": "98d35b094f4d2585525434e2af9fab03ed5c71b17e39bd6a1e1aed484ce8d6a9"
+  },
+  "reader": {
+    "bytes": 843696,
+    "sha256": "39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441"
+  },
+  "cleanSdkBuild": {
+    "passed": true,
+    "commands": 164,
+    "hostSuites": [
+      "source",
+      "adapter",
+      "prehook",
+      "input_diagnostic",
+      "first_read",
+      "connect",
+      "cache",
+      "home_startup",
+      "exfat_metadata",
+      "compressed_stream",
+      "self_contained_bundle",
+      "send_logging"
+    ],
+    "allHostSuitesPassed": true,
+    "sourceBeforeAfterMatch": true
+  },
+  "offlineRepairChecks": {
+    "missingGlobalReproducedBefore": true,
+    "missingGlobalPassesAfter": true,
+    "minimalBundleChecks": 352,
+    "upgradeCases": 47,
+    "upgradeChecks": 27934,
+    "selectionCases": 25,
+    "selectionChecks": 8863,
+    "actualSendRemovalCases": 9,
+    "wrapperCases": 6
+  },
+  "hardware": {
+    "firmwareProfile": "0x13000040",
+    "freshSendPassed": true,
+    "step7Passed": true,
+    "setupLogSteps2Through13": true,
+    "readerOnlyBundle": true,
+    "readerBytesVerified": true,
+    "readerMode": 493,
+    "dashboardReady": true,
+    "initialScreen": "NFS EA/Criterion/Frostbite Continue",
+    "normalClosePassed": true,
+    "controllableGameplayConfirmed": false,
+    "directGamesIconLaunchConfirmed": false,
+    "repeatLaunchConfirmed": false,
+    "otherPreparedControlFilesAndGlobalsUnchanged": true,
+    "freshSendElapsedSeconds": 112.75
+  },
+  "reporterEnvironmentConfirmed": false,
+  "privateLogsIncluded": false,
+  "controlledSpeedupEstablished": false
+}

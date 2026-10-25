@@ -4,11 +4,11 @@
 
 ## Formats
 
-The unreleased [exFAT development branch](EXFAT-DEVELOPMENT.md) adds a bounded read-only adapter. The release behavior and historical tests below remain unchanged; existing download assets have not been replaced.
+`v0.3.0-beta.1` adds the bounded [read-only exFAT adapter](EXFAT-DEVELOPMENT.md). Use the [beta instructions](BETA-TESTING.md). The v0.2.0-preview.1 PFS behavior and historical tests below remain attributed to that older release; existing download assets have not been replaced.
 
 The candidate accepts unsigned contiguous D32 PFS, PFSC containing that PFS layout, and supported one-file PFS wrappers. The supplied GTA V and Resident Evil 7 `.ffpfsc` samples use a PFS wrapper around PFSC-compressed PFS. Both were inspected read-only and compared with their independently unpacked folders.
 
-An extension is not proof of format support. Compressor versions can also produce exFAT images. exFAT, signed/encrypted PFS, scattered extents, wide inode layouts and individually compressed inner files remain unsupported. Unsupported or corrupt sources must refuse preparation instead of appearing Ready.
+An extension is not proof of format support. Compressor versions can also produce exFAT images, which the older v0.2.0 reader rejects; the beta accepts its [supported contiguous exFAT layouts](EXFAT-DEVELOPMENT.md#admitted-layout). Signed/encrypted PFS, fragmented/scattered allocations, wide PFS inode layouts and individually compressed inner files remain unsupported. Unsupported or corrupt sources must refuse preparation instead of appearing Ready.
 
 The original image remains on the SMB share. Preparation enumerates logical files, copies startup data onto the PS5 and creates sparse placeholders there. Streamed reads use exact map IDs bound to the image's logical files; those IDs are not assumed to equal PFS inode numbers. No PC decompression server or write access to the share is required.
 

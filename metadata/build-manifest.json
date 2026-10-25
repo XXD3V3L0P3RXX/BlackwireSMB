@@ -1,86 +1,43 @@
 {
-  "kind": "blackwire-standalone-release-build/2",
+  "kind": "blackwire-standalone-beta-build/1",
   "product": "Blackwire",
-  "version": "v0.2.0-preview.1",
-  "artifact": "Blackwire.elf",
-  "buildPassed": true,
+  "version": "v0.3.0-beta.1",
+  "artifact": "Blackwire-Beta.elf",
+  "runtimeBuildId": "blackwire-v0.3.0-beta.1",
+  "runtimeSourceCommit": "27a7565320c1d6951e7f846b6751eb7e0e039b4d",
+  "frozenBuildSourceCommit": "85c66956361e41ffaf98012f7e1c1f20bcb5944d",
   "package": {
-    "bytes": 5738856,
-    "sha256": "b9189c87cdb88d3ad0fccc947d0d007185bb0cfa1b39e8edb585c96347411fd9"
+    "bytes": 5772536,
+    "sha256": "98d35b094f4d2585525434e2af9fab03ed5c71b17e39bd6a1e1aed484ce8d6a9"
   },
   "reader": {
-    "bytes": 831168,
-    "sha256": "c9d069b520c367c971e52432a053d7105a7019cb19ee97185120bffb6190e025"
+    "bytes": 843696,
+    "sha256": "39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441"
   },
   "page": {
     "bytes": 150929,
     "sha256": "d1d033c7b35d31fbab2a67c14dce3d215f775104dd4329ef7aa16789b545c28c"
   },
-  "suppliedLogo": {
-    "bytes": 1430630,
-    "sha256": "cfb85eff8f7928e1e68912b8c656741c39fdf49227d2e693945913157b4843da"
-  },
-  "runtimeSourceCommit": "f490e1917a1f1393d0948b24b9d93d03eee9e95b",
-  "runtimeBuildId": "blackwire-two-sources-dev.11",
-  "runtimeRebuiltForRelease": false,
-  "buildMode": "full-source-sdk-build-unchanged-tested-artifact",
-  "sourceBeforeAfterMatch": true,
-  "commands": 144,
   "sourceManifest": {
-    "bytes": 71501,
-    "sha256": "8794a3d6d93a4743abf868595f3a77ac055294f397c243ee31f5dfbd898310f5"
+    "bytes": 73302,
+    "sha256": "bae8433e799775938e4ba7f0b84e5d5feba26bd9769115163759fc44f3a503ac"
   },
-  "dependencies": {
-    "bytes": 71090,
-    "sha256": "35e608bc3a3bd8374e31ba63611697c7d3eef58e0fbcdd1f6d5b19490fc08945"
-  },
-  "sdkReference": {
-    "bytes": 155000,
-    "sha256": "56aa5f0c50ef7437e807a7261d325d739122eaf50a49a26adce3ae641aea65ae"
-  },
-  "sourceRuntime": {
-    "bytes": 18411,
-    "sha256": "013191ff64e582ab142a345f2e12ac7956a520cd1111e4562eb19a0be66bf4c3"
-  },
-  "commandRecord": {
-    "bytes": 176479,
-    "sha256": "66e2370dd0b71e7a97743468e70c44bfc07f88a31701d49a1df16ce433b95fab"
-  },
-  "uiTests": {
-    "bytes": 1110,
-    "sha256": "5eee5e2a9756aa3d9a61321119358d64d2a4691e2575229780de017837428815"
-  },
+  "runtimeRebuiltForRelease": true,
+  "buildPassed": true,
+  "sourceBeforeAfterMatch": true,
+  "commands": 164,
   "standaloneWeb": true,
   "nativeFrontendIncluded": false,
-  "compressedEarlyReaderIncluded": true,
   "compressedFormats": [
     "unsigned-contiguous-d32-pfs",
     "pfsc-pfs",
-    "one-file-pfs-wrapper"
+    "one-file-pfs-wrapper",
+    "contiguous-exfat",
+    "pfsc-exfat"
   ],
-  "readerPolicy": "STRICT",
   "payloadCacheBytes": 67108864,
-  "consoleVerification": {
-    "exactElfAndServedPageReadBack": true,
-    "savedSharesPreserved": true,
-    "readerUnchangedFromTwoSourcesDev7": true,
-    "rootCircleExit": true,
-    "detailsCircleDismissal": true,
-    "extraCloseBrowserButtonWorks": false,
-    "currentReaderInitialMenus": [
-      "GTA V Continue",
-      "RE7 Start Game"
-    ],
-    "currentReaderFullGameplayRepeated": false,
-    "earlierReaderGameplay": [
-      "GTA V driving",
-      "RE7 controllable character"
-    ],
-    "earlierReaderSha256": "135148e2de73b5b54d6f18dbfb95c1f2cd2d7d7e3e6dac60b756e844e6cbc684",
-    "currentHardwareUninstallQualified": false,
-    "controlledPs5SpeedupEstablished": false,
-    "consoleRestartedForUiUpdate": false
-  },
+  "hardwareRecord": "metadata/beta-qualification.json",
+  "byteIdenticalRelinkVerified": true,
   "privateBuildLogsIncluded": false,
   "externalConsoleLibrariesIncluded": false,
   "gameContentIncluded": false

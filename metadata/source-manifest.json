@@ -1432,8 +1432,8 @@
       "sha256": "d5b7c190e69bf73d6bce41bb26d05381727016466ccc1faea8fc6d03186030a5"
     },
     "tests/dashboard/lifecycle/check_preload_bundle_upgrade.py": {
-      "bytes": 10587,
-      "sha256": "d0ca16dde85aeee19994ef765499a4b5a9b4de6cd21bde7a4ed6251869ff448a"
+      "bytes": 10605,
+      "sha256": "42e2476ce32730da5743b1d7bd7d06e68713a63823ef46578f928563aab52f75"
     },
     "tests/dashboard/lifecycle/check_preload_bundle_upgrade_backend.py": {
       "bytes": 7584,

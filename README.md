@@ -2,7 +2,7 @@
 
 Stream PS5 games from an ordinary PC SMB share, with a smaller startup copy on the console. Supports extracted folders and the tested PFS/PFSC compressed layouts, including supported `.ffpfsc` images.
 
-This development branch contains an experimental [read-only exFAT adapter](docs/EXFAT-DEVELOPMENT.md) and a [self-contained step-7 reader installer](docs/RUNTIME-BUNDLE-DEVELOPMENT.md). The release downloads linked below remain unchanged; see the exact [development console observations](docs/TESTING.md#unreleased-exfat-test) before treating it as a qualified release.
+**v0.3.0-beta.1 is available for testing:** it adds the MkPFS exFAT reader, fixes step 7's optional global-library dependency, and includes bounded setup logging. [Download the beta](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.1) · [Etawen mirror — beta pending](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB) · [Beta test instructions](docs/BETA-TESTING.md). Existing preview downloads and the normal Payload Manager catalog are preserved.
 
 [Download working and logging ELFs](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.2.0-preview.1-sendlog.1) · [Etawen mirror](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB) · [Changelog](CHANGELOG.md) · [Video](#video) · [Setup](docs/SETUP.md) · [Requirements](docs/REQUIREMENTS.md) · [Test results](docs/TESTING.md) · [Build from source](docs/BUILD.md)
 
@@ -29,7 +29,13 @@ Earlier baseline tests used ShadowMountPlus `1.7-beta5fix1` and elfldr `v0.26`; 
 
 The released preview has a setup bug: it requires a particular optional global pack at `/data/shadowmount/fakelib`, even though Blackwire already embeds its reader. A missing pack can cause setup step 7 to fail after startup files transfer. This does **not** mean PS5 system files are missing. The development installer writes and verifies its embedded reader directly, preserves recognized existing per-game companions, and does not read or modify that global directory. See [repair scope](docs/RUNTIME-BUNDLE-DEVELOPMENT.md), [requirements](docs/REQUIREMENTS.md) and [test results](docs/TESTING.md).
 
-## Downloads
+## Beta download
+
+Use **Blackwire-Beta.elf** from [v0.3.0-beta.1](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.1) to test the reported missing-image and step-7 failures. Keep your original game images and share layout; there is no need to repack the whole library or create `/data/shadowmount/fakelib`. Stop the old resident before loading the beta. Follow the [one-attempt test and logging instructions](docs/BETA-TESTING.md), including the build ID check.
+
+The [exFAT format scope](docs/EXFAT-DEVELOPMENT.md), [installer repair](docs/RUNTIME-BUNDLE-DEVELOPMENT.md) and [exact test records](docs/TESTING.md) describe what has been verified. Test results on our 13.00-family console do not establish universal firmware or title compatibility.
+
+## Previous preview downloads
 
 Choose one of these two ELF files. Load only one Blackwire resident at a time.
 
@@ -112,7 +118,7 @@ Bulk files are represented by sparse placeholders with their original logical le
 
 No title-specific compatibility blocker has been identified in testing so far. Coverage remains limited; individual startup, menu and gameplay observations are recorded separately.
 
-- Extracted folders and supported unsigned contiguous D32 PFS/PFSC layouts are accepted. An `.ffpfsc` extension alone does not establish support. exFAT-based compressor output, signed/encrypted PFS, scattered extents, wide inode layouts and individually compressed inner files remain unsupported.
+- Extracted folders and supported unsigned contiguous D32 PFS/PFSC layouts are accepted. v0.3.0-beta.1 also accepts the [supported contiguous exFAT layouts](docs/EXFAT-DEVELOPMENT.md#admitted-layout). An `.ffpfsc` extension alone does not establish support. Signed/encrypted PFS, fragmented/scattered allocations, wide PFS inode layouts and individually compressed inner files remain unsupported.
 - The two shares must use the same PC/server and credentials. A folder outside either shared root is not exposed automatically.
 - Wired Ethernet is the tested network path. No minimum speed guarantees or universal loading-time improvement are claimed.
 - Some tested games have slow menu or scene loading even when gameplay is normal. No universal speed improvement or all-game compatibility is claimed.
@@ -130,7 +136,7 @@ No title-specific compatibility blocker has been identified in testing so far. C
 
 Blackwire is intended for interoperability, research, preservation and compatibility purposes on systems and content that users are authorized to access.
 
-Blackwire does not distribute retail game payloads, console firmware, cryptographic keys or proprietary console system libraries. A compatible console runtime, including the [external libraries listed in the requirements](docs/REQUIREMENTS.md#external-shadowmount-libraries), is required and must be supplied separately. Users are responsible for ensuring that software, binaries and content used with this project are obtained and used in accordance with applicable laws and their respective license terms.
+Blackwire does not distribute retail game payloads, console firmware, cryptographic keys or proprietary console system libraries. A compatible jailbreak, Kstuff and ShadowMountPlus runtime must be supplied separately. The optional global library pack required by the older preview is no longer a reader-installation prerequisite in v0.3.0-beta.1. Users are responsible for ensuring that software, binaries and content used with this project are obtained and used in accordance with applicable laws and their respective license terms.
 
 Blackwire is an independent project and is not affiliated with, authorized by or endorsed by Sony Interactive Entertainment. "PlayStation" and "PS5" are trademarks of Sony Interactive Entertainment Inc.
 

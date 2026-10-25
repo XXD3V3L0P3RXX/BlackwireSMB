@@ -1,6 +1,6 @@
 # exFAT reader development
 
-This branch adds an experimental read-only exFAT adapter to the standalone Blackwire resident. Existing `v0.2.0-preview.1` and SendLog downloads are unchanged and do not contain this adapter. Native Dashboard development is separate.
+Standalone `v0.3.0-beta.1` includes this experimental read-only exFAT adapter; follow the [beta test instructions](BETA-TESTING.md). Existing `v0.2.0-preview.1` and SendLog downloads are unchanged and do not contain this adapter. Native Dashboard development is separate. The development results below remain attributed to their original exact artifacts.
 
 ## Why
 

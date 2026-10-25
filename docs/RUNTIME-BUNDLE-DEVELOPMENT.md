@@ -1,6 +1,6 @@
 # Self-contained reader installation development
 
-This is an unreleased standalone Blackwire repair. Existing preview and SendLog downloads are unchanged. Native Dashboard work is separate and paused during this investigation.
+This repair is included in standalone Blackwire v0.3.0-beta.1, with [beta test instructions](BETA-TESTING.md). Existing preview and SendLog downloads are unchanged. Native Dashboard work is separate and paused during this investigation. The earlier development observations below remain attributed to their original binaries.
 
 ## Fault and repair
 

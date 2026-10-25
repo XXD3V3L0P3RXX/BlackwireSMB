@@ -12,7 +12,7 @@ Set ShadowMount's **Library scan depth to 2** (`scan_depth=2`) for the folder la
 
 ## External ShadowMount libraries
 
-**Released-preview dependency, removed in this development branch:** the original test console had these exact optional global files at `/data/shadowmount/fakelib`. The released preview incorrectly requires that pack and can report `reader_directory_named_stat_failed` with `errno=2` at setup step 7 when the path is absent, after startup files transfer. These are not missing PS5 system files. Creating an empty folder does not repair the released installer.
+**Older-preview dependency, removed in v0.3.0-beta.1:** the original test console had these exact optional global files at `/data/shadowmount/fakelib`. The older preview incorrectly requires that pack and can report `reader_directory_named_stat_failed` with `errno=2` at setup step 7 when the path is absent, after startup files transfer. These are not missing PS5 system files. Creating an empty folder does not repair the old installer.
 
 The [development installer](RUNTIME-BUNDLE-DEVELOPMENT.md) uses the reader already embedded in the ELF and never opens or modifies the global directory. An ordinary fresh game needs no separate global pack for reader installation. Qualified optional companions in the game's prepared `fakelib` are copied and verified; recognized existing five-file private bundles remain supported. Unknown companions or altered owned files refuse without being overwritten. This repairs installation dependency handling; it does not qualify other firmware or arbitrary backports.
 
@@ -40,7 +40,7 @@ Python, Node, WSL, a native Dashboard and recording tools are development tools 
 
 ## Reader and format scope
 
-The selected reader keeps STRICT identity validation, a contiguous-read coalescer, one worker and a 64 MiB payload cache. `v0.2.0-preview.1` adds an indexed cache and bounded PFSC batching without increasing that payload-cache budget. Extracted folders and supported unsigned contiguous D32 PFS/PFSC layouts are accepted. exFAT-based compressor output, signed/encrypted PFS, scattered extents, wide inode layouts and individually compressed inner files remain unsupported. See [format scope](COMPRESSED-DEVELOPMENT.md#formats).
+The selected reader keeps STRICT identity validation, a contiguous-read coalescer, one worker and a 64 MiB payload cache. `v0.2.0-preview.1` adds an indexed cache and bounded PFSC batching without increasing that payload-cache budget. Extracted folders and supported unsigned contiguous D32 PFS/PFSC layouts are accepted. `v0.3.0-beta.1` adds the [supported contiguous exFAT layouts](EXFAT-DEVELOPMENT.md#admitted-layout). Signed/encrypted PFS, fragmented/scattered allocations, wide PFS inode layouts and individually compressed inner files remain unsupported. See [PFS scope](COMPRESSED-DEVELOPMENT.md#formats) and [beta instructions](BETA-TESTING.md).
 
 The two-share configuration uses the same PC/server and sign-in details. Both shares need only read access; Blackwire does not need to write into the PC library. No compressor payload needs to run on the PS5 merely to stream an already supported compressed image.
 

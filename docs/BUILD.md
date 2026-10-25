@@ -24,7 +24,15 @@ python3 tools/test_ui.py
 
 These commands describe the public recipe; they do not assert that every listed check was rerun for a particular release. Read its attached build manifest and the [hardware test record](TESTING.md).
 
-## Current preview build record
+## v0.3.0-beta.1 build record
+
+The beta is a complete clean-export SDK build of frozen source commit `85c66956361e41ffaf98012f7e1c1f20bcb5944d`, with runtime/logging source commit `27a7565320c1d6951e7f846b6751eb7e0e039b4d`. All 164 commands and twelve host suites passed without `--allow-source-changes`, and source hashes matched across the build. The attached `Blackwire-Beta.elf` is the unchanged tested output renamed for download: 5,772,536 bytes, SHA-256 `98d35b094f4d2585525434e2af9fab03ed5c71b17e39bd6a1e1aed484ce8d6a9`. Its build ID is `blackwire-v0.3.0-beta.1`.
+
+The reader remains 843,696 bytes, SHA-256 `39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441`. The release includes exFAT and the self-contained installer plus bounded setup diagnostics. The matching relink archive independently reproduces the packaged ELF byte for byte. [Beta observations](TESTING.md#v030-beta1), metadata and attached SHA-256 sums identify this exact artifact; prior preview results remain separate.
+
+After that build, the standalone upgrade-test harness gained the missing production-header search path needed by its isolated diagnostic fixture. The corrected harness and full removal suite passed against the same unchanged payload sources. `metadata/beta-build-source-manifest.json` preserves the frozen build manifest; the current source manifest additionally pins that test-only harness correction. Release documentation and packaging do not patch or rebuild the tested ELF.
+
+## Previous preview build record
 
 `v0.2.0-preview.1` packages the exact `blackwire-two-sources-dev.11` binary built from runtime source commit `f490e1917a1f1393d0948b24b9d93d03eee9e95b`. A full source SDK build passed all 144 commands and verified unchanged build inputs from start to finish. The packaged ELF is 5,738,856 bytes, SHA-256 `b9189c87cdb88d3ad0fccc947d0d007185bb0cfa1b39e8edb585c96347411fd9`. The reader is 831,168 bytes, SHA-256 `c9d069b520c367c971e52432a053d7105a7019cb19ee97185120bffb6190e025`.
 

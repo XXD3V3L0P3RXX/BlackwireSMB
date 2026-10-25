@@ -1,8 +1,14 @@
 # Preview status
 
+## v0.3.0-beta.1
+
+The standalone test beta adds supported MkPFS exFAT images, removes the optional global-pack dependency at setup step 7, and includes bounded Send/setup logging. Use the [beta download and instructions](BETA-TESTING.md); the normal Payload Manager catalog stays on the older preview. Exact beta identities and observations are recorded in [testing](TESTING.md#v030-beta1). Native Dashboard remains a separate product.
+
+## Previous preview baseline
+
 **v0.2.0-preview.1** adds supported PFS/PFSC compressed sources, two SMB shares, compressed artwork, library refresh and console-control repairs to the standalone web product. It runs as one `Blackwire.elf`; no Blackwire PC service, native Dashboard installer or Media helper is required. See the [changelog](../CHANGELOG.md).
 
-## Current package
+## v0.2.0-preview.1 package
 
 The release preserves the exact tested `blackwire-two-sources-dev.11` runtime. The ELF SHA-256 is `b9189c87cdb88d3ad0fccc947d0d007185bb0cfa1b39e8edb585c96347411fd9`; its embedded reader is `c9d069b520c367c971e52432a053d7105a7019cb19ee97185120bffb6190e025`. Documentation and packaging changes do not change that binary. Full identities and evidence scope are in [testing](TESTING.md#compressed-and-two-share-preview).
 

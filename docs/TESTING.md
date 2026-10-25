@@ -144,3 +144,22 @@ On October 25, 2026, standalone development build `blackwire-runtime-bundle-test
 - Web Play launched the reader-only copy, and the capture visibly reached the EA/Criterion/Frostbite Continue screen without an error overlay observed. Normal authenticated Close then completed, the game process disappeared, and the resident returned to `stopped` with no recorded last failure. Controllable driving, direct Games-icon launch and repeat launch remain unqualified for this exact bundle profile; process presence alone was not used to claim visible startup or gameplay.
 
 Firmware 10.01, the reporter's exact payload combination, arbitrary companion libraries and every rejected compressed image remain unqualified. The repair removes an installer dependency; it does not install or replace PS5 system files. Source and build backups were verified before testing.
+
+## v0.3.0-beta.1
+
+The public test beta includes the same exFAT reader and installer repair, plus the bounded setup logger. Its exact artifact passed the following checks on October 25, 2026; these observations supersede neither earlier gameplay records nor the reporter's own environment test.
+
+| Artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| Blackwire-Beta.elf | 5772536 | 98d35b094f4d2585525434e2af9fab03ed5c71b17e39bd6a1e1aed484ce8d6a9 |
+| Embedded reader | 843696 | 39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441 |
+
+- A clean exported-source SDK build passed all 164 commands and twelve host suites with source hashes unchanged during the build. The logging tests cover errno preservation, the size cap, symlink/hardlink refusal, nonblocking FIFO handling and actual directory-failure path/error capture.
+- The full actual-filesystem upgrade suite passed 47 cases and 27,934 checks on the beta payload source, after correcting its isolated test fixture's production-header search path. Reader selection passed 25 cases and 8,863 checks, nine actual Send/removal cases passed, and six default-wrapper scenarios passed. This fixture-only correction changes no payload source or tested ELF bytes.
+- The exact beta was loaded once on the recorded 13.00-family console. Its existing NFS reader-only copy passed normal Uninstall, its source was restored, and a genuinely fresh preparation completed in 112.750 seconds. Startup and dashboard readiness were true; the fresh reader-only directory matched the embedded reader's bytes/hash and mode 0755.
+- The dedicated Send log captured all setup steps 2–13 and a successful `setup-end` with result 0, first failure step 0 and no unconfirmed release. Raw logs remain private; only redacted test facts are distributed.
+- Web Play visibly reached NFS's EA/Criterion/Frostbite Continue screen without an observed error overlay. Normal authenticated Close completed and left no game process or recorded last failure. Controllable driving, direct Games-icon and repeat launch are not confirmed for this exact beta.
+- Thirty control-file hashes for the other five preparations and the existing global pack matched before/after setup. The shared global files were preserved. The independently reproduced absent-global host case and production global-I/O removal establish the dependency repair; this hardware test did not delete the shared pack.
+- Independently relinking the supplied clean objects reproduces the beta ELF byte for byte. Corresponding source, notices, practical relinking materials and checksums accompany the release. The normal Payload Manager catalog and older release downloads are unchanged.
+
+Use [the beta instructions](BETA-TESTING.md) to test original share layouts and retained startup files. No universal firmware/title compatibility or controlled loading-speed improvement is claimed.

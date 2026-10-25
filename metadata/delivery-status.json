@@ -1,45 +1,30 @@
 {
-  "kind": "blackwire-preview-delivery/2",
+  "kind": "blackwire-beta-delivery/1",
   "product": "Blackwire",
-  "version": "v0.2.0-preview.1",
+  "version": "v0.3.0-beta.1",
   "readyToPublish": true,
-  "publicationPendingChecks": false,
-  "binaryIncludedInSourceRepository": false,
-  "selectedApplication": {
-    "bytes": 5738856,
-    "sha256": "b9189c87cdb88d3ad0fccc947d0d007185bb0cfa1b39e8edb585c96347411fd9"
+  "application": {
+    "bytes": 5772536,
+    "sha256": "98d35b094f4d2585525434e2af9fab03ed5c71b17e39bd6a1e1aed484ce8d6a9"
   },
-  "selectedReader": {
-    "bytes": 831168,
-    "sha256": "c9d069b520c367c971e52432a053d7105a7019cb19ee97185120bffb6190e025"
+  "reader": {
+    "bytes": 843696,
+    "sha256": "39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441"
   },
-  "runtimeSourceCommit": "f490e1917a1f1393d0948b24b9d93d03eee9e95b",
   "sourceBuildPassed": true,
-  "publicationTarget": "https://github.com/XXD3V3L0P3RXX/BlackwireSMB",
+  "nativeFrontendIncluded": false,
+  "catalogChanged": false,
+  "previousReleasesChanged": false,
   "knownLimits": [
-    "Extra Close browser button fails; use Circle. Removal planned for next build.",
-    "Earlier gameplay and current-reader initial menus have separate artifact identities.",
-    "Controlled PS5 loading benchmarks, broad coverage and hardware removal remain open.",
-    "Background CPU contention is a contributor; a sole system-dialog failure cause is not established."
+    "Hardware observations cover the recorded 13.00-family environment, fresh setup, initial menu and normal exit.",
+    "Driving, direct Games-icon and repeat launch remain unqualified for this exact beta.",
+    "Only the documented contiguous exFAT layouts are supported; broader compatibility and controlled speed benchmarks remain open."
   ],
   "excluded": [
     "credentials and settings",
     "private logs and captures",
     "game content and saves",
     "external console libraries and keys",
-    "native Dashboard app",
-    "custom Media helper"
-  ],
-  "sourceManifest": {
-    "bytes": 71501,
-    "sha256": "8794a3d6d93a4743abf868595f3a77ac055294f397c243ee31f5dfbd898310f5"
-  },
-  "buildManifest": {
-    "bytes": 2887,
-    "sha256": "a89047a7cc3077d5fb8da27158351a5bbb7ae2586dd20889fb387fd97442be01"
-  },
-  "relinkManifest": {
-    "bytes": 1037,
-    "sha256": "8b973366057c51672986f9ecd669c00d918c6b7e0e6ea15a0f637bb89cd8426e"
-  }
+    "native Dashboard application"
+  ]
 }
