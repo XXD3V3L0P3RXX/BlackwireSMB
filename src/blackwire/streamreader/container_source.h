@@ -2,6 +2,7 @@
 #define BW_CONTAINER_SOURCE_H
 #include "pfs_source.h"
 #include "pfsc_range.h"
+#include "exfat_source.h"
 
 struct bw_container_ops {
     /* Exact, bounded reads. BW_CONTAINER_CANCELED explicitly interrupts the
@@ -13,7 +14,8 @@ struct bw_container_ops {
      * Called before and after every public operation. */
     int (*generation)(void *);
 };
-enum bw_container_kind { BW_CONTAINER_NONE, BW_CONTAINER_PFS, BW_CONTAINER_PFSC_PFS, BW_CONTAINER_WRAPPED_PFS };
+enum bw_container_kind { BW_CONTAINER_NONE, BW_CONTAINER_PFS, BW_CONTAINER_PFSC_PFS, BW_CONTAINER_WRAPPED_PFS,
+    BW_CONTAINER_EXFAT, BW_CONTAINER_PFSC_EXFAT, BW_CONTAINER_WRAPPED_EXFAT };
 enum { BW_CONTAINER_STALE=-32, BW_CONTAINER_CODEC=-33, BW_CONTAINER_CANCELED=-35 };
 struct bw_container {
     struct bw_container_ops ops;
@@ -22,13 +24,16 @@ struct bw_container {
     uint64_t session;
     struct bw_pfs outer,inner,*filesystem;
     struct bw_pfsc pfsc;
+    struct bw_exfat exfat;
     int kind,ready,failed,has_pfsc,decoder_error,interrupted;
 };
 /* Keep this object at a stable address; no copying, concurrent calls or
  * callback re-entry. No retained allocation: workspace is fixed. PFS traversal
  * temporarily allocates bounded inode/name metadata. No extraction/mount/write.
  * Admits plain unsigned D32 PFS, PFSC->PFS, and one-file PFS->PFSC->PFS wrappers.
- * exFAT, signed, encrypted and other layouts fail explicitly in this revision.
+ * Also admits MkPFS exFAT (bare or in the same wrappers): one FAT, fully
+ * initialized contiguous file/directory allocations. Fragmented allocations,
+ * TexFAT, signed/encrypted PFS and unknown critical entries refuse.
  */
 int bw_container_open(struct bw_container *,const struct bw_container_ops *,void *,uint64_t);
 int bw_container_walk(struct bw_container *,bw_pfs_visit_fn,void *,uint32_t *);

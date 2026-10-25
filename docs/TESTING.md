@@ -6,6 +6,8 @@ No title-specific compatibility blocker has been identified in testing so far. T
 
 ## Compressed and two-share preview
 
+The unreleased exFAT experiment is recorded [separately below](#unreleased-exfat-test). It does not replace these release observations.
+
 `v0.2.0-preview.1` packages the tested `blackwire-two-sources-dev.11` runtime without changing its bytes. Its runtime source commit is `f490e1917a1f1393d0948b24b9d93d03eee9e95b`; later release changes are documentation and packaging.
 
 | Artifact | Bytes | SHA-256 |
@@ -106,3 +108,20 @@ There is no universal speed claim. This preview does not establish compatibility
 Keep exact source, build, dependency, binary and reader identities with each release. Offline host checks and compiler checks are separate from hardware observations. Before extending qualification, exercise fresh settings, Send, Ready, direct game-icon launch, normal exit, repeat launch, optional Media setup, and exact streamed-copy Uninstall while confirming originals and saves remain intact. Missing-resident behavior and crash recovery still need broader qualification.
 
 Public reports should contain redacted summaries and synthetic reproductions, not game assets, raw captures, credentials or personal console/PC details. See [contributing](../CONTRIBUTING.md) and [security reporting](../SECURITY.md).
+
+## Unreleased exFAT test
+
+On October 25, 2026, standalone development build `blackwire-exfat-test.02` was built and loaded once on the existing test PS5. Native Dashboard work was paused; no native frontend was loaded. These identities are development artifacts, not published downloads:
+
+| Artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| Standalone resident | 5772296 | fa937f581359c10f7bd9d968d264fe5d998d1a9d358cc94b30c4aa8f672beea0 |
+| Embedded reader | 843696 | 39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441 |
+
+- The PC test inputs were separate copies/views of owned game files. MkPFS 0.0.9 packed them using the reporter's ordinary folder command, producing exFAT inside the PFS/PFSC wrapper. No original game or existing prepared copy was deleted or overwritten.
+- The console discovered both new Red Dead Redemption and Need for Speed Unbound images as `pfsc_exfat`, alongside the five existing PFS/PFSC entries in the same flat share. Seven candidates were present after the explicit refresh.
+- A fresh Need for Speed Unbound preparation completed: 120 startup files totaling about 209.7 MiB, plus 177 streamed-file placeholders. Reader setup and dashboard registration passed; the operation reported `Startup files, reader and PS5 dashboard registration are ready.` Both startup and dashboard readiness were true. The observed whole operation took 109.421 seconds, not a controlled loading-speed benchmark.
+- Web Play started the title. The capture visibly reached its EA/Criterion/Frostbite Continue screen with no system-software error observed at that point. A process alone was not used to claim visible startup. Controllable driving, a direct Games-icon launch, normal exit and repeat launch are not yet qualified on this exact reader.
+- The five expected global runtime libraries already existed on this console. Passing setup here does **not** reproduce or fix the reporter's absent-global-library step-7 case, nor qualify their firmware 10.01 environment.
+
+The working released resident and existing prepared games were preserved. See [adapter scope and PC tests](EXFAT-DEVELOPMENT.md). Broader qualification and a separate missing-library repair remain required before presenting this as a replacement release.

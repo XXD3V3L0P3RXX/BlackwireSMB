@@ -123,7 +123,7 @@ int main(int argc,char **argv){
             struct bw_container_ops final_ops={final_raw,final_generation};
             image=calloc(1,sizeof *image);CHECK(image);
             int decoded=bw_container_open(image,&final_ops,&probe,(uint64_t)live.st_size);
-            int expected=!strcmp(argv[4],"refuse-codec-cancel")?BW_CONTAINER_CODEC:BW_PFS_UNSUPPORTED;
+            int expected=!strcmp(argv[4],"refuse-codec-cancel")?BW_CONTAINER_CODEC:!strcmp(argv[4],"refuse-format-cancel")?BW_PFS_FORMAT:BW_PFS_UNSUPPORTED;
             fprintf(stderr,"final cancellation precedence: decoded=%d expected=%d\n",decoded,expected);
             CHECK(decoded==expected&&probe.fences>1);
             if(expected==BW_CONTAINER_CODEC)CHECK(image->failed);

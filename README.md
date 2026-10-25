@@ -2,6 +2,8 @@
 
 Stream PS5 games from an ordinary PC SMB share, with a smaller startup copy on the console. Supports extracted folders and the tested PFS/PFSC compressed layouts, including supported `.ffpfsc` images.
 
+This development branch also contains an experimental [read-only exFAT adapter](docs/EXFAT-DEVELOPMENT.md). The release downloads linked below remain unchanged; see the exact [development console observations](docs/TESTING.md#unreleased-exfat-test) before treating it as a qualified release.
+
 [Download working and logging ELFs](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.2.0-preview.1-sendlog.1) · [Etawen mirror](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB) · [Changelog](CHANGELOG.md) · [Video](#video) · [Setup](docs/SETUP.md) · [Requirements](docs/REQUIREMENTS.md) · [Test results](docs/TESTING.md) · [Build from source](docs/BUILD.md)
 
 ## Tested environment

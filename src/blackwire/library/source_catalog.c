@@ -27,7 +27,8 @@ const char *bw_source_catalog_status(const struct bw_catalog_item *p){
 }
 const char *bw_source_catalog_format(const struct bw_catalog_item *p){
     if(!p)return "";
-    switch(p->container_kind){case BW_CONTAINER_PFS:return "pfs";case BW_CONTAINER_PFSC_PFS:return "pfsc_pfs";case BW_CONTAINER_WRAPPED_PFS:return "nested_pfs";default:return "";}
+    switch(p->container_kind){case BW_CONTAINER_PFS:return "pfs";case BW_CONTAINER_PFSC_PFS:return "pfsc_pfs";case BW_CONTAINER_WRAPPED_PFS:return "nested_pfs";
+    case BW_CONTAINER_EXFAT:return "exfat";case BW_CONTAINER_PFSC_EXFAT:return "pfsc_exfat";case BW_CONTAINER_WRAPPED_EXFAT:return "nested_exfat";default:return "";}
 }
 int bw_source_catalog_image_same(const struct smb2_stat_64 *a,const struct smb2_stat_64 *b){
     return a&&b&&a->smb2_type==SMB2_TYPE_FILE&&b->smb2_type==SMB2_TYPE_FILE&&a->smb2_ino==b->smb2_ino&&a->smb2_size==b->smb2_size&&

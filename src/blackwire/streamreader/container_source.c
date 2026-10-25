@@ -1,6 +1,9 @@
 #include "container_source.h"
 #include <stdatomic.h>
 #include <string.h>
+#include "exfat_internal.h"
+
+static int exfat_kind(const struct bw_container *p){return p->kind>=BW_CONTAINER_EXFAT&&p->kind<=BW_CONTAINER_WRAPPED_EXFAT;}
 
 static _Atomic uint64_t next_session=1;
 static int assign_session(struct bw_container *p) {
@@ -97,8 +100,16 @@ int bw_container_open(struct bw_container *p,const struct bw_container_ops *ops,
             }
             p->inner_base=node.base;p->inner_size=node.logical_size;
         }
-    } else return finish(p,BW_PFS_UNSUPPORTED);
+    } else if(!memcmp(head+3,"EXFAT   ",8))p->inner_size=size;
+    else return finish(p,BW_PFS_UNSUPPORTED);
     if (inner(p,0,head,sizeof head)) return finish(p,BW_PFS_IO);
+    if(!memcmp(head+3,"EXFAT   ",8)){
+        result=ex_open(&p->exfat,inner,p,p->inner_size);if(result)return finish(p,result);
+        p->kind=p->has_pfsc?BW_CONTAINER_PFSC_EXFAT:p->inner_base?BW_CONTAINER_WRAPPED_EXFAT:BW_CONTAINER_EXFAT;
+        /* Shared token bounds use the cluster ID in place of a PFS inode ID.
+         * No PFS operation is dispatched to this metadata-only bounds view. */
+        p->filesystem=&p->inner;p->inner.inode_count=p->exfat.clusters+2;p->ready=1;return finish(p,0);
+    }
     if (!is_pfs(head)) return finish(p,BW_PFS_UNSUPPORTED);
     result=bw_pfs_open(&p->inner,inner,p,p->inner_size);if (result) return finish(p,result);
     p->filesystem=&p->inner;p->kind=p->has_pfsc?BW_CONTAINER_PFSC_PFS:BW_CONTAINER_WRAPPED_PFS;p->ready=1;
@@ -106,17 +117,17 @@ int bw_container_open(struct bw_container *p,const struct bw_container_ops *ops,
 }
 int bw_container_walk(struct bw_container *p,bw_pfs_visit_fn visit,void *context,uint32_t *count) {
     int result=begin(p);if (result) return result;
-    return finish(p,bw_pfs_walk(p->filesystem,visit,context,count));
+    return finish(p,exfat_kind(p)?ex_walk(&p->exfat,visit,context,count):bw_pfs_walk(p->filesystem,visit,context,count));
 }
 int bw_container_find(struct bw_container *p,const char *path,struct bw_pfs_inode *out) {
     int result=begin(p);if (result) return result;
-    return finish(p,bw_pfs_find(p->filesystem,path,out));
+    return finish(p,exfat_kind(p)?ex_find(&p->exfat,path,out):bw_pfs_find(p->filesystem,path,out));
 }
 int bw_container_read(struct bw_container *p,const char *path,uint64_t at,void *out,size_t size) {
     int result=begin(p);if (result) return result;
     struct bw_pfs_inode node;
-    result=bw_pfs_find(p->filesystem,path,&node);
-    if (!result) result=bw_pfs_read_file(p->filesystem,node.id,at,out,size);
+    result=exfat_kind(p)?ex_find(&p->exfat,path,&node):bw_pfs_find(p->filesystem,path,&node);
+    if (!result) result=exfat_kind(p)?ex_file_read(&p->exfat,node.id,node.logical_size,at,out,size):bw_pfs_read_file(p->filesystem,node.id,at,out,size);
     return finish(p,result);
 }
 int bw_container_validate(struct bw_container *p) { return begin(p); }
@@ -135,11 +146,12 @@ int bw_container_file_read(const struct bw_container_file *file,uint64_t at,void
     if (at>file->size || size>file->size-at) return BW_PFS_RANGE;
     struct bw_container *p=file->owner;
     int result=begin(p);if (result) return result;
-    return finish(p,bw_pfs_read_file(p->filesystem,file->inode,at,out,size));
+    return finish(p,exfat_kind(p)?ex_file_read(&p->exfat,file->inode,file->size,at,out,size):bw_pfs_read_file(p->filesystem,file->inode,at,out,size));
 }
 const char *bw_container_error(int error) {
     if (error==BW_CONTAINER_CANCELED) return "compressed read operation canceled";
     if (error==BW_CONTAINER_STALE) return "compressed source generation changed or previously failed";
     if (error==BW_CONTAINER_CODEC) return "compressed block checksum, length or zlib stream failed";
+    if (error==BW_PFS_UNSUPPORTED) return "unsupported container filesystem, allocation or inode layout";
     return bw_pfs_error(error);
 }

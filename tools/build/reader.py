@@ -153,6 +153,10 @@ def host_tests(root, out, source, runner):
     home_out = out / "home-startup-host"
     runner.run(["python3", tests / "check_home.py", "--root", root, "--out", home_out], "host-home-startup")
     results["home_startup"] = json.loads((home_out / "proof.json").read_text())
+    for key, script in (("exfat_metadata", "check_exfat.py"), ("compressed_stream", "check_synthetic.py")):
+        checked = out / key
+        runner.run(["python3", root / "tests/compressed" / script, "--output", checked], "host-" + key)
+        results[key] = json.loads((checked / "proof.json").read_text())
     if not all(value.get("passed") is True for value in results.values()):
         raise ValueError("A host reader test did not pass")
     save(out / "host-tests.json", results)

@@ -38,7 +38,8 @@ static int stable(struct bw_compressed_stream *p) {
        c->kind!=p->kind||c->has_pfsc!=p->has_pfsc||c->ops.pread!=p->ops.pread||c->ops.generation!=p->ops.generation)
         return latch(p,BW_CONTAINER_STALE);
     if((c->kind==BW_CONTAINER_PFS&&c->filesystem!=&c->outer)||
-       ((c->kind==BW_CONTAINER_PFSC_PFS||c->kind==BW_CONTAINER_WRAPPED_PFS)&&c->filesystem!=&c->inner))return latch(p,BW_CONTAINER_STALE);
+       ((c->kind==BW_CONTAINER_PFSC_PFS||c->kind==BW_CONTAINER_WRAPPED_PFS||
+         (c->kind>=BW_CONTAINER_EXFAT&&c->kind<=BW_CONTAINER_WRAPPED_EXFAT))&&c->filesystem!=&c->inner))return latch(p,BW_CONTAINER_STALE);
     if(p->files->files!=p->tokens||p->files->source!=&s->container||p->files->session!=p->session||
        p->files->failed||p->files->count!=p->map.count||p->files->manifest_checksum!=p->map.checksum||
        memcmp(p->map_bytes,p->map_header,sizeof p->map_header))return latch(p,BW_CSTREAM_MAP);
@@ -110,8 +111,8 @@ int bw_compressed_stream_bind(struct bw_compressed_stream *p,const struct bw_cst
        strnlen(s->path,sizeof s->path)==sizeof s->path||strcmp(s->path,a->binding->source))return latch(p,BW_CSTREAM_IDENTITY);
     if(!s->smb||!s->handle||s->failed||!c->ready||c->failed||!c->session||c->source!=s||
        c->image_size!=s->admitted.smb2_size||!c->ops.pread||!c->ops.generation)return latch(p,BW_CONTAINER_STALE);
-    if((c->kind!=BW_CONTAINER_PFS&&c->kind!=BW_CONTAINER_PFSC_PFS&&c->kind!=BW_CONTAINER_WRAPPED_PFS)||
-       (c->kind==BW_CONTAINER_PFSC_PFS?!c->has_pfsc:c->has_pfsc))return latch(p,BW_PFS_UNSUPPORTED);
+    if(c->kind<BW_CONTAINER_PFS||c->kind>BW_CONTAINER_WRAPPED_EXFAT||
+       ((c->kind==BW_CONTAINER_PFSC_PFS||c->kind==BW_CONTAINER_PFSC_EXFAT)?!c->has_pfsc:c->has_pfsc))return latch(p,BW_PFS_UNSUPPORTED);
     if(a->map_size<BW_MANIFEST_HEADER_SIZE||a->map_size>BW_MANIFEST_HEADER_SIZE+(size_t)BW_MANIFEST_MAX_FILES*BW_MANIFEST_RECORD_SIZE+BW_MANIFEST_MAX_PATH_BYTES||
        bw_manifest_open(&p->map,a->map_bytes,a->map_size))return latch(p,BW_CSTREAM_MAP);
     uint8_t digest[32];cp_sha_bytes(a->map_bytes,a->map_size,digest);

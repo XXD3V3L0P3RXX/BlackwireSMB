@@ -683,7 +683,7 @@ static int valid_library(const struct bw_native_library *p){
         }else if(*item->title_id)return 0;
         if(item->state==BW_CATALOG_CONTAINER_READY){
             static const struct bw_source_info empty={0};uint8_t generation[32];bw_source_catalog_image_hash(&item->image,generation);
-            if(item->container_error||item->container_kind<BW_CONTAINER_PFS||item->container_kind>BW_CONTAINER_WRAPPED_PFS||
+            if(item->container_error||item->container_kind<BW_CONTAINER_PFS||item->container_kind>BW_CONTAINER_WRAPPED_EXFAT||
                !item->logical_boot_size||item->logical_boot_size>UINT64_C(2147483648)||item->image.smb2_type!=SMB2_TYPE_FILE||
                item->container_bytes<48||item->container_bytes>BW_PFS_MAX_VOLUME||item->image.smb2_size!=item->container_bytes||memcmp(generation,item->image_sha256,32)||
                memcmp(&item->boot,&empty,sizeof empty)||memcmp(&item->param,&empty,sizeof empty)||memcmp(&item->icon,&empty,sizeof empty)||

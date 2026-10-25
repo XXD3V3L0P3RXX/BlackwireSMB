@@ -4,6 +4,8 @@
 
 ## Formats
 
+The unreleased [exFAT development branch](EXFAT-DEVELOPMENT.md) adds a bounded read-only adapter. The release behavior and historical tests below remain unchanged; existing download assets have not been replaced.
+
 The candidate accepts unsigned contiguous D32 PFS, PFSC containing that PFS layout, and supported one-file PFS wrappers. The supplied GTA V and Resident Evil 7 `.ffpfsc` samples use a PFS wrapper around PFSC-compressed PFS. Both were inspected read-only and compared with their independently unpacked folders.
 
 An extension is not proof of format support. Compressor versions can also produce exFAT images. exFAT, signed/encrypted PFS, scattered extents, wide inode layouts and individually compressed inner files remain unsupported. Unsupported or corrupt sources must refuse preparation instead of appearing Ready.

@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 from fixtures import make_pfs, pfsc, wrapped
+from fixtures_exfat import make_exfat
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -38,7 +39,9 @@ def main():
         subprocess.run([sys.executable, str(root / 'tests/compressed/check_reader.py'), '--image', str(admitted), '--folder', str(folder),
                         '--output', str(out / 'compiled')], check=True, capture_output=True, text=True)
         exe = out / 'compiled/compressed-reader-test'
-        variants = {'plain-pfs': pfs, 'bare-pfsc': packed, 'wrapped-pfsc': wrapped(pfs), 'wrapped-plain': wrapped(pfs, encode=False)}
+        exfat_valid,_ = make_exfat(contents)
+        variants = {'plain-pfs': pfs, 'bare-pfsc': packed, 'wrapped-pfsc': wrapped(pfs), 'wrapped-plain': wrapped(pfs, encode=False),
+                    'plain-exfat':exfat_valid,'pfsc-exfat':pfsc(exfat_valid),'wrapped-exfat':wrapped(exfat_valid)}
         damaged = bytearray(packed)
         first, end = struct.unpack_from('<QQ', damaged, 0x400)
         if not end - first < 65536:
@@ -52,11 +55,11 @@ def main():
         exfat[3:11] = b'EXFAT   '
         mismatch, _ = make_pfs({**contents, 'packs/first.pak': contents['packs/first.pak'] + b'mismatch'})
         refused = {'manifest-mismatch': mismatch, 'checksum-failure': damaged, 'nonmonotonic-table': invalid_table, 'unsupported-signed-pfs': invalid_mode,
-                   'unsupported-exfat': pfsc(exfat), 'truncated-header': packed[:32]}
+                   'malformed-exfat': pfsc(exfat), 'truncated-header': packed[:32]}
         for label, body in {**variants, **refused}.items():
             image = temp / (label + '.ffpfsc')
             image.write_bytes(body)
-            mode = 'refuse-codec-cancel' if label == 'checksum-failure' else 'refuse-late-cancel' if label.startswith('unsupported-') else 'refuse'
+            mode = 'refuse-codec-cancel' if label == 'checksum-failure' else 'refuse-format-cancel' if label=='malformed-exfat' else 'refuse-late-cancel' if label.startswith('unsupported-') else 'refuse'
             result = subprocess.run([str(exe), str(admitted), str(image), str(folder), *([mode] if label in refused else [])],
                                     capture_output=True, text=True)
             if result.returncode:

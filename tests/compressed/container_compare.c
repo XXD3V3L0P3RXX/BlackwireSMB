@@ -32,12 +32,20 @@ static int compare(void *opaque,const char *path,const struct bw_pfs_inode *node
     int result=-1;unsigned char *left=malloc(65536),*right=malloc(65536);
     if(!left||!right||fstat(fd,&before)||!S_ISREG(before.st_mode)||before.st_size<0||(uint64_t)before.st_size!=node->logical_size)goto done;
     struct bw_container_file token={0};if(bw_container_file_open(&p->image,path,&token))goto done;
+#ifdef BW_COMPARE_ALL_BYTES
+    for(uint64_t at=0;at<node->logical_size;){
+        size_t size=node->logical_size-at<65519?(size_t)(node->logical_size-at):65519;
+        if(bw_container_file_read(&token,at,left,size)||exact(fd,at,right,size)||memcmp(left,right,size))goto done;
+        p->spans++;p->compared+=size;at+=size;
+    }
+#else
     for(unsigned i=0;i<3&&node->logical_size;i++){
         size_t size=node->logical_size<65536?(size_t)node->logical_size:65536;
         uint64_t at=i==0?0:i==1?(node->logical_size-size)/2:node->logical_size-size;
         if(bw_container_file_read(&token,at,left,size)||exact(fd,at,right,size)||memcmp(left,right,size))goto done;
         p->spans++;p->compared+=size;
     }
+#endif
     if(fstat(fd,&after)||!same(&before,&after))goto done;
     if(node->logical_size>p->largest_size){p->largest_size=node->logical_size;strcpy(p->largest,path);}
     p->files++;result=0;

@@ -54,7 +54,7 @@ def main():
         source,slices=reader.prepare(ROOT,out)
         host=reader.host_tests(ROOT,out,source,run) if args.host_tests else None
         result={'passed':True,'standaloneWeb':True,'nativeFrontend':False,'hostTests':host,'sdkBuild':args.build,
-                'folderOnly':False,'compressedFormats':['unsigned-contiguous-d32-pfs','pfsc-pfs','one-file-pfs-wrapper'],
+                'folderOnly':False,'compressedFormats':['unsigned-contiguous-d32-pfs','pfsc-pfs','one-file-pfs-wrapper','contiguous-exfat','pfsc-exfat'],
                 'consoleContacted':False,'deployed':False,'nativeRuntimeProved':False}
         if args.build:
             run.run([sdk/'bin/prospero-clang','--version'],'sdk-compiler-version')

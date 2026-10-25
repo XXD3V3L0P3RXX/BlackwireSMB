@@ -2,6 +2,14 @@
 
 Changes are grouped by published preview. A build pass, initial menu and controllable gameplay are recorded separately in [testing](docs/TESTING.md).
 
+## Unreleased — exFAT reader development
+
+- Add read-only support for clean, single-FAT exFAT images with fully initialized contiguous allocations, including the default MkPFS 0.0.9 and 1.1.0 PFS/PFSC wrappers. FAT-linked contiguous files and NoFatChain files are both supported. Other layouts still refuse explicitly.
+- Preserve Unicode filenames and validate boot/backup checksums, allocation bitmap, FAT chains, up-case table, entry-set/name checksums, directory cycles, overlapping allocations and duplicate names.
+- Avoid repeatedly traversing unrelated files' FAT chains during path lookup. File-token size and the 64 MiB payload-cache budget are unchanged; the exFAT adapter has a fixed 128 KiB Unicode map and bounded metadata workspace.
+- Add independent exFAT corruption fixtures and include PFS/exFAT streaming/cancellation regressions in ordinary host builds.
+- This is development work, not a change to the existing release downloads or firmware qualification. The missing global runtime-library step-7 problem remains separate. See [exFAT development](docs/EXFAT-DEVELOPMENT.md).
+
 ## Documentation update — October 24, 2026
 
 - Make the tested 13.00-family firmware profile, runtime payload versions, operator-reported jailbreak chain and optional helper tools visible in the README. Keep unrecorded build/entry-point details explicit.
