@@ -7,6 +7,7 @@ Changes are grouped by published preview. A build pass, initial menu and control
 - Remove setup step 7's hidden dependency on a particular `/data/shadowmount/fakelib` pack. Install and hash-check the reader embedded in Blackwire without opening or changing the global directory.
 - Preserve qualified optional game companions and recognized legacy five-file private bundles. Retain strict refusal for unknown or altered files, path changes, expired authority and uncertain operation outcomes.
 - Cover a missing-global fresh installation, retained readers, upgrades and ordinary removal. See [repair details and verification](docs/RUNTIME-BUNDLE-DEVELOPMENT.md).
+- On the 13.00-family test console, normal removal of the old NFS test copy and fresh exFAT preparation passed. The new copy contains only the embedded reader, reaches its Continue screen and closes normally; the other five preparations and global pack are unchanged. This does not qualify the reporter's firmware 10.01 environment.
 
 - Add read-only support for clean, single-FAT exFAT images with fully initialized contiguous allocations, including the default MkPFS 0.0.9 and 1.1.0 PFS/PFSC wrappers. FAT-linked contiguous files and NoFatChain files are both supported. Other layouts still refuse explicitly.
 - Preserve Unicode filenames and validate boot/backup checksums, allocation bitmap, FAT chains, up-case table, entry-set/name checksums, directory cycles, overlapping allocations and duplicate names.

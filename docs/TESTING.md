@@ -124,4 +124,23 @@ On October 25, 2026, standalone development build `blackwire-exfat-test.02` was 
 - Web Play started the title. The capture visibly reached its EA/Criterion/Frostbite Continue screen with no system-software error observed at that point. A process alone was not used to claim visible startup. Controllable driving, a direct Games-icon launch, normal exit and repeat launch are not yet qualified on this exact reader.
 - The five expected global runtime libraries already existed on this console. Passing setup here does **not** reproduce or fix the reporter's absent-global-library step-7 case, nor qualify their firmware 10.01 environment.
 
-The working released resident and existing prepared games were preserved. See [adapter scope and PC tests](EXFAT-DEVELOPMENT.md). Broader qualification and a separate missing-library repair remain required before presenting this as a replacement release.
+The working released resident and existing prepared games were preserved. See [adapter scope and PC tests](EXFAT-DEVELOPMENT.md). This exFAT-only test does not qualify the separate installer repair recorded below, and is not a replacement release.
+
+## Unreleased self-contained reader setup
+
+On October 25, 2026, standalone development build `blackwire-runtime-bundle-test.01` passed the full SDK build and was loaded once on the same 13.00-family test console. This is a private development test, with no changes to published downloads. Native Dashboard remained paused.
+
+| Artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| Standalone resident | 5772408 | a54746dd8d6f8ef35e47084511b8ed69a2ab9c14cb95ec5dbbe48a6a30863179 |
+| Embedded reader | 843696 | 39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441 |
+
+- The actual released installer fails the absent-global-folder host reproduction before destination mutation. The repaired installer passes the same case with the global folder absent throughout. The production installer contains no global-pack path or file access; optional qualified game companions are handled separately. [Installer and upgrade/removal tests](RUNTIME-BUNDLE-DEVELOPMENT.md#offline-verification) use synthetic fixture bytes and actual C under sanitizers.
+- The complete SDK build passes 163 commands and eleven host suites. Source hashes match before and after the build. The embedded reader is identical to the preceding exFAT development reader; the resident installer and bundle verification change.
+- The existing Need for Speed Unbound preparation remained Ready after resident replacement. Its exact owned legacy five-file copy was then removed using ordinary authenticated Uninstall, and its source was restored to the library. Both actions completed, and the old game/preparation directories were confirmed absent before a new Send.
+- A genuinely fresh Send from the same MkPFS 0.0.9 exFAT image completed in 109.500 seconds: 120 startup files, about 209.7 MiB and 177 streamed placeholders. Reader setup and PS5 registration passed, with startup and dashboard readiness both true. This is a whole-operation observation, not a controlled speed benchmark.
+- The fresh `fakelib2` contains exactly one file: Blackwire's embedded reader. Its complete downloaded bytes match the reader hash above, and its mode is 0755. No game companion directory was present in this test source.
+- Thirty before/after control-file hashes match: the other five preparations' control files and the five global-pack files are unchanged. The global pack existed on this console and was deliberately preserved; absence is proven by the separate host reproduction, not by deleting shared runtime files on the PS5.
+- Web Play launched the reader-only copy, and the capture visibly reached the EA/Criterion/Frostbite Continue screen without an error overlay observed. Normal authenticated Close then completed, the game process disappeared, and the resident returned to `stopped` with no recorded last failure. Controllable driving, direct Games-icon launch and repeat launch remain unqualified for this exact bundle profile; process presence alone was not used to claim visible startup or gameplay.
+
+Firmware 10.01, the reporter's exact payload combination, arbitrary companion libraries and every rejected compressed image remain unqualified. The repair removes an installer dependency; it does not install or replace PS5 system files. Source and build backups were verified before testing.
