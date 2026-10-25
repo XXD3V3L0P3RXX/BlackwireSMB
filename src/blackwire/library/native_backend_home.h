@@ -1,3 +1,4 @@
+#include "send_diagnostic.h"
 /* SPDX-License-Identifier: GPL-3.0-or-later
  * Included only by native_backend.c. One joined external-start owner, separate
  * from normal Sony launch/reader runtime. Never accepted from a LAN/browser. */
@@ -270,7 +271,8 @@ static int home_prepare_control(void *opaque){
 static int home_prepare_registration(void *opaque,enum bw_nrl_control point){return point==BW_NRL_REGISTER?home_prepare_control(opaque):-1;}
 struct home_prepare_failure {unsigned step;const char *where,*detail;int raw,error;};
 static void home_prepare_first_failure(struct home_prepare_failure *f,unsigned step,const char *where,const char *detail,int raw,int error){
-    if(!f->step)*f=(struct home_prepare_failure){step,where,detail,raw,error};
+    if(!f->step){*f=(struct home_prepare_failure){step,where,detail,raw,error};
+        bw_send_log("setup-failure","step=%u stage=%s detail=%s raw=%d errno=%d",step,where?where:"",detail?detail:"",raw,error);}
 }
 static int home_prepare_provision(struct bw_native_backend *p,const struct bw_native_prepared *prepared,unsigned *startup_invalid){
     if(startup_invalid)*startup_invalid=0;
@@ -280,32 +282,45 @@ static int home_prepare_provision(struct bw_native_backend *p,const struct bw_na
     pthread_mutex_lock(&p->lock);h.generation=p->generation;h.revision=p->settings_revision;pthread_mutex_unlock(&p->lock);
     char run[33];const char *failure=NULL;struct bw_nrl_owner *owner=NULL;int result=-1,unknown=0,step_result=0;
     struct home_prepare_failure first={0};
+    bw_send_log("setup-begin","game=%s prepared_run=%s",prepared->game,prepared->run);
+    bw_send_log("setup-step","game=%s step=2",prepared->game);
     step_result=p->ops.nonce(p->opaque,run);
     if(step_result||!nonce_valid(run)||!strcmp(run,prepared->run)){
         home_prepare_first_failure(&first,2,"nonce","fresh setup identity unavailable",step_result,step_result?errno:0);goto done;}
+    bw_send_log("setup-step","game=%s step=3",prepared->game);
     if((step_result=home_prepare_control(&h))){home_prepare_first_failure(&first,3,"initial-control","current setup authority refused",step_result,errno);goto done;}
+    bw_send_log("setup-step","game=%s step=4",prepared->game);
     step_result=bw_native_launch_admission_open(&h.startup,backend_data_root,&h.identity,prepared,run,home_prepare_lease,&h,&failure);
     if(step_result){h.startup_invalid=1;home_prepare_first_failure(&first,4,"startup-admission",failure?failure:"startup admission refused",step_result,errno);goto done;}
+    bw_send_log("setup-step","game=%s step=5",prepared->game);
     if((step_result=bw_native_launch_admission_selection(h.startup,&h.selection))){h.startup_invalid=1;home_prepare_first_failure(&first,5,"startup-selection","held startup selection unavailable",step_result,errno);goto done;}
+    bw_send_log("setup-step","game=%s step=6",prepared->game);
     char root[BW_NRC_PATH_BYTES];int n=snprintf(root,sizeof root,"%s/games/%s",backend_data_root,h.selection.game);
     struct bw_preload_bundle_upgrade_request upgrade={.bundle={root,home_prepare_lease,&h,now()+20},.data_root=backend_data_root,.game=h.selection.game,.prepared_run=prepared->run,.launch_run=run,.prepared_record_sha256=prepared->record_sha256};
     struct bw_preload_bundle_control split={home_prepare_control,&h};struct bw_preload_bundle_result bundled={0};
     if(n<0||(size_t)n>=sizeof root){home_prepare_first_failure(&first,6,"source-root","selected source path does not fit",n,0);goto done;}
+    bw_send_log("setup-step","game=%s step=7",prepared->game);
     if((step_result=bw_preload_bundle_upgrade_controlled(&upgrade,&split,&bundled))){unknown|=bundled.release_unknown;
         home_prepare_first_failure(&first,7,bundled.stage?bundled.stage:"reader-bundle",bundled.reason?bundled.reason:"reader bundle refused",step_result,bundled.system_error);goto done;}
+    bw_send_log("setup-step","game=%s step=8",prepared->game);
     struct bw_nrc_environment env=registration_environment;env.data_root=backend_data_root;struct bw_nrl_request acquire={.environment=env,.selection=&h.selection,.current=home_prepare_registration,.opaque=&h};struct bw_nrc_result acquired={0};
     int began=bw_nrl_begin(&acquire,&owner,&acquired);if(began){unknown|=began==BW_NRC_RELEASE_UNCONFIRMED;
         home_prepare_first_failure(&first,8,acquired.stage?acquired.stage:"registration-owner",acquired.detail?acquired.detail:acquired.reason?acquired.reason:"registration owner admission refused",began,acquired.error_snapshot);goto done;}
     struct bw_native_register_request registration={.data_root=backend_data_root,.apps=env.apps_root,.database=env.database,.identity=&h.identity,.selected=&h.selection,.current=home_prepare_control,.guard=&h,.startup=h.startup};
+    bw_send_log("setup-step","game=%s step=9",prepared->game);
     struct bw_register_result checked={0};int registered=bw_native_register(&registration,&checked);
     if(registered)home_prepare_first_failure(&first,9,"registration",checked.message?checked.message:"registration refused",registered,errno);
+    bw_send_log("setup-step","game=%s step=10",prepared->game);
     struct bw_nrc_result committed={0};int committed_status=bw_nrl_registered(owner,registered,&checked,&committed);
     if(committed_status)home_prepare_first_failure(&first,10,committed.stage?committed.stage:"registration-commit",committed.detail?committed.detail:committed.reason?committed.reason:"ownership commit refused",committed_status,committed.error_snapshot);
     unknown|=committed_status==BW_NRC_RELEASE_UNCONFIRMED;
     if(registered||committed_status)goto done;
+    bw_send_log("setup-step","game=%s step=11",prepared->game);
     if((step_result=home_prepare_control(&h))){home_prepare_first_failure(&first,11,"final-control","current setup authority refused",step_result,errno);goto done;}result=0;
 done:;
+    bw_send_log("setup-step","game=%s step=12",prepared->game);
     int registration_closed=bw_nrl_destroy(&owner),registration_error=errno;
+    bw_send_log("setup-step","game=%s step=13",prepared->game);
     int startup_closed=bw_native_launch_admission_close(&h.startup),startup_error=errno;
     if(registration_closed)home_prepare_first_failure(&first,12,"registration-release","registration descriptor release unconfirmed",registration_closed,registration_error);
     if(startup_closed)home_prepare_first_failure(&first,13,"startup-release","startup descriptor release unconfirmed",startup_closed,startup_error);
@@ -318,7 +333,8 @@ done:;
         snprintf(p->home_setup_reason,sizeof p->home_setup_reason,"Startup files kept. Setup step %u (%.48s): %.128s (raw=%d errnoSnapshot=%d).",
             first.step,first.where?first.where:"unknown",first.detail?first.detail:"setup did not finish",first.raw,first.error);}
     else if(!strcmp(p->home_setup_game,prepared->game)){memset(p->home_setup_game,0,sizeof p->home_setup_game);memset(p->home_setup_reason,0,sizeof p->home_setup_reason);}
-    pthread_mutex_unlock(&p->lock);if(startup_invalid)*startup_invalid=h.startup_invalid;return result;
+    pthread_mutex_unlock(&p->lock);if(startup_invalid)*startup_invalid=h.startup_invalid;
+    bw_send_log("setup-end","game=%s result=%d first_step=%u release_unknown=%d startup_invalid=%d",prepared->game,result,first.step,unknown,h.startup_invalid);return result;
 }
 
 /* Explicit scan only: no provisioner, upgrade, ADD, scan request or launch.

@@ -2,6 +2,7 @@
 #define _POSIX_C_SOURCE 200809L
 #endif
 #include "native_job.h"
+#include "send_diagnostic.h"
 #include <float.h>
 #include <pthread.h>
 #include <stdarg.h>
@@ -72,6 +73,7 @@ int bw_native_job_begin(struct bw_native_jobs *p,const char *id,const char *sour
     memcpy(job->id,id,33);memcpy(job->source,source,strlen(source)+1);job->generation=++p->generation;job->state=BW_JOB_QUEUED;
     snprintf(job->message,sizeof job->message,"Waiting to prepare required files.");
     p->active=(int)slot;p->next=(slot+1)%BW_NATIVE_JOB_LIMIT;if(p->count<BW_NATIVE_JOB_LIMIT)p->count++;
+    bw_send_log("job-begin","id=%s source=%s",job->id,job->source);
     *token=(struct bw_native_job_token){.owner=p,.generation=job->generation};memcpy(token->id,id,33);result=0;
 done:
     pthread_mutex_unlock(&p->lock);return result;
@@ -90,7 +92,9 @@ int bw_native_job_update(const struct bw_native_job_token *token,const struct bw
     struct bw_native_job_record *job=owned(token);int result=-1;
     if(job&&job->state==BW_JOB_RUNNING&&progress->requests>=job->progress.requests&&progress->entries>=job->progress.entries&&
         progress->pages>=job->progress.pages&&progress->source_bytes>=job->progress.source_bytes&&progress->monotonic_seconds>=job->progress.monotonic_seconds){
+        int log_progress=progress->phase!=job->progress.phase||progress->bytes_done/(16u*1048576u)!=job->progress.bytes_done/(16u*1048576u);
         job->progress=*progress;message(job);result=0;
+        if(log_progress)bw_send_log("job-progress","id=%s phase=%u files=%u/%u bytes=%llu/%llu requests=%u entries=%u source_bytes=%llu message=%s",job->id,(unsigned)progress->phase,progress->files_done,progress->files_total,(unsigned long long)progress->bytes_done,(unsigned long long)progress->bytes_total,progress->requests,progress->entries,(unsigned long long)progress->source_bytes,job->message);
     }
     pthread_mutex_unlock(&token->owner->lock);return result;
 }
@@ -98,7 +102,7 @@ void bw_native_job_observe(void *opaque,const struct bw_source_progress *progres
 int bw_native_job_setup_message(const struct bw_native_job_token *token,const char *text){
     if(!token||!token->owner||!text||strlen(text)>=384||pthread_mutex_lock(&token->owner->lock))return -1;
     struct bw_native_job_record *job=owned(token);int result=-1;
-    if(job&&job->state==BW_JOB_RUNNING){snprintf(job->message,sizeof job->message,"%s",text);result=0;}
+    if(job&&job->state==BW_JOB_RUNNING){snprintf(job->message,sizeof job->message,"%s",text);result=0;bw_send_log("job-setup-message","id=%s message=%s",job->id,text);}
     pthread_mutex_unlock(&token->owner->lock);return result;
 }
 int bw_native_job_reuse_prepared(const struct bw_native_job_token *token,uint32_t files,uint64_t bytes){
@@ -121,6 +125,7 @@ int bw_native_job_finish_setup(const struct bw_native_job_token *token,int files
         job->files_prepared=(unsigned)files_prepared;job->registered=(unsigned)registered;
         job->failure=registered?BW_JOB_SUCCESS:BW_JOB_FAILED;job->state=registered?BW_JOB_DONE:BW_JOB_ERROR;
         snprintf(job->message,sizeof job->message,"%s",text);token->owner->active=-1;result=0;
+        bw_send_log("job-setup-end","id=%s files_prepared=%d registered=%d message=%s",job->id,files_prepared,registered,text);
     }
 done:
     pthread_mutex_unlock(&token->owner->lock);return result;
@@ -131,6 +136,7 @@ int bw_native_job_finish(const struct bw_native_job_token *token,enum bw_native_
     if(job){
         if(error==BW_JOB_SUCCESS&&(job->state!=BW_JOB_RUNNING||job->progress.phase!=BW_SOURCE_PREPARED||!job->progress.files_total||
             job->progress.files_done!=job->progress.files_total||!job->progress.bytes_total||job->progress.bytes_done!=job->progress.bytes_total))goto done;
+        bw_send_log("job-finish","id=%s result=%u",job->id,(unsigned)error);
         job->failure=error;job->state=error==BW_JOB_SUCCESS?BW_JOB_DONE:BW_JOB_ERROR;token->owner->active=-1;
         snprintf(job->message,sizeof job->message,"%s",error==BW_JOB_SUCCESS?"Startup files prepared. Registration and playback checks remain.":failure(error));result=0;
     }

@@ -161,6 +161,9 @@ def host_tests(root, out, source, runner):
     runner.run(["python3", root / "tests/dashboard/lifecycle/check_self_contained_bundle.py",
                 "--host-only", "--output", checked], "host-self-contained-bundle")
     results["self_contained_bundle"] = json.loads((checked / "proof.json").read_text())
+    checked = out / "send-logging"
+    runner.run(["python3", root / "tests/diagnostics/check_send_logging.py", "--output", checked], "host-send-logging")
+    results["send_logging"] = json.loads((checked / "proof.json").read_text())
     if not all(value.get("passed") is True for value in results.values()):
         raise ValueError("A host reader test did not pass")
     save(out / "host-tests.json", results)
