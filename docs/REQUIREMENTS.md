@@ -12,7 +12,11 @@ Set ShadowMount's **Library scan depth to 2** (`scan_depth=2`) for the folder la
 
 ## External ShadowMount libraries
 
-**Check this prerequisite before Send files:** the tested setup has these exact global files at `/data/shadowmount/fakelib`. The current preview can report `reader_directory_named_stat_failed` with `errno=2` at setup step 7 if this path is missing, after startup files have already transferred. Creating an empty folder does not supply the required libraries. Obtain them through the compatible runtime's normal distribution; these external console/runtime libraries are **not bundled with Blackwire**.
+**Released-preview dependency, removed in this development branch:** the original test console had these exact optional global files at `/data/shadowmount/fakelib`. The released preview incorrectly requires that pack and can report `reader_directory_named_stat_failed` with `errno=2` at setup step 7 when the path is absent, after startup files transfer. These are not missing PS5 system files. Creating an empty folder does not repair the released installer.
+
+The [development installer](RUNTIME-BUNDLE-DEVELOPMENT.md) uses the reader already embedded in the ELF and never opens or modifies the global directory. An ordinary fresh game needs no separate global pack for reader installation. Qualified optional companions in the game's prepared `fakelib` are copied and verified; recognized existing five-file private bundles remain supported. Unknown companions or altered owned files refuse without being overwritten. This repairs installation dependency handling; it does not qualify other firmware or arbitrary backports.
+
+The following hashes document the old preview's test environment and the recognized legacy profile, not new mandatory downloads:
 
 | File | Bytes | SHA-256 |
 | --- | ---: | --- |
@@ -22,7 +26,7 @@ Set ShadowMount's **Library scan depth to 2** (`scan_depth=2`) for the folder la
 | libSceNpEntitlementAccess.sprx | 43286 | 3f1826f20e174ff0f7aaa8d7f3f7e386dfcca1136c9e4c0e72a49e041c0b1488 |
 | libSceAmpr.sprx.orig | 423350 | 69e6c4d5e4f5fb83c9e01815db5861c4c75734acbf4595cafa50d4c218116d1a |
 
-Keep ShadowMount's API and per-game library overlay enabled. The observed setup used `debug=1` for readable lifecycle evidence, `auto_update_ampr=0`, and per-game library priority. Changing the global libraries or runtime configuration needs separate qualification. Blackwire installs its source-built reader into an exact owned game's per-game library directory; it does not replace the global set.
+Keep ShadowMount's API and per-game library overlay enabled. The observed setup used `debug=1` for readable lifecycle evidence, `auto_update_ampr=0`, and per-game library priority. Blackwire installs its source-built reader into an exact owned game's per-game library directory; it does not replace the global set. Optional runtime/backport compatibility still needs separate qualification.
 
 ## PC, network and console space
 

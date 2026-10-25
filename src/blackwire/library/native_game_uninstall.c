@@ -256,7 +256,7 @@ static int gu_load_plan(struct gu_plan *p){
     p->rows=calloc(p->manifest.count,sizeof *p->rows);if(!p->rows)return -1;for(uint32_t i=0;i<p->manifest.count;i++){struct bw_manifest_record row;if(bw_manifest_get(&p->manifest,i,&row))return -1;p->rows[i].path=row.path;p->rows[i].id=i;}
     qsort(p->rows,p->manifest.count,sizeof *p->rows,gu_row_compare);
     p->checking="complete_prepared_tree";if(gu_walk(p,p->root,"",0,0))return -1;p->checking="complete_private_record_tree";if(gu_walk(p,p->state,"",1,0))return -1;
-    unsigned fake_count=0,fake_dir=0;for(size_t i=0;i<p->count;i++)if(!p->nodes[i].state){if(!strcmp(p->nodes[i].path,"fakelib2"))fake_dir++;else if(!strncmp(p->nodes[i].path,"fakelib2/",9))fake_count++;}if(fake_dir&&fake_count!=5)return -1;
+    unsigned fake_count=0,fake_dir=0;for(size_t i=0;i<p->count;i++)if(!p->nodes[i].state){if(!strcmp(p->nodes[i].path,"fakelib2"))fake_dir++;else if(!strncmp(p->nodes[i].path,"fakelib2/",9))fake_count++;}if(fake_dir&&(!fake_count||fake_count>5))return -1;
     /* The complete manifest must occur exactly once; the tree walk rejects
      * extras but cannot infer missing expected entries from directory counts. */
     for(uint32_t i=0;i<p->manifest.count;i++){struct bw_manifest_record row;if(bw_manifest_get(&p->manifest,i,&row))return -1;char leaf[256],relative[1024];int parent=v2_parent(p->anchor+4,p->root,row.path,0,leaf,relative);if(parent<0)return -1;struct stat named;int bad=cp_fstatat(parent,leaf,&named,AT_SYMLINK_NOFOLLOW);if(close(parent))bad=1;if(bad)return -1;}

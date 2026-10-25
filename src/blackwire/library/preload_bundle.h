@@ -31,11 +31,12 @@ struct bw_preload_bundle_result {
      * positively released. Zero never permits checkpoint replay/adoption. */
     unsigned release_unknown;
 };
-/* Verify the five exact qualified global source libraries; create an absent
- * per-game fakelib2 and write five 0755 files exclusively, replacing only the
- * SOURCE Ampr bytes with the image embedded in our ELF. An existing directory
- * is read-only admitted only if it already contains exactly our five complete
- * bytes/modes. Other backports, foreign files, stale inputs, changed globals,
+/* Install the embedded reader into an absent per-game fakelib2. No global
+ * library folder is required or opened. Qualified optional companions already
+ * present in the prepared game's fakelib are copied without changing them.
+ * An existing complete legacy five-file bundle remains admitted independently
+ * of global state. New bundles must match the game's qualified companion set.
+ * Other backports, foreign files, stale inputs, changed game companions,
  * partial writes and unknown closes refuse. No overwrite, rename or delete.
  * Returns 0=verified, -1=no destination mutation, -2=partial/uncertain outcome.
  * Caller must retain -2 and must not automatically replay it. This verifies

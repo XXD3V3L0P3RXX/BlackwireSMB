@@ -49,6 +49,8 @@ static void change_byte(const char *path){
 static void path(char out[4096],const char *root,const char *leaf){int n=snprintf(out,4096,"%s/%s",root,leaf);CHECK(n>0&&n<4096);}
 static struct bw_preload_bundle_request request(char root[4096],int prepared){
     int n=snprintf(root,4096,"%s/case-%02u",fixture_base,cases++);CHECK(n>0&&n<4096);CHECK(!mkdir(root,0755));
+    char game_lib[4096],source[4096],target[4096];path(game_lib,root,"fakelib");CHECK(!mkdir(game_lib,0755));
+    for(unsigned i=1;i<5;i++){path(source,BW_PRELOAD_GLOBAL_ROOT,pb_globals[i].name);path(target,game_lib,pb_globals[i].name);copy_file(source,target,0644);}
     struct bw_preload_bundle_request q={root,current,&guard_calls,monotonic()+120.0};
     if(prepared){struct bw_preload_bundle_result d={0};CHECK(!bw_preload_bundle_install_checked(&q,&d));CHECK(!d.reason&&!strcmp(d.stage,"complete")&&d.mutation_started);}
     return q;
@@ -64,7 +66,7 @@ static void failure(const struct bw_preload_bundle_request *q,int expected,const
 }
 int main(int argc,char **argv){
     CHECK(argc==2&&strlen(argv[1])<sizeof fixture_base);strcpy(fixture_base,argv[1]);
-    char root[4096],file[4096],other[4096],global[4096],saved[4096];
+    char root[4096],file[4096],other[4096],global[4096];
     struct bw_preload_bundle_request q=request(root,0);struct bw_preload_bundle_result d={0};
     CHECK(!bw_preload_bundle_install_checked(&q,&d)&&!d.reason&&d.mutation_started);
     CHECK(!strcmp(d.stage,"complete"));
@@ -106,13 +108,13 @@ int main(int argc,char **argv){
     CHECK(!stat(file,&after)&&pb_same(&before,&after)); /* no replay/repair */
     q=request(root,0);sync_fault=1;
     failure(&q,-2,"private-library-sync","private_reader_library_sync_failed","libSceAmpr.sprx",EIO);CHECK(!sync_fault);
-    q=request(root,0);close_fault=1;close_name=BW_PRELOAD_GLOBAL_ROOT "/libSceAmpr.sprx";
-    failure_result(&q,-2,"global-library-hash","reader_library_close_failed","libSceAmpr.sprx",EIO,0);CHECK(!close_fault);
+    q=request(root,0);close_fault=1;close_name="/fakelib/libSceAppContent.sprx";
+    failure_result(&q,-2,"game-library-hash","reader_library_close_failed","libSceAppContent.sprx",EIO,0);CHECK(!close_fault);
 
-    path(global,BW_PRELOAD_GLOBAL_ROOT,"libSceGameUpdate.sprx");path(saved,fixture_base,"saved-global");copy_file(global,saved,0600);change_byte(global);
-    q=request(root,0);failure(&q,-1,"global-library-hash","reader_library_hash_differs","libSceGameUpdate.sprx",0);copy_file(saved,global,0777);
-    path(global,BW_PRELOAD_GLOBAL_ROOT,"foreign");fd=open(global,O_CREAT|O_EXCL|O_WRONLY,0600);CHECK(fd>=0&&!close(fd));
-    q=request(root,0);failure(&q,-1,"global-library-names","reader_directory_names_differ",NULL,0);CHECK(!unlink(global));
+    q=request(root,0);path(global,root,"fakelib/libSceGameUpdate.sprx");change_byte(global);
+    failure(&q,-1,"game-library-hash","reader_library_hash_differs","libSceGameUpdate.sprx",0);
+    q=request(root,0);path(global,root,"fakelib/foreign");fd=open(global,O_CREAT|O_EXCL|O_WRONLY,0600);CHECK(fd>=0&&!close(fd));
+    failure(&q,-1,"game-library-directory","reader_directory_names_differ",NULL,0);CHECK(!unlink(global));
     printf("{\"passed\":true,\"cases\":%u,\"checks\":%u,\"guardCalls\":%u,\"consoleActions\":0}\n",cases,checks,guard_calls);
     return 0;
 }

@@ -90,7 +90,7 @@ def main():
  sql=OUT/'sqlite.o';run('sqlite-compile',['clang-18','-O0','-std=gnu11','-DSQLITE_THREADSAFE=1','-DSQLITE_OMIT_LOAD_EXTENSION','-DSQLITE_TEMP_STORE=3','-c',ROOT/'vendor/sqlite/sqlite3.c','-o',sql]);objects.append(sql);used.add(ROOT/'vendor/sqlite/sqlite3.c')
  core_binary=OUT/'core';run('core-link',['clang-18','-fsanitize=address,undefined',*objects,*['-Wl,--wrap='+n for n in ['openat','readdir','pread','close']],'-Wl,--gc-sections','-pthread','-lm','-o',core_binary])
  factory=load('game_uninstall_fixture',HERE/'check_game_uninstall.py');used.add(HERE/'check_game_uninstall.py');results=[]
- for mode in ['reader-old','reader-current','reader-absent','reader-old-wrong-pin','reader-changed-after','reader-public07','reader-public07-wrong-pin','reader-public07-changed-after']:
+ for mode in ['reader-old','reader-current','reader-legacy-current','reader-absent','reader-old-wrong-pin','reader-changed-after','reader-public07','reader-public07-wrong-pin','reader-public07-changed-after']:
   with tempfile.TemporaryDirectory(prefix='blackwire-reader-remove-') as tmp:
    factory.fixture(Path(tmp),'normal',8);results.append(json.loads(run('actual-send-delete-'+mode,[core_binary,tmp,mode]).splitlines()[-1]))
  # Actual default wrapper and joined removal worker: only helper/remote effects

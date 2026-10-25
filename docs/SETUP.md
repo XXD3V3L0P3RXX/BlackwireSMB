@@ -31,7 +31,7 @@ Each copy retains its own share, path and preparation identity. Equal titles in 
 
 ## Load the console resident
 
-1. Check the [tested firmware and runtime versions](../README.md#tested-environment), including the [required external runtime files](REQUIREMENTS.md#external-shadowmount-libraries), before preparing a game. Start the working jailbreak chain with Kstuff and compatible stock ShadowMountPlus active. Only the 13.00-family profile `0x13000040` is console-qualified; 10.01 and other firmware profiles are unverified.
+1. Check the [tested firmware and runtime versions](../README.md#tested-environment) and whether your ELF has the [released-preview dependency or development repair](REQUIREMENTS.md#external-shadowmount-libraries), before preparing a game. Start the working jailbreak chain with Kstuff and compatible stock ShadowMountPlus active. Only the 13.00-family profile `0x13000040` is console-qualified; 10.01 and other firmware profiles are unverified.
 2. Load the standalone `Blackwire.elf` using your normal ELF loader. Repeat this after reboot.
 3. Open `http://<PS5-address>:5918/` in a LAN browser. The console page is `http://127.0.0.1:5918/`.
 4. Configure the share and let library discovery finish. Choose a game, select **Send files**, and wait for that named job to finish with Ready status.

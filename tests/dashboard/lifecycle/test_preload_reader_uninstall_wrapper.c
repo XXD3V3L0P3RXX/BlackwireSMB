@@ -88,6 +88,10 @@ int bw_preload_bundle_upgrade_checked(const struct bw_preload_bundle_upgrade_req
     if(cache_fault==1)cache_pending=1;
     if(fail_bundle){r->stage="bundle_fixture_exact_bytes_refused";r->reason="bundle_fixture_named_identity_differs";}return fail_bundle==2?-1:fail_bundle?-2:0;
 }
+int bw_preload_bundle_upgrade_controlled(const struct bw_preload_bundle_upgrade_request *upgrade,const struct bw_preload_bundle_control *control,struct bw_preload_bundle_result *r){
+    CHECK(control&&control->checkpoint);if(control->checkpoint(control->opaque))return -2;
+    int result=bw_preload_bundle_upgrade_checked(upgrade,r);if(!result&&control->checkpoint(control->opaque))return -2;return result;
+}
 int bw_nrl_begin(const struct bw_nrl_request *q,struct bw_nrl_owner **out,struct bw_nrc_result *r){
     CHECK(q&&q->selection&&live&&bundle_calls==1&&!register_calls&&!q->current(q->opaque,BW_NRL_REGISTER));CHECK(!((struct play_observer *)q->opaque)->context.control_log&&!cache_live);begin_calls++;
     if(fail_begin){*r=(struct bw_nrc_result){.state=BW_NRC_PENDING,.reason="Exact title cleanup is pending."};return -1;}

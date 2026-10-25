@@ -2,13 +2,17 @@
 
 Changes are grouped by published preview. A build pass, initial menu and controllable gameplay are recorded separately in [testing](docs/TESTING.md).
 
-## Unreleased — exFAT reader development
+## Unreleased — self-contained reader setup and exFAT
+
+- Remove setup step 7's hidden dependency on a particular `/data/shadowmount/fakelib` pack. Install and hash-check the reader embedded in Blackwire without opening or changing the global directory.
+- Preserve qualified optional game companions and recognized legacy five-file private bundles. Retain strict refusal for unknown or altered files, path changes, expired authority and uncertain operation outcomes.
+- Cover a missing-global fresh installation, retained readers, upgrades and ordinary removal. See [repair details and verification](docs/RUNTIME-BUNDLE-DEVELOPMENT.md).
 
 - Add read-only support for clean, single-FAT exFAT images with fully initialized contiguous allocations, including the default MkPFS 0.0.9 and 1.1.0 PFS/PFSC wrappers. FAT-linked contiguous files and NoFatChain files are both supported. Other layouts still refuse explicitly.
 - Preserve Unicode filenames and validate boot/backup checksums, allocation bitmap, FAT chains, up-case table, entry-set/name checksums, directory cycles, overlapping allocations and duplicate names.
 - Avoid repeatedly traversing unrelated files' FAT chains during path lookup. File-token size and the 64 MiB payload-cache budget are unchanged; the exFAT adapter has a fixed 128 KiB Unicode map and bounded metadata workspace.
 - Add independent exFAT corruption fixtures and include PFS/exFAT streaming/cancellation regressions in ordinary host builds.
-- This is development work, not a change to the existing release downloads or firmware qualification. The missing global runtime-library step-7 problem remains separate. See [exFAT development](docs/EXFAT-DEVELOPMENT.md).
+- This is development work, not a change to the existing release downloads or firmware qualification. Format discovery and step-7 installation are separate faults with separate checks. See [exFAT development](docs/EXFAT-DEVELOPMENT.md).
 
 ## Documentation update — October 24, 2026
 

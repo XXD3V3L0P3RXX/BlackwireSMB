@@ -2,7 +2,7 @@
 
 Stream PS5 games from an ordinary PC SMB share, with a smaller startup copy on the console. Supports extracted folders and the tested PFS/PFSC compressed layouts, including supported `.ffpfsc` images.
 
-This development branch also contains an experimental [read-only exFAT adapter](docs/EXFAT-DEVELOPMENT.md). The release downloads linked below remain unchanged; see the exact [development console observations](docs/TESTING.md#unreleased-exfat-test) before treating it as a qualified release.
+This development branch contains an experimental [read-only exFAT adapter](docs/EXFAT-DEVELOPMENT.md) and a [self-contained step-7 reader installer](docs/RUNTIME-BUNDLE-DEVELOPMENT.md). The release downloads linked below remain unchanged; see the exact [development console observations](docs/TESTING.md#unreleased-exfat-test) before treating it as a qualified release.
 
 [Download working and logging ELFs](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.2.0-preview.1-sendlog.1) · [Etawen mirror](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB) · [Changelog](CHANGELOG.md) · [Video](#video) · [Setup](docs/SETUP.md) · [Requirements](docs/REQUIREMENTS.md) · [Test results](docs/TESTING.md) · [Build from source](docs/BUILD.md)
 
@@ -20,14 +20,14 @@ Our latest recorded console setup is from **October 24, 2026**:
 | ShadowMountPlus | Stock `1.7beta7`, used in the latest diagnostic retest |
 | ELF loader | elfldr `v0.27` in the latest captured payload inventory |
 | ShadowMount library scan depth | `scan_depth=2` |
-| External runtime libraries | The [required five-file set](docs/REQUIREMENTS.md#external-shadowmount-libraries) at `/data/shadowmount/fakelib` |
+| Legacy external runtime files | The released preview was tested with the [five-file global pack](docs/REQUIREMENTS.md#external-shadowmount-libraries); the development installer removes that dependency. |
 | Network | Wired Ethernet with an SMB share on an awake PC |
 
 Byepervisor Reborn is the hypervisor-exploit stage of a jailbreak chain; the reported name does not identify the initial entry point or its version. Blackwire requires a working jailbreak with Kstuff active before it is loaded.
 
 Earlier baseline tests used ShadowMountPlus `1.7-beta5fix1` and elfldr `v0.26`; their results remain attributed to that earlier environment. The latest test inventory also records PS5 Payload Manager `0.6.3`, BFpilot `v0.4.4` and shsrv `v0.20`. Those are loading, file-management and development helpers, not additional game-streaming requirements.
 
-Check the external runtime files before starting **Send files**. In the current preview, a missing `/data/shadowmount/fakelib` can cause setup step 7 to fail after startup files have already transferred. An empty directory is insufficient: the required files must match the documented sizes and hashes. See [requirements](docs/REQUIREMENTS.md) and [test results](docs/TESTING.md) for prerequisites and the scope of each observation.
+The released preview has a setup bug: it requires a particular optional global pack at `/data/shadowmount/fakelib`, even though Blackwire already embeds its reader. A missing pack can cause setup step 7 to fail after startup files transfer. This does **not** mean PS5 system files are missing. The development installer writes and verifies its embedded reader directly, preserves recognized existing per-game companions, and does not read or modify that global directory. See [repair scope](docs/RUNTIME-BUNDLE-DEVELOPMENT.md), [requirements](docs/REQUIREMENTS.md) and [test results](docs/TESTING.md).
 
 ## Downloads
 

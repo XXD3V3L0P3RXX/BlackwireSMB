@@ -7,7 +7,7 @@ extern const uint8_t fixture_previous[];
 extern const size_t fixture_previous_size;
 extern const uint8_t fixture_public07[];
 extern const size_t fixture_public07_size;
-static unsigned checks,cases,guard_calls,fault_used,observed_workspace,global_closes;
+static unsigned checks,cases,guard_calls,fault_used,observed_workspace,global_closes,game_closes;
 static int fault,deny,held_fault_fd=-1;
 static char current_root[2048],current_state[2048],workspace[2048];
 static ino_t old_inode;
@@ -21,7 +21,7 @@ int __real_closedir(DIR *);
 int __real_clock_gettime(clockid_t,struct timespec *);
 int __wrap_clock_gettime(clockid_t id,struct timespec *t){int result=__real_clock_gettime(id,t);if(!result&&id==CLOCK_MONOTONIC)t->tv_sec+=clock_shift;return result;}
 static void fd_path(int fd,char out[4096]){char p[64];snprintf(p,sizeof p,"/proc/self/fd/%d",fd);ssize_t n=readlink(p,out,4095);if(n<0)out[0]=0;else out[n]=0;}
-int __wrap_close(int fd){char name[4096];fd_path(fd,name);int global=strstr(name,BW_PRELOAD_GLOBAL_ROOT "/libSceAmpr.sprx")!=NULL;if(global)global_closes++;int hit=!fault_used&&
+int __wrap_close(int fd){char name[4096];fd_path(fd,name);int global=strstr(name,BW_PRELOAD_GLOBAL_ROOT "/libSceAmpr.sprx")!=NULL;if(global)global_closes++;int game=strstr(name,"/fakelib/libSceAppContent.sprx")!=NULL;if(game)game_closes++;int hit=!fault_used&&
  ((fault==CLOSE_OLD&&strstr(name,"/fakelib2/libSceAmpr.sprx (deleted)"))||
  (fault==CLOSE_BACKUP&&strstr(name,"/.blackwire-reader-upgrade/old-reader"))||
  (fault==CLOSE_INTENT&&strstr(name,"/.blackwire-reader-upgrade/intent"))||
@@ -30,9 +30,9 @@ int __wrap_close(int fd){char name[4096];fd_path(fd,name);int global=strstr(name
  (fault==CLOSE_RETAINED&&strstr(name,"/.blackwire-reader-upgrade/old-reader"))||
  (fault==CLOSE_GLOBAL&&strstr(name,BW_PRELOAD_GLOBAL_ROOT "/libSceAmpr.sprx"))||
  (fault==CLOSE_CURRENT&&strstr(name,"/fakelib2/libSceAmpr.sprx"))||
- (fault==CLOSE_INSTALL_GLOBAL&&global&&global_closes==2));
+ (fault==CLOSE_INSTALL_GLOBAL&&game&&game_closes==1));
  if(hit){fault_used++;if(fault==CLOSE_RETAINED){held_fault_fd=fd;errno=EIO;return -1;}int r=__real_close(fd);(void)r;errno=EIO;return -1;}return __real_close(fd);}
-int __wrap_closedir(DIR *d){char name[4096];fd_path(dirfd(d),name);int hit=!fault_used&&fault==CLOSE_DIR&&strstr(name,BW_PRELOAD_GLOBAL_ROOT);int r=__real_closedir(d);if(hit){fault_used++;errno=EIO;return -1;}return r;}
+int __wrap_closedir(DIR *d){char name[4096];fd_path(dirfd(d),name);int hit=!fault_used&&fault==CLOSE_DIR&&(strstr(name,BW_PRELOAD_GLOBAL_ROOT)||strstr(name,"/fakelib2"));int r=__real_closedir(d);if(hit){fault_used++;errno=EIO;return -1;}return r;}
 ssize_t __wrap_write(int fd,const void *p,size_t n){char name[4096];fd_path(fd,name);
  int hit=!fault_used&&((fault==WRITE_INTENT&&strstr(name,"/.blackwire-reader-upgrade/intent"))||
  (fault==WRITE_BACKUP&&strstr(name,"/.blackwire-reader-upgrade/old-reader"))||(fault==WRITE_NEW&&strstr(name,"/.blackwire-reader-upgrade/new-reader")));
@@ -102,6 +102,8 @@ int main(int argc,char **argv){CHECK(argc==2);char file[2048];struct bw_preload_
  dev6_hash[0]^=1;CHECK(!pu_previous_match(831168,dev6_hash));
  struct bw_preload_bundle_upgrade_request q=fixture(argv[1],0);CHECK(!bw_preload_bundle_upgrade_workspace(q.data_root,q.game));execute(&q,0,1);CHECK(access(workspace,F_OK)<0&&errno==ENOENT);CHECK(!bw_preload_bundle_upgrade_workspace(q.data_root,q.game));CHECK(!bw_preload_bundle_verify_checked(&q.bundle,&r));
  q=fixture(argv[1],1);struct stat before,after;joined_path(file,current_root,"fakelib2/libSceAmpr.sprx");CHECK(!lstat(file,&before));execute(&q,0,1);CHECK(!lstat(file,&after)&&pb_same(&before,&after));
+ /* Reader-only owned installations migrate without any global pack. */
+ q=fixture(argv[1],0);for(unsigned i=1;i<5;i++){char folder[2048];joined_path(folder,current_root,"fakelib2");joined_path(file,folder,pb_globals[i].name);CHECK(!unlink(file));}execute(&q,0,1);CHECK(!bw_preload_bundle_verify_checked(&q.bundle,&r));
  for(unsigned state=0;state<3;state++){q=fixture(argv[1],state==2);if(state==0)CHECK(!mkdir(workspace,0700));else if(state==1)write_file(workspace,"foreign",7,0600);else CHECK(!symlink("/unrelated",workspace));CHECK(bw_preload_bundle_upgrade_workspace(q.data_root,q.game)==1);execute(&q,-1,state==2);}
  q=fixture(argv[1],0);q.prepared_run="cccccccccccccccccccccccccccccccc";execute(&q,-1,0);
  q=fixture(argv[1],0);q.launch_run="00000000000000000000000000000000";execute(&q,-1,0);
@@ -113,7 +115,8 @@ int main(int argc,char **argv){CHECK(argc==2);char file[2048];struct bw_preload_
   execute(&q,-2,(unsigned)published);CHECK(fault_used==1);
   if(f!=CLOSE_STATE&&f!=CLOSE_WORK&&f!=CANCEL_CLEANED){fault=0;deny=0;q.launch_run="cccccccccccccccccccccccccccccccc";CHECK(bw_preload_bundle_upgrade_checked(&q,&r)==-1);}
  }
- for(int f=CLOSE_GLOBAL;f<=CLOSE_CURRENT;f++){
+ q=fixture(argv[1],0);fault=CLOSE_GLOBAL;unsigned closed_globals=global_closes;execute(&q,0,1);CHECK(!fault_used&&global_closes==closed_globals);
+ for(int f=CLOSE_DIR;f<=CLOSE_CURRENT;f++){
   q=fixture(argv[1],f==CLOSE_CURRENT);fault=f;execute(&q,-2,f==CLOSE_CURRENT);CHECK(fault_used==1&&access(workspace,F_OK)<0&&errno==ENOENT);
  }
  /* Both admitted predecessors use their own hash/length in durable intent and backup. */
@@ -135,7 +138,10 @@ int main(int argc,char **argv){CHECK(argc==2);char file[2048];struct bw_preload_
  q=fixture(argv[1],0);joined_path(file,current_root,"fakelib2/libSceGameUpdate.sprx");CHECK(!truncate(file,1));CHECK(bw_preload_bundle_upgrade_checked(&q,&r)==-1&&access(workspace,F_OK)<0);
  q=fixture(argv[1],0);CHECK(bw_preload_bundle_verify_checked(&q.bundle,&r)==-1&&access(workspace,F_OK)<0); /* no migration in second check */
  q=fixture(argv[1],0);for(unsigned i=0;i<5;i++){char folder[2048];joined_path(folder,current_root,"fakelib2");joined_path(file,folder,pb_globals[i].name);CHECK(!unlink(file));}joined_path(file,current_root,"fakelib2");CHECK(!rmdir(file));
- CHECK(bw_preload_bundle_verify_checked(&q.bundle,&r)==-1&&access(file,F_OK)<0);global_closes=0;fault=CLOSE_INSTALL_GLOBAL;
+ CHECK(bw_preload_bundle_verify_checked(&q.bundle,&r)==-1&&access(file,F_OK)<0);
+ char game_folder[2048];joined_path(game_folder,current_root,"fakelib");CHECK(!mkdir(game_folder,0755));
+ for(unsigned i=1;i<5;i++){char source[2048],dest[2048];joined_path(source,BW_PRELOAD_GLOBAL_ROOT,pb_globals[i].name);joined_path(dest,game_folder,pb_globals[i].name);copy_file(source,dest);}
+ global_closes=game_closes=0;fault=CLOSE_INSTALL_GLOBAL;
  CHECK(bw_preload_bundle_upgrade_checked(&q,&r)==-2&&fault_used==1&&!r.mutation_started&&access(file,F_OK)<0&&access(workspace,F_OK)<0);
  q=fixture(argv[1],0);fault=EXPIRE_INITIAL;execute(&q,-1,0);CHECK(fault_used==1&&access(workspace,F_OK)<0);
  q=fixture(argv[1],0);fault=EXPIRE_NEW;execute(&q,-2,0);CHECK(fault_used==1&&access(workspace,F_OK)==0);

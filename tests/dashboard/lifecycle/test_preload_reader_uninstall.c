@@ -165,6 +165,10 @@ int main(int argc,char **argv){
     unsigned absent=!strcmp(argv[2],"reader-absent"),old=!strcmp(argv[2],"reader-old")||!strcmp(argv[2],"reader-old-wrong-pin");
     unsigned public07=!strncmp(argv[2],"reader-public07",15);
     if(!absent){CHECK(!bw_preload_bundle_install_checked(&selection_request.bundle,&diagnostic));if(old||public07){path(name,test_root,"fakelib2/libSceAmpr.sprx");file_write(name,public07?fixture_public07:fixture_previous,public07?fixture_public07_size:fixture_previous_size,0755);}}
+    if(!strcmp(argv[2],"reader-legacy-current")){
+        static const char *companions[]={"libSceAppContent.sprx","libSceGameUpdate.sprx","libSceNpEntitlementAccess.sprx","libSceAmpr.sprx.orig"};
+        for(unsigned i=0;i<4;i++){char source_name[2048],relative[256];size_t bytes;path(source_name,BW_PRELOAD_GLOBAL_ROOT,companions[i]);void *body=file_read(source_name,&bytes);snprintf(relative,sizeof relative,"fakelib2/%s",companions[i]);path(name,test_root,relative);file_write(name,body,bytes,0755);free(body);}
+    }
     struct bw_preload_reader_pin selected_pin={0};CHECK(!bw_preload_bundle_select_for_removal(&selection_request,&selected_pin,&diagnostic)&&!diagnostic.mutation_started);
     request.reader_size=selected_pin.size;memcpy(request.reader_sha256,selected_pin.sha256,32);
     if(old||public07){uint8_t expected[32];cp_sha_bytes(public07?fixture_public07:fixture_previous,public07?fixture_public07_size:fixture_previous_size,expected);CHECK(selected_pin.size==(public07?fixture_public07_size:fixture_previous_size)&&!memcmp(expected,selected_pin.sha256,32));}

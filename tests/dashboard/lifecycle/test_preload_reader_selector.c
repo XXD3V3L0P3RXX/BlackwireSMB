@@ -21,6 +21,7 @@ static void select_case(struct bw_preload_bundle_upgrade_request *q,int expected
 int main(int argc,char **argv){CHECK(argc==2);struct bw_preload_bundle_upgrade_request q;char name[2048],other[2048];
  q=fixture(argv[1],0);select_case(&q,0,0);
  q=fixture(argv[1],1);select_case(&q,0,1);
+ q=fixture(argv[1],1);for(unsigned i=1;i<5;i++){char folder[2048];joined_path(folder,current_root,"fakelib2");joined_path(name,folder,pb_globals[i].name);CHECK(!unlink(name));}select_case(&q,0,1);
  q=fixture(argv[1],2);select_case(&q,0,2);
  q=fixture(argv[1],2);joined_path(name,current_root,"fakelib2/libSceAmpr.sprx");int fd07=open(name,O_RDWR);CHECK(fd07>=0);uint8_t byte07=17;CHECK(pwrite(fd07,&byte07,1,0)==1&&!__real_close(fd07));select_case(&q,-1,2);
  q=fixture(argv[1],2);uint8_t wrong07[32]={1};q.prepared_record_sha256=wrong07;select_case(&q,-1,2);

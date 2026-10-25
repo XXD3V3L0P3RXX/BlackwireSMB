@@ -42,4 +42,4 @@ Host request counts and elapsed times do not establish PS5 gameplay loading time
 
 ## Separate step-7 issue
 
-Adding exFAT does not supply missing runtime libraries. The existing preview still expects its qualified five-file set at `/data/shadowmount/fakelib`. An empty directory or dummy file is insufficient. A console test where those libraries already exist cannot establish that the missing-directory case is repaired. The reporter's firmware 10.01 and Kstuff combination remain unqualified.
+Adding exFAT alone does not repair step 7. The released preview still expects a particular optional five-file pack at `/data/shadowmount/fakelib`; these are not missing PS5 system files. A separate [development installer repair](RUNTIME-BUNDLE-DEVELOPMENT.md) now installs the embedded reader without accessing the global pack. Its missing-folder reproduction and upgrade/removal checks are recorded separately from the exFAT console test. The reporter's firmware 10.01 and Kstuff combination remain unqualified.
