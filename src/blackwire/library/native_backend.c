@@ -257,7 +257,7 @@ static int prepare(void *opaque,struct bw_share_config *config,const struct bw_n
     int connected=smb2_connect_share(source.smb,config->server,config->share,config->user);bw_share_clear(config);if(connected<0||current(guard))goto done;
     if(selection->identity.kind==BW_PROVIDER_CONTAINER){
         image=calloc(1,sizeof *image);if(!image)goto done;
-        if(bw_container_smb_open_owned(image,&source.smb,selection->identity.binding.source))goto done;
+        if(bw_container_smb_open_owned_metadata(image,&source.smb,selection->identity.binding.source))goto done;
         if(!bw_source_catalog_image_same(&selection->image,&image->admitted)||selection->container_kind!=image->container.kind){result=BW_BACKEND_SOURCE_CHANGED;goto done;}
     }else if(selection->identity.kind!=BW_PROVIDER_FOLDER)goto done;
     enum bw_source_plan_policy source_policy=BW_SOURCE_PLAN_LEGACY;

@@ -2,6 +2,14 @@
 
 `v0.2.0-preview.1` adds supported compressed sources to the existing preparation and early-reader workflow; `v0.1.0-preview.1` remains the earlier folder-only baseline. GTA V and Resident Evil 7 reached controllable gameplay on compressed development 5, and GTA passed a literal Games-icon driving test. The later combined-library reader reached both initial menus; full gameplay was not repeated on that exact reader. Controlled PS5 loading-time benchmarks, wider coverage and hardware removal checks remain open. The investigation and version-specific results below preserve failed as well as successful tests.
 
+## Unreleased metadata-read window
+
+The current development change uses a bounded **128 KiB** window for small reads of compressed-image metadata during discovery. Nearby requests can reuse bytes from one complete window fill instead of issuing a separate SMB read for each small field. Requests of **64 KiB or more** bypass the window, preserving the ordinary larger-read path.
+
+Source-generation, identity, cancellation and deadline checks remain in place. A failed or incomplete fill does not publish valid cached bytes. This window is separate from the reader's existing 64 MiB payload cache and does not increase that payload-cache budget.
+
+A five-image comparison against an actual Windows SMB share on the PC reduced metadata read requests from **1,790 to 56**. A single same-PC timing changed from **0.386 to 0.206 seconds**. These observations measure that PC metadata workload; they do not measure PS5 Send-files time, in-game loading, sustained Ethernet throughput or a percentage improvement in gameplay. PS5 preparation-speed and gameplay checks for the current revision remain pending. See [the testing scope](TESTING.md#unreleased-image-access-and-metadata-reads).
+
 ## Formats
 
 `v0.3.0-beta.1` adds the bounded [read-only exFAT adapter](EXFAT-DEVELOPMENT.md). Use the [beta instructions](BETA-TESTING.md). The v0.2.0-preview.1 PFS behavior and historical tests below remain attributed to that older release; existing download assets have not been replaced.

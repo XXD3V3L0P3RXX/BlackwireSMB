@@ -12,6 +12,10 @@ If files are still valid but reader/icon setup is incomplete, Blackwire keeps th
 
 Progress, session updates and errors appear with the selected game card. If setup fails, keep its detailed stage and reason when reporting the issue; an error for one game does not mean another game's preparation failed.
 
+An image appearing in the share's listing does not establish that Blackwire can read its contents. A connected share can still refuse the exact image's file access. Check both Windows permission layers for the same SMB account as described in [file Read access](SETUP.md#a-listed-image-still-needs-file-read-access). Preserve the first error before retrying; repacking an image or deleting console libraries does not repair a Windows access denial.
+
+Setup step 8 checks registration ownership and retained history; step 9 requests and independently verifies registration. Existing same-title copies, incomplete app metadata, database observations or missing manual-source membership can stop those stages. Their failure alone does not establish a firmware cause. Keep the exact stage and reason; valid retained startup files may allow **Finish setup**, while unknown outcomes still require observation rather than repeated registration.
+
 While a game is running, Send files remains blocked and the selected card names the session that must be closed. Close the named game normally before starting preparation. **Refresh library** rescans the configured shares after source changes; it does not automatically repeat a failed Send or resolve uncertain registration ownership.
 
 Two shares can be combined in one library, with each copy bound to its own server/share/path identity. The normal guarded reader upgrade recognizes exact known previous reader binaries and retains valid startup files. It does not accept unknown predecessor bytes or reconnect a moved source by title alone. A prepared compressed image uses its sealed generation and logical map for bounded launch validation; required local startup checks remain active.

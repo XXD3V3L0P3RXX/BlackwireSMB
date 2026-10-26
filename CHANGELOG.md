@@ -5,6 +5,8 @@ Changes are grouped by published preview. A build pass, initial menu and control
 ## Unreleased — verification in progress
 
 - Report the failing SMB share and connection, catalog, source-validation or artwork stage in the setup form. Failed checks preserve saved settings.
+- Distinguish a refused SMB sign-in/share connection from a connected share whose exact game image cannot be read. Report the image path, failing operation and available transport result; directory listing alone does not prove file Read access.
+- Use a bounded 128 KiB read window for compressed-image metadata. Source-generation and cancellation checks remain active, and requests of at least 64 KiB bypass the window. A five-image PC SMB comparison reduced metadata read requests from 1,790 to 56; one same-PC timing changed from 0.386 to 0.206 seconds. These are not PS5 loading or preparation benchmarks.
 - Preserve and verify a game's original Ampr module against its prepared source receipt while installing Blackwire's embedded reader separately. Use a distinct local-only verification path for uninstalling owned preparations.
 - Preserve source `fakelib`/`fakelib2` precedence, including an empty preferred directory. Keep source companion files separate from Blackwire's reader and private launch inputs, with source-bound hashes checked throughout preparation, launch and removal.
 - Allow normal removal of a verified older partial preparation containing source-owned `fakelib2` files. Unrelated or changed files still refuse removal.
@@ -15,7 +17,7 @@ Changes are grouped by published preview. A build pass, initial menu and control
 - Remove the top-right **Close browser** button. Preserve Circle and dialog Back controls.
 - Make startup tracing, launch timing and verbose setup logging explicit private diagnostic build options. Ordinary builds retain user-facing errors.
 
-These changes are not a published release. The source-companion preparation, bundle, reader handoff and DATA-read paths pass focused host tests. The full integrated build, console retesting and final review remain in progress; these tests do not establish firmware or title compatibility.
+These changes are not a published release. The source-companion preparation, bundle, reader handoff and DATA-read paths pass focused host tests. Final integrated validation and PS5 preparation, gameplay and loading-speed checks remain pending for this revision. Ordinary release builds keep private diagnostics disabled. These results do not establish firmware or title compatibility; see the [current qualification limits](docs/REQUIREMENTS.md).
 
 ## v0.3.0-beta.2 — connection settings recovery
 

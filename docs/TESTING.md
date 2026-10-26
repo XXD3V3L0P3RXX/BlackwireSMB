@@ -4,6 +4,14 @@ This record distinguishes copied files, a running game process, a visible menu, 
 
 No title-specific compatibility blocker has been identified in testing so far. The limited coverage below does not establish that every title or every stage of a title will work.
 
+## Unreleased image access and metadata reads
+
+The current revision distinguishes a failed SMB connection from an image-access failure after the share connects. Its error provenance retains the selected share, relative image path, failing stage/operation and available transport result. Directory listing success does not prove the same account can read that image; check the [share and file permission layers](SETUP.md#a-listed-image-still-needs-file-read-access).
+
+An actual five-image PC SMB A/B comparison reduced metadata read requests from **1,790 to 56** with the bounded 128 KiB metadata window. One same-PC elapsed-time observation changed from **0.386 to 0.206 seconds**. This is a PC metadata/discovery measurement, not a PS5 loading or preparation benchmark; it does not qualify sustained transfer speed or later gameplay. The [window's limits and retained checks](COMPRESSED-DEVELOPMENT.md#unreleased-metadata-read-window) apply.
+
+PS5 preparation-speed and gameplay qualification for this revision remain pending. Earlier console results below belong to their named binaries and do not qualify this changed reader. Ordinary release builds keep private startup traces, launch timing and verbose setup diagnostics disabled; private diagnostic runs do not change that release policy. The recorded lifecycle profile remains the 13.00 family; 10.01 lifecycle behavior is not qualified, and firmware alone has not been established as the cause of the reported step-8/9 failures.
+
 ## v0.3.0-beta.2
 
 Exact standalone resident: 5,772,600 bytes, SHA-256 `ad3505cca3c6b409152e8c12024d81582a351aee473d7fecee4d82bc4e1e252c`; build ID `blackwire-v0.3.0-beta.2`. The reader remains the beta.1 reader `39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441`. This release repairs settings reporting and client recovery; the native Dashboard is excluded.

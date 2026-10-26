@@ -45,7 +45,7 @@ static int legacy_preflight(const struct bw_reader_preflight *p,struct bw_native
     provider=calloc(1,sizeof *provider);if(!provider)goto done;
     if(identity.kind==BW_PROVIDER_CONTAINER) {
         image=calloc(1,sizeof *image);
-        if(!image||p->current(p->opaque)||bw_container_smb_open_owned(image,&p->source->smb,identity.binding.source)||p->current(p->opaque))goto done;
+        if(!image||p->current(p->opaque)||bw_container_smb_open_owned_metadata(image,&p->source->smb,identity.binding.source)||p->current(p->opaque))goto done;
     }
     if(BW_LT_CALL(BW_LT_PC_SOURCE,bw_source_provider_prepare(provider,&identity,p->source,image,s->run,BW_PROVIDER_MAX_LOCAL_BYTES,p->current,p->opaque))||p->current(p->opaque))goto done;
     failure="The selected file map or startup executable changed";

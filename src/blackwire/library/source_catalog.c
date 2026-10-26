@@ -91,7 +91,7 @@ static int inspect_image(struct scan *scan,const struct candidate *candidate,str
     item->container_stage=BW_CATALOG_IMAGE_SIZE;
     if(candidate->info.size<48||candidate->info.size>BW_PFS_MAX_VOLUME){result=BW_PFS_UNSUPPORTED;goto done;}
     item->container_stage=BW_CATALOG_IMAGE_OPEN;
-    result=bw_container_smb_open_owned(image,&source->smb,candidate->source);
+    result=bw_container_smb_open_owned_metadata(image,&source->smb,candidate->source);
     if(result==BW_PFS_IO||result==BW_CONTAINER_STALE){bad=fail(scan->catalog,
         image_access_refused(image)?"catalog_image_access_refused":"catalog_image_generation_or_io_failed");goto done;}
     if(!listed_image(&candidate->info,&image->admitted)){item->container_stage=BW_CATALOG_IMAGE_LISTING;bad=fail(scan->catalog,"catalog_image_listing_changed");goto done;}
@@ -159,7 +159,7 @@ int bw_source_catalog_container_cover(struct bw_source_smb *source,const struct 
     if(!item->cover||!item->logical_icon_size||item->logical_icon_size>BW_SOURCE_SMALL_FILE_LIMIT||item->logical_icon_size>limit)return 1;
     struct bw_container_smb *image=calloc(1,sizeof *image);void *bytes=NULL;int result=-1;
     if(!image)goto done;
-    if(live(source)||bw_container_smb_open_owned(image,&source->smb,item->source)||
+    if(live(source)||bw_container_smb_open_owned_metadata(image,&source->smb,item->source)||
        !bw_source_catalog_image_same(&item->image,&image->admitted)||image->container.kind!=item->container_kind)goto done;
     struct bw_container_file icon={0};
     if(bw_container_file_open(&image->container,"sce_sys/icon0.png",&icon)||icon.size!=item->logical_icon_size)goto done;

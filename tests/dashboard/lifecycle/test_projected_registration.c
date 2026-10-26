@@ -8,6 +8,7 @@
  * never a generic-success transport/witness substitute. Image-source control
  * qualification is deliberately outside this fixture's claims. */
 int bw_container_smb_open_owned(struct bw_container_smb *p,struct smb2_context **owner,const char *name){(void)p;(void)owner;(void)name;abort();}
+int bw_container_smb_open_owned_metadata(struct bw_container_smb *p,struct smb2_context **owner,const char *name){(void)p;(void)owner;(void)name;abort();}
 int bw_container_smb_close(struct bw_container_smb *p){(void)p;abort();}
 int __real_close(int);
 static unsigned reg_close_armed,reg_after_mutation,reg_failed_close;

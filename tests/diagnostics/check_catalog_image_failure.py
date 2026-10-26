@@ -125,7 +125,9 @@ with tempfile.TemporaryDirectory(prefix='blackwire-image-failure-') as temp:
                         inode = re.search(r'admitted=\{type:\d+,ino:(\d+),', low[0])
                         assert inode and int(inode[1]) > 2**53, (case, low)
                     if case == 'pread-error':
-                        assert 'raw=-110 ' in low[0] and 'requestedBytes=48 ' in low[0], low
+                        # Catalog explicitly opts into the bounded metadata
+                        # window: the initial 48-byte header now fills one page.
+                        assert 'raw=-110 ' in low[0] and 'requestedBytes=16384 ' in low[0], low
                     if case == 'pread-eof':
                         assert 'raw=0 ' in low[0], low
                 if high:

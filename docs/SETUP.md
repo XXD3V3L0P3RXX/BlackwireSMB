@@ -16,6 +16,14 @@ The current test build is **v0.3.0-beta.2**. Both the direct download and the Pa
 
 There is no Blackwire Python, Node or background service to install on the PC. Fresh configuration fields are blank. Saved nonsecret values can be displayed later, with a fixed `********` marker for a saved password. Password bytes are not returned to the browser.
 
+### A listed image still needs file Read access
+
+Windows applies two permission layers to the same SMB account: the shared folder's **Sharing → Permissions** and the file's **Security** permissions. Share-level **Read** can allow a directory listing while an individual `.ffpfsc` image remains unreadable because of its NTFS access rules. Files moved from another folder can retain different permissions; check the exact file named in the error, rather than assuming every image inherited its current parent's access.
+
+In that file's **Properties → Security → Advanced → Effective Access**, check the account entered in Blackwire. It needs Read access to the image and access through its parent folders; Blackwire does not need Full control or PC write access. Review any denied or missing access with the folder owner before making a narrowly scoped change. Blackwire does not automatically change Windows permissions.
+
+The unreleased diagnostics distinguish SMB sign-in/share access from a connected share whose image open, metadata or read operation fails. Keep the displayed share, file, stage, operation and transport result. An access refusal is not proof that the image needs repacking or that console libraries need deleting. After resolving the exact file access, explicitly check or refresh once and inspect the result. A failed connection/library check keeps the previously saved settings.
+
 ## Optional second share
 
 Share both parent folders on the same PC and give the same account read access to both. For example:

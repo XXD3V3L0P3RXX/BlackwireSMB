@@ -4,6 +4,7 @@
 #include <time.h>
 #include <smb2/smb2.h>
 #include <smb2/libsmb2.h>
+struct bw_metadata_read_window;
 
 /* Borrows one already connected SMB context; owns one O_RDONLY handle.
  * Keep at a stable address and serialize calls. The remote file must remain
@@ -33,6 +34,11 @@ struct bw_container_smb {
     int first_failure_result;
     enum bw_container_smb_failure_operation first_failure_operation;
     unsigned first_failure_seen,first_failure_result_known;
+    /* Explicit owned-metadata API only. Default/borrowed APIs never allocate
+     * this optional 128 KiB data window. Never retain it across a generation
+     * check; a failed fetch drains its owned context before freeing storage. */
+    struct bw_metadata_read_window *metadata_window;
+    unsigned metadata_window_active;
 };
 int bw_container_smb_open(struct bw_container_smb *,struct smb2_context *,const char *);
 /* Same worker owns *transport_owner through close. A failed synchronous SMB
@@ -40,5 +46,10 @@ int bw_container_smb_open(struct bw_container_smb *,struct smb2_context *,const 
  * caller's pointer before returning failure or freeing any decoder workspace.
  * The pointer itself must remain alive and exclusively owned through close. */
 int bw_container_smb_open_owned(struct bw_container_smb *,struct smb2_context **transport_owner,const char *);
+/* Opt-in metadata coalescing with the same owned transport contract. Requires
+ * a non-NULL live owner. Allocation failure retains exact uncached behavior.
+ * Requests >=64 KiB use the unchanged direct path; DATA workers do not opt in.
+ */
+int bw_container_smb_open_owned_metadata(struct bw_container_smb *,struct smb2_context **transport_owner,const char *);
 int bw_container_smb_close(struct bw_container_smb *);
 #endif

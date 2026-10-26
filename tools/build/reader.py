@@ -158,6 +158,7 @@ def host_tests(root, out, source, runner):
     for key, script in (("exfat_metadata", "check_exfat.py"), ("compressed_stream", "check_synthetic.py"),
                         ("pfsc_batching", "check_pfsc_batching.py"), ("preparation_batching", "check_prepare_batching.py"),
                         ("folder_preparation_batching", "check_source_smb_batching.py"),
+                        ("metadata_read_window", "check_metadata_read_window.py"),
                         ("catalog_admission", "check_catalog_admission.py")):
         checked = out / key
         runner.run(["python3", root / "tests/compressed" / script, "--output", checked], "host-" + key)
@@ -235,6 +236,7 @@ def host_tests(root, out, source, runner):
     for key, script in (("settings_startup", "diagnostics/check_settings_startup.py"),
                         ("settings_storage", "diagnostics/check_settings_storage.py"),
                         ("settings_check_failure", "diagnostics/check_settings_check_failure.py"),
+                        ("catalog_image_failure", "diagnostics/check_catalog_image_failure.py"),
                         ("registration_wait", "diagnostics/check_registration_wait.py"),
                         ("two_shares", "sources/check_two_shares.py")):
         checked = out / key

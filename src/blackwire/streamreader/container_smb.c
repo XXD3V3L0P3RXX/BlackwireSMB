@@ -1,7 +1,9 @@
 #include "container_smb.h"
 #include "manifest.h"
+#include "metadata_read_window.h"
 #include "../library/send_diagnostic.h"
 #include <fcntl.h>
+#include <stdlib.h>
 #include <string.h>
 
 #if defined(BW_SEND_DIAGNOSTIC) && BW_SEND_DIAGNOSTIC
@@ -51,10 +53,15 @@ static int same(const struct smb2_stat_64 *a,const struct smb2_stat_64 *b) {
         a->smb2_mtime==b->smb2_mtime && a->smb2_mtime_nsec==b->smb2_mtime_nsec &&
         a->smb2_ctime==b->smb2_ctime && a->smb2_ctime_nsec==b->smb2_ctime_nsec;
 }
+_Static_assert(BW_METADATA_WINDOW_MAX_READ==BW_PFSC_MAX_READ,"metadata window range contract");
+static void window_release(struct bw_container_smb *p){
+    if(!p->metadata_window_active){free(p->metadata_window);p->metadata_window=NULL;}
+}
 static int failure(struct bw_container_smb *p,int transport,enum bw_container_smb_failure_operation operation,unsigned integer_result) {
     if(!p->first_failure_seen){p->first_failure_seen=1;p->first_failure_result=transport;
         p->first_failure_operation=operation;p->first_failure_result_known=integer_result;}
     p->failed=1;p->last_transport_error=transport;
+    bw_metadata_window_reset(p->metadata_window);
     if(transport&&p->transport_owner&&p->smb){
         struct smb2_context *smb=p->smb;
         /* Drain while caller/decoder destinations are still alive. This
@@ -63,12 +70,17 @@ static int failure(struct bw_container_smb *p,int transport,enum bw_container_sm
         if(*p->transport_owner==smb)*p->transport_owner=NULL;
         p->smb=NULL;p->handle=NULL;
     }
+    /* A synchronous failed fetch may still retain its destination until the
+     * drain above completes. Its helper stack also borrows the window, so the
+     * exact-read wrapper releases it only after that helper returns. */
+    window_release(p);
     return -1;
 }
 static int generation(void *context) {
     struct bw_container_smb *p=context;
     struct smb2_stat_64 held,named;
-    if (p->failed || !p->handle) return -1;
+    bw_metadata_window_reset(p->metadata_window);
+    if (p->failed || !p->handle) {window_release(p);return -1;}
     p->generation_checks++;
     int result=smb2_fstat(p->smb,p->handle,&held);
     if (result) { BW_IMAGE_FAILURE(p,"generation-fstat",result,0,0,NULL,NULL);return failure(p,result,BW_IMAGE_FAILURE_FSTAT,1); }
@@ -80,7 +92,7 @@ static int generation(void *context) {
     }
     return 0;
 }
-static int exact_read(void *context,uint64_t at,void *out,size_t size) {
+static int direct_read(void *context,uint64_t at,void *out,size_t size) {
     struct bw_container_smb *p=context;
     if (p->failed || !p->handle || (!out && size) || size>BW_PFSC_MAX_READ ||
         at>p->admitted.smb2_size || size>p->admitted.smb2_size-at) {
@@ -98,7 +110,18 @@ static int exact_read(void *context,uint64_t at,void *out,size_t size) {
     }
     return 0;
 }
-static int open_image(struct bw_container_smb *p,struct smb2_context *smb,const char *path,struct smb2_context **owner) {
+static int exact_read(void *context,uint64_t at,void *out,size_t size) {
+    struct bw_container_smb *p=context;
+    if(!p->metadata_window)return direct_read(p,at,out,size);
+    if(p->failed||!p->handle||(!out&&size)||size>BW_PFSC_MAX_READ||at>p->admitted.smb2_size||size>p->admitted.smb2_size-at)
+        return direct_read(p,at,out,size);
+    p->metadata_window_active=1;
+    int result=bw_metadata_window_read(p->metadata_window,p->admitted.smb2_size,at,out,size,direct_read,p);
+    p->metadata_window_active=0;
+    if(p->failed)window_release(p);
+    return result;
+}
+static int open_image(struct bw_container_smb *p,struct smb2_context *smb,const char *path,struct smb2_context **owner,unsigned metadata) {
     if (!p) return BW_PFS_ARGUMENT;
     memset(p,0,sizeof *p);
     if (!smb || !path) return BW_PFS_ARGUMENT;
@@ -112,14 +135,22 @@ static int open_image(struct bw_container_smb *p,struct smb2_context *smb,const 
     }
     p->handle=smb2_open(smb,path,O_RDONLY);
     if (!p->handle) { BW_IMAGE_FAILURE(p,"open-readonly",-1,0,0,NULL,NULL);failure(p,-1,BW_IMAGE_FAILURE_OPEN,0);return BW_PFS_IO; }
+    if(metadata){
+        int saved=errno;
+        p->metadata_window=malloc(sizeof *p->metadata_window);
+        bw_metadata_window_reset(p->metadata_window);errno=saved;
+    }
     struct bw_container_ops ops={exact_read,generation};
     result=bw_container_open(&p->container,&ops,p,p->admitted.smb2_size);
     if (result) { bw_container_smb_close(p);return result; }
     return 0;
 }
-int bw_container_smb_open(struct bw_container_smb *p,struct smb2_context *smb,const char *path){return open_image(p,smb,path,NULL);}
+int bw_container_smb_open(struct bw_container_smb *p,struct smb2_context *smb,const char *path){return open_image(p,smb,path,NULL,0);}
 int bw_container_smb_open_owned(struct bw_container_smb *p,struct smb2_context **owner,const char *path){
-    return open_image(p,owner?*owner:NULL,path,owner);
+    return open_image(p,owner?*owner:NULL,path,owner,0);
+}
+int bw_container_smb_open_owned_metadata(struct bw_container_smb *p,struct smb2_context **owner,const char *path){
+    return open_image(p,owner?*owner:NULL,path,owner,1);
 }
 int bw_container_smb_close(struct bw_container_smb *p) {
     if (!p) return BW_PFS_ARGUMENT;
@@ -128,5 +159,6 @@ int bw_container_smb_close(struct bw_container_smb *p) {
     if(result)BW_IMAGE_FAILURE(p,"close",result,0,0,NULL,NULL);
     p->handle=NULL;p->container.ready=0;p->failed=1;
     if (result) failure(p,result,BW_IMAGE_FAILURE_CLOSE,1);
+    window_release(p);
     return result;
 }
