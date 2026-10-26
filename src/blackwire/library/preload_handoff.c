@@ -5,6 +5,7 @@
 #define BW_COPY_HOST_TEST
 #endif
 #include "preload_handoff.h"
+#include "reader_projection.h"
 #include "source_binding.h"
 #include "../streamreader/copy_fs.h"
 #include "../streamreader/copy_sha256.h"
@@ -19,7 +20,7 @@ static int ph_consumer_instance(const struct bw_preload_handoff *o) {
         (__atomic_load_n(&ph_live_consumer,__ATOMIC_ACQUIRE)==o&&o->producer_pid==getpid());
 }
 static void ph_forget_closed(struct bw_preload_handoff *o) {
-    if(o->retained_descriptors&&!o->share.descriptor_held&&!o->selection.descriptor_held) {
+    if(o->retained_descriptors&&!o->share.descriptor_held&&!o->selection.descriptor_held&&!o->projection.descriptor_held) {
         struct bw_preload_handoff *expected=o;
         o->descriptors_closed=1;
         (void)__atomic_compare_exchange_n(&ph_live_consumer,&expected,NULL,0,__ATOMIC_ACQ_REL,__ATOMIC_ACQUIRE);
@@ -83,15 +84,17 @@ static int ph_absent(struct ph_operation *p,const char *leaf) {
     return !ph_paths(p)&&cp_fstatat(p->folder,leaf,&named,AT_SYMLINK_NOFOLLOW)<0&&errno==ENOENT&&!ph_paths(p)?0:-1;
 }
 static int ph_verify(struct ph_operation *p,const char *leaf,int fd,struct bw_preload_handoff_file *file,int capture) {
-    struct stat before,named,after;struct cp_sha hash;uint8_t digest[32],bytes[256];int result=-1;
+    struct stat before,named,after;struct cp_sha hash;uint8_t digest[32],bytes[32768];int result=-1;
     cp_sha_init(&hash);memset(digest,0,sizeof digest);memset(bytes,0,sizeof bytes);
-    if(!file->created||!file->identity_known||file->bytes>BW_READER_SELECTION_BYTES||ph_paths(p)||
+    size_t maximum=!strcmp(leaf,BW_PRELOAD_HANDOFF_PROJECTION)?BW_READER_PROJECTION_LIMIT:BW_READER_SELECTION_BYTES;
+    if(!file->created||!file->identity_known||file->bytes>maximum||ph_paths(p)||
        fstat(fd,&before)||!ph_node(&file->identity,&before)||!S_ISREG(before.st_mode)||before.st_nlink!=1||
        (before.st_mode&07777)!=0600||before.st_size<0||(uint64_t)before.st_size!=file->bytes||
        (!capture&&!ph_file_same(&file->identity,&before))||
        cp_fstatat(p->folder,leaf,&named,AT_SYMLINK_NOFOLLOW)||!ph_file_same(&before,&named))goto done;
     for(size_t at=0;at<file->bytes;) {
-        size_t take=file->bytes-at;if(take>sizeof bytes)take=sizeof bytes;
+        size_t chunk=!strcmp(leaf,BW_PRELOAD_HANDOFF_PROJECTION)?sizeof bytes:256u;
+        size_t take=file->bytes-at;if(take>chunk)take=chunk;
         if(ph_paths(p))goto done;
         ssize_t got=pread(fd,bytes,take,(off_t)at);
         if(got<0&&errno==EINTR)continue;
@@ -155,12 +158,13 @@ static int ph_fresh_verify(struct ph_operation *p,const char *leaf,struct bw_pre
     if(fd<0)return -1;
     int result=ph_verify(p,leaf,fd,file,0);if(close(fd))result=-1;return result;
 }
-static int ph_publish(const struct bw_preload_handoff_request *r,struct bw_preload_handoff *o,int retained) {
+static int ph_publish(const struct bw_preload_handoff_request *r,struct bw_preload_handoff *o,int retained,const void *projection,size_t projection_size) {
     char selection[BW_READER_SELECTION_BYTES+1]={0},share[1024]={0};size_t selection_size=0,share_size=0;
     struct bw_provider_binding binding={0};struct ph_operation p={o,-1,-1,NULL,NULL,0};int entered=0,result=BW_PRELOAD_HANDOFF_REFUSED;
     if(!o||!ph_zero(o,sizeof *o)||!r||!r->root||!r->selection||!r->connection||!r->current||
        r->root[0]!='/'||strnlen(r->root,sizeof o->root)>=sizeof o->root||
        (r->selection->source_kind!=BW_PROVIDER_FOLDER&&r->selection->source_kind!=BW_PROVIDER_CONTAINER)||r->selection->source_policy!=BW_PROVIDER_POLICY_V1||
+       (bw_reader_selection_is_projection(r->selection)?(!retained||!projection||projection_size<BW_READER_PROJECTION_HEADER||projection_size>BW_READER_PROJECTION_LIMIT||memcmp(projection,"BWDAT001",8)):(projection||projection_size))||
        bw_reader_selection_serialize(r->selection,selection,sizeof selection,&selection_size)||
        ph_encode_share(r->connection,share,&share_size)||
        bw_provider_binding_init(&binding,r->connection,r->selection->source,r->selection->title,(enum bw_provider_kind)r->selection->source_kind)||
@@ -173,13 +177,15 @@ static int ph_publish(const struct bw_preload_handoff_request *r,struct bw_prelo
         if(producer<=0||!__atomic_compare_exchange_n(&ph_live_consumer,&expected,o,0,__ATOMIC_ACQ_REL,__ATOMIC_ACQUIRE))goto done;
     }
     memcpy(o->root,r->root,strlen(r->root)+1);o->initialized=PH_INITIALIZED;o->busy=1;entered=1;
-    o->retained_descriptors=retained;o->producer_pid=producer;
+    o->retained_descriptors=retained;o->producer_pid=producer;o->projected=bw_reader_selection_is_projection(r->selection);
     p.current=r->current;p.opaque=r->opaque;p.deadline=r->deadline;
-    if(ph_open(&p,1)||ph_absent(&p,BW_PRELOAD_HANDOFF_SHARE)||ph_absent(&p,BW_PRELOAD_HANDOFF_SELECTION)||
+    if(ph_open(&p,1)||ph_absent(&p,BW_PRELOAD_HANDOFF_SHARE)||ph_absent(&p,BW_PRELOAD_HANDOFF_SELECTION)||ph_absent(&p,BW_PRELOAD_HANDOFF_PROJECTION)||
        ph_create(&p,BW_PRELOAD_HANDOFF_SHARE,share,share_size,&o->share)||
+       (o->projected&&ph_create(&p,BW_PRELOAD_HANDOFF_PROJECTION,projection,projection_size,&o->projection))||
        ph_absent(&p,BW_PRELOAD_HANDOFF_SELECTION)||
        ph_create(&p,BW_PRELOAD_HANDOFF_SELECTION,selection,selection_size,&o->selection)||
        ph_fresh_verify(&p,BW_PRELOAD_HANDOFF_SHARE,&o->share)||
+       (o->projected&&ph_fresh_verify(&p,BW_PRELOAD_HANDOFF_PROJECTION,&o->projection))||
        ph_fresh_verify(&p,BW_PRELOAD_HANDOFF_SELECTION,&o->selection)||ph_paths(&p))goto done;
     result=BW_PRELOAD_HANDOFF_OK;
 done:
@@ -187,17 +193,20 @@ done:
     if(p.folder>=0&&close(p.folder))result=BW_PRELOAD_HANDOFF_UNCONFIRMED;
     if(p.root>=0&&close(p.root))result=BW_PRELOAD_HANDOFF_UNCONFIRMED;
     if(entered) {
-        if(result&& (o->share.created||o->selection.created))result=BW_PRELOAD_HANDOFF_UNCONFIRMED;
+        if(result&& (o->share.created||o->selection.created||o->projection.created))result=BW_PRELOAD_HANDOFF_UNCONFIRMED;
         o->published=result==BW_PRELOAD_HANDOFF_OK;o->last_status=result;o->busy=0;
-        if(retained&&!o->share.created&&!o->selection.created)ph_forget_closed(o);
+        if(retained&&!o->share.created&&!o->selection.created&&!o->projection.created)ph_forget_closed(o);
     }
     return result;
 }
 int bw_preload_handoff_publish(const struct bw_preload_handoff_request *r,struct bw_preload_handoff *o) {
-    return ph_publish(r,o,0);
+    return ph_publish(r,o,0,NULL,0);
 }
 int bw_preload_handoff_publish_retained(const struct bw_preload_handoff_request *r,struct bw_preload_handoff *o) {
-    return ph_publish(r,o,1);
+    return ph_publish(r,o,1,NULL,0);
+}
+int bw_preload_handoff_publish_projection_retained(const struct bw_preload_handoff_request *r,const void *bytes,size_t size,struct bw_preload_handoff *o){
+    return ph_publish(r,o,1,bytes,size);
 }
 static int ph_owned_open(struct ph_operation *p,const char *leaf,struct bw_preload_handoff_file *file,int *out) {
     if(!file->created)return ph_absent(p,leaf);
@@ -235,14 +244,17 @@ int bw_preload_handoff_assign_consumer(struct bw_preload_handoff *o,uid_t uid,in
     if(!o||o->initialized!=PH_INITIALIZED||!o->retained_descriptors||!ph_consumer_instance(o)||
        o->busy||!o->published||o->consumer_assignment_started||o->release_started||o->descriptor_close_started||
        o->released||uid==(uid_t)-1||!current)return BW_PRELOAD_HANDOFF_REFUSED;
-    struct ph_operation p={o,-1,-1,current,opaque,deadline};int share=-1,selection=-1,result=BW_PRELOAD_HANDOFF_REFUSED;
+    struct ph_operation p={o,-1,-1,current,opaque,deadline};int share=-1,selection=-1,projection=-1,result=BW_PRELOAD_HANDOFF_REFUSED;
     o->busy=1;
     if(ph_open(&p,0)||ph_owned_open(&p,BW_PRELOAD_HANDOFF_SHARE,&o->share,&share)||
-       ph_owned_open(&p,BW_PRELOAD_HANDOFF_SELECTION,&o->selection,&selection)||ph_paths(&p))goto done;
+       ph_owned_open(&p,BW_PRELOAD_HANDOFF_SELECTION,&o->selection,&selection)||
+       ph_owned_open(&p,BW_PRELOAD_HANDOFF_PROJECTION,&o->projection,&projection)||ph_paths(&p))goto done;
     o->consumer_uid=uid;o->consumer_assignment_started=1;result=BW_PRELOAD_HANDOFF_UNCONFIRMED;
     if(ph_assign_file(&p,BW_PRELOAD_HANDOFF_SHARE,&o->share,uid)||
+       (o->projected&&ph_assign_file(&p,BW_PRELOAD_HANDOFF_PROJECTION,&o->projection,uid))||
        ph_assign_file(&p,BW_PRELOAD_HANDOFF_SELECTION,&o->selection,uid)||
        ph_verify(&p,BW_PRELOAD_HANDOFF_SHARE,share,&o->share,0)||
+       (o->projected&&ph_verify(&p,BW_PRELOAD_HANDOFF_PROJECTION,projection,&o->projection,0))||
        ph_verify(&p,BW_PRELOAD_HANDOFF_SELECTION,selection,&o->selection,0)||fsync(p.folder)||ph_paths(&p))goto done;
     o->consumer_assigned=1;result=BW_PRELOAD_HANDOFF_OK;
 done:
@@ -270,8 +282,8 @@ static int ph_discharge(struct ph_operation *p) {
     struct bw_preload_handoff *o=p->owner;
     if(ph_guard(p))return -1;
     o->descriptor_close_started=1;
-    int selection=ph_close_retained(p,&o->selection),share=ph_close_retained(p,&o->share);
-    ph_forget_closed(o);return selection||share?-1:0;
+    int selection=ph_close_retained(p,&o->selection),projection=ph_close_retained(p,&o->projection),share=ph_close_retained(p,&o->share);
+    ph_forget_closed(o);return selection||projection||share?-1:0;
 }
 static int ph_remove(struct ph_operation *p,const char *leaf,int fd,struct bw_preload_handoff_file *file) {
     if(!file->created)return ph_absent(p,leaf);
@@ -282,12 +294,14 @@ static int ph_remove(struct ph_operation *p,const char *leaf,int fd,struct bw_pr
 int bw_preload_handoff_release(struct bw_preload_handoff *o,int (*exited)(void *),void *opaque,double deadline) {
     if(!o||o->initialized!=PH_INITIALIZED||!ph_consumer_instance(o)||o->busy||o->release_started||
        o->descriptor_close_started||o->released||!exited)return BW_PRELOAD_HANDOFF_REFUSED;
-    struct ph_operation p={o,-1,-1,exited,opaque,deadline};int share=-1,selection=-1,result=BW_PRELOAD_HANDOFF_REFUSED;
+    struct ph_operation p={o,-1,-1,exited,opaque,deadline};int share=-1,selection=-1,projection=-1,result=BW_PRELOAD_HANDOFF_REFUSED;
     o->busy=1;
     if(ph_open(&p,0)||ph_owned_open(&p,BW_PRELOAD_HANDOFF_SHARE,&o->share,&share)||
-       ph_owned_open(&p,BW_PRELOAD_HANDOFF_SELECTION,&o->selection,&selection)||ph_paths(&p))goto done;
+       ph_owned_open(&p,BW_PRELOAD_HANDOFF_SELECTION,&o->selection,&selection)||
+       ph_owned_open(&p,BW_PRELOAD_HANDOFF_PROJECTION,&o->projection,&projection)||ph_paths(&p))goto done;
     o->release_started=1;result=BW_PRELOAD_HANDOFF_UNCONFIRMED;
     if(ph_remove(&p,BW_PRELOAD_HANDOFF_SELECTION,selection,&o->selection)||
+       ph_remove(&p,BW_PRELOAD_HANDOFF_PROJECTION,projection,&o->projection)||
        ph_remove(&p,BW_PRELOAD_HANDOFF_SHARE,share,&o->share)||ph_paths(&p))goto done;
     result=BW_PRELOAD_HANDOFF_OK;
 done:
@@ -295,6 +309,7 @@ done:
         if(o->release_started&&ph_discharge(&p))result=BW_PRELOAD_HANDOFF_UNCONFIRMED;
     } else {
         if(selection>=0&&close(selection))result=BW_PRELOAD_HANDOFF_UNCONFIRMED;
+        if(projection>=0&&close(projection))result=BW_PRELOAD_HANDOFF_UNCONFIRMED;
         if(share>=0&&close(share))result=BW_PRELOAD_HANDOFF_UNCONFIRMED;
     }
     if(p.folder>=0&&close(p.folder))result=BW_PRELOAD_HANDOFF_UNCONFIRMED;

@@ -16,6 +16,7 @@ struct bw_provider_bundle {
     char source[BW_MANIFEST_MAX_PATH+1],game[75],title[10],selection[2048];
     uint8_t generation_sha256[32];
     unsigned ready;
+    enum bw_source_plan_policy plan_policy;
 };
 struct bw_source_provider {
     struct bw_provider_binding identity;
@@ -31,6 +32,7 @@ struct bw_source_provider {
     int (*current)(void *);
     void *opaque;
     int failed,error,busy;
+    enum bw_source_plan_policy plan_policy;
 };
 /* Folder identity delegates source_binding_resolve unchanged, including its
  * existing profile namespace. Container identity adds an explicit stable
@@ -55,6 +57,11 @@ struct bw_source_provider {
 int bw_source_provider_prepare(struct bw_source_provider *,const struct bw_provider_binding *,
     struct bw_source_smb *,struct bw_container_smb *,const char *run,uint64_t budget,
     int (*current)(void *),void *);
+/* New projection-source planning only. COMPANIONS_V1 reads/hashes all admitted
+ * files in both source companion directories locally; it must not be handed
+ * to legacy Send/reader policy as if its classification were an old receipt. */
+int bw_source_provider_prepare_policy(struct bw_source_provider *,const struct bw_provider_binding *,
+    struct bw_source_smb *,struct bw_container_smb *,const char *,uint64_t,int (*)(void *),void *,enum bw_source_plan_policy);
 int bw_source_provider_current(struct bw_source_provider *);
 int bw_source_provider_read(struct bw_source_provider *,const char *,bw_source_consume_fn,void *);
 void bw_source_provider_destroy(struct bw_source_provider *);

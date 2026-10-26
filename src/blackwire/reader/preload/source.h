@@ -81,6 +81,13 @@ typedef int (*bp_current_fn)(void *); /* Pure; zero means current. */
 int bp_source_admit(struct bp_source **,const void *map,size_t map_size,
     const void *selection,size_t selection_size,const void *share,size_t share_size,
     bp_current_fn,void *);
+/* Explicit v8 path. Verifies the full bounded private projection envelope
+ * against the physical map and selected record/receipt before DATA admission.
+ * The ordinary entrypoint always refuses v8 without this evidence. Existing
+ * caller input-identity and launch/source leases remain mandatory. */
+int bp_source_admit_projection(struct bp_source **,const void *map,size_t map_size,
+    const void *selection,size_t selection_size,const void *share,size_t share_size,
+    const void *envelope,size_t envelope_size,bp_current_fn,void *);
 /* Single worker only: create its actual SMB context/16 handles/64MiB cache.
  * This candidate adds one bounded1MiB scratch allocation outside the cache.
  * No retry: failure poisons the admitted session. Credentials are cleared on

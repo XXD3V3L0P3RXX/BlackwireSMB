@@ -4,6 +4,8 @@
 #include "native_owned_registration.h"
 #include "native_launch.h"
 #include "native_prepared_target.h"
+#include "native_registration_cleanup.h"
+#include "native_launch_admission.h"
 #include "../streamreader/copy_sha256.h"
 #include <fcntl.h>
 #include <limits.h>
@@ -276,6 +278,13 @@ int bw_native_owned_registration(const struct bw_native_register_request *r,stru
     if(!out)return -1;memset(out,0,sizeof *out);out->message="The owned registration upgrade request is invalid.";
     if(!r||!r->selected)return -1;
     if(!r->selected->prepared_policy){out->message="Legacy preparations use the unchanged registration path.";return 0;}
+    if(r->selected->prepared_policy==3){
+        struct bw_native_prepared prepared={0};
+        if(!r->data_root||!r->identity||!r->current||r->current(r->guard)||
+           bw_native_launch_admission_current(r->startup,r->data_root,r->identity,r->selected,&prepared)||prepared.prepared_policy!=3||
+           bw_nrc_projection_execution_current(r->startup,r->data_root,r->selected)||r->current(r->guard))return -1;
+        out->message="The verified projection keeps its original registration source.";return 0;
+    }
     if(!r->data_root||!r->apps||!r->database||!r->identity||!r->current||r->identity->kind!=BW_PROVIDER_FOLDER||r->identity->policy!=BW_PROVIDER_POLICY_V1)return -1;
     struct upgrade *p=calloc(1,sizeof *p);if(!p)return -1;p->request=r;p->result=out;p->identity=*r->identity;
     int result=-1;if(bw_reader_selection_serialize(r->selected,p->selected,sizeof p->selected,&p->selected_size)||

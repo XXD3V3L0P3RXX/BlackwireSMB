@@ -48,6 +48,9 @@ static int add(void *opaque,const char *path,const struct bw_pfs_inode *node) {
     size_t length=strnlen(path,BW_MANIFEST_MAX_PATH+1u);
     if (bw_manifest_validate_path(path,length)) {p->error=BW_PFS_PATH;return -1;}
     if (bw_source_excluded(path)) return 0;
+    int directory=(node->mode&0xf000u)==0x4000u;
+    if(bw_source_plan_node(p->plan,path,directory)){p->error=BW_COMPRESSED_DATA_PLAN;return -1;}
+    if(directory)return 0;
     if (node->flags&1u) {p->error=BW_PFS_UNSUPPORTED;return -1;}
     length++;
     if (p->count==BW_COMPRESSED_DATA_MAX_FILES ||
@@ -104,26 +107,27 @@ void bw_compressed_data_destroy(struct bw_compressed_data *p) {
     if (p && p->busy) {fail(p,BW_COMPRESSED_DATA_STATE);return;}
     if (p) {release(p);memset(p,0,sizeof *p);}
 }
-int bw_compressed_data_prepare(struct bw_compressed_data *p,struct bw_container_smb *image,
+int bw_compressed_data_prepare_policy(struct bw_compressed_data *p,struct bw_container_smb *image,
                               const struct bw_source_binding *binding,uint64_t budget,
-                              struct bw_source_smb *progress,int (*current)(void *),void *opaque) {
+                              struct bw_source_smb *progress,int (*current)(void *),void *opaque,enum bw_source_plan_policy policy) {
     if (!p || p->image || p->map.bytes || p->digests || p->buffer || p->files.files || p->ready || p->failed || p->busy)
         return BW_COMPRESSED_DATA_STATE;
     if (!image || !binding || !progress || !current || !budget || budget>BW_COMPRESSED_DATA_MAX_LOCAL_BYTES)
         return fail(p,BW_COMPRESSED_DATA_BUDGET);
+    if(policy!=BW_SOURCE_PLAN_LEGACY&&policy!=BW_SOURCE_PLAN_COMPANIONS_V1)return fail(p,BW_COMPRESSED_DATA_PLAN);
     size_t source_length=strnlen(binding->source,sizeof binding->source);
     if (!source_length || source_length==sizeof binding->source ||
         bw_manifest_validate_path(binding->source,source_length) || !title_valid(binding->title) ||
         strnlen(binding->game,sizeof binding->game)==sizeof binding->game ||
         strcmp(image->path,binding->source)) return fail(p,BW_COMPRESSED_DATA_BINDING);
-    p->image=image;p->session=image->container.session;p->local_budget=budget;p->binding=*binding;p->busy=1;
+    p->image=image;p->session=image->container.session;p->local_budget=budget;p->binding=*binding;p->busy=1;p->plan_policy=policy;
     p->progress=progress;p->current=current;p->current_opaque=opaque;
     bw_source_smb_progress(progress,BW_SOURCE_SCANNING,0,0,0,0);
     int result=live(p);struct bw_source_plan plan={0};
     if (result) goto done;
-    if (bw_source_plan_init(&plan,binding->game)) {result=BW_COMPRESSED_DATA_BINDING;goto done;}
+    if (bw_source_plan_init_policy(&plan,binding->game,policy)) {result=BW_COMPRESSED_DATA_BINDING;goto done;}
     struct scanning scan={.plan=&plan,.owner=p};
-    result=bw_container_walk(&image->container,add,&scan,NULL);
+    result=policy==BW_SOURCE_PLAN_COMPANIONS_V1?bw_container_walk_nodes(&image->container,add,&scan,NULL):bw_container_walk(&image->container,add,&scan,NULL);
     if (scan.error) result=scan.error;
     if (result) goto done;
     if (bw_source_plan_finish(&plan,&p->map)) {result=BW_COMPRESSED_DATA_PLAN;goto done;}
@@ -175,6 +179,10 @@ done:
     bw_source_plan_destroy(&plan);p->busy=0;
     if (result) {fail(p,result);release(p);}
     return result;
+}
+int bw_compressed_data_prepare(struct bw_compressed_data *p,struct bw_container_smb *image,
+    const struct bw_source_binding *binding,uint64_t budget,struct bw_source_smb *progress,int (*current)(void *),void *opaque){
+    return bw_compressed_data_prepare_policy(p,image,binding,budget,progress,current,opaque,BW_SOURCE_PLAN_LEGACY);
 }
 int bw_compressed_data_current(struct bw_compressed_data *p) {
     if (!p || !p->ready) return BW_COMPRESSED_DATA_STATE;

@@ -8,6 +8,7 @@
 #include "native_registration_retirement.h"
 #include "native_registration_removed.h"
 #include "native_prepared_target.h"
+#include "native_launch_admission.h"
 #include "source_param.h"
 #include "registration_param_compat.h"
 #include "../streamreader/copy_sha256.h"
@@ -32,7 +33,10 @@ struct record {
     struct stamp stamp[R_COUNT];
 };
 struct anchor {int fd;char path[BW_NRC_PATH_BYTES];struct stat st;unsigned release_unknown;};
-struct context {struct bw_nrc_environment env;char roots[3][BW_NRC_PATH_BYTES];struct anchor data,games,apps,ledger;unsigned release_unknown;};
+struct context {struct bw_nrc_environment env;char roots[3][BW_NRC_PATH_BYTES];struct anchor data,games,apps,ledger;unsigned release_unknown;
+    struct bw_native_launch_admission *projection,*execution;
+    int (*projection_guard)(void *);void *projection_opaque;
+};
 struct bw_nrc_ticket {uint64_t magic;unsigned finished;struct context c;struct bw_nrc_ops ops;struct record record;unsigned char intent_hash[32];};
 static pthread_mutex_t nrc_lock=PTHREAD_MUTEX_INITIALIZER;
 static const char ledger_marker[]="Blackwire registration ownership ledger v1\n";
@@ -67,6 +71,7 @@ static int anchor_open(struct anchor *a,const char *path,int private){
 }
 static void context_init(struct context *c){memset(c,0,sizeof *c);c->data.fd=c->games.fd=c->apps.fd=c->ledger.fd=-1;}
 static int context_close(struct context *c){
+    if(c->projection&&bw_native_launch_admission_close(&c->projection))c->release_unknown=1;
     struct anchor *a[]={&c->ledger,&c->apps,&c->games,&c->data};
     for(size_t i=0;i<4;i++){if(a[i]->release_unknown)c->release_unknown=1;
         if(a[i]->fd>=0){if(close(a[i]->fd))c->release_unknown=1;a[i]->fd=-1;}}
@@ -108,8 +113,37 @@ static void put32(unsigned char *p,uint32_t n){for(unsigned i=0;i<4;i++)p[i]=(un
 static void put64(unsigned char *p,uint64_t n){for(unsigned i=0;i<8;i++)p[i]=(unsigned char)(n>>(8*i));}
 static uint32_t get32(const unsigned char *p){uint32_t n=0;for(unsigned i=0;i<4;i++)n|=(uint32_t)p[i]<<(8*i);return n;}
 static uint64_t get64(const unsigned char *p){uint64_t n=0;for(unsigned i=0;i<8;i++)n|=(uint64_t)p[i]<<(8*i);return n;}
+static int projection_identity(const struct bw_reader_selection *s,struct bw_provider_binding *identity){
+    char canonical[BW_READER_SELECTION_BYTES+1];size_t size=0;
+    if(!s||!identity||s->prepared_policy!=3||bw_reader_selection_serialize(s,canonical,sizeof canonical,&size))return -1;
+    memset(identity,0,sizeof *identity);identity->kind=s->source_kind;identity->policy=s->source_policy;
+    memcpy(identity->binding.source,s->source,sizeof identity->binding.source);memcpy(identity->binding.game,s->game,sizeof identity->binding.game);memcpy(identity->binding.title,s->title,sizeof identity->binding.title);
+    return hex(s->binding_hex,64,identity->binding.sha256);
+}
+int bw_nrc_projection_execution_current(struct bw_native_launch_admission *startup,const char *base,const struct bw_reader_selection *s){
+    struct bw_provider_binding identity;struct bw_native_prepared prepared={0};const struct bw_preload_companions *companions=NULL;
+    return !startup||!base||projection_identity(s,&identity)||bw_native_launch_admission_current(startup,base,&identity,s,&prepared)||
+        prepared.state!=BW_PREPARED_VALID||prepared.prepared_policy!=3||bw_native_launch_admission_companions(startup,&companions)||!companions?-1:0;
+}
+static int projection_current(void *opaque){struct context *c=opaque;return !c||c->release_unknown||!c->projection_guard||c->projection_guard(c->projection_opaque)||anchors_current(c)?-1:0;}
+static int projection_capture(struct context *c,const struct bw_reader_selection *s){
+    if(s->prepared_policy!=3)return 0;
+    if(c->execution)return bw_nrc_projection_execution_current(c->execution,c->env.data_root,s);
+    struct bw_provider_binding identity;struct bw_native_prepared prepared={0};unsigned char expected[32];
+    if(projection_identity(s,&identity)||hex(s->prepared_record_hex,64,expected)||projection_current(c))return -1;
+    if(!c->projection){
+        int inspected=bw_native_send_inspect(c->env.data_root,&identity,&prepared);
+        if(inspected==-2||prepared.state==BW_PREPARED_UNKNOWN){c->release_unknown=1;return -1;}
+        if(inspected||prepared.state!=BW_PREPARED_VALID||prepared.prepared_policy!=3||memcmp(prepared.record_sha256,expected,32))return -1;
+        int opened=bw_native_launch_admission_open_for_removal(&c->projection,c->env.data_root,&identity,&prepared,s->run,projection_current,c,NULL);
+        if(opened==-2)c->release_unknown=1;if(opened)return -1;
+    }
+    const struct bw_preload_companions *companions=NULL;
+    return bw_native_launch_admission_current_for_removal(c->projection,c->env.data_root,&identity,s,&prepared)||
+        prepared.prepared_policy!=3||bw_native_launch_admission_companions_for_removal(c->projection,&companions)||!companions||projection_current(c)?-1:0;
+}
 static int subject_init(struct record *r,const struct context *c,const struct bw_reader_selection *s){
-    if(!s||(s->source_kind!=BW_PROVIDER_FOLDER&&s->source_kind!=BW_PROVIDER_CONTAINER)||s->source_policy!=BW_PROVIDER_POLICY_V1||s->prepared_policy||!title_valid(s->title)||!run_valid(s->run)||hex(s->prepared_record_hex,64,r->subject.prepared_record_sha256)||
+    if(!s||(s->source_kind!=BW_PROVIDER_FOLDER&&s->source_kind!=BW_PROVIDER_CONTAINER)||s->source_policy!=BW_PROVIDER_POLICY_V1||(s->prepared_policy&&s->prepared_policy!=3)||!title_valid(s->title)||!run_valid(s->run)||hex(s->prepared_record_hex,64,r->subject.prepared_record_sha256)||
        bw_native_selected_root(s,r->subject.game)||bw_reader_selection_serialize(s,r->selection,sizeof r->selection,&r->selection_size)||!r->selection_size||r->selection_size>BW_READER_SELECTION_BYTES)return -1;
     memcpy(r->subject.title,s->title,10);memcpy(r->subject.run,s->run,33);cp_sha_bytes(r->selection,r->selection_size,r->subject.selection_sha256);
     return join(r->subject.source,c->games.path,r->subject.game);
@@ -147,6 +181,7 @@ done:if(close(fd))bad=1;if(bad)blob_free(b);return bad?-1:0;
 static int path_dir(const char *path,struct stat *out){struct anchor a={.fd=-1};int bad=anchor_open(&a,path,0);if(!bad){*out=a.st;if(close(a.fd))bad=1;}return bad?-1:0;}
 static int source_capture(struct context *c,struct record *r,int compare){
     char path[BW_NRC_PATH_BYTES],title[10],content[128];struct stat st;struct blob param={0},receipt={0};int bad=1;
+    struct bw_reader_selection selected;if(bw_reader_selection_parse(&selected,r->selection,r->selection_size)||projection_capture(c,&selected))return -1;
     if(path_dir(r->subject.source,&st)||join(path,r->subject.source,"sce_sys/param.json")||blob_read(path,BW_SOURCE_PARAM_LIMIT,&param)||
        bw_source_param_identity(param.bytes,param.size,title,content)||strcmp(title,r->subject.title))goto done;
     int n=snprintf(path,sizeof path,"%s/native-prepared/%s/prepared.bin",c->env.data_root,r->subject.game);
@@ -155,7 +190,7 @@ static int source_capture(struct context *c,struct record *r,int compare){
         param.size!=r->source_param_size||memcmp(param.hash,r->source_param_hash,32)||strcmp(content,r->subject.content))goto done;}
     else {if(stamp_set(&r->stamp[R_SOURCE],&st)||stamp_set(&r->stamp[R_SOURCE_PARAM],&param.st)||stamp_set(&r->stamp[R_RECEIPT],&receipt.st))goto done;
         r->source_param_size=(uint32_t)param.size;memcpy(r->source_param_hash,param.hash,32);memcpy(r->subject.content,content,strlen(content)+1);}
-    bad=0;
+    bad=projection_capture(c,&selected);
 done:blob_free(&param);blob_free(&receipt);return bad?-1:0;
 }
 static int app_absent(struct context *c,const struct record *r){
@@ -189,9 +224,10 @@ static int registration_capture(struct context *c,struct record *r,const struct 
     r->app_param_size=(uint32_t)param.size;r->mount_size=(uint32_t)mount.size;memcpy(r->app_param_hash,param.hash,32);memcpy(r->mount_hash,mount.hash,32);bad=0;
 done:blob_free(&source);blob_free(&param);blob_free(&mount);return bad?-1:0;
 }
-int bw_nrc_begin(const struct bw_nrc_environment *e,const struct bw_reader_selection *s,const struct bw_nrc_ops *ops,struct bw_nrc_ticket **out,struct bw_nrc_result *r){
+static int nrc_begin(const struct bw_nrc_environment *e,const struct bw_reader_selection *s,struct bw_native_launch_admission *startup,const struct bw_nrc_ops *ops,struct bw_nrc_ticket **out,struct bw_nrc_result *r){
     if(out)*out=NULL;if(r)memset(r,0,sizeof *r);if(!out||!r||!ops_valid(ops,0)||pthread_mutex_lock(&nrc_lock))return -1;
     int rc=-1;struct bw_nrc_ticket *t=calloc(1,sizeof *t);unsigned char *wire=NULL;if(!t)goto done;context_init(&t->c);t->ops=*ops;
+    if(s&&s->prepared_policy==3&&!startup)goto done;t->c.execution=startup;t->c.projection_guard=ops->current;t->c.projection_opaque=ops->opaque;
     NRC_CALL(r,"ownership_intent_anchors",context_base(&t->c,e));
     NRC_CALL(r,"ownership_intent_selection",subject_init(&t->record,&t->c,s));
     NRC_CALL(r,"ownership_intent_initial_current",current(ops,NULL));
@@ -211,6 +247,10 @@ int bw_nrc_begin(const struct bw_nrc_environment *e,const struct bw_reader_selec
     NRC_CALL(r,"ownership_intent_final_absence",app_absent(&t->c,&t->record));
     memcpy(t->intent_hash,wire+NRC_HASH_AT,32);t->magic=NRC_MAGIC;*out=t;t=NULL;rc=0;result(r,BW_NRC_INTENT,"new_registration_intent_durable",0);
 done:free(wire);if(t){if(context_close(&t->c))rc=BW_NRC_RELEASE_UNCONFIRMED;free(t);}if(rc<0)result(r,BW_NRC_UNKNOWN,r->stage?r->stage:"registration_ownership_intent_unconfirmed",rc);pthread_mutex_unlock(&nrc_lock);return rc;
+}
+int bw_nrc_begin(const struct bw_nrc_environment *e,const struct bw_reader_selection *s,const struct bw_nrc_ops *ops,struct bw_nrc_ticket **out,struct bw_nrc_result *r){return nrc_begin(e,s,NULL,ops,out,r);}
+int bw_nrc_begin_projected(const struct bw_nrc_environment *e,const struct bw_reader_selection *s,struct bw_native_launch_admission *startup,const struct bw_nrc_ops *ops,struct bw_nrc_ticket **out,struct bw_nrc_result *r){
+    if(!s||s->prepared_policy!=3||!startup){if(out)*out=NULL;return -1;}return nrc_begin(e,s,startup,ops,out,r);
 }
 int bw_nrc_finish(struct bw_nrc_ticket *t,int registration_status,const struct bw_register_result *registered,struct bw_nrc_result *r){
     if(r)memset(r,0,sizeof *r);if(!t||!r||pthread_mutex_lock(&nrc_lock))return -1;int rc=-1;unsigned char *wire=NULL,*intent=NULL;char name[96];
@@ -260,7 +300,7 @@ done:blob_free(&param);blob_free(&link);return bad?-1:0;
 }
 int bw_nrc_reconcile(const struct bw_nrc_environment *e,const char title[10],const char run[33],const struct bw_nrc_ops *ops,struct bw_nrc_result *r){
     if(r)memset(r,0,sizeof *r);if(!r||!title_valid(title)||!run_valid(run)||!ops_valid(ops,1)||pthread_mutex_lock(&nrc_lock))return -1;
-    int rc=-1;struct context c;context_init(&c);struct record *record=calloc(1,sizeof *record);unsigned char *wire=malloc(NRC_WIRE);char name[96];
+    int rc=-1;struct context c;context_init(&c);c.projection_guard=ops->current;c.projection_opaque=ops->opaque;struct record *record=calloc(1,sizeof *record);unsigned char *wire=malloc(NRC_WIRE);char name[96];
     if(!record||!wire||!e||!e->data_root)goto done;
     char ledger_path[BW_NRC_PATH_BYTES];struct stat ledger_stat;if(join(ledger_path,e->data_root,BW_NRC_LEDGER_LEAF))goto done;
     if(lstat(ledger_path,&ledger_stat)){if(errno==ENOENT)rc=result(r,BW_NRC_UNOWNED,"no_ownership_ledger_no_action",0);goto done;}
@@ -335,7 +375,7 @@ int bw_nrc_observe_superseded(const struct bw_nrc_environment *e,const struct bw
     if(out)memset(out,0,sizeof *out);
     if(!e||!expected||!selected||!out||!o||!o->current||!o->sources||!o->manual_present||
        !title_valid(expected->title)||!run_valid(expected->run)||pthread_mutex_lock(&nrc_lock))return -1;
-    struct context c;context_init(&c);struct record *old=calloc(1,sizeof *old),*fresh=calloc(1,sizeof *fresh);
+    struct context c;context_init(&c);c.projection_guard=o->current;c.projection_opaque=o->opaque;struct record *old=calloc(1,sizeof *old),*fresh=calloc(1,sizeof *fresh);
     unsigned char *wire=malloc(NRC_WIRE);struct bw_reader_selection original;char name[96];int rc=-1,publication_unknown=0;
     struct bw_nrc_ops base={.opaque=o->opaque,.current=o->current,.sources=o->sources};
     NRC_PRED(out,"superseded_memory",!old||!fresh||!wire);
@@ -352,7 +392,7 @@ int bw_nrc_observe_superseded(const struct bw_nrc_environment *e,const struct bw
         strcmp(old->subject.game,fresh->subject.game)||strcmp(old->subject.source,fresh->subject.source)||
         strcmp(original.source,selected->source)||strcmp(original.binding_hex,selected->binding_hex)||
         original.source_kind!=selected->source_kind||original.source_policy!=selected->source_policy||
-        original.prepared_policy!=selected->prepared_policy||!strcmp(old->subject.run,selected->run)||
+        (original.prepared_policy!=selected->prepared_policy&&!(original.prepared_policy==0&&selected->prepared_policy==3))||!strcmp(old->subject.run,selected->run)||
         !memcmp(old->subject.prepared_record_sha256,fresh->subject.prepared_record_sha256,32));
     NRC_CALL(out,"superseded_fresh_source_capture",source_capture(&c,fresh,0));
     NRC_PRED(out,"superseded_content_conflict",strcmp(old->subject.content,fresh->subject.content));
@@ -406,7 +446,7 @@ int bw_nrc_retire_present(const struct bw_nrc_environment *e,const char title[10
     if(!out||!title_valid(title)||!run_valid(run)||!ops||!ops_valid(&ops->registration,1)||
        !ops->released||!ops->outside_scan_roots||!ops->manual_present||!ops->manual_remove||pthread_mutex_lock(&nrc_lock))return -1;
     struct bw_nrc_result *r=&out->registration;const struct bw_nrc_ops *base=&ops->registration;
-    struct context c;context_init(&c);struct record *record=calloc(1,sizeof *record);
+    struct context c;context_init(&c);c.projection_guard=ops->registration.current;c.projection_opaque=ops->registration.opaque;struct record *record=calloc(1,sizeof *record);
     unsigned char *wire=malloc(NRC_WIRE);char name[96],path[BW_NRC_PATH_BYTES];struct stat st;int rc=-1;
     if(!record||!wire||!e||!e->data_root||join(path,e->data_root,BW_NRC_LEDGER_LEAF))goto done;
     if(lstat(path,&st)){if(errno==ENOENT)rc=result(r,BW_NRC_UNOWNED,"no_ownership_ledger_no_retirement",0);goto done;}
@@ -466,7 +506,7 @@ int bw_nrc_retire_present(const struct bw_nrc_environment *e,const char title[10
     r->uninstall_attempted=1;int requested=base->uninstall(base->opaque,record->subject.title);r->uninstall_accepted=requested==0;
     r->reason=requested==0?"normal_uninstall_requested_absence_unverified":requested==1?"normal_uninstall_refused_no_retry":"normal_uninstall_outcome_unknown_no_retry";
 done:
-    if(context_close(&c))rc=-1;free(record);free(wire);
+    if(context_close(&c))rc=BW_NRC_RELEASE_UNCONFIRMED;free(record);free(wire);
     if(rc<0)result(r,BW_NRC_UNKNOWN,"owned_registration_retirement_evidence_unknown",rc);
     pthread_mutex_unlock(&nrc_lock);return rc;
 }
@@ -483,7 +523,7 @@ int bw_nrc_retirement_observe(const struct bw_nrc_environment *e,const char titl
     if(out)memset(out,0,sizeof *out);
     if(!out||!title_valid(title)||!run_valid(run)||!ops||!ops->current||!ops->sources||!ops->outside_scan_roots||!ops->manual_present||pthread_mutex_lock(&nrc_lock))return -1;
     struct bw_nrc_ops base={.opaque=ops->opaque,.current=ops->current,.sources=ops->sources};
-    struct bw_nrc_result *r=&out->registration;struct context c;context_init(&c);struct record *record=calloc(1,sizeof *record);unsigned char *wire=malloc(NRC_WIRE);int rc=-1;char name[96],path[BW_NRC_PATH_BYTES];struct stat st;
+    struct bw_nrc_result *r=&out->registration;struct context c;context_init(&c);c.projection_guard=ops->current;c.projection_opaque=ops->opaque;struct record *record=calloc(1,sizeof *record);unsigned char *wire=malloc(NRC_WIRE);int rc=-1;char name[96],path[BW_NRC_PATH_BYTES];struct stat st;
     if(!record||!wire||!e||!e->data_root||ops->current(ops->opaque))goto done;
     int n=snprintf(path,sizeof path,"%s/%s",e->data_root,BW_NRC_LEDGER_LEAF);if(n<0||(size_t)n>=sizeof path)goto done;
     if(lstat(path,&st)){if(errno==ENOENT)rc=result(r,BW_NRC_UNOWNED,"no_ownership_ledger_no_observation",0);goto done;}
@@ -499,7 +539,7 @@ int bw_nrc_retirement_observe(const struct bw_nrc_environment *e,const char titl
     marker(expected,"BWROCA01",wire+NRC_HASH_AT,&record->subject);if(leaf(name,title,run,"absent"))goto done;int absent=marker_read(&c,name,expected);if(absent<0){rc=-1;goto done;}
     if(absent&&write_new(&c,name,expected,sizeof expected,&base,&record->subject)){rc=-1;goto done;}
     if(retirement_observe_absence(&c,record,ops)){rc=-1;goto done;}out->manual_absent=1;rc=result(r,BW_NRC_ABSENT,"manual_path_app_directory_and_title_row_observed_absent",0);
-done:if(context_close(&c))rc=-1;free(record);free(wire);if(rc<0)result(r,BW_NRC_UNKNOWN,"retirement_observation_evidence_unknown_no_requests",rc);pthread_mutex_unlock(&nrc_lock);return rc;
+done:if(context_close(&c))rc=BW_NRC_RELEASE_UNCONFIRMED;free(record);free(wire);if(rc<0)result(r,BW_NRC_UNKNOWN,"retirement_observation_evidence_unknown_no_requests",rc);pthread_mutex_unlock(&nrc_lock);return rc;
 }
 
 static int removed_equal(const struct bw_removed_source *a,const struct bw_removed_source *b){

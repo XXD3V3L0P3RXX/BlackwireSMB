@@ -47,6 +47,8 @@ int bw_source_smb_snapshot(struct bw_source_smb *,const char *game,struct bw_sou
  * Holds each collection parent; both paths and parent generations are bound
  * into the sealed snapshot. This does not register or launch a title. */
 int bw_source_smb_snapshot_bound(struct bw_source_smb *,const char *source,const char *game,struct bw_source_map *,struct bw_source_snapshot *);
+int bw_source_smb_snapshot_bound_policy(struct bw_source_smb *,const char *source,const char *game,
+    struct bw_source_map *,struct bw_source_snapshot *,enum bw_source_plan_policy);
 /* Whole existing file, opened read-only with reparse points rejected. Holds and
  * verifies each parent. Expected metadata must come from a sealed snapshot.
  * The consumer is synchronous and borrows at most 64 KiB per call. No callback

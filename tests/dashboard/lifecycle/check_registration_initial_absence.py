@@ -40,6 +40,7 @@ def main():
         'native_cleanup_remote.c', 'native_registration.c', 'registration_db.c', 'source_param.c',
         'reader_selection.c', 'native_prepared_target.c', 'register_job.c')]
     core += [STREAM / 'manifest.c', own[0]]
+    core += [HERE / 'legacy_projection_boundary.c']
     core += [STREAM / n for n in ('container_source.c', 'pfs_source.c', 'pfsc_range.c', 'pfsc_inflate.c')]
     sqlite = ROOT / 'vendor/sqlite/sqlite3.c'
     possible = set(core + own + [Path(__file__), sqlite, ROOT / 'tools/build/app-recipe.json'])

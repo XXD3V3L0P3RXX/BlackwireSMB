@@ -18,9 +18,12 @@ def dir_blob(entries):
     return output + bytes(BLOCK - len(output)), positions
 
 
-def make_pfs(files, *, compressed=None, mode=8):
+def make_pfs(files, *, compressed=None, mode=8, directories=()):
     compressed = compressed or {}
     folders = {''}
+    for directory in directories:
+        parts=directory.split('/')
+        folders.update('/'.join(parts[:i]) for i in range(1,len(parts)+1))
     for path in files:
         parts = path.split('/')
         folders.update('/'.join(parts[:i]) for i in range(1, len(parts)))

@@ -66,7 +66,12 @@ done:
 }
 static int pin_current(struct context *c){
     const struct bw_native_register_request *r=c->request;
-    if(r->startup)return c->prepared_policy||bw_native_launch_admission_current(r->startup,r->data_root,r->identity,r->selected,NULL)?-1:0;
+    if(r->startup){
+        if((c->prepared_policy&&c->prepared_policy!=3)||bw_native_launch_admission_current(r->startup,r->data_root,r->identity,r->selected,NULL))return -1;
+        if(c->prepared_policy==3){const struct bw_preload_companions *witness=NULL;return bw_native_launch_admission_companions(r->startup,&witness);}
+        return 0;
+    }
+    if(c->prepared_policy==3)return -1; /* no raw-policy fallback into derived ownership */
     return c->prepared_policy?pin_derived(c):pin_legacy(c);
 }
 static int map_matches(const void *bytes,size_t size,const struct bw_reader_selection *s){
@@ -123,7 +128,7 @@ int bw_native_register(const struct bw_native_register_request *r,struct bw_regi
         if(bw_native_batch_record_path_exact(r->data_root,r->identity,component,c.expected,c.record,sizeof c.record))return -1;
     }else{
         int m=snprintf(c.record,sizeof c.record,"%s/%s/%s/prepared.bin",r->data_root,
-            c.prepared_policy?"native-derived-prepared":"native-prepared",b->game);
+            c.prepared_policy&&c.prepared_policy!=3?"native-derived-prepared":"native-prepared",b->game);
         if(m<0||(size_t)m>=sizeof c.record)return -1;
     }
     if(current(&c))return -1;
@@ -131,7 +136,8 @@ int bw_native_register(const struct bw_native_register_request *r,struct bw_regi
     if(r->startup){
         /* The normal Ready-Play owner already hashed the required boot/module
          * set once. Reuse only its exact held proof, never a cached boolean. */
-        if(c.prepared_policy||bw_native_launch_admission_current(r->startup,r->data_root,r->identity,s,&fresh))return -1;
+        if((c.prepared_policy&&c.prepared_policy!=3)||bw_native_launch_admission_current(r->startup,r->data_root,r->identity,s,&fresh))return -1;
+        if(c.prepared_policy==3&&(fresh.prepared_policy!=3||strcmp(fresh.prepared_component,s->game)||memcmp(fresh.provenance_sha256,c.provenance,32)))return -1;
     }else if(c.prepared_policy==BW_BATCH_POLICY){
         /* Fresh destination LOCAL bodies only; actual PC/cache admission is
          * independently owned by normal launch preflight. */

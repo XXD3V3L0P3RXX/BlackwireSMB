@@ -29,7 +29,7 @@ def main():
  sources=[HERE/'test_fast_ready_play.c']+[LIB/n for n in [
   'reader_preflight.c','native_register.c','register_job.c','native_registration.c','registration_db.c',
   'native_prepared_target.c','reader_selection.c','source_binding.c','source_identity.c','source_profile.c','source_plan.c','source_param.c','source_directory.c']]+[STREAM/'manifest.c',STREAM/'share_config.c']
- owned=[LIB/n for n in ['native_launch_admission.c','native_launch_admission.h','native_send.c','native_register.c','native_register.h','reader_preflight.c','reader_preflight.h','reader_runtime.h','native_backend.c']]+[ROOT/'src/blackwire/reader/native-reader.c',STREAM/'prepare_copy.c',Path(__file__),HERE/'test_fast_ready_play.c',HERE/'test_registration_backend.c',HERE/'test_idle_cache_callers.c',LIB/'startup_runtime_idle.c',LIB/'startup_runtime_idle.h',LIB/'idle_log_cache.h',LIB/'native_job.c',STREAM/'diagnostics/game_stop_identity.c',STREAM/'diagnostics/game_stop_identity.h']
+ owned=[LIB/n for n in ['native_launch_admission.c','native_launch_admission.h','preload_source_ampr_internal.h','preload_bundle.c','preload_bundle.h','native_send.c','native_register.c','native_register.h','reader_preflight.c','reader_preflight.h','reader_runtime.h','native_backend.c','native_backend_home.h','native_backend_removal.h']]+[ROOT/'src/blackwire/reader/native-reader.c',STREAM/'prepare_copy.c',Path(__file__),HERE/'test_fast_ready_play.c',HERE/'test_registration_backend.c',HERE/'test_idle_cache_callers.c',HERE/'source_ampr_admission_model.h',LIB/'startup_runtime_idle.c',LIB/'startup_runtime_idle.h',LIB/'idle_log_cache.h',LIB/'native_job.c',STREAM/'diagnostics/game_stop_identity.c',STREAM/'diagnostics/game_stop_identity.h']
  before={str(p.relative_to(ROOT)):pin(p) for p in dict.fromkeys(owned+sources)}
  objects=[]
  for p in sources:
@@ -61,13 +61,15 @@ def main():
  scenarios=['normal','missing-boot','changed-boot','changed-module','mode-module','index-mismatch','map-mismatch','receipt-mismatch',
   'source-owner-mismatch','settings-before','settings-after','required-after','receipt-after','selected-mismatch','source-binding',
   'source-missing-boot','source-title','source-module-size','missing-stream','changed-nonboot-local','registration','foreign-registration',
-  'linked-boot','zero-run','missing-play-epoch','close-error']
+  'linked-boot','zero-run','missing-play-epoch','close-error','source-ampr','source-ampr-local-tamper','source-ampr-mode','source-ampr-stale','source-ampr-extra-local']
  results=[]
  def fixture(area,scenario,streams):
   data=area/'data';data.mkdir();source=area/'source';source.mkdir();meta=area/'metadata';meta.mkdir();(area/'game.log').write_text('')
   (source/'sce_sys').mkdir();(source/'sce_module').mkdir();(source/'assets').mkdir()
   param=b'{"titleId":"PPSA99999","contentId":"UP0000-PPSA99999_00-BLACKWIREFIXTURE0"}'
   contents={'eboot.bin':bytes(range(256))*1024,'sce_sys/param.json':param,'sce_module/libfixture.sprx':bytes(range(255,-1,-1))*2048,'startup.txt':b'prepared non-executable LOCAL data'}
+  if scenario.startswith('source-ampr') and scenario!='source-ampr-extra-local':
+   (source/'fakelib').mkdir();contents['fakelib/libSceAmpr.sprx']=b'SYNTHETIC INDEPENDENT SOURCE AMPR\0'*157
   fields=['192.0.2.1','FixtureShare','Fixture','PPSA99999'];binding=hashlib.sha256(b'BWBIND01'+b''.join(struct.pack('<I',len(s))+s.encode() for s in fields)).hexdigest();game='PPSA99999_'+binding
   rows=[]
   for name,body in contents.items():
@@ -89,7 +91,8 @@ def main():
   with tempfile.TemporaryDirectory(prefix='blackwire-fast-scale-') as tmp:
    area=Path(tmp);fixture(area,'normal',n);result=run('scale-'+str(n),[binary,area,'normal',n]);results.append(json.loads(result.stdout.splitlines()[-1]))
  backend=OUT/'host-fast-backend';backend_flags=[f for f in flags if f!='-DBW_LAUNCH_TIMING=1']
- # Preserve the actual 64-case routing body while using the maintained
+ # Preserve the actual 66-case routing body, including both removed-folder
+ # versus newly prepared compressed-copy ownership cases, while using the maintained
  # cache-aware fixture and real cache/identity implementation.
  baseline=(HERE/'test_registration_backend.c').read_text().split('int main(void){',1)[1].strip()
  retained=(HERE/'test_idle_cache_callers.c').read_text().split('static int retained_routing_main(void){',1)[1].split('\nstatic void *execute_joined(',1)[0].strip()
@@ -100,7 +103,7 @@ def main():
   obj=OUT/('backend-caller-'+str(i)+'.o');run('actual-backend-route-build-'+str(i),backend_flags+['-pthread','-c',source,'-o',obj]);caller_objects.append(obj)
  run('actual-backend-route-link',['clang-18','-fsanitize=address,undefined',*caller_objects,*['-Wl,--wrap='+n for n in ('open','dup','close','fclose','fgets','clock_gettime')],'-Wl,--gc-sections','-pthread','-lm','-o',backend])
  caller_lines=run('actual-backend-route-cases',[backend]).stdout.splitlines();backend_result=json.loads(caller_lines[-2]);backend_cache=json.loads(caller_lines[-1])
- if not(backend_cache['passed'] and backend_cache['retainedRoutingCases']==64 and backend_cache['focusedCallerCases']==15 and backend_cache['allCachesClosedBeforeHandoff'] and backend_cache['releaseUnknownRetained']):raise RuntimeError('Actual caller/lifetime scenarios changed')
+ if not(backend_cache['passed'] and backend_cache['retainedRoutingCases']==66 and backend_cache['focusedCallerCases']==17 and backend_cache['allCachesClosedBeforeHandoff'] and backend_cache['releaseUnknownRetained']):raise RuntimeError('Actual caller/lifetime scenarios changed')
  # Compile the actual production commands, redirecting only outputs/deps.
  historical=ROOT/'build/native-dashboard/sdk-template-placeholder';sdk=OUT/'sdk';sdk.mkdir();sdk_objects=[]
  for row in production_rows(ROOT,OUT/'sdk-template'):

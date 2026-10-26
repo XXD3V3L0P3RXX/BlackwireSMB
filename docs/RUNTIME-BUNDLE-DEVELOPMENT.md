@@ -14,6 +14,30 @@ Cancellation, deadline, immutable prepared-copy identity, exclusive creation, ch
 
 ## Offline verification
 
+### Unreleased source-companion repair
+
+Later testing found a separate step-7 collision: a game can already contain `fakelib2`, including its own Ampr module and other files. Treating that entire directory as Blackwire's generated reader bundle rejects valid source material. This differs from the older missing-global-pack failure above.
+
+The development repair records both source companion directories, preserves ShadowMountPlus's preference for `fakelib2` even when it is empty, and prepares a separate verified physical layout. The original source tables and a generated receipt bind that layout to the selected game. Source companion files remain local and retain their original source hashes; Blackwire's compiled reader and temporary launch inputs have distinct roles. It neither overwrites the PC source nor changes ShadowMountPlus's global files or settings.
+
+Projected preparations use an explicit new selection format. Both the controller and in-game reader verify its receipt; the older reader path refuses it rather than interpreting generated local aliases as remote paths. Actual host tests cover Send, bundle installation, streaming DATA reads, ordinary registration and offline removal. The tests use inert synthetic game/module bytes and modeled Sony/process boundaries. Native module loading, permissions and gameplay still require console qualification for the exact build.
+
+An older partial preparation with source-owned `fakelib2` files has a separate normal-removal path. It requires the original sealed inventory, hashes for local files, and zero sparse streamed placeholders. Unknown extra files or altered data still stop removal. This is not permission to recursively delete an arbitrary game directory.
+
+Focused checks for that development work are:
+
+```sh
+python3 tests/dashboard/lifecycle/check_projected_bundle_data_chain.py --output build/companion-data-01
+python3 tests/dashboard/lifecycle/check_projected_game_uninstall_e2e.py --output build/companion-remove-01
+python3 tests/dashboard/lifecycle/check_projected_game_uninstall_e2e.py --registration --output build/companion-register-01
+python3 tests/dashboard/lifecycle/check_legacy_source_removal.py --output build/companion-old-remove-01
+python3 tests/home/check_projected_handoff.py --root . --output build/companion-handoff-01
+```
+
+No new download or console-tested release is implied by these development checks.
+
+### Earlier self-contained bundle checks
+
 Use fresh absent output directories below `build/` on Linux/WSL with LLVM 18 and the open-source payload SDK:
 
 ```sh

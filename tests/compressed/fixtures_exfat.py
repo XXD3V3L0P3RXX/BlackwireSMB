@@ -12,8 +12,15 @@ def entry_checksum(image, at):
     size=(image[at+1]+1)*32
     struct.pack_into('<H',image,at+2,checksum(image[at:at+size],16,(2,3)))
 
-def make_exfat(contents, *, nofat=False):
+def make_exfat(contents, *, nofat=False, directories=()):
     cluster_size=4096;nodes={'':{'children':[], 'directory':True}}
+    for directory in sorted(directories):
+        parent=''
+        for component in directory.split('/'):
+            name=parent+'/'+component if parent else component
+            if name not in nodes:
+                nodes[name]={'children':[], 'directory':True};nodes[parent]['children'].append(name)
+            parent=name
     for path,body in sorted(contents.items()):
         parent=''
         for component in path.split('/')[:-1]:

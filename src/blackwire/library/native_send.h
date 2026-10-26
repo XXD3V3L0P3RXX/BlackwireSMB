@@ -14,7 +14,9 @@ struct bw_native_prepared {
     uint8_t record_sha256[32];
     /* Explicit prepared-target refinement; game remains ORIGINAL identity.
      * Zero is the unchanged legacy target. Policy1 is a distinct derived root
-     * backed by BWNDR001/BWDPR001, never a replacement provider binding. */
+     * backed by BWNDR001/BWDPR001, never a replacement provider binding.
+     * Policy3 is an original-root companion projection, reported only after
+     * record -> physical LOCAL receipt -> original-table validation. */
     uint32_t prepared_policy;
     char prepared_component[75];
     uint8_t provenance_sha256[32];

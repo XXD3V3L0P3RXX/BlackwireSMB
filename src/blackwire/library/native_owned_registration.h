@@ -7,7 +7,9 @@ struct bw_native_owned_registration_result {
     const char *message;
 };
 /* Optional, narrow normal-Play upgrade before bw_native_register. Legacy v4/v5
- * is a no-op. A v6 conflict may move ONLY the exact verified original legacy
+ * is a no-op. Policy3 retains the original source and is a no-op ONLY with its
+ * live source-qualified execution admission; it never enters a derived switch.
+ * A v6 conflict may move ONLY the exact verified original legacy
  * root to this selection's exact verified derived root. An explicit v7/policy2
  * conflict may instead refine the exact owned original legacy OR V1-derived
  * registration of the SAME original identity to its verified batch root.

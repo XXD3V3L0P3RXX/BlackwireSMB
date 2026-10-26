@@ -28,13 +28,13 @@ def main():
     if not out.is_relative_to(ROOT/'build/native-dashboard'):raise ValueError('New native-dashboard output required')
     out.mkdir(parents=True,exist_ok=False); commands=[]; deps=[]
     status_fixture=out/'manual.status';status_fixture.write_bytes(b'installed\tCUSA00001\t/data/neutral-existing-cusa\tNeutral fixture\n');status_fixture.chmod(0o666)
-    names=['native_game_uninstall.c','native_removed_sources.c','native_game_uninstall_remote.c','native_registration_lifecycle.c','native_registration_cleanup.c','native_cleanup_remote.c','native_registration.c','registration_db.c','native_prepared_target.c','reader_selection.c','source_binding.c','source_identity.c','source_profile.c','source_plan.c','source_param.c','source_directory.c']
+    names=['native_game_uninstall.c','native_removed_sources.c','native_game_uninstall_remote.c','native_registration_lifecycle.c','native_registration_cleanup.c','native_cleanup_remote.c','native_registration.c','registration_db.c','native_prepared_target.c','reader_selection.c','source_binding.c','source_identity.c','source_namespace.c','source_companions.c','source_profile.c','source_plan.c','source_param.c','source_directory.c']
     sources=[HERE/'test_game_uninstall_remote.c']+[LIB/n for n in names]+[STREAM/'manifest.c',STREAM/'share_config.c']
     sources += [STREAM/n for n in ('container_source.c','pfs_source.c','pfsc_range.c','pfsc_inflate.c')]
     owned=[Path(__file__).resolve(),HERE/'test_game_uninstall_remote.c',HERE/'test_game_uninstall_remote_io.h']+[LIB/n for n in ['native_game_uninstall_remote.c','native_game_uninstall_remote.h','native_registration_lifecycle.c','native_registration_lifecycle.h']]
     possible=set(owned+sources)|set(LIB.glob('*.h'))|set(STREAM.rglob('*.h'))|set((ROOT/'vendor/libsmb2/include').rglob('*.h'))|set((ROOT/'vendor/sqlite').glob('*.h'))|set((ROOT/'src/blackwire/tools/compressed_stream_candidate').rglob('*.h'))
     possible.update((STREAM/'vendor/miniz').glob('*.c'))
-    possible|={LIB/n for n in ['native_send.c','native_prepare_ops.c','native_startup_upgrade.c','native_launch_admission.c']}
+    possible|={LIB/n for n in ['native_send.c','native_companion_state.c','native_prepare_ops.c','native_startup_upgrade.c','native_launch_admission.c']}
     possible|={HERE/n for n in ['test_game_uninstall.c','test_game_uninstall_io.h','test_fast_ready_play.c','check_game_uninstall.py']}
     possible|={STREAM/'prepare_copy.c',ROOT/'vendor/sqlite/sqlite3.c'}
     before={p.resolve():pin(p) for p in possible}
@@ -60,7 +60,7 @@ def main():
     missing=sorted(n for n in needed-defined if n.startswith('bw_'))
     headers=[p for d in (LIB,STREAM,ROOT/'src/blackwire/tools/compressed_stream_candidate') for p in d.glob('*.h') if p.name!='native_json.h']
     declarations='\n'.join(p.read_text() for p in headers)
-    stubs=['#include "reader_preflight.h"','#include "native_register.h"','#include "native_prepared_target.h"','#include "native_derived_context.h"','#include "native_batch_context.h"','#include <stdlib.h>']
+    stubs=['#include "reader_preflight.h"','#include "native_register.h"','#include "native_prepared_target.h"','#include "native_derived_context.h"','#include "native_batch_context.h"','#include "source_namespace.h"','#include <stdlib.h>']
     for name in missing:
         matches=re.findall(r'((?:int|void|const\s+struct\s+\w+\s*\*|struct\s+\w+\s*\*)\s*'+re.escape(name)+r'\s*\([^;{}]*\))\s*;',declarations)
         if not matches:raise ValueError('Missing abort-stub declaration '+name)

@@ -34,13 +34,22 @@ static int map_file(void *opaque,const char *path,const struct bw_pfs_inode *nod
 void bw_container_manifest_destroy(struct bw_container_manifest *p) {
     if (p) {free(p->files);memset(p,0,sizeof *p);}
 }
-int bw_container_manifest_bind(struct bw_container_manifest *p,struct bw_container *source,const struct bw_manifest *manifest) {
+static int bind_manifest(struct bw_container_manifest *p,struct bw_container *source,const struct bw_manifest *manifest,int streams_only) {
     if (!p || p->files || !source || !manifest || !manifest->count || manifest->count>BW_MANIFEST_MAX_FILES)
         return BW_PFS_ARGUMENT;
     memset(p,0,sizeof *p);
     int result=bw_container_validate(source);if (result) return result;
+    uint32_t selected=manifest->count;
+    if(streams_only){
+        selected=0;
+        for(uint32_t id=0;id<manifest->count;id++){
+            struct bw_manifest_record record;
+            if(bw_manifest_get(manifest,id,&record))return BW_PFS_ARGUMENT;
+            if(record.flags==BW_MANIFEST_STREAM)selected++;
+        }
+    }
     uint32_t capacity=2;
-    while (capacity<manifest->count*2) capacity*=2;
+    while (capacity<selected*2) capacity*=2;
     struct mapping map={p,manifest,NULL,capacity,0,0};
     map.slots=calloc(capacity,sizeof *map.slots);
     p->files=calloc(manifest->count,sizeof *p->files);
@@ -50,13 +59,14 @@ int bw_container_manifest_bind(struct bw_container_manifest *p,struct bw_contain
     for (uint32_t id=0;id<manifest->count;id++) {
         struct bw_manifest_record record;
         if (bw_manifest_get(manifest,id,&record)) {result=BW_PFS_ARGUMENT;goto done;}
+        if(streams_only&&record.flags!=BW_MANIFEST_STREAM)continue;
         uint32_t at=slot_for(record.path,capacity);
         while (map.slots[at]) at=(at+1)&(capacity-1);
         map.slots[at]=id+1;
     }
     result=bw_container_walk(source,map_file,&map,NULL);
     if (map.error) result=map.error;
-    if (!result && map.matched!=manifest->count) result=BW_CONTAINER_MANIFEST_MISMATCH;
+    if (!result && map.matched!=selected) result=BW_CONTAINER_MANIFEST_MISMATCH;
     if (!result && source->session!=p->session) result=BW_CONTAINER_STALE;
     if (!result) result=bw_container_validate(source);
 done:
@@ -64,8 +74,14 @@ done:
     if (result) bw_container_manifest_destroy(p);
     return result;
 }
+int bw_container_manifest_bind(struct bw_container_manifest *p,struct bw_container *source,const struct bw_manifest *manifest){
+    return bind_manifest(p,source,manifest,0);
+}
+int bw_container_manifest_bind_streams(struct bw_container_manifest *p,struct bw_container *source,const struct bw_manifest *manifest){
+    return bind_manifest(p,source,manifest,1);
+}
 const struct bw_container_file *bw_container_manifest_file(struct bw_container_manifest *p,uint32_t id) {
-    if (!p || !p->files || id>=p->count || p->failed) return NULL;
+    if (!p || !p->files || id>=p->count || p->failed || !p->files[id].owner) return NULL;
     if (p->source->session!=p->session) {p->failed=1;return NULL;}
     int current=bw_container_validate(p->source);
     if (current) {if(current!=BW_CONTAINER_CANCELED)p->failed=1;return NULL;}

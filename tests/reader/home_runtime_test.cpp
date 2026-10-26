@@ -12,6 +12,7 @@
 #include <unistd.h>
 extern "C" {
 #include "library/reader_selection.h"
+#include "library/reader_projection.h"
 #include "reader/preload/home_client.h"
 }
 static unsigned cases,checks,scenario,claims,hashes,notifications,exits,logs,sleeps,opened,closed,admitted;
@@ -22,20 +23,23 @@ static const char other_run[]="abcdef1234567890abcdef1234567890";
 static char selection_bytes[4097];static size_t selection_size;
 static const char map_bytes[]="full-manifest-fixture";
 static const char share_bytes[]="share-fixture";
+static const char projection_bytes[]="BWDAT001-modeled-transport-only";
 static unsigned fd_kind[128];static bool fd_live[128];static unsigned next_fd;
 #define CHECK(x) do{checks++;if(!(x)){std::fprintf(stderr,"home-runtime case%u line%d: %s\n",scenario,__LINE__,#x);std::exit(1);}}while(0)
 enum {PLAY,PLAY_WAIT,HOME,PARTIAL,PARTIAL_DENIED,WRONG_MODE,IO_ERROR,CLAIM_REFUSED,NEVER_PUBLISHED,WRONG_RUN,MAP_CHANGED,NO_EXIT,NO_NOTICE,INPUT_CLOSE_ERROR,CANCELED_HOME,NAMED_CLOSE_ERROR,LAST_SCENARIO};
+enum {P_PLAY=100,P_HOME,P_MISSING,P_MODE,P_LARGE,P_CLOSE,P_REFUSED,P_CHANGED};
 struct bp_source {} fixture_source;static bp_source *source;
 static std::atomic<unsigned> status{0};static std::atomic<bool> metadata_ready{false};static std::atomic<bp_source*> cache_owner{nullptr};
 static int current(void*){return canceled.load()?-1:0;}
-static int kind(const char *path){if(!std::strcmp(path,"/app0/blackwire.files"))return 1;if(std::strstr(path,".selection"))return 2;if(std::strstr(path,".share"))return 3;CHECK(false);return 0;}
+static int kind(const char *path){if(!std::strcmp(path,"/app0/blackwire.files"))return 1;if(std::strstr(path,".selection"))return 2;if(std::strstr(path,".share"))return 3;if(!std::strcmp(path,"/app0/fakelib2/blackwire-reader.projection"))return 4;CHECK(false);return 0;}
 static int fake_open(const char *path,int flags,...){
     CHECK(flags==(O_RDONLY|O_NOFOLLOW|O_NONBLOCK));unsigned k=(unsigned)kind(path);
+    if(k==4&&scenario==P_MISSING){errno=ENOENT;return -1;}
     if(k!=1){
         if(scenario==IO_ERROR){errno=EIO;return -1;}
         if(scenario==PARTIAL||scenario==PARTIAL_DENIED){if(k==2){errno=ENOENT;return -1;}if(scenario==PARTIAL_DENIED){errno=EACCES;return -1;}}
         if(scenario==PLAY_WAIT&&sleeps<2){errno=EACCES;return -1;}
-        if(scenario!=PLAY&&scenario!=PLAY_WAIT&&scenario!=WRONG_MODE&&scenario!=PARTIAL&&scenario!=PARTIAL_DENIED){
+        if((scenario<100&&scenario!=PLAY&&scenario!=PLAY_WAIT&&scenario!=WRONG_MODE&&scenario!=PARTIAL&&scenario!=PARTIAL_DENIED)||scenario==P_HOME){
             if(!claimed||scenario==NEVER_PUBLISHED){errno=ENOENT;return -1;}
             if(sleeps<2){errno=k==3||sleeps?EACCES:ENOENT;return -1;}
         }
@@ -45,13 +49,15 @@ static int fake_open(const char *path,int flags,...){
 static int fake_stat(int fd,struct stat *st){
     CHECK(fd>0&&fd<128&&fd_live[fd]);unsigned k=fd_kind[fd];*st={};st->st_dev=7;st->st_ino=k+(changed&&k==1?100:0);st->st_nlink=1;st->st_uid=20;
     st->st_mode=S_IFREG|((k==1||scenario==WRONG_MODE)?0644:0600);
-    st->st_size=(off_t)(k==1?sizeof map_bytes-1:k==2?selection_size:sizeof share_bytes-1);st->st_mtim.tv_sec=10;st->st_ctim.tv_sec=11;return 0;
+    st->st_size=(off_t)(k==1?sizeof map_bytes-1:k==2?selection_size:k==3?sizeof share_bytes-1:sizeof projection_bytes-1);
+    if(k==4){if(scenario==P_MODE)st->st_mode=S_IFREG|0644;if(scenario==P_LARGE)st->st_size=BW_READER_PROJECTION_LIMIT+1u;if(scenario==P_CHANGED&&admitted)st->st_ino++;}
+    st->st_mtim.tv_sec=10;st->st_ctim.tv_sec=11;return 0;
 }
 static ssize_t fake_pread(int fd,void *out,size_t size,off_t at){
-    CHECK(fd>0&&fd<128&&fd_live[fd]&&at==0);unsigned k=fd_kind[fd];const void *body=k==1?(const void*)map_bytes:k==2?(const void*)selection_bytes:(const void*)share_bytes;
-    size_t expected=k==1?sizeof map_bytes-1:k==2?selection_size:sizeof share_bytes-1;CHECK(size==expected);std::memcpy(out,body,size);return (ssize_t)size;
+    CHECK(fd>0&&fd<128&&fd_live[fd]&&at==0);unsigned k=fd_kind[fd];const void *body=k==1?(const void*)map_bytes:k==2?(const void*)selection_bytes:k==3?(const void*)share_bytes:(const void*)projection_bytes;
+    size_t expected=k==1?sizeof map_bytes-1:k==2?selection_size:k==3?sizeof share_bytes-1:sizeof projection_bytes-1;CHECK(size==expected);std::memcpy(out,body,size);return (ssize_t)size;
 }
-static int fake_close(int fd){CHECK(fd>0&&fd<128&&fd_live[fd]);fd_live[fd]=false;closed++;if(claimed&&fd_kind[fd]==1&&(scenario==INPUT_CLOSE_ERROR||(scenario==NAMED_CLOSE_ERROR&&closed==3))){errno=EIO;return -1;}return 0;}
+static int fake_close(int fd){CHECK(fd>0&&fd<128&&fd_live[fd]);fd_live[fd]=false;closed++;if((fd_kind[fd]==4&&scenario==P_CLOSE)||(claimed&&fd_kind[fd]==1&&(scenario==INPUT_CLOSE_ERROR||(scenario==NAMED_CLOSE_ERROR&&closed==3)))){errno=EIO;return -1;}return 0;}
 static int fake_clock_gettime(clockid_t which,struct timespec *st){CHECK(which==CLOCK_MONOTONIC);st->tv_sec=(time_t)(tick/1000000u);st->tv_nsec=(long)(tick%1000000u)*1000;return 0;}
 static int fake_usleep(useconds_t delay){CHECK(delay==20000);sleeps++;tick+=delay;return 0;}
 static pid_t fake_getpid(){return 234;}
@@ -86,6 +92,14 @@ extern "C" int bw_home_client_claim(int32_t pid,const uint8_t hash[32],uint64_t 
     std::memcpy(run,accepted_run,33);return 0;
 }
 static int bp_source_admit(bp_source **out,const void*,size_t,const void*,size_t,const void*,size_t,int(*guard)(void*),void *opaque){CHECK(!guard(opaque));admitted++;*out=&fixture_source;return 0;}
+/* DATA admission is a recording boundary here. Actual producer/codec/DATA
+ * bytes are qualified separately; this checks C++ Input4 forwarding/failure. */
+static int bp_source_admit_projection(bp_source **out,const void *map,size_t map_size,const void *selected,size_t selected_size,const void *share,size_t share_size,const void *projection,size_t projection_size,int(*guard)(void*),void *opaque){
+    CHECK(scenario>=100&&!guard(opaque));CHECK(map_size==sizeof map_bytes-1&&!std::memcmp(map,map_bytes,map_size));
+    CHECK(selected_size==selection_size&&!std::memcmp(selected,selection_bytes,selected_size));CHECK(share_size==sizeof share_bytes-1&&!std::memcmp(share,share_bytes,share_size));
+    CHECK(projection_size==sizeof projection_bytes-1&&!std::memcmp(projection,projection_bytes,projection_size));admitted++;
+    if(scenario==P_REFUSED)return -1;*out=&fixture_source;return 0;
+}
 extern "C" void bw_home_client_diagnostic(struct bw_home_client_failure *out){getters++;*out={BW_HC_NONCE,1,-1,EPERM,0};}
 static int bp_source_close(bp_source*){return 0;}
 #define clock_gettime fake_clock_gettime
@@ -106,6 +120,7 @@ static void reset(){
     struct bw_reader_selection selected{};std::strcpy(selected.source,"Fixture");std::strcpy(selected.title,"PPSA02325");
     std::memset(selected.binding_hex,'a',64);std::memset(selected.prepared_record_hex,'b',64);std::snprintf(selected.game,sizeof selected.game,"PPSA02325_%s",selected.binding_hex);
     std::strcpy(selected.run,scenario==WRONG_RUN?other_run:accepted_run);selected.source_kind=BW_PROVIDER_FOLDER;selected.source_policy=1;selected.eboot_size=32;selected.manifest_count=2;selected.manifest_hash=123;
+    if(scenario>=100){selected.prepared_policy=3;std::strcpy(selected.prepared_game,selected.game);std::memset(selected.provenance_hex,'c',64);}
     CHECK(!bw_reader_selection_serialize(&selected,selection_bytes,sizeof selection_bytes,&selection_size));
 }
 int main(){
@@ -128,5 +143,16 @@ int main(){
     scenario=HOME;reset();cases++;home_start.active=true;home_start.inputs_released=true;home_notice=fake_notice;home_exit=fake_exit;
     CHECK(bp_home_startup_failure(-1)==-1&&notifications==1&&!exits);
     home_start.inputs_released=false;CHECK(bp_home_startup_failure(0)==-1&&!exits);
-    std::printf("{\"passed\":true,\"cases\":%u,\"checks\":%u,\"actualRuntimeAdmission\":true,\"actualSelectionCodec\":true,\"nativeExitProved\":false}\n",cases,checks);return 0;
+    for(scenario=P_PLAY;scenario<=P_CHANGED;scenario++){
+        reset();cases++;bool result=bp_metadata_prepare();bool success=scenario==P_PLAY||scenario==P_HOME;
+        CHECK(result==success&&opened==closed);CHECK(home_start.active==(scenario==P_HOME));CHECK(claims==(scenario==P_HOME?1u:0u));
+        CHECK((admitted==1)==(success||scenario==P_REFUSED||scenario==P_CHANGED));
+        if(success)CHECK(metadata_ready.load()&&bp_metadata_prepare());
+        if(scenario==P_MISSING)CHECK(init_failure.input==4&&init_failure.operation==1&&init_failure.error==ENOENT&&!sleeps);
+        if(scenario==P_MODE||scenario==P_LARGE)CHECK(init_failure.input==4&&init_failure.operation==3);
+        if(scenario==P_CLOSE)CHECK(home_start.release_unknown&&init_failure.input==4&&init_failure.operation==10);
+        if(scenario==P_REFUSED)CHECK(init_failure.input==4&&init_failure.operation==13);
+        if(scenario==P_CHANGED)CHECK(init_failure.input==4&&init_failure.operation==9);
+    }
+    std::printf("{\"passed\":true,\"cases\":%u,\"checks\":%u,\"actualRuntimeAdmission\":true,\"actualSelectionCodec\":true,\"dataAdmissionBoundaryModeled\":true,\"nativeExitProved\":false}\n",cases,checks);return 0;
 }

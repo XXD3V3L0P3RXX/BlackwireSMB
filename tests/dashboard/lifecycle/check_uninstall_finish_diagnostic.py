@@ -22,7 +22,7 @@ def main():
  replace('from fixture_sdk import production_rows','import sys\nsys.path.insert(0,'+repr(str(HERE))+')\nfrom fixture_sdk import production_rows')
  replace('ROOT=Path(__file__).resolve().parents[3]','ROOT=Path('+repr(str(ROOT))+')')
  replace("if not out.is_relative_to(ROOT/'build/native-dashboard'):","if not out.is_relative_to(ROOT/'build'):")
- replace("    host += ['-DBW_NRC_HOST_MANUAL_STATUS_PATH='+json.dumps(str(status_fixture))]", "    host += ['-DBW_NRC_HOST_MANUAL_STATUS_PATH='+json.dumps(str(status_fixture)), '-DBW_SEND_LOG_PATH='+json.dumps(str(out/'finish.log'))]")
+ replace("    host += ['-DBW_NRC_HOST_MANUAL_STATUS_PATH='+json.dumps(str(status_fixture))]", "    host += ['-DBW_SEND_DIAGNOSTIC=1', '-DBW_NRC_HOST_MANUAL_STATUS_PATH='+json.dumps(str(status_fixture)), '-DBW_SEND_LOG_PATH='+json.dumps(str(out/'finish.log'))]")
  start=text.index("    scenarios=['send-only'");end=text.index('    if args.scenario:',start)
  text=text[:start]+"    scenarios=['runtime-busy','manual-no-effect','uninstall-no-effect','registered','send-only','scan-root']\n"+text[end:]
  original="            fixtures.fixture(area,fixture_kind);observations.append(json.loads(run('case-'+scenario,[binary,area,scenario]).splitlines()[-1]))"

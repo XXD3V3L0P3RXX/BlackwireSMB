@@ -34,4 +34,8 @@ void bw_source_snapshot_destroy(struct bw_source_snapshot *);
  * arbitrary invalid C pointers cannot be validated. A matching hash grants no
  * job/source capability and cannot admit a HOST stat witness as native memory. */
 int bw_source_snapshot_validate(const struct bw_source_snapshot *);
+/* Borrowed sealed metadata, INCLUDING directories/root and empty directories.
+ * Validates the complete seal before and after callbacks. Callback must not
+ * mutate/reenter; this data-only visit never establishes live SMB authority. */
+int bw_source_snapshot_visit(const struct bw_source_snapshot *,bw_source_visit_fn,void *);
 #endif

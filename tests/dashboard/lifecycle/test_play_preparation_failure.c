@@ -25,6 +25,7 @@ static char last_error[256];
 static unsigned final_admission_checks;
 static int late_startup_drift,late_settings_drift,admission_close_failure,cache_close_failure,workspace_pending,reader_error_mode,owned_failure,registration_close_failure,allow_locked_settings,begin_release_unknown,commit_release_unknown;
 #define CHECK(x) do{checks++;if(!(x)){fprintf(stderr,"fast routing case%u line%d: %s\n",cases,__LINE__,#x);exit(1);}}while(0)
+#include "source_ampr_admission_model.h"
 int bw_native_setup_generation_equal(const struct bw_setup_generation *a,const struct bw_setup_generation *b){return !memcmp(a,b,sizeof *a);}
 int bw_native_setup_idle(void *p){(void)p;return 0;}
 static int settings(void *p,struct bw_share_config *c,struct bw_setup_generation *g){CHECK(p==&owner);int locked=pthread_mutex_trylock(&owner.lock);CHECK(!locked||allow_locked_settings);if(!locked)CHECK(!pthread_mutex_unlock(&owner.lock));setting_calls++;memset(c,0,sizeof *c);*g=owner.playing.selection.connection;if(settings_changed)g->sha256[0]^=1;if(query_mutation)owner.setup_operation++;return settings_status;}
@@ -33,7 +34,7 @@ int bw_startup_idle_ps5(void *opaque){struct bw_startup_idle_request *q=opaque;C
 int bw_native_launch_admission_open(struct bw_native_launch_admission **p,const char *root,const struct bw_provider_binding *id,const struct bw_native_prepared *expected,const char *run,int (*guard)(void *),void *opaque,const char **error){
     CHECK(p&&!live&&!*p&&root&&id==&owner.playing.selection.identity&&expected==&owner.playing.selection.prepared&&run&&!guard(opaque));opened++;
     if(fail_open){*error="Required startup receipt changed; choose Send to repair it.";return -1;}
-    live=*p=(struct bw_native_launch_admission *)(uintptr_t)0x1234;return 0;
+    live=*p=(struct bw_native_launch_admission *)(uintptr_t)0x1234;ampr_model_open(live);return 0;
 }
 int bw_native_launch_admission_selection(struct bw_native_launch_admission *p,struct bw_reader_selection *out){CHECK(live&&p==live&&out);selected_calls++;*out=selection;return 0;}
 int bw_native_launch_admission_current(struct bw_native_launch_admission *p,const char *root,const struct bw_provider_binding *id,const struct bw_reader_selection *s,struct bw_native_prepared *out){

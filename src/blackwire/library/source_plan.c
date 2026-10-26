@@ -72,11 +72,31 @@ static int grow(void **memory,size_t *capacity,size_t need,size_t maximum) {
     while(next<need){if(next>maximum/2){next=maximum;break;}next*=2;}
     void *fresh=realloc(*memory,next);if(!fresh)return -1;*memory=fresh;*capacity=next;return 0;
 }
-int bw_source_plan_init(struct bw_source_plan *p,const char *game) {
+int bw_source_plan_init_policy(struct bw_source_plan *p,const char *game,enum bw_source_plan_policy policy) {
     if(!p)return -1;
     memset(p,0,sizeof *p);
+    if(policy!=BW_SOURCE_PLAN_LEGACY&&policy!=BW_SOURCE_PLAN_COMPANIONS_V1)return fail(p,"invalid_source_plan_policy");
     if(!game||!*game||strlen(game)>240||strchr(game,'/')||bw_manifest_validate_path(game,strlen(game)))return fail(p,"invalid_game_component");
-    memcpy(p->game,game,strlen(game)+1);return 0;
+    memcpy(p->game,game,strlen(game)+1);p->policy=policy;return 0;
+}
+int bw_source_plan_init(struct bw_source_plan *p,const char *game){return bw_source_plan_init_policy(p,game,BW_SOURCE_PLAN_LEGACY);}
+int bw_source_companion_path_namespace(const char *path){
+    if(!path)return -1;const char *slash=strchr(path,'/');size_t n=slash?(size_t)(slash-path):strlen(path);
+    if(n>255)return 0;char lower[256];lower_token(lower,path,n);unsigned ns=!strcmp(lower,"fakelib")?1u:!strcmp(lower,"fakelib2")?2u:0u;
+    if(!ns)return 0;const char *canonical=ns==1?"fakelib":"fakelib2";
+    return strlen(canonical)==n&&!memcmp(path,canonical,n)?(int)ns:-1;
+}
+int bw_source_plan_node(struct bw_source_plan *p,const char *path,int directory){
+    if(!p||p->error||p->sealed||!path||!p->game[0])return -1;
+    if(p->policy==BW_SOURCE_PLAN_LEGACY)return 0;
+    int ns=bw_source_companion_path_namespace(path);
+    if(ns<0)return fail(p,"source_companion_namespace_alias");
+    if(ns&&!strchr(path,'/')&&!directory)return fail(p,"source_companion_root_is_not_directory");
+    static const char *const reserved[]={"blackwire.companions","source.original.files","source.original.digests","blackwire-reader.selection","blackwire-reader.share","blackwire-reader.projection"};
+    for(const char *at=path;*at;){const char *end=strchr(at,'/');size_t n=end?(size_t)(end-at):strlen(at);
+        if(n<=255){char lower[256];lower_token(lower,at,n);if(member(lower,reserved,sizeof reserved/sizeof reserved[0]))return fail(p,"reserved_source_companion_material");}
+        if(!end)break;at=end+1;
+    }return 0;
 }
 static uint32_t classify(const char *path,uint64_t size,int *bootstrap) {
     static const char *const modules[]={".self",".prx",".sprx",".elf"};
@@ -98,10 +118,12 @@ int bw_source_plan_add(struct bw_source_plan *p,const char *path,uint64_t size,u
     if(bw_source_excluded(path))return 1;
     if(bw_manifest_validate_path(path,length)||sizeof("/data/blackwire/games/")-1+strlen(p->game)+1+length>=1024)return fail(p,"invalid_source_path");
     if(size>INT64_MAX||mtime>INT64_MAX)return fail(p,"invalid_source_metadata");
+    if(bw_source_plan_node(p,path,0))return -1;
     if(p->count>=BW_MANIFEST_MAX_FILES||length+1>BW_MANIFEST_MAX_PATH_BYTES-p->paths_size)return fail(p,"source_namespace_limit");
     if(grow((void **)&p->entries,&p->entries_capacity,((size_t)p->count+1)*sizeof *p->entries,BW_MANIFEST_MAX_FILES*sizeof *p->entries)||
         grow((void **)&p->paths,&p->paths_capacity,p->paths_size+length+1,BW_MANIFEST_MAX_PATH_BYTES))return fail(p,"planner_memory_limit");
     int bootstrap;uint32_t flags=classify(path,size,&bootstrap);(void)bootstrap;
+    if(p->policy==BW_SOURCE_PLAN_COMPANIONS_V1&&bw_source_companion_path_namespace(path)>0)flags=BW_MANIFEST_LOCAL;
     p->entries[p->count++]=(struct bw_source_entry){(uint32_t)p->paths_size,flags,size,mtime};
     memcpy(p->paths+p->paths_size,path,length+1);p->paths_size+=length+1;return 0;
 }

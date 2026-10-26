@@ -34,6 +34,7 @@ def main():
          HERE/'test_registration_cleanup_io.h']
     core=[LIB/name for name in ('native_registration_cleanup.c','native_registration.c',
         'registration_db.c','source_param.c','reader_selection.c','native_prepared_target.c')]+[STREAM/'manifest.c']
+    core += [HERE/'legacy_projection_boundary.c']
     all_sources=set(core+own+[ROOT/'vendor/sqlite/sqlite3.c'])
     # Record possible local header dependencies before compilation, and include
     # only actual compiler dependency inputs in the final proof.
@@ -90,6 +91,7 @@ def main():
         realRegistrationAndReadonlyDbHelpersLinked=True,pendingPersistsBeforeAtMostOneCallback=True,
         preexistingTitlesNeverAdopted=True,wholeDataResetInert=True,
         exactAfterExitRetirement=True,preparedSourceAndSavesPreserved=True,
+        policy0Only=True,projectedBranchesAbortIfCalled=True,projectedAuthorityQualified=False,
         releaseAndEffectiveScanRootsModeled=True,automaticApiRetry=False,
         limitations=['No console execution or actual uninstall has been performed.',
             'Current and source-collector callbacks must own the shared resident mutation reservation.',

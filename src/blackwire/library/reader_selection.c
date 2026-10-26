@@ -116,15 +116,61 @@ static int rsel_derived_bytes(const struct bw_reader_selection *s,char out[BW_RE
 }
 int bw_reader_selection_is_derived(const struct bw_reader_selection *s){return s&&s->prepared_policy==1;}
 int bw_reader_selection_is_batch(const struct bw_reader_selection *s){return s&&s->prepared_policy==2;}
+int bw_reader_selection_is_projection(const struct bw_reader_selection *s){return s&&s->prepared_policy==3;}
+static int rsel_projection_bytes(const struct bw_reader_selection *s,char out[BW_READER_SELECTION_BYTES+1],size_t *size){
+    if(!s||s->prepared_policy!=3||!memchr(s->prepared_game,0,sizeof s->prepared_game)||
+       !memchr(s->provenance_hex,0,sizeof s->provenance_hex)||rsel_hex(s->provenance_hex,64)||
+       !rsel_nonzero(s->provenance_hex,64)||!memchr(s->prepared_record_hex,0,sizeof s->prepared_record_hex)||
+       rsel_hex(s->prepared_record_hex,64)||!rsel_nonzero(s->prepared_record_hex,64))return -1;
+    struct bw_reader_selection legacy=*s;legacy.prepared_policy=0;
+    memset(legacy.prepared_game,0,sizeof legacy.prepared_game);memset(legacy.provenance_hex,0,sizeof legacy.provenance_hex);
+    char common[BW_READER_SELECTION_BYTES+1];size_t n=0;
+    if(rsel_legacy_serialize(&legacy,common,sizeof common,&n)||strcmp(s->prepared_game,s->game))return -1;
+    if(s->source_kind==BW_PROVIDER_CONTAINER){
+        char *kind=strstr(common,"\nsource_kind=");if(!kind)return -1;kind[1]=0;
+    }
+    int wrote=snprintf(out,BW_READER_SELECTION_BYTES+1,
+        "version=8\n%ssource_kind=%u\nsource_policy=1\nprepared_policy=3\nprepared_game=%s\nprovenance_sha256=%s\n",
+        common+10,s->source_kind,s->prepared_game,s->provenance_hex);
+    if(wrote<=0||(size_t)wrote>BW_READER_SELECTION_BYTES)return -1;*size=(size_t)wrote;return 0;
+}
+static int rsel_projection_parse(struct bw_reader_selection *out,const void *input,size_t size){
+    if(!input||size<10||size>BW_READER_SELECTION_BYTES||memchr(input,0,size)||((const char *)input)[size-1]!='\n')return -1;
+    char text[BW_READER_SELECTION_BYTES+1];memcpy(text,input,size);text[size]=0;
+    const char *keys[]={"version","run_id","title_id","game","eboot_size","manifest_count","manifest_hash","source","source_binding","prepared_record","source_kind","source_policy","prepared_policy","prepared_game","provenance_sha256"};
+    char *values[15],*at=text;size_t common_end=0;
+    for(unsigned i=0;i<15;i++){
+        char *end=strchr(at,'\n');if(!end)return -1;*end=0;size_t n=strlen(keys[i]);
+        if(strncmp(at,keys[i],n)||at[n]!='=')return -1;values[i]=at+n+1;
+        if(i==9)common_end=(size_t)(end-text)+1;at=end+1;
+    }
+    if(at!=text+size||strcmp(values[0],"8")||(strcmp(values[10],"1")&&strcmp(values[10],"2"))||
+       strcmp(values[11],"1")||strcmp(values[12],"3"))return -1;
+    char legacy[BW_READER_SELECTION_BYTES+1];memcpy(legacy,input,common_end);size_t legacy_size=common_end;
+    legacy[8]=!strcmp(values[10],"1")?'4':'5';
+    if(legacy[8]=='5'){
+        static const char fields[]="source_kind=2\nsource_policy=1\n";
+        if(sizeof fields-1>sizeof legacy-legacy_size)return -1;
+        memcpy(legacy+legacy_size,fields,sizeof fields-1);legacy_size+=sizeof fields-1;
+    }
+    struct bw_reader_selection next;
+    if(rsel_legacy_parse(&next,legacy,legacy_size)||rsel_copy(next.prepared_game,sizeof next.prepared_game,values[13])||
+       rsel_copy(next.provenance_hex,sizeof next.provenance_hex,values[14]))return -1;next.prepared_policy=3;
+    char canonical[BW_READER_SELECTION_BYTES+1];size_t n=0;
+    if(rsel_projection_bytes(&next,canonical,&n)||n!=size||memcmp(canonical,input,size))return -1;
+    *out=next;return 0;
+}
 int bw_reader_selection_serialize(const struct bw_reader_selection *s,void *out,size_t capacity,size_t *size){
     if(size)*size=0;if(out&&capacity)memset(out,0,capacity);
     if(!s||!out||!capacity||!size)return -1;
     if(!s->prepared_policy){if(s->prepared_game[0]||s->provenance_hex[0])return -1;return rsel_legacy_serialize(s,out,capacity,size);}
-    char bytes[BW_READER_SELECTION_BYTES+1];size_t n=0;if(rsel_derived_bytes(s,bytes,&n)||n>=capacity)return -1;
+    char bytes[BW_READER_SELECTION_BYTES+1];size_t n=0;
+    if((s->prepared_policy==3?rsel_projection_bytes(s,bytes,&n):rsel_derived_bytes(s,bytes,&n))||n>=capacity)return -1;
     memcpy(out,bytes,n+1);*size=n;return 0;
 }
 int bw_reader_selection_parse(struct bw_reader_selection *out,const void *input,size_t size){
     if(!out)return -1;memset(out,0,sizeof *out);
+    if(input&&size>=10&&!memcmp(input,"version=8\n",10))return rsel_projection_parse(out,input,size);
     if(!input||size<10||(memcmp(input,"version=6\n",10)&&memcmp(input,"version=7\n",10)))return rsel_legacy_parse(out,input,size);
     const unsigned policy=((const char *)input)[8]=='6'?1u:2u;
     if(size>BW_READER_SELECTION_BYTES||memchr(input,0,size)||((const char *)input)[size-1]!='\n')return -1;

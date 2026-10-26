@@ -12,6 +12,7 @@
 #include "native_registration.h"
 #include "registration_param_compat.h"
 #include "source_param.h"
+#include "source_companions.h"
 #include "send_diagnostic.h"
 #include "../streamreader/copy_fs.h"
 #include "../streamreader/copy_sha256.h"
@@ -51,11 +52,12 @@ static int gur_current(void *opaque){
     if(f&&(memcmp(&f->identity,&r->identity,sizeof r->identity)||memcmp(&f->prepared,&r->prepared,sizeof r->prepared)||
        strcmp(f->operation,r->operation)||strcmp(f->confirmed_title,r->confirmed_title)||
        strcmp(f->environment.data_root,p->paths[0])||strcmp(f->environment.apps_root,p->paths[1])||strcmp(f->environment.database,p->paths[2])||
-       f->reader_size!=r->reader_size||memcmp(f->reader_sha256,r->reader_sha256,32)))return -1;
+       f->reader_size!=r->reader_size||memcmp(f->reader_sha256,r->reader_sha256,32)||f->legacy_source_fakelib2!=r->legacy_source_fakelib2))return -1;
     return !p->outer.current||p->outer.current(p->outer.opaque)||memcmp(&a->identity,&r->identity,sizeof r->identity)||
         memcmp(a->prepared.record_sha256,r->prepared.record_sha256,32)||strcmp(a->prepared.run,r->prepared.run)||
         strcmp(a->operation,r->operation)||strcmp(a->confirmed_title,r->confirmed_title)||
-        strcmp(a->environment.data_root,p->paths[0])||strcmp(a->environment.apps_root,p->paths[1])||strcmp(a->environment.database,p->paths[2])?-1:0;
+        strcmp(a->environment.data_root,p->paths[0])||strcmp(a->environment.apps_root,p->paths[1])||strcmp(a->environment.database,p->paths[2])||
+        a->reader_size!=r->reader_size||memcmp(a->reader_sha256,r->reader_sha256,32)||a->legacy_source_fakelib2!=r->legacy_source_fakelib2?-1:0;
 }
 static int gur_node(const struct stat *a,const struct stat *b){return a->st_dev==b->st_dev&&a->st_ino==b->st_ino&&a->st_mode==b->st_mode&&a->st_uid==b->st_uid&&a->st_gid==b->st_gid;}
 static int gur_same(const struct stat *a,const struct stat *b){return gur_node(a,b)&&a->st_nlink==b->st_nlink&&a->st_size==b->st_size&&
@@ -139,6 +141,13 @@ static int gur_bind(struct gur *p,const struct bw_removed_source *s){
         p->selection.eboot_size=(uint64_t)boot.st_size;
         for(unsigned i=0;i<4;i++)p->selection.manifest_count|=(uint32_t)head[16+i]<<(8*i);
         for(unsigned i=0;i<8;i++)p->selection.manifest_hash|=(uint64_t)head[32+i]<<(8*i);bad=0;
+    }
+    if(!bad&&p->request.prepared.prepared_policy==3){
+        const struct bw_native_prepared *prepared=&p->request.prepared;
+        if(!memchr(prepared->prepared_component,0,sizeof prepared->prepared_component)||strcmp(prepared->prepared_component,b->game)||
+           prepared->provenance_size<BW_COMPANION_HEADER_BYTES||prepared->provenance_size>BW_COMPANION_RECEIPT_LIMIT)bad=1;
+        else{p->selection.prepared_policy=3;strcpy(p->selection.prepared_game,b->game);
+            for(unsigned i=0;i<32;i++)snprintf(p->selection.provenance_hex+2*i,3,"%02x",prepared->provenance_sha256[i]);}
     }
     if(map>=0&&gur_release(p,map))bad=1;if(bad||gur_registration_owner_capture(p))return -1;
     enum bw_registration_state state=bw_native_registration_state(p->paths[0],p->paths[1],p->paths[2],&p->selection);
@@ -309,11 +318,11 @@ int bw_native_game_uninstall_normal(const struct bw_game_uninstall_request *q,ui
 int bw_native_game_uninstall_files_normal(const struct bw_game_uninstall_files_request *q,uint16_t port,struct bw_game_uninstall_result *out){
     if(!q){if(out)*out=(struct bw_game_uninstall_result){.phase=BW_GAME_REMOVE_UNKNOWN,.reason="file_only_adapter_request_unqualified"};return -1;}
     struct bw_game_uninstall_request common={.environment=q->environment,.identity=q->identity,.prepared=q->prepared,
-        .ops={.opaque=q->ops.opaque,.current=q->ops.current,.observe=q->ops.observe},.reader_size=q->reader_size};
+        .ops={.opaque=q->ops.opaque,.current=q->ops.current,.observe=q->ops.observe},.reader_size=q->reader_size,.legacy_source_fakelib2=q->legacy_source_fakelib2};
     memcpy(common.operation,q->operation,33);memcpy(common.confirmed_title,q->confirmed_title,10);memcpy(common.reader_sha256,q->reader_sha256,32);
     struct gur *p=gur_create(&common,q,port,out);if(!p)return -1;
     struct bw_game_uninstall_files_request next={.environment=p->request.environment,.identity=p->request.identity,
-        .prepared=p->request.prepared,.ops={.opaque=p,.current=gur_current,.source_excluded=gur_excluded,.observe=gur_observe},.reader_size=p->request.reader_size};
+        .prepared=p->request.prepared,.ops={.opaque=p,.current=gur_current,.source_excluded=gur_excluded,.observe=gur_observe},.reader_size=p->request.reader_size,.legacy_source_fakelib2=p->request.legacy_source_fakelib2};
     memcpy(next.operation,p->request.operation,33);memcpy(next.confirmed_title,p->request.confirmed_title,10);memcpy(next.reader_sha256,p->request.reader_sha256,32);
     int rc=bw_native_game_uninstall_continue_files(&next,out);return gur_finish(p,rc,out);
 }

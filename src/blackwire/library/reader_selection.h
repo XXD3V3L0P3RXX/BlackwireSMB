@@ -6,7 +6,7 @@ struct bw_reader_selection {
     char source[BW_MANIFEST_MAX_PATH+1],game[75],title[10],run[33],binding_hex[65],prepared_record_hex[65];
     uint64_t eboot_size,manifest_hash;
     uint32_t manifest_count,source_kind,source_policy;
-    uint32_t prepared_policy; /* 0 legacy, 1 explicit derived v6, 2 packed batch v7 */
+    uint32_t prepared_policy; /* 0 legacy, 1 derived v6, 2 batch v7, 3 projection v8 */
     char prepared_game[75],provenance_hex[65];
 };
 /* Version 4 is strictly the unchanged folder wire format and parses to an
@@ -37,5 +37,14 @@ int bw_reader_selection_is_derived(const struct bw_reader_selection *);
  * source, material, startup-copy or reader admission. V6 is never reinterpreted.
  * The V1-specific helper above deliberately remains false for this policy. */
 int bw_reader_selection_is_batch(const struct bw_reader_selection *);
+
+/* Version8 preserves the ORIGINAL FOLDER/CONTAINER V1 identity and uses an
+ * explicitly sealed companion projection. prepared_game must equal game;
+ * provenance_hex is the full companion-receipt SHA, not a freshness token.
+ * Parsing never qualifies that receipt or permits a generated LOCAL path to
+ * be treated as a remote file. Admission and reader DATA setup must separately
+ * verify the held physical tables, receipt and original source generation.
+ * Older wire versions and prepared policies retain their original meanings. */
+int bw_reader_selection_is_projection(const struct bw_reader_selection *);
 
 #endif

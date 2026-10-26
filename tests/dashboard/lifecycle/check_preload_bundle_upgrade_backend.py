@@ -20,7 +20,7 @@ def main():
     if not out.is_relative_to(ROOT/'build') or out.exists():raise ValueError('Use a fresh absent output below build/')
     out.mkdir(parents=True);commands=[];deps=[]
     fixture=HERE/'test_preload_bundle_upgrade_backend.c'
-    used={Path(__file__).resolve(),HERE/'check_preload_bundle_upgrade.py',HERE/'fixture_sdk.py',fixture}
+    used={Path(__file__).resolve(),HERE/'check_preload_bundle_upgrade.py',HERE/'fixture_sdk.py',HERE/'source_ampr_admission_model.h',fixture}
     possible=set(used)
     for directory in (ROOT/'src/blackwire',ROOT/'vendor/libsmb2/include',ROOT/'vendor/sqlite',ROOT/'vendor/ampr/third_party/lz4/lib'):
         possible.update(p.resolve() for p in directory.rglob('*') if p.is_file() and p.suffix in ('.c','.h','.S'))
@@ -45,7 +45,10 @@ def main():
         obj=out/(str(index)+'-'+path.stem+'.o');dep=obj.with_suffix('.d');deps.append(dep)
         # Only the upgrade function is a transport spy. Keep the actual
         # presentation-only workspace observer, with exact no-follow checks.
-        extra=['-Dbw_preload_bundle_upgrade_checked=fixture_unused_upgrade','-Dbw_preload_bundle_upgrade_controlled=fixture_unused_controlled_upgrade'] if path.name=='preload_bundle.c' else []
+        extra=['-D'+name+'=fixture_unused_'+name for name in (
+            'bw_preload_bundle_upgrade_checked','bw_preload_bundle_upgrade_controlled',
+            'bw_preload_bundle_upgrade_source_controlled','bw_preload_bundle_verify_source_checked',
+            'bw_preload_bundle_select_source_for_removal')] if path.name=='preload_bundle.c' else []
         run('compile-'+path.stem,[args.cc,*flags,*extra,'-MD','-MF',dep,'-c',path,'-o',obj]);objects.append(obj)
     # Backend function-address comparisons retain unreachable production
     # preparation paths. Keep the injected test independent of SMB/reader

@@ -6,10 +6,14 @@ INSTRUMENTED = frozenset((
 ))
 
 
-def commands(recipe_commands):
+def commands(recipe_commands, enabled=False):
+    if type(enabled) is not bool:
+        raise ValueError('Diagnostic timing selection must be an explicit boolean')
     rows = [{'label': row['label'], 'argv': list(row['argv'])} for row in recipe_commands]
     if any(row['label'] == 'compile-launch-timing' for row in rows):
         raise ValueError('Timing source was already added')
+    if not enabled:
+        return rows
     for row in rows:
         argv = row['argv']
         if '-c' not in argv:

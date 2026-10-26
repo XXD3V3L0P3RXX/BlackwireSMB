@@ -13,6 +13,64 @@ STARTUP_TRACE_FLAGS = ("-DBW_STARTUP_TRACE=1", "-DBW_STARTUP_TRACE_STDOUT_ONLY=1
 STARTUP_TRACE_MARKERS = (b"BW core-isolation-01 pid=", b"main.enter", b"net.init.before",
                          b"net.init.after", b"listen.before", b"backend.create.before",
                          b"resident.create.before", b"refresh.before", b"accept.loop")
+DIAGNOSTIC_MARKERS = (b"sendlog.1 t=", b"/data/blackwire/send-diagnostic.log", b"launch-timing context=")
+OPERATIONAL_MARKERS = (b"library start", b"listening 5918", b"page port unavailable; preserving the existing launcher")
+
+
+def macro_arguments(argv, names):
+    found = []
+    for index, argument in enumerate(argv):
+        if argument in ("-D", "-U") and index + 1 < len(argv):
+            macro = argv[index + 1]
+            candidate = argument + macro
+        elif argument.startswith(("-D", "-U")):
+            macro = argument[2:]
+            candidate = argument
+        else:
+            continue
+        if macro.split("=", 1)[0] in names:
+            found.append(candidate)
+    return found
+
+
+def diagnostic_build_proof(enabled, commands, artifact, package):
+    if type(enabled) is not bool:
+        raise ValueError("Diagnostic selection must be an explicit boolean")
+    if artifact != {"bytes": len(package), "sha256": hashlib.sha256(package).hexdigest()}:
+        raise ValueError("Diagnostic artifact pin differs from the inspected package")
+    compiled = [row for row in commands if "-c" in row["argv"]]
+    linked = [row for row in commands if "-o" in row["argv"] and
+              str(row["argv"][row["argv"].index("-o") + 1]).endswith("/blackwire-native.elf")]
+    if not compiled or len(linked) != 1:
+        raise ValueError("Actual diagnostic compilation/link commands are incomplete")
+    observations = []
+    for row in compiled:
+        argv = row["argv"]
+        source = str(argv[argv.index("-c") + 1]).replace("\\", "/").rsplit("/", 1)[-1]
+        timing = source in launch_timing.INSTRUMENTED or source == "launch_timing.c" or row["label"] in ("compile-reader", "compile-media-public-trial")
+        expected = (["-DBW_SEND_DIAGNOSTIC=1"] + (["-DBW_LAUNCH_TIMING=1"] if timing else [])) if enabled else []
+        actual = macro_arguments(argv, {"BW_SEND_DIAGNOSTIC", "BW_LAUNCH_TIMING"})
+        if sorted(actual) != sorted(expected) or any(argv.count(flag) != 1 for flag in expected):
+            raise ValueError("Actual diagnostic flags differ for " + row["label"])
+        if not enabled and macro_arguments(argv, {"BW_STARTUP_TRACE", "BW_STARTUP_TRACE_STDOUT_ONLY"}):
+            raise ValueError("Ordinary compilation contains private startup trace flags")
+        observations.append({"label": row["label"], "source": source, "flags": actual})
+    timing_objects = [arg for arg in linked[0]["argv"] if str(arg).replace("\\", "/").endswith("/objects/launch-timing.o")]
+    timing_units = [row for row in compiled if row["label"] == "compile-launch-timing"]
+    if len(timing_objects) != int(enabled) or len(timing_units) != int(enabled):
+        raise ValueError("Actual timing object inclusion differs from diagnostic selection")
+    presence = {marker.decode("ascii"): marker in package for marker in DIAGNOSTIC_MARKERS}
+    if enabled and not all(presence.values()):
+        raise ValueError("Diagnostic ELF is missing its selected logging/timing implementation")
+    if not enabled and (any(presence.values()) or any(marker in package for marker in STARTUP_TRACE_MARKERS)):
+        raise ValueError("Ordinary ELF contains private diagnostic instrumentation")
+    operational_presence = {marker.decode("ascii"): marker in package for marker in OPERATIONAL_MARKERS}
+    if not all(operational_presence.values()):
+        raise ValueError("Packaged ELF is missing its ordinary startup/error logging")
+    return {"enabled": enabled, "artifact": artifact, "compileCommands": observations,
+            "timingObjectIncluded": bool(timing_objects), "markerPresence": presence,
+            "privateInstrumentationAbsent": not enabled, "consoleActions": 0,
+            "ordinaryOperationalMarkerPresence": operational_presence, "provesRuntimeExecution": False}
 
 
 def startup_trace_flags(enabled, stdout_only=True):
@@ -28,18 +86,7 @@ def startup_trace_proof(enabled, main_argv, artifact, package, stdout_only=True)
         raise ValueError("Startup trace artifact pin differs from the inspected package")
     actual = list(main_argv)
     trace_names = {flag[2:].split("=", 1)[0] for flag in STARTUP_TRACE_FLAGS}
-    trace_arguments = []
-    for index, argument in enumerate(actual):
-        if argument in ("-D", "-U") and index + 1 < len(actual):
-            macro = actual[index + 1]
-            candidate = argument + macro
-        elif argument.startswith(("-D", "-U")):
-            macro = argument[2:]
-            candidate = argument
-        else:
-            continue
-        if macro.split("=", 1)[0] in trace_names:
-            trace_arguments.append(candidate)
+    trace_arguments = macro_arguments(actual, trace_names)
     if enabled and (sorted(trace_arguments) != sorted(flags) or
                     any(actual.count(flag) != 1 for flag in flags)):
         raise ValueError("Actual main command does not enable the exact selected startup trace")
@@ -58,12 +105,16 @@ def startup_trace_proof(enabled, main_argv, artifact, package, stdout_only=True)
             "bestEffort": True, "provesRuntimeExecution": False, "consoleActions": 0}
 
 
-def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, allow_source_changes=False, runtime=None, startup_trace_stdout=False, startup_trace_file=False):
+def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, allow_source_changes=False, runtime=None, startup_trace_stdout=False, startup_trace_file=False, diagnostic=False):
     if type(startup_trace_stdout) is not bool or type(startup_trace_file) is not bool:
         raise ValueError("Startup trace selections must be explicit booleans")
     if startup_trace_stdout and startup_trace_file:
         raise ValueError("Select only one startup trace mode")
+    if type(diagnostic) is not bool:
+        raise ValueError("Diagnostic selection must be an explicit boolean")
     startup_trace_enabled = startup_trace_stdout or startup_trace_file
+    if startup_trace_enabled and not diagnostic:
+        raise ValueError("Startup trace requires an explicitly selected diagnostic build")
     selected_trace_flags = startup_trace_flags(startup_trace_enabled, not startup_trace_file)
     # A previous build's objects or an unpinned runtime are never a fallback.
     source_identity = sdk_runtime.source_lineage(root, out, runtime)
@@ -80,7 +131,7 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
               '    "' + source_identity + '",10000u', "};", ""]
     (embedded / "preload-image.c").write_text("\n".join(lines), encoding="ascii")
     recipe = json.loads((root / "tools/build/app-recipe.json").read_text())
-    commands = launch_timing.commands(recipe["commands"])
+    commands = launch_timing.commands(recipe["commands"], enabled=diagnostic)
     for row in commands:
         argv = row["argv"]
         # Preserve the accepted standalone Media path in the resident entry.
@@ -125,14 +176,14 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
         target = "{OUT}/objects/preload-" + name + ".o"
         additional.append({"label": "compile-preload-" + name, "argv": [
             "{SDK}/bin/prospero-clang", "-std=gnu11", "-Wall", "-Wextra", "-Werror", "-g",
-            "-DBW_GTA_AUDIO_BOOTSTRAP=1", *(["-DBW_LAUNCH_TIMING=1"] if name == "launch" else []),
+            "-DBW_GTA_AUDIO_BOOTSTRAP=1", *(["-DBW_LAUNCH_TIMING=1"] if name == "launch" and diagnostic else []),
             *source_flags(root, sdk), "-I", "{SRC}/streamreader", "-I", "{SRC}/library",
             "-I", "{SDK}/target/user/homebrew/include", "-c", source, "-o", target,
             "-MD", "-MP", "-MF", "{OUT}/deps/preload-" + name + ".d"]})
         objects.append(target)
-    # The ordinary home-startup broker is part of the web resident. Its
-    # three new objects are always compiled; no native cover app is included.
-    for name in ("home_protocol", "home_session", "home_identity_ps5"):
+    # The home-startup broker and source-companion codecs are part of the web
+    # resident. These objects are always compiled; no native cover app is included.
+    for name in ("home_protocol", "home_session", "home_identity_ps5", "source_companions", "reader_projection", "source_namespace"):
         target = "{OUT}/objects/" + name + ".o"
         additional.append({"label": "compile-" + name.replace("_", "-"), "argv": [
             "{SDK}/bin/prospero-clang", "-std=gnu11", "-Wall", "-Wextra", "-Werror",
@@ -182,8 +233,11 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
     (out / "deps").mkdir()
     runtime_link = None
     main_argv = None
+    actual_commands = []
     for row in commands:
         argv = [expand(value) for value in row["argv"]]
+        if "-c" in argv and diagnostic:
+            argv.insert(1, "-DBW_SEND_DIAGNOSTIC=1")
         if row["label"] == "compile-00":
             argv.insert(1, '-DBW_RESIDENT_BUILD_ID="blackwire-v0.3.0-beta.3"')
             argv[1:1] = selected_trace_flags
@@ -192,6 +246,7 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
             argv = sdk_runtime.link_arguments(root, out, argv, runtime)
         if "-o" in argv:
             Path(argv[argv.index("-o") + 1]).parent.mkdir(parents=True, exist_ok=True)
+        actual_commands.append({"label": row["label"], "argv": list(argv)})
         trace = runner.run(argv, "app-" + row["label"], row.get("cwd") or root / "src/blackwire/library")
         if row is link:
             runtime_link = sdk_runtime.verify_link_trace(root, out, trace, runtime)
@@ -214,6 +269,7 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
     if main_argv is None:
         raise ValueError("Actual resident main compile command is missing")
     save(out/"startup-trace.json", startup_trace_proof(startup_trace_enabled, main_argv, image_pin, packed, stdout_only=not startup_trace_file))
+    save(out/"diagnostic-build.json", diagnostic_build_proof(diagnostic, actual_commands, image_pin, packed))
     save(out/"embedding.json",{"reader":pin(image),"sourceManifestSha256":source_identity,
         "generatedC":pin(embedded/"preload-image.c"),"folderOnly":False,"standaloneWeb":True,
         "sourceRuntime":{"receipt":runtime["receiptPin"],"link":runtime_link},"nativeFrontendIncluded":False,

@@ -283,13 +283,20 @@ int bw_reader_preflight_run(const struct bw_reader_preflight *p,struct bw_native
         struct bw_provider_binding identity;struct bw_reader_data_admission admission={0};
         const char *failure="The verified startup launch no longer matches its selected receipt; choose Send to repair it.";
         if(!p->data_current||!p->data_epoch||p->data_current(p->data_opaque)||
-           (p->selected->source_kind!=BW_PROVIDER_FOLDER&&p->selected->source_kind!=BW_PROVIDER_CONTAINER)||p->selected->prepared_policy||
-           p->selected->prepared_game[0]||p->selected->provenance_hex[0]||
+           (p->selected->source_kind!=BW_PROVIDER_FOLDER&&p->selected->source_kind!=BW_PROVIDER_CONTAINER)||
+           (p->selected->prepared_policy&&!bw_reader_selection_is_projection(p->selected))||
+           (!bw_reader_selection_is_projection(p->selected)&&(p->selected->prepared_game[0]||p->selected->provenance_hex[0]))||
            bw_provider_binding_init(&identity,p->connection,p->selected->source,p->selected->title,(enum bw_provider_kind)p->selected->source_kind)||
            bw_native_launch_admission_current(p->startup,p->data_root,&identity,p->selected,out)||
            bw_native_launch_admission_source(p->startup,p->connection,p->source,p->selected,admission.map_sha256,admission.generation_sha256,&failure)||
            p->current(p->opaque)||bw_native_launch_admission_current(p->startup,p->data_root,&identity,p->selected,out)){
             memset(out,0,sizeof *out);out->state=BW_PREPARED_UNKNOWN;if(p->error)*p->error=failure;return -1;
+        }
+        if(bw_reader_selection_is_projection(p->selected)){
+            const struct bw_preload_companions *companions=NULL;
+            if(bw_native_launch_admission_companions(p->startup,&companions)){
+                memset(out,0,sizeof *out);out->state=BW_PREPARED_UNKNOWN;if(p->error)*p->error="The held projected source evidence changed before DATA admission.";return -1;
+            }
         }
         admission.identity=identity;admission.valid=1;if(p->data_admission)*p->data_admission=admission;
         if(p->error)*p->error=NULL;return 0;

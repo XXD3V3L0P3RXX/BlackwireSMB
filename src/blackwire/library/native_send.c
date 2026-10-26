@@ -17,12 +17,15 @@ static int cp_status(const struct cp_plan *,int,const char *,const char *) __att
 #endif
 #include "native_prepare_ops.c"
 #include "native_send.h"
+#include "native_launch_admission.h"
 #include "native_json.h"
 #include <pthread.h>
 #include <sys/file.h>
 #define NS_RECORD_SIZE 384u
 static pthread_mutex_t ns_mutex=PTHREAD_MUTEX_INITIALIZER;
 static const char ns_scope[]="Blackwire native preparations v1\n";
+struct ns_companion_state;
+static int ns_companion_state_current(struct ns_companion_state *);
 struct ns_operation {
     const struct bw_native_send_files *request;
     struct prepare_v2 base_anchor,state_anchor;
@@ -30,6 +33,8 @@ struct ns_operation {
     struct stat source_identity;
     bw_source_observer_fn observe;
     void *observe_opaque;
+    unsigned projection_requested;
+    struct ns_companion_state *companions;
 };
 static int ns_same(const struct stat *a,const struct stat *b){return cp_measure_same(a,b)&&S_ISREG(b->st_mode)&&b->st_nlink==1;}
 static int ns_nonce(const char *value){
@@ -120,6 +125,7 @@ static int ns_current(void *opaque){
     if(!p->request->current||p->request->current(p->request->opaque)||ns_games_stopped(ns_log_path)||!v2_root_current(&p->base_anchor,p->base))return -1;
     if(p->state>=0&&!v2_root_current(&p->state_anchor,p->state))return -1;
     if(p->source_file>=0){struct stat held,named;if(fstat(p->source_file,&held)||cp_fstatat(p->state,"source.json",&named,AT_SYMLINK_NOFOLLOW)||!ns_same(&p->source_identity,&held)||!ns_same(&held,&named))return -1;}
+    if(p->companions&&ns_companion_state_current(p->companions))return -1;
     return 0;
 }
 static void ns_observe(void *opaque,const struct bw_source_progress *progress){
@@ -150,6 +156,7 @@ static void ns_result(const uint8_t record[NS_RECORD_SIZE],const struct bw_sourc
     result->local_count=cp_u32(record+272);result->stream_count=cp_u32(record+276);result->bytes_verified=verified;
     cp_sha_bytes(record,NS_RECORD_SIZE,result->record_sha256);
 }
+#include "native_companion_state.c"
 static int ns_publish(struct ns_operation *operation,const struct cp_plan *plan,const uint8_t record[NS_RECORD_SIZE],int *published){
     const char *leaf="prepared.bin";char temp[96],backup[96];void *prior=NULL;size_t prior_size=0;struct stat before,after;int fd=-1,final=-1,result=BW_SEND_FAILED;
     *published=0;int loaded=ns_read(operation->state,leaf,NS_RECORD_SIZE,&prior,&prior_size,&before);
@@ -239,13 +246,18 @@ int bw_native_send_files(const struct bw_native_send_files *request,struct bw_na
     struct bw_source_smb *source=request->provider->source;
     const struct bw_provider_binding *identity=&request->provider->identity;
     const struct bw_source_binding *binding=&identity->binding;
-    const struct bw_provider_bundle *bundle=&request->provider->bundle;
+    const struct bw_provider_bundle *original_bundle=&request->provider->bundle,*bundle=original_bundle;
+    struct bw_provider_bundle physical={0};struct bw_companion_projection *projection=NULL;struct bw_source_companion_namespace *source_namespace=NULL;
     struct ns_operation operation={.request=request,.base=-1,.state=-1,.source_file=-1};struct cp_plan plan={0};struct bw_json identity_json={.maximum=4096};
     struct np_context copy={.plan=&plan,.source=source,.bundle=bundle,.provider=request->provider,.selection_current=ns_current,.selection=&operation};
     struct ns_upgrade upgrade=NS_UPGRADE_INIT;
     plan.deadline=source->deadline;
     if(ns_paths(request->data_root,binding,state_path)||!bundle->ready||bw_source_provider_current(request->provider)||strcmp(bundle->source,binding->source)||
         strcmp(bundle->game,binding->game)||strcmp(bundle->title,binding->title)||ns_provider_json(identity,&identity_json))goto done;
+    if(bundle->plan_policy==BW_SOURCE_PLAN_COMPANIONS_V1){struct bw_source_namespace_view namespaces;
+        if(bw_source_provider_companion_namespace(request->provider,&source_namespace,NULL)||bw_source_companion_namespace_view(source_namespace,&namespaces))goto done;
+        operation.projection_requested=namespaces.presence_flags!=0;
+    }else if(bundle->plan_policy!=BW_SOURCE_PLAN_LEGACY)goto done;
     ns_state_path=state_path;ns_log_path=request->game_log;operation.base=ns_root(request->data_root,&operation.base_anchor);
     if(operation.base<0||ns_current(&operation)||cp_games_stopped(ns_log_path))goto done;
     cp_io_guard=ns_current;cp_io_opaque=&operation;
@@ -267,6 +279,31 @@ int bw_native_send_files(const struct bw_native_send_files *request,struct bw_na
     root=ns_directory(ns_games_path,games,binding->game,1,&created);if(root<0)goto done;
     if(created){if(cp_blob(&plan.cfg,root,"blackwire.generation.owner",identity_json.bytes,identity_json.used,plan.cfg.run_id,plan.deadline))goto done;}
     else if(ns_exact(root,"blackwire.generation.owner",identity_json.bytes,identity_json.used))goto done;
+    if(operation.projection_requested){struct stat game_id,state_id;struct bw_source_namespace_view namespaces;
+        if(fstat(root,&game_id)||fstat(operation.state,&state_id)||bw_source_companion_namespace_matches(source_namespace,request->provider)||
+           bw_source_companion_namespace_view(source_namespace,&namespaces))goto done;
+        struct bw_companion_binding admitted={.provider=identity,.prepare_run=plan.cfg.run_id,.source_generation_sha256=original_bundle->generation_sha256,
+            .roots={(uint64_t)game_id.st_dev,(uint64_t)game_id.st_ino,(uint64_t)state_id.st_dev,(uint64_t)state_id.st_ino}};
+        struct bw_companion_source_tables original={original_bundle->map.bytes,original_bundle->map.size,original_bundle->digests,original_bundle->digest_size};
+        if(bw_companion_projection_create(&projection,&admitted,&original,namespaces.presence_flags,NULL))goto done;
+        struct bw_companion_tables tables;if(bw_companion_projection_tables(projection,&tables))goto done;
+        physical=*original_bundle;physical.map=(struct bw_source_map){.bytes=(uint8_t *)tables.map,.size=tables.map_size,.local_bytes=tables.local_bytes,
+            .remote_bytes=tables.remote_bytes,.local_count=tables.local_count,.stream_count=tables.stream_count};physical.digests=tables.digests;physical.digest_size=tables.digest_size;
+        struct bw_manifest physical_map;if(bw_manifest_open(&physical_map,tables.map,tables.map_size))goto done;
+        uint64_t boot=0;for(uint32_t i=0;i<physical_map.count;i++){struct bw_manifest_record row;if(bw_manifest_get(&physical_map,i,&row))goto done;if(!strcmp(row.path,"eboot.bin"))boot=row.size;}
+        int n=snprintf(physical.selection,sizeof physical.selection,"version=2\nrun_id=%s\ntitle_id=%s\ngame=%s\neboot_size=%"PRIu64"\nmanifest_count=%u\nmanifest_hash=%016"PRIx64"\n",
+            plan.cfg.run_id,binding->title,binding->game,boot,physical_map.count,physical_map.checksum);
+        if(n<0||(size_t)n>=sizeof physical.selection)goto done;
+        np_active=NULL;memset(&plan,0,sizeof plan);plan.deadline=source->deadline;bundle=&physical;copy.bundle=bundle;copy.projection=projection;copy.source_namespace=source_namespace;
+        if(np_select(&copy))goto done;const char *profile_error=NULL;
+        if(bw_native_launch_admission_budget(plan.map,plan.map_size,1,&profile_error)){if(!source->error)source->error=profile_error;v2_fail(profile_error?profile_error:"The projection exceeds the current reader profile limit.");goto done;}
+        if(ns_current(&operation)||bw_source_companion_namespace_matches(source_namespace,request->provider))goto done;
+        if(us_file(operation.state,BW_COMPANION_ORIGINAL_MAP_NAME,original.map,original.map_size)||
+           us_file(operation.state,BW_COMPANION_ORIGINAL_DIGEST_NAME,original.digests,original.digest_size)){
+            const char *failed="The original companion source tables could not be exclusively written and verified.";
+            if(!source->error)source->error=failed;v2_fail(failed);goto done;
+        }
+    }
     uint8_t digest_hash[32];cp_sha_bytes(bundle->digests,bundle->digest_size,digest_hash);
     if(ns_current(&operation)||cp_existing(&plan.cfg,root,root,"","blackwire.generation.digests",bundle->digest_size,digest_hash)<0||cp_preflight(&plan,root)||ns_streams_empty(&plan,root,1)||
         cp_blob(&plan.cfg,root,"blackwire.generation.digests",bundle->digests,bundle->digest_size,plan.cfg.run_id,plan.deadline))goto done;
@@ -285,14 +322,18 @@ int bw_native_send_files(const struct bw_native_send_files *request,struct bw_na
     np_put32(record+272,bundle->map.local_count);np_put32(record+276,bundle->map.stream_count);np_put64(record+280,bundle->map.size);np_put64(record+288,bundle->digest_size);np_put64(record+296,plan.index_size);
     np_put64(record+304,(uint64_t)game_stat.st_dev);np_put64(record+312,(uint64_t)game_stat.st_ino);np_put64(record+320,(uint64_t)state_stat.st_dev);np_put64(record+328,(uint64_t)state_stat.st_ino);cp_sha_bytes(record,352,record+352);
     if(ns_record_valid(record,binding))goto done;
+    if(projection&&ns_companion_state_open(&operation.companions,identity,record,&plan,root,&plan.cfg,operation.state,&operation.state_anchor,request->current,request->opaque)!=1)goto done;
     if(upgrade.active&&ns_upgrade_admit(&operation,&upgrade))goto done;
     if(request->publication_current&&request->publication_current(request->opaque))goto done;
     outcome=ns_publish(&operation,&plan,record,&published);
     if(!outcome&&(np_generation(&copy)||ns_current(&operation)))outcome=BW_SEND_UNCONFIRMED;
-    if(!outcome)ns_result(record,binding,1,result);
+    if(!outcome){ns_result(record,binding,1,result);
+        if(projection&&ns_companion_state_result(operation.companions,result))outcome=BW_SEND_UNCONFIRMED;
+    }
 done:
     cp_io_guard=NULL;cp_io_opaque=NULL;np_active=NULL;free(identity_json.bytes);free(plan.index);
-    int closed=0;if(root>=0&&close(root))closed=1;if(games>=0&&close(games))closed=1;if(operation.source_file>=0&&close(operation.source_file))closed=1;
+    int closed=0;if(ns_companion_state_close(&operation.companions)){closed=1;outcome=BW_SEND_UNCONFIRMED;}
+    if(root>=0&&close(root))closed=1;if(games>=0&&close(games))closed=1;if(operation.source_file>=0&&close(operation.source_file))closed=1;
     if(operation.state>=0&&close(operation.state))closed=1;operation.state=-1;operation.source_file=-1;if(scope>=0&&close(scope))closed=1;
     if(closed&&upgrade.active)outcome=BW_SEND_UNCONFIRMED;
     if(!outcome&&upgrade.active&&ns_upgrade_finish(&operation,&upgrade,result))outcome=BW_SEND_UNCONFIRMED;
@@ -304,6 +345,7 @@ done:
     if(outcome){memset(result,0,sizeof *result);result->state=BW_PREPARED_UNKNOWN;bw_source_smb_progress(source,BW_SOURCE_ERROR,0,0,0,0);}
     else bw_source_smb_progress(source,BW_SOURCE_PREPARED,bundle->map.local_count+bundle->map.stream_count,bundle->map.local_count+bundle->map.stream_count,bundle->map.local_bytes,bundle->map.local_bytes);
     result->retirement=upgrade.state_code;result->retirement_error=upgrade.error;
+    bw_companion_projection_clear(&projection);bw_source_companion_namespace_close(&source_namespace);
     cp_io_guard=NULL;cp_io_opaque=NULL;cp_idle_guard=NULL;cp_idle_opaque=NULL;ns_state_path=NULL;ns_log_path=NULL;memset(ns_games_path,0,sizeof ns_games_path);pthread_mutex_unlock(&ns_mutex);return outcome;
 }
 static int ns_inspect_locked(const char *base,const struct bw_provider_binding *identity,const uint8_t *expected,
@@ -311,7 +353,7 @@ static int ns_inspect_locked(const char *base,const struct bw_provider_binding *
     if(!result)return -1;memset(result,0,sizeof *result);if(!base||!identity)return -1;
     const struct bw_source_binding *binding=&identity->binding;
     char state_path[2048],game_path[2048],scope_path[2048];struct prepare_v2 anchor={0},state_anchor={0},game_anchor={0},scope_anchor={0};int data=-1,state=-1,root=-1,scope=-1;void *record=NULL,*map=NULL,*digests=NULL,*index=NULL;size_t size=0;
-    struct bw_json identity_json={.maximum=4096};struct cp_plan plan={0};plan.deadline=cp_now()+300;result->state=BW_PREPARED_INVALID;
+    struct bw_json identity_json={.maximum=4096};struct cp_plan plan={0};struct ns_companion_state *companions=NULL;plan.deadline=cp_now()+300;result->state=BW_PREPARED_INVALID;
     cp_io_guard=current;cp_io_opaque=opaque;
     if(current&&current(opaque)){result->state=BW_PREPARED_UNKNOWN;goto done;}
     if(ns_paths(base,binding,state_path)||ns_provider_json(identity,&identity_json))goto done;
@@ -326,12 +368,9 @@ static int ns_inspect_locked(const char *base,const struct bw_provider_binding *
     const uint8_t *r=record;struct stat state_stat,game_stat;
     if(expected){uint8_t actual[32];cp_sha_bytes(record,NS_RECORD_SIZE,actual);if(memcmp(expected,actual,32))goto done;}
     if(source){
-        uint8_t map_hash[32],digest_hash[32];
         if(!source->bundle.ready||bw_source_provider_current(source)||!source->bundle.map.bytes||!source->bundle.digests||
             strcmp(source->bundle.source,binding->source)||strcmp(source->bundle.game,binding->game)||strcmp(source->bundle.title,binding->title)||
-            source->bundle.map.size!=cp_u64(r+280)||source->bundle.digest_size!=cp_u64(r+288)||memcmp(source->bundle.generation_sha256,r+80,32))goto done;
-        cp_sha_bytes(source->bundle.map.bytes,source->bundle.map.size,map_hash);cp_sha_bytes(source->bundle.digests,source->bundle.digest_size,digest_hash);
-        if(memcmp(map_hash,r+112,32)||memcmp(digest_hash,r+144,32))goto done;
+            memcmp(source->bundle.generation_sha256,r+80,32))goto done;
     }
     int n=snprintf(game_path,sizeof game_path,"%s/%s",ns_games_path,binding->game);if(n<0||(size_t)n>=sizeof game_path)goto done;
     if(fstat(state,&state_stat)||(uint64_t)state_stat.st_dev!=cp_u64(r+320)||(uint64_t)state_stat.st_ino!=cp_u64(r+328))goto done;
@@ -361,6 +400,16 @@ static int ns_inspect_locked(const char *base,const struct bw_provider_binding *
     for(uint32_t i=0;i<plan.manifest.count;i++){struct bw_manifest_record row;if(bw_manifest_get(&plan.manifest,i,&row))goto done;if(!strcmp(row.path,"eboot.bin"))plan.cfg.eboot_size=row.size;
         uint64_t *total=row.flags==BW_MANIFEST_LOCAL?&local:&remote;if(row.size>UINT64_C(9007199254740991)-*total)goto done;*total+=row.size;}
     if(cp_validate_map(&plan)||plan.local_count!=cp_u32(r+272)||local!=cp_u64(r+240)||remote!=cp_u64(r+248)||cp_index_rows(&plan,root)||ns_streams_empty(&plan,root,0))goto done;
+    int projection=ns_companion_state_open(&companions,identity,r,&plan,root,&game_anchor,state,&state_anchor,current,opaque);
+    if(projection<0){if(projection==-2)result->state=BW_PREPARED_UNKNOWN;goto done;}
+    if(source){
+        if(projection){if(ns_companion_state_provider(companions,source))goto done;}
+        else{uint8_t map_hash[32],digest_hash[32];
+            if(source->bundle.map.size!=plan.map_size||source->bundle.digest_size!=plan.digest_size)goto done;
+            cp_sha_bytes(source->bundle.map.bytes,source->bundle.map.size,map_hash);cp_sha_bytes(source->bundle.digests,source->bundle.digest_size,digest_hash);
+            if(memcmp(map_hash,r+112,32)||memcmp(digest_hash,r+144,32))goto done;
+        }
+    }
     if(current){
         for(uint32_t i=0;i<plan.manifest.count;i++){
             struct bw_manifest_record row;if(bw_manifest_get(&plan.manifest,i,&row))goto done;
@@ -377,8 +426,17 @@ static int ns_inspect_locked(const char *base,const struct bw_provider_binding *
     cp_sha_bytes(marker,sizeof marker,hash);if(memcmp(hash,r+208,32)||ns_exact(state,"prepared.bin",record,NS_RECORD_SIZE)||
         !v2_root_current(&anchor,data)||!v2_root_current(&scope_anchor,scope)||!v2_root_current(&state_anchor,state)||!v2_root_current(&game_anchor,root))goto done;
     ns_result(record,binding,current!=NULL,result);
+    if(companions&&ns_companion_state_result(companions,result))result->state=BW_PREPARED_INVALID;
+    if(!companions&&result->state==BW_PREPARED_VALID){
+        /* Advisory reprepare only: legacy file rows cannot prove absent versus
+         * empty namespace precedence or mint policy3. A fresh typed source
+         * operation and normal owned retirement must produce the projection. */
+        for(uint32_t i=0;i<plan.manifest.count;i++){struct bw_manifest_record row;if(bw_manifest_get(&plan.manifest,i,&row)){result->state=BW_PREPARED_INVALID;break;}
+            if(bw_source_companion_path_namespace(row.path)!=0){result->startup_upgrade_required=1;break;}}
+    }
 done:
     cp_io_guard=NULL;cp_io_opaque=NULL;
+    if(ns_companion_state_close(&companions))result->state=BW_PREPARED_UNKNOWN;
     free(identity_json.bytes);free(record);free(map);free(digests);free(index);if(root>=0&&close(root))result->state=BW_PREPARED_UNKNOWN;if(state>=0&&close(state))result->state=BW_PREPARED_UNKNOWN;if(scope>=0&&close(scope))result->state=BW_PREPARED_UNKNOWN;if(data>=0&&close(data))result->state=BW_PREPARED_UNKNOWN;
     memset(ns_games_path,0,sizeof ns_games_path);return 0;
 }

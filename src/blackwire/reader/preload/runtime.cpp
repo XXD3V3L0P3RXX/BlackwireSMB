@@ -18,6 +18,7 @@
 #include <cstring>
 extern "C" {
 #include "../bw/library/reader_selection.h"
+#include "../bw/library/reader_projection.h"
 }
 namespace {
 std::atomic<unsigned> status{0},metadata_users{0};
@@ -190,8 +191,20 @@ static bool private_selection_bound(const Input& selection){
 }
 // BP_HOME_ADMISSION_END
 bool metadata_guard(){int result=current(nullptr);return result==0?home_window(0):input_fail(0,5,result,0);}
-bool metadata_admit(const Input& map,const Input& selection,const Input& share){
-    int result=bp_source_admit(&source,map.bytes,map.size,selection.bytes,selection.size,share.bytes,share.size,current,nullptr);int saved=errno;
+bool metadata_admit(Input& map,Input& selection,Input& share){
+    struct bw_reader_selection selected{};int parsed=bw_reader_selection_parse(&selected,selection.bytes,selection.size);
+    if(!parsed&&bw_reader_selection_is_projection(&selected)){
+        Input projection(4);bool ok=false;
+        if(projection.load("/app0/fakelib2/blackwire-reader.projection",BW_READER_PROJECTION_LIMIT,0600)&&
+           map.stable()&&selection.stable()&&share.stable()&&metadata_guard()){
+            int result=bp_source_admit_projection(&source,map.bytes,map.size,selection.bytes,selection.size,share.bytes,share.size,
+                projection.bytes,projection.size,current,nullptr);int saved=errno;
+            ok=result==0&&projection.stable()&&map.stable()&&selection.stable()&&share.stable()&&metadata_guard();
+            if(result)input_fail(4,13,result,saved);
+        }
+        bool closed=projection.clear();return ok&&closed;
+    }
+    int result=parsed?-1:bp_source_admit(&source,map.bytes,map.size,selection.bytes,selection.size,share.bytes,share.size,current,nullptr);int saved=errno;
     return result==0?true:input_fail(0,13,result,saved);
 }
 }

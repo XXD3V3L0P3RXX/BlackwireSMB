@@ -119,6 +119,10 @@ int bw_container_walk(struct bw_container *p,bw_pfs_visit_fn visit,void *context
     int result=begin(p);if (result) return result;
     return finish(p,exfat_kind(p)?ex_walk(&p->exfat,visit,context,count):bw_pfs_walk(p->filesystem,visit,context,count));
 }
+int bw_container_walk_nodes(struct bw_container *p,bw_pfs_visit_fn visit,void *context,uint32_t *count){
+    int result=begin(p);if(result)return result;
+    return finish(p,exfat_kind(p)?ex_walk_nodes(&p->exfat,visit,context,count,1):bw_pfs_walk_nodes(p->filesystem,visit,context,count));
+}
 int bw_container_find(struct bw_container *p,const char *path,struct bw_pfs_inode *out) {
     int result=begin(p);if (result) return result;
     return finish(p,exfat_kind(p)?ex_find(&p->exfat,path,out):bw_pfs_find(p->filesystem,path,out));

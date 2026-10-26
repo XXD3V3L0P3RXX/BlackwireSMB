@@ -3,6 +3,7 @@
  * No source mutation, container fallback or game/process control. */
 #include "source.h"
 #include "../../library/reader_selection.h"
+#include "../../library/reader_projection.h"
 #include "../../library/source_binding.h"
 #include "../../streamreader/container_manifest.h"
 #include "../../streamreader/cache.h"
@@ -41,6 +42,7 @@ struct bp_source {
     struct smb2_context *smb;struct bw_cache cache;struct bp_handle handles[BP_HANDLES];
     struct bw_container *image;struct bw_container_manifest image_files;
     uint64_t image_mtime;
+    uint8_t original_map_sha256[32],original_generation_sha256[32];unsigned projected;
     bp_current_fn current;void *opaque;uint64_t clock,network;int failed,ready;
     struct bp_connect_diagnostic connect_diagnostic;
     uint8_t *scratch;
@@ -230,12 +232,17 @@ static struct bp_handle *image_remote(struct bp_source *p,uint32_t id){
         if(named_stat(p,p->binding.source,&h->admitted,BP_SOURCE_ENTRY_NAMED))return poison(p,BP_SOURCE_ENTRY_NAMED),NULL;
         if(h->admitted.smb2_type!=SMB2_TYPE_FILE||h->admitted.smb2_size<48||h->admitted.smb2_size>BW_PFS_MAX_VOLUME||h->admitted.smb2_mtime!=p->image_mtime)
             return poison(p,BP_SOURCE_ENTRY_METADATA),NULL;
+        if(p->projected){
+            struct bw_provider_binding identity={.kind=BW_PROVIDER_CONTAINER,.policy=BW_PROVIDER_POLICY_V1,.binding=p->binding};uint8_t generation[32];
+            bw_provider_image_generation(&identity,&h->admitted,p->original_map_sha256,generation);
+            if(memcmp(generation,p->original_generation_sha256,32))return poison(p,BP_SOURCE_ENTRY_IDENTITY),NULL;
+        }
         h->fh=open_file(p,p->binding.source);if(!h->fh)return poison(p,BP_SOURCE_OPEN),NULL;
         if(image_fence(p,0))return image_current(p)==BW_CONTAINER_CANCELED?image_open_canceled(p):NULL;
         p->image=calloc(1,sizeof *p->image);if(!p->image)return poison(p,BP_SOURCE_CONTAINER),NULL;
         struct bw_container_ops ops={image_payload,image_current};
         int result=bw_container_open(p->image,&ops,p,h->admitted.smb2_size);
-        if(!result)result=bw_container_manifest_bind(&p->image_files,p->image,&p->map);
+        if(!result)result=p->projected?bw_container_manifest_bind_streams(&p->image_files,p->image,&p->map):bw_container_manifest_bind(&p->image_files,p->image,&p->map);
         if(result==BW_CONTAINER_CANCELED&&!p->failed)return image_open_canceled(p);
         if(result)return poison(p,BP_SOURCE_CONTAINER),NULL;
         if(image_fence(p,1))return image_current(p)==BW_CONTAINER_CANCELED?image_open_canceled(p):NULL;
@@ -357,8 +364,9 @@ static int load(void *opaque,uint32_t id,uint64_t block,uint8_t *dest,size_t cap
     memcpy(dest,p->scratch,n);*out_size=n;return 0;
 }
 static uint64_t path_hash(const char *path,size_t size){return bw_manifest_fnv1a64(path,size);}
-int bp_source_admit(struct bp_source **out,const void *map,size_t map_size,
-    const void *selection,size_t selection_size,const void *share,size_t share_size,bp_current_fn guard,void *opaque){
+static int source_admit(struct bp_source **out,const void *map,size_t map_size,
+    const void *selection,size_t selection_size,const void *share,size_t share_size,
+    const void *envelope,size_t envelope_size,bp_current_fn guard,void *opaque){
     if(!out)return -1;
     *out=NULL;
     if(!map||!map_size||map_size>BP_MAP_LIMIT||!guard||guard(opaque))return -1;
@@ -367,6 +375,7 @@ int bp_source_admit(struct bp_source **out,const void *map,size_t map_size,
     p->current=guard;p->opaque=opaque;
     struct bw_provider_binding identity;
     if(bw_reader_selection_parse(&p->selected,selection,selection_size)||
+       (bw_reader_selection_is_projection(&p->selected)?(!envelope||!envelope_size):(envelope||envelope_size))||
        (p->selected.source_kind!=BW_PROVIDER_FOLDER&&p->selected.source_kind!=BW_PROVIDER_CONTAINER)||p->selected.source_policy!=BW_PROVIDER_POLICY_V1||
        bw_share_parse(&config,share,share_size)||!numeric_ipv4(config.server)||
        bw_provider_binding_init(&identity,&config,p->selected.source,p->selected.title,(enum bw_provider_kind)p->selected.source_kind)||
@@ -375,12 +384,18 @@ int bp_source_admit(struct bp_source **out,const void *map,size_t map_size,
     p->map_bytes=malloc(map_size);if(!p->map_bytes)goto fail;memcpy(p->map_bytes,map,map_size);
     if(bw_manifest_open(&p->map,p->map_bytes,map_size)||p->map.count!=p->selected.manifest_count||
        p->map.checksum!=p->selected.manifest_hash)goto fail;
+    if(bw_reader_selection_is_projection(&p->selected)){
+        struct bw_reader_projection *proof=NULL;
+        if(bw_reader_projection_open(&proof,&p->selected,p->map_bytes,map_size,envelope,envelope_size,NULL))goto fail;
+        int bad=bw_reader_projection_source(proof,p->original_map_sha256,p->original_generation_sha256,&p->image_mtime);
+        bw_reader_projection_clear(&proof);if(bad)goto fail;p->projected=1;
+    }
     p->lookup_count=1;while(p->lookup_count<(size_t)p->map.count*2u)p->lookup_count*=2;
     p->lookup=calloc(p->lookup_count,sizeof *p->lookup);if(!p->lookup)goto fail;
     unsigned boot=0;
     for(uint32_t i=0;i<p->map.count;i++){
         struct bw_manifest_record row;if(bw_manifest_get(&p->map,i,&row))goto fail;
-        if(p->selected.source_kind==BW_PROVIDER_CONTAINER){
+        if(p->selected.source_kind==BW_PROVIDER_CONTAINER&&!p->projected){
             if(!i)p->image_mtime=row.mtime_sec;else if(row.mtime_sec!=p->image_mtime)goto fail;
         }
         if(!strcmp(row.path,"eboot.bin")){
@@ -395,6 +410,16 @@ int bp_source_admit(struct bp_source **out,const void *map,size_t map_size,
     p->config=config;bw_share_clear(&config);*out=p;return 0;
 fail:
     bw_share_clear(&config);bp_source_close(p);return -1;
+}
+int bp_source_admit(struct bp_source **out,const void *map,size_t map_size,
+    const void *selection,size_t selection_size,const void *share,size_t share_size,bp_current_fn guard,void *opaque){
+    return source_admit(out,map,map_size,selection,selection_size,share,share_size,NULL,0,guard,opaque);
+}
+int bp_source_admit_projection(struct bp_source **out,const void *map,size_t map_size,
+    const void *selection,size_t selection_size,const void *share,size_t share_size,
+    const void *envelope,size_t envelope_size,bp_current_fn guard,void *opaque){
+    if(!envelope||!envelope_size){if(out)*out=NULL;return -1;}
+    return source_admit(out,map,map_size,selection,selection_size,share,share_size,envelope,envelope_size,guard,opaque);
 }
 static void connect_failure(struct bp_source *p,unsigned stage,int raw,int error){
     if(!p->connect_diagnostic.stage){p->connect_diagnostic.stage=stage;p->connect_diagnostic.raw=raw;p->connect_diagnostic.error=error;}

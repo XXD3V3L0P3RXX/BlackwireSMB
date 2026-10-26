@@ -69,6 +69,7 @@ struct bw_native_backend {
     int (*preparation_idle)(void *,const char[33],const char[33],enum bw_prepare_guard_point);void *preparation_idle_owner;
     int settings_enabled,settings_known,settings_status,setup_phase,setup_error,setup_blocked,setup_checked_only;
     uint32_t settings_revision,setup_operation;char setup_token[33];struct bw_setup_generation settings_generation;
+    struct bw_native_check_failure check_failure;char check_message[768];unsigned check_settings_saved;
     struct {struct bw_share_config config;struct bw_setup_generation expected;char nonce[33];int unchanged;} pending;
     struct {struct bw_share_config config;struct bw_setup_generation expected;struct bw_native_prepare_selection selection;struct bw_native_job_token token;size_t item;char authority[33];
         struct bw_native_prepared retained;unsigned setup_only;} sending;
@@ -259,7 +260,11 @@ static int prepare(void *opaque,struct bw_share_config *config,const struct bw_n
         if(bw_container_smb_open_owned(image,&source.smb,selection->identity.binding.source))goto done;
         if(!bw_source_catalog_image_same(&selection->image,&image->admitted)||selection->container_kind!=image->container.kind){result=BW_BACKEND_SOURCE_CHANGED;goto done;}
     }else if(selection->identity.kind!=BW_PROVIDER_FOLDER)goto done;
-    if(current(guard)||bw_source_provider_prepare(&provider,&selection->identity,&source,image,selection->run,BW_PROVIDER_MAX_LOCAL_BYTES,preparation_data_current,&lease))goto done;
+    enum bw_source_plan_policy source_policy=BW_SOURCE_PLAN_LEGACY;
+#ifdef BW_NATIVE_PRELOAD
+    source_policy=BW_SOURCE_PLAN_COMPANIONS_V1;
+#endif
+    if(current(guard)||bw_source_provider_prepare_policy(&provider,&selection->identity,&source,image,selection->run,BW_PROVIDER_MAX_LOCAL_BYTES,preparation_data_current,&lease,source_policy))goto done;
     if(selection->identity.kind==BW_PROVIDER_FOLDER){
         if(!metadata_matches(&selection->boot,bw_source_snapshot_find(&provider.folder.snapshot,"eboot.bin"))||
            !metadata_matches(&selection->param,bw_source_snapshot_find(&provider.folder.snapshot,"sce_sys/param.json"))){result=BW_BACKEND_SOURCE_CHANGED;goto done;}
@@ -281,7 +286,7 @@ static int prepare(void *opaque,struct bw_share_config *config,const struct bw_n
         int inspected=bw_native_prepared_inspect(backend_data_root,&selection->identity,&existing);
         if((inspected!=0&&!(inspected==BW_SEND_FAILED&&existing.state==BW_PREPARED_ABSENT))||
            (existing.state!=BW_PREPARED_ABSENT&&existing.state!=BW_PREPARED_VALID)||
-           existing.prepared_policy){result=BW_SEND_UNCONFIRMED;goto done;}
+           (existing.prepared_policy&&existing.prepared_policy!=3)){result=BW_SEND_UNCONFIRMED;goto done;}
         plain_folder=1;
     }
 #endif
@@ -467,7 +472,7 @@ static int play(void *opaque,const struct bw_native_play_selection *selected,int
 #ifdef BW_NATIVE_PRELOAD
     /* Automatic early-folder play never adopts a cached old derived/batch
      * preparation. Explicit v6/v7 launch/preflight APIs remain unchanged. */
-    if(selected->identity.kind==BW_PROVIDER_FOLDER&&selected->prepared.prepared_policy)return -1;
+    if(selected->identity.kind==BW_PROVIDER_FOLDER&&selected->prepared.prepared_policy&&selected->prepared.prepared_policy!=3)return -1;
 #endif
     struct bw_native_backend *p=guard;struct play_observer ctx={.context={.current=current,.guard=guard,.owner=p,.selected=selected,.captured=*selected},.observe=observe,.observer=observer};
     if(play_context_capture(&ctx.context))return -1;
@@ -480,8 +485,10 @@ static int play(void *opaque,const struct bw_native_play_selection *selected,int
     if(current(guard)||bw_native_setup_idle(NULL))goto done;
 #ifdef BW_NATIVE_PRELOAD
     if(selected->identity.kind==BW_PROVIDER_FOLDER||selected->identity.kind==BW_PROVIDER_CONTAINER){
-        if(BW_LT_CALL(BW_LT_SELECT,bw_native_launch_admission_open(&ctx.context.startup,backend_data_root,&selected->identity,
-                &selected->prepared,selected->run,play_current_adapter,&ctx,&failure))||
+        int opened=BW_LT_CALL(BW_LT_SELECT,bw_native_launch_admission_open(&ctx.context.startup,backend_data_root,&selected->identity,
+                &selected->prepared,selected->run,play_current_adapter,&ctx,&failure));
+        if(opened==-2){pthread_mutex_lock(&p->lock);p->control_release_unknown=1;pthread_mutex_unlock(&p->lock);}
+        if(opened||
            bw_native_launch_admission_selection(ctx.context.startup,&request.selection)){
             struct bw_reader_event event={.phase="error",.message=failure?failure:"Required startup files changed; choose Send to repair them."};observe(observer,&event);goto done;
         }
@@ -505,11 +512,23 @@ static int play(void *opaque,const struct bw_native_play_selection *selected,int
             struct bw_reader_event event={.phase="error",.message=ctx.context.registration_failure?ctx.context.registration_failure:
                 "reader_bundle_before_install_guard_refused"};observe(observer,&event);goto done;
         }
+        struct bw_share_config source_config={0};struct bw_setup_generation source_generation={0};
+        const struct bw_preload_source_ampr *source_ampr=NULL;
+        const struct bw_preload_companions *companions=NULL;
+        int projected=bw_reader_selection_is_projection(&request.selection);
+        int source_bad=p->ops.read_settings(p->opaque,&source_config,&source_generation)!=BW_SETUP_VALID||
+            !bw_native_setup_generation_equal(&source_generation,&selected->connection)||
+            bw_native_launch_admission_source_connect(request.startup,&source_config,&request.selection,bundle.deadline,&failure)||
+            (projected?bw_native_launch_admission_companions(request.startup,&companions):bw_native_launch_admission_source_ampr(request.startup,&source_ampr))||play_registration_bundle_current(&ctx);
+        bw_share_clear(&source_config);
+        if(source_bad){struct bw_reader_event event={.phase="error",.message=failure?failure:
+            "The selected source generation could not be bound to its prepared reader."};observe(observer,&event);goto done;}
         struct bw_preload_bundle_result bundled={0};
         struct bw_preload_bundle_upgrade_request upgrade={.bundle=bundle,.data_root=backend_data_root,
             .game=request.selection.game,.prepared_run=selected->prepared.run,.launch_run=selected->run,
             .prepared_record_sha256=selected->prepared.record_sha256};
-        int bundle_status=bw_preload_bundle_upgrade_controlled(&upgrade,&bundle_control,&bundled);
+        int bundle_status=projected?bw_preload_bundle_upgrade_projection_controlled(&upgrade,&bundle_control,companions,&bundled):
+            bw_preload_bundle_upgrade_source_controlled(&upgrade,&bundle_control,source_ampr,&bundled);
         if(bundle_status){
             /* A retained per-game upgrade checkpoint still refuses this title,
              * but known-closed material does not retain unrelated operations.
@@ -522,7 +541,7 @@ static int play(void *opaque,const struct bw_native_play_selection *selected,int
         }
         if(play_control_log_close(&ctx))goto done;
         struct bw_nrc_environment env=registration_environment;env.data_root=backend_data_root;
-        struct bw_nrl_request acquire={.environment=env,.selection=&request.selection,.current=play_registration_control,.opaque=&ctx};
+        struct bw_nrl_request acquire={.environment=env,.selection=&request.selection,.current=play_registration_control,.opaque=&ctx,.startup=request.startup};
         struct bw_nrc_result acquired={0};
         int acquired_status=bw_nrl_begin(&acquire,&registration_owner,&acquired);
         if(acquired_status){
@@ -716,11 +735,41 @@ static const struct bw_native_cover *cached_cover(const struct bw_native_library
            !strcmp(selected->title_id,p->catalog.items[i].title_id))return &p->covers[i];
     return NULL;
 }
+static void check_reason(char out[129],const char *reason){
+    size_t n=reason?strnlen(reason,129):0;
+    if(n>128){strcpy(out,"detail_unavailable");return;}
+    for(size_t i=0;i<n;i++)if(!((reason[i]>='a'&&reason[i]<='z')||(reason[i]>='0'&&reason[i]<='9')||reason[i]=='_')){strcpy(out,"detail_unavailable");return;}
+    if(n)memcpy(out,reason,n);out[n]=0;
+}
+static void check_failure(struct bw_native_check_failure *out,const char *share,const char *stage,int result,uint32_t status,const char *reason,const char *source_reason){
+    memset(out,0,sizeof *out);
+    if(share&&strnlen(share,sizeof out->share)<sizeof out->share&&bw_json_utf8(share))strcpy(out->share,share);
+    if(stage&&strnlen(stage,sizeof out->stage)<sizeof out->stage)strcpy(out->stage,stage);
+    check_reason(out->reason,reason);check_reason(out->source_reason,source_reason);out->result=result;out->nt_status=status;
+}
+static void check_failure_message(struct bw_native_backend *p,const struct bw_native_check_failure *failure,int saved){
+    p->check_failure=*failure;p->check_settings_saved=saved!=0;const char *what="The library could not be validated";
+    if(!strcmp(failure->stage,"smb-connect")){
+        what=failure->nt_status==UINT32_C(0xc00000cc)?"The SMB shared folder was not found":
+            failure->nt_status==UINT32_C(0xc000006d)||failure->nt_status==UINT32_C(0xc000006a)||failure->nt_status==UINT32_C(0xc0000064)?"SMB sign-in was refused":
+            failure->nt_status==UINT32_C(0xc0000022)?"SMB share access was refused":
+            failure->result==-ETIMEDOUT?"The SMB connection timed out":"The SMB connection or sign-in failed";
+    }else if(strstr(failure->reason,"expired")||strstr(failure->source_reason,"expired"))what="The library scan timed out";
+    else if(strstr(failure->reason,"changed")||strstr(failure->source_reason,"changed")||strstr(failure->reason,"generation")||strstr(failure->source_reason,"generation"))what="The source changed or could not be read consistently";
+    else if(!strcmp(failure->stage,"artwork"))what="The share connected, but artwork could not be read";
+    else if(!strcmp(failure->stage,"catalog"))what="The share connected, but its game catalog could not be read";
+    else if(!strcmp(failure->stage,"library-merge"))what="The two share catalogs could not be combined";
+    snprintf(p->check_message,sizeof p->check_message,"%s%s%s: %s. Stage: %s; reason: %s%s%s; result: %d; SMB status: 0x%08x. %s",
+        *failure->share?"Shared folder \"":"Configured library",failure->share,*failure->share?"\"":"",what,
+        *failure->stage?failure->stage:"validation",*failure->reason?failure->reason:"unavailable",
+        *failure->source_reason?" / ":"",failure->source_reason,failure->result,failure->nt_status,
+        saved?"The settings were saved; refresh the library to check its current status.":"Saved settings were not replaced.");
+}
 static int discover_one(void *opaque,struct bw_share_config *share,struct bw_native_library *out,size_t cover_limit){
     (void)opaque;struct bw_source_smb source={0};double start=now();if(start<0)return -1;source.deadline=start+180;
     const char *stage="smb-connect";
     char share_name[128];memcpy(share_name,share->share,sizeof share_name);
-    source.smb=smb2_init_context();if(!source.smb)return -1;
+    source.smb=smb2_init_context();if(!source.smb){check_failure(&out->failure,share_name,stage,-1,0,"smb_context_allocation_failed",NULL);bw_share_clear(share);return -1;}
     smb2_set_timeout(source.smb,10);smb2_set_sign(source.smb,1);smb2_set_security_mode(source.smb,SMB2_NEGOTIATE_SIGNING_ENABLED|SMB2_NEGOTIATE_SIGNING_REQUIRED);smb2_set_user(source.smb,share->user);smb2_set_password(source.smb,share->password);
     int result=smb2_connect_share(source.smb,share->server,share->share,share->user);bw_share_clear(share);if(result<0)goto done;
     stage="catalog";
@@ -746,7 +795,11 @@ static int discover_one(void *opaque,struct bw_share_config *share,struct bw_nat
         }free(bytes);
     }
 done:
-    if(result)bw_send_log("connection-source-failure","stage=%s result=%d catalog_reason=%.128s source_reason=%.128s requests=%u entries=%u",stage,result,out->catalog.error?out->catalog.error:"",source.error?source.error:"",source.requests,source.entries);
+    if(result){
+        uint32_t status=!strcmp(stage,"smb-connect")&&source.smb?(uint32_t)smb2_get_nterror(source.smb):source.last_status;
+        check_failure(&out->failure,share_name,stage,result,status,out->catalog.error,source.error);
+        bw_send_log("connection-source-failure","share=%.127s stage=%s result=%d smb_status=0x%08x catalog_reason=%.128s source_reason=%.128s requests=%u entries=%u",share_name,stage,result,status,out->failure.reason,out->failure.source_reason,source.requests,source.entries);
+    }
     out->requests=source.requests;out->entries=source.entries;out->content_bytes=source.content_bytes;
     if(source.smb)smb2_destroy_context(source.smb);return result;
 }
@@ -783,10 +836,18 @@ static int discover(void *opaque,struct bw_share_config *configured,struct bw_na
     struct bw_native_library parts[2]={{0},{0}};struct bw_share_config connection={0};int result=-1;
     for(unsigned i=0;i<2;i++){
         if(i&&!*configured->share2)break;
-        if(bw_share_select(&connection,configured,i?configured->share2:NULL)||
-           discover_one(opaque,&connection,parts+i,BW_NATIVE_COVER_LIMIT-parts[0].cover_bytes)||!valid_library(parts+i))goto done;
+        const char *selected=i?configured->share2:configured->share;
+        if(bw_share_select(&connection,configured,i?configured->share2:NULL)){
+            check_failure(&out->failure,selected,"share-selection",-1,0,"invalid_share_selection",NULL);goto done;
+        }
+        if(discover_one(opaque,&connection,parts+i,BW_NATIVE_COVER_LIMIT-parts[0].cover_bytes)||!valid_library(parts+i)){
+            out->failure=parts[i].failure;
+            if(!*out->failure.stage)check_failure(&out->failure,selected,"catalog",-1,0,"catalog_validation_failed",NULL);
+            goto done;
+        }
     }
     result=library_merge(out,parts);
+    if(result)check_failure(&out->failure,NULL,"library-merge",result,0,"catalog_merge_failed",NULL);
 done:
     bw_share_clear(&connection);bw_share_clear(configured);
     for(unsigned i=0;i<2;i++)bw_native_library_destroy(parts+i);return result;
@@ -810,7 +871,7 @@ static void *scan(void *opaque){
     unsigned char observed_ready[BW_CATALOG_MAX_ITEMS]={0};
 #endif
     struct bw_setup_generation before_generation={0},after_generation={0};uint8_t before_digest[32],after_digest[32];
-    int phase=BACKEND_NEEDS_SETUP,error=SETUP_NO_ERROR,setup=p->worker_kind==WORK_SETUP,success=0;
+    int phase=BACKEND_NEEDS_SETUP,error=SETUP_NO_ERROR,setup=p->worker_kind==WORK_SETUP,success=0,settings_saved=0;
     bw_send_log(setup?"connection-check-begin":"library-scan-begin","operation=%u",p->setup_operation);
     if(setup){
         if(settings_idle(p)){error=SETUP_IDLE_ERROR;phase=BACKEND_FAILED;goto done;}
@@ -828,6 +889,7 @@ static void *scan(void *opaque){
         if(!p->pending.unchanged){
             pthread_mutex_lock(&p->lock);p->setup_phase=SETUP_SAVING;pthread_mutex_unlock(&p->lock);struct bw_setup_saved saved={0};
             int stored=p->ops.save_settings(p->opaque,&p->pending.config,&p->pending.expected,p->pending.nonce,settings_idle,p,&saved);
+            settings_saved=saved.published!=0;
             if(stored||!saved.published||!saved.verified){error=stored==BW_SETUP_SAVE_UNCONFIRMED||saved.published?SETUP_UNCONFIRMED_ERROR:stored==BW_SETUP_SAVE_STALE?SETUP_STALE_ERROR:stored==BW_SETUP_SAVE_BUSY?SETUP_IDLE_ERROR:SETUP_SAVE_ERROR;goto done;}
         }
         if(p->ops.read_settings(p->opaque,&after,&after_generation)!=BW_SETUP_VALID||!config_equal(&after,&p->pending.config)||
@@ -858,6 +920,8 @@ static void *scan(void *opaque){
 done:
     bw_send_log(setup?"connection-check-end":"library-scan-end","operation=%u success=%d error=%d phase=%d",p->setup_operation,success,error,phase);
     pthread_mutex_lock(&p->lock);p->phase=phase;
+    memset(&p->check_failure,0,sizeof p->check_failure);p->check_message[0]=0;p->check_settings_saved=settings_saved!=0;
+    if(!success&&*next.failure.stage)check_failure_message(p,&next.failure,settings_saved);
     if(success){
         old=p->library;p->library=next;memset(&next,0,sizeof next);p->generation++;
 #ifdef BW_HOME_STARTUP
@@ -962,12 +1026,24 @@ static const char *phase_message(int phase){
     }
 }
 static const char *setup_phase_name(int phase){static const char *names[]={"idle","checking","saving","saved","error","unconfirmed"};return names[phase];}
+static void setup_failure_json(struct bw_json *json,const struct bw_native_backend *p){
+    if(p->active||!*p->check_failure.stage){bw_json_text(json,"null");return;}
+    const struct bw_native_check_failure *f=&p->check_failure;
+    bw_json_text(json,"{\"share\":");bw_json_string(json,f->share);
+    bw_json_text(json,",\"stage\":");bw_json_string(json,f->stage);
+    bw_json_text(json,",\"reason\":");bw_json_string(json,f->reason);
+    bw_json_text(json,",\"sourceReason\":");bw_json_string(json,f->source_reason);
+    bw_json_format(json,",\"result\":%d,\"ntStatus\":\"0x%08x\",\"settingsSaved\":%s}",f->result,f->nt_status,p->check_settings_saved?"true":"false");
+}
 static const char *setup_message(const struct bw_native_backend *p){
     if(p->setup_phase==SETUP_CHECKING)return "Checking the PC share before saving.";
     if(p->setup_phase==SETUP_SAVING)return "Saving the checked connection settings.";
+    if(p->phase==BACKEND_FAILED&&*p->check_message)return p->check_message;
     if(p->setup_phase==SETUP_SAVED)return p->setup_checked_only?"PC connection checked. Existing settings were kept.":"PC connection saved and checked.";
     switch(p->setup_error){
-        case SETUP_CONNECTION_ERROR:return "The new PC connection failed. Check the share and sign-in details; saved settings were not replaced.";
+        case SETUP_CONNECTION_ERROR:return *p->check_message?p->check_message:p->check_settings_saved?
+            "The settings were saved, but the remaining library check failed. Refresh to check its current status.":
+            "The library check failed without a detailed result. Saved settings were not replaced; inspect the current diagnostic log.";
         case SETUP_STALE_ERROR:return "Connection settings changed during the check. Refresh before saving again.";
         case SETUP_IDLE_ERROR:return "Close running games and check console status before changing the connection.";
         case SETUP_SAVE_ERROR:return "The checked connection could not be saved. Check Blackwire's data folder before retrying.";
@@ -1032,7 +1108,7 @@ static void prepared_absence_poll(struct bw_native_backend *p){
         const struct bw_catalog_item *item=p->library.catalog.items+i;
         struct bw_native_prepared *cached=p->library.prepared+i;struct bw_provider_binding binding={0};
         if(!bw_source_catalog_available(item)||
-           cached->state!=BW_PREPARED_VALID||cached->prepared_policy||!nonce_valid(cached->run)||
+           cached->state!=BW_PREPARED_VALID||(cached->prepared_policy&&cached->prepared_policy!=3)||!nonce_valid(cached->run)||
            cached->retirement!=BW_RETIRE_NONE||removed_at(p,i)||registration_waiting(p,item->title_id)||
            bw_source_catalog_binding(&binding,&connection,item)||
            !memchr(cached->game,0,sizeof cached->game)||strcmp(cached->game,binding.binding.game)||
@@ -1106,7 +1182,7 @@ static int state(struct bw_native_backend *p,struct bw_native_response *out){
     bw_json_format(&json,",\"editable\":%s,\"supported\":%s,\"busy\":%s,\"configured\":%s,\"hasSavedCredentials\":%s,\"revision\":%u,\"operation\":%u,\"phase\":",editable?"true":"false",p->settings_enabled?"true":"false",p->active&&p->worker_kind==WORK_SETUP?"true":"false",
         p->settings_enabled?p->settings_known&&p->settings_status==BW_SETUP_VALID?"true":"false":*p->server&&*p->share?"true":"false",p->settings_enabled&&p->settings_known&&p->settings_status==BW_SETUP_VALID?"true":"false",p->settings_revision,p->setup_operation);
     bw_json_string(&json,setup_phase_name(p->setup_phase));bw_json_text(&json,",\"token\":");bw_json_string(&json,p->setup_token);
-    bw_json_text(&json,",\"checks\":[]},\"library\":{\"phase\":");bw_json_string(&json,phase_name(p->phase));
+    bw_json_text(&json,",\"checks\":[],\"failure\":");setup_failure_json(&json,p);bw_json_text(&json,"},\"library\":{\"phase\":");bw_json_string(&json,phase_name(p->phase));
     bw_json_format(&json,",\"generation\":%llu,\"stale\":%s,\"items\":%zu,\"collections\":%u,\"entries\":%u,\"unsearched\":%u,\"coverBytes\":%zu,\"coverLimit\":%u,\"contentBytes\":%llu,\"requests\":%u,\"containerCandidates\":%u,\"containersValidated\":%u,\"containersRejected\":%u},\"games\":[",
         (unsigned long long)p->generation,p->stale?"true":"false",visible_count,p->library.catalog.collections,p->library.catalog.entries,p->library.catalog.unsearched,
         p->library.cover_bytes,BW_NATIVE_COVER_LIMIT,(unsigned long long)p->library.content_bytes,p->library.requests,container_candidates,containers_validated,containers_rejected);
@@ -1205,9 +1281,14 @@ static int prepare_authority(struct bw_native_backend *p,enum bw_prepare_guard_p
 static int prepared_valid(const struct bw_native_prepared *value,const struct bw_native_prepare_selection *selection){
     if(value->startup_upgrade_required)return 0;
 #ifdef BW_NATIVE_PRELOAD
-    if(selection->identity.kind==BW_PROVIDER_FOLDER&&value->prepared_policy)return 0;
+    if(selection->identity.kind==BW_PROVIDER_FOLDER&&value->prepared_policy&&value->prepared_policy!=3)return 0;
 #endif
-    if(value->prepared_policy){
+    if(value->prepared_policy==3){
+        uint8_t present=0;for(unsigned i=0;i<32;i++)present|=value->provenance_sha256[i];
+        if((selection->identity.kind!=BW_PROVIDER_FOLDER&&selection->identity.kind!=BW_PROVIDER_CONTAINER)||
+           !memchr(value->prepared_component,0,sizeof value->prepared_component)||strcmp(value->prepared_component,selection->identity.binding.game)||
+           value->provenance_size<384||value->provenance_size>1024u*1024u||!present)return 0;
+    }else if(value->prepared_policy){
         uint64_t provenance_limit=value->prepared_policy==BW_BATCH_POLICY?BW_BATCH_PROVENANCE_LIMIT:BW_DERIVED_PROVENANCE_LIMIT;
         if((value->prepared_policy!=BW_DERIVED_PLAN_POLICY&&value->prepared_policy!=BW_BATCH_POLICY)||selection->identity.kind!=BW_PROVIDER_FOLDER||
            strnlen(value->prepared_component,sizeof value->prepared_component)!=74||

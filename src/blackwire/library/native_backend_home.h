@@ -6,6 +6,7 @@
 #include <float.h>
 #include <math.h>
 #include "launch_timing.h"
+#include "native_projection_handoff.h"
 
 struct home_worker {
     struct bw_native_backend *backend;
@@ -97,7 +98,7 @@ static int home_select(struct home_worker *h,struct bw_share_config *config){
         pthread_mutex_lock(&p->lock);item=p->library.catalog.items[i];
         if(p->library.prepared)candidate=p->library.prepared[i];
         eligible=!strcmp(item.title_id,title)&&bw_source_catalog_available(&item)&&
-            p->library.prepared&&candidate.state==BW_PREPARED_VALID&&!candidate.prepared_policy&&!candidate.startup_upgrade_required&&
+            p->library.prepared&&candidate.state==BW_PREPARED_VALID&&(!candidate.prepared_policy||candidate.prepared_policy==3)&&!candidate.startup_upgrade_required&&
             !reader_update_reason(&candidate)&&!revalidation_required(p,&candidate)&&!removed_at(p,i)&&!registration_waiting(p,title);
         pthread_mutex_unlock(&p->lock);if(!eligible)continue;
         struct bw_provider_binding identity={0};struct bw_reader_selection registered={0};
@@ -134,19 +135,25 @@ static void *home_worker(void *opaque){
     home_phase(h,1,"Connecting the game started from the PS5 dashboard.");
     if(BW_LT_CALL(BW_LT_SELECT,home_select(h,&config))){failure="The game could not be matched to exactly one prepared Blackwire source.";goto track;}
     home_phase(h,2,"Checking the exact PS5 dashboard game and prepared source.");
+    int opened=0;
     if(BW_LT_CALL(BW_LT_FINAL_AUTH,home_startup_control(h,NULL))||
-       BW_LT_CALL(BW_LT_LOCAL_PREFLIGHT,bw_native_launch_admission_open(&h->startup,backend_data_root,&h->selected.identity,&h->selected.prepared,h->selected.run,home_lease,h,&failure))||
+       (opened=BW_LT_CALL(BW_LT_LOCAL_PREFLIGHT,bw_native_launch_admission_open(&h->startup,backend_data_root,&h->selected.identity,&h->selected.prepared,h->selected.run,home_lease,h,&failure)))||
        bw_native_launch_admission_selection(h->startup,&selected)||bw_native_launch_admission_map_sha256(h->startup,map)||memcmp(map,h->claim.map_sha256,32)){
+        release_unknown|=opened==-2;
         if(!failure)failure="The running game's file map differs from its prepared receipt.";goto track;
     }
     home_phase(h,3,"Checking the prepared game reader.");
+    if(BW_LT_CALL(BW_LT_PC_SOURCE,home_source(h,&config,&selected))){failure="The current PC source could not be verified for this dashboard game.";goto track;}
+    const struct bw_preload_source_ampr *source_ampr=NULL;
+    const struct bw_preload_companions *companions=NULL;int projected=bw_reader_selection_is_projection(&selected);
+    if(projected?bw_native_launch_admission_companions(h->startup,&companions):bw_native_launch_admission_source_ampr(h->startup,&source_ampr)){failure="The prepared source module evidence could not be retained.";goto track;}
     char root[BW_NRC_PATH_BYTES];int n=snprintf(root,sizeof root,"%s/games/%s",backend_data_root,selected.game);
     struct bw_preload_bundle_request bundle={root,home_lease,h,h->deadline};struct bw_preload_bundle_result checked={0};
-    if(n<0||(size_t)n>=sizeof root||BW_LT_CALL(BW_LT_BUNDLE,bw_preload_bundle_verify_checked(&bundle,&checked))){
+    if(n<0||(size_t)n>=sizeof root||BW_LT_CALL(BW_LT_BUNDLE,projected?bw_preload_bundle_verify_projection_checked(&bundle,companions,&checked):bw_preload_bundle_verify_source_checked(&bundle,source_ampr,&checked))){
         release_unknown|=checked.release_unknown;failure="The dashboard reader needs setup. Start this game once from Blackwire Play; its startup files will be kept.";goto track;
     }
     home_phase(h,4,"Checking the current PC share for this game.");
-    if(BW_LT_CALL(BW_LT_PC_SOURCE,home_source(h,&config,&selected))){failure="The current PC source could not be verified for this dashboard game.";goto track;}
+    if(home_lease(h)){failure="The verified dashboard source changed before registration.";goto track;}
     home_phase(h,5,"Checking the game's existing dashboard registration.");
     if(BW_LT_CALL(BW_LT_FINAL_AUTH,home_startup_control(h,&selected))||
        BW_LT_CALL(BW_LT_REGISTER,bw_native_registration_verify(backend_data_root,"/user/app","/system_data/priv/mms/app.db",&selected))||
@@ -154,7 +161,14 @@ static void *home_worker(void *opaque){
         failure="The PS5 dashboard registration no longer matches this prepared source.";goto track;
     }
     home_phase(h,6,"Starting the reader for the PS5 dashboard game.");
-    if(BW_LT_CALL(BW_LT_HANDOFF,bw_home_session_publish(&h->session,root,&selected,&config))||
+    void *projection_bytes=NULL;size_t projection_size=0;int handoff_status;
+    if(bw_reader_selection_is_projection(&selected)){
+        if(bw_native_projection_handoff_bytes(h->startup,&selected,&projection_bytes,&projection_size)){
+            failure="The held projected reader inputs could not be verified.";goto track;
+        }
+        handoff_status=BW_LT_CALL(BW_LT_HANDOFF,bw_home_session_publish_projection(&h->session,root,&selected,&config,&projection_bytes,projection_size));
+    }else handoff_status=BW_LT_CALL(BW_LT_HANDOFF,bw_home_session_publish(&h->session,root,&selected,&config));
+    if(handoff_status||
        BW_LT_CALL(BW_LT_FINAL_AUTH,home_startup_control(h,&selected))){
         failure="The game's private startup inputs could not be assigned safely.";goto track;
     }
@@ -276,7 +290,7 @@ static void home_prepare_first_failure(struct home_prepare_failure *f,unsigned s
 }
 static int home_prepare_provision(struct bw_native_backend *p,const struct bw_native_prepared *prepared,unsigned *startup_invalid){
     if(startup_invalid)*startup_invalid=0;
-    if(!prepared||prepared->state!=BW_PREPARED_VALID||prepared->prepared_policy||
+    if(!prepared||prepared->state!=BW_PREPARED_VALID||(prepared->prepared_policy&&prepared->prepared_policy!=3)||
        (p->sending.selection.identity.kind!=BW_PROVIDER_FOLDER&&p->sending.selection.identity.kind!=BW_PROVIDER_CONTAINER)){if(startup_invalid)*startup_invalid=1;return -1;}
     struct home_prepare h={.p=p,.identity=p->sending.selection.identity,.prepared=*prepared,.deadline=now()+BW_REGISTER_WAIT_SECONDS+60};
     pthread_mutex_lock(&p->lock);h.generation=p->generation;h.revision=p->settings_revision;pthread_mutex_unlock(&p->lock);
@@ -294,7 +308,7 @@ static int home_prepare_provision(struct bw_native_backend *p,const struct bw_na
     if((step_result=home_prepare_control(&h))){home_prepare_first_failure(&first,3,"initial-control","current setup authority refused",step_result,errno);goto done;}
     bw_send_log("setup-step","game=%s step=4",prepared->game);
     step_result=bw_native_launch_admission_open(&h.startup,backend_data_root,&h.identity,prepared,run,home_prepare_lease,&h,&failure);
-    if(step_result){h.startup_invalid=1;home_prepare_first_failure(&first,4,"startup-admission",failure?failure:"startup admission refused",step_result,errno);goto done;}
+    if(step_result){unknown|=step_result==-2;h.startup_invalid=1;home_prepare_first_failure(&first,4,"startup-admission",failure?failure:"startup admission refused",step_result,errno);goto done;}
     bw_send_log("setup-step","game=%s step=5",prepared->game);
     if((step_result=bw_native_launch_admission_selection(h.startup,&h.selection))){h.startup_invalid=1;home_prepare_first_failure(&first,5,"startup-selection","held startup selection unavailable",step_result,errno);goto done;}
     bw_send_log("setup-step","game=%s step=6",prepared->game);
@@ -302,11 +316,17 @@ static int home_prepare_provision(struct bw_native_backend *p,const struct bw_na
     struct bw_preload_bundle_upgrade_request upgrade={.bundle={root,home_prepare_lease,&h,now()+20},.data_root=backend_data_root,.game=h.selection.game,.prepared_run=prepared->run,.launch_run=run,.prepared_record_sha256=prepared->record_sha256};
     struct bw_preload_bundle_control split={home_prepare_control,&h};struct bw_preload_bundle_result bundled={0};
     if(n<0||(size_t)n>=sizeof root){home_prepare_first_failure(&first,6,"source-root","selected source path does not fit",n,0);goto done;}
+    const struct bw_preload_source_ampr *source_ampr=NULL;
+    const struct bw_preload_companions *companions=NULL;int projected=bw_reader_selection_is_projection(&h.selection);
+    if((step_result=bw_native_launch_admission_source_connect(h.startup,&p->sending.config,&h.selection,upgrade.bundle.deadline,&failure))||
+       (step_result=projected?bw_native_launch_admission_companions(h.startup,&companions):bw_native_launch_admission_source_ampr(h.startup,&source_ampr))||
+       (step_result=home_prepare_control(&h))){
+        home_prepare_first_failure(&first,6,"source-generation",failure?failure:"sealed source module evidence unavailable",step_result,errno);goto done;}
     bw_send_log("setup-step","game=%s step=7",prepared->game);
-    if((step_result=bw_preload_bundle_upgrade_controlled(&upgrade,&split,&bundled))){unknown|=bundled.release_unknown;
+    if((step_result=projected?bw_preload_bundle_upgrade_projection_controlled(&upgrade,&split,companions,&bundled):bw_preload_bundle_upgrade_source_controlled(&upgrade,&split,source_ampr,&bundled))){unknown|=bundled.release_unknown;
         home_prepare_first_failure(&first,7,bundled.stage?bundled.stage:"reader-bundle",bundled.reason?bundled.reason:"reader bundle refused",step_result,bundled.system_error);goto done;}
     bw_send_log("setup-step","game=%s step=8",prepared->game);
-    struct bw_nrc_environment env=registration_environment;env.data_root=backend_data_root;struct bw_nrl_request acquire={.environment=env,.selection=&h.selection,.current=home_prepare_registration,.opaque=&h};struct bw_nrc_result acquired={0};
+    struct bw_nrc_environment env=registration_environment;env.data_root=backend_data_root;struct bw_nrl_request acquire={.environment=env,.selection=&h.selection,.current=home_prepare_registration,.opaque=&h,.startup=h.startup};struct bw_nrc_result acquired={0};
     int began=bw_nrl_begin(&acquire,&owner,&acquired);if(began){unknown|=began==BW_NRC_RELEASE_UNCONFIRMED;
         home_prepare_first_failure(&first,8,acquired.stage?acquired.stage:"registration-owner",acquired.detail?acquired.detail:acquired.reason?acquired.reason:"registration owner admission refused",began,acquired.error_snapshot);goto done;}
     struct bw_native_register_request registration={.data_root=backend_data_root,.apps=env.apps_root,.database=env.database,.identity=&h.identity,.selected=&h.selection,.current=home_prepare_control,.guard=&h,.startup=h.startup};
@@ -356,24 +376,49 @@ static int home_observation_current(void *opaque){
 }
 static int home_ready_observe(struct bw_native_backend *p,const struct bw_provider_binding *identity,
     const struct bw_native_prepared *prepared,const struct bw_setup_generation *settings){
-    if(!identity||!prepared||!settings||(identity->kind!=BW_PROVIDER_FOLDER&&identity->kind!=BW_PROVIDER_CONTAINER)||prepared->state!=BW_PREPARED_VALID||prepared->prepared_policy||prepared->startup_upgrade_required)return -1;
+    if(!identity||!prepared||!settings||(identity->kind!=BW_PROVIDER_FOLDER&&identity->kind!=BW_PROVIDER_CONTAINER)||prepared->state!=BW_PREPARED_VALID||(prepared->prepared_policy&&prepared->prepared_policy!=3)||prepared->startup_upgrade_required)return -1;
     pthread_mutex_lock(&p->lock);int refused=revalidation_required(p,prepared);pthread_mutex_unlock(&p->lock);
     if(refused||bw_preload_bundle_upgrade_workspace(backend_data_root,prepared->game)!=0)return -1;
     struct home_observation o={.p=p,.settings=*settings,.deadline=now()+20};
     pthread_mutex_lock(&p->lock);o.generation=p->generation;o.revision=p->settings_revision;o.worker_kind=p->worker_kind;pthread_mutex_unlock(&p->lock);
-    struct bw_reader_selection first={0},last={0};char root[BW_NRC_PATH_BYTES];
-    if(home_observation_current(&o)||bw_native_launch_selection(backend_data_root,identity,prepared,prepared->run,&first))return -1;
-    int n=snprintf(root,sizeof root,"%s/games/%s",backend_data_root,first.game);if(n<0||(size_t)n>=sizeof root)return -1;
+    struct bw_reader_selection first={0},last={0};char root[BW_NRC_PATH_BYTES];int result=-1,release_unknown=0;
+    struct bw_native_launch_admission *startup=NULL;const struct bw_preload_source_ampr *source_ampr=NULL;
+    const struct bw_preload_companions *companions=NULL;int projected=prepared->prepared_policy==3;
+    struct bw_share_config config={0};struct bw_setup_generation actual={0};const char *error=NULL;
+    if(home_observation_current(&o)||bw_native_launch_selection(backend_data_root,identity,prepared,prepared->run,&first))goto done;
+    int n=snprintf(root,sizeof root,"%s/games/%s",backend_data_root,first.game);if(n<0||(size_t)n>=sizeof root)goto done;
     struct bw_preload_bundle_request bundle={root,home_observation_current,&o,o.deadline};struct bw_preload_bundle_result checked={0};
-    if(bw_preload_bundle_verify_checked(&bundle,&checked)||home_observation_current(&o)){
-        if(checked.release_unknown){pthread_mutex_lock(&p->lock);p->control_release_unknown=1;pthread_mutex_unlock(&p->lock);}return -1;
+    int verified=projected?-1:bw_preload_bundle_verify_checked(&bundle,&checked);release_unknown|=checked.release_unknown;
+    if(verified){
+        /* Preserve the local-only readiness path for the ordinary qualified
+         * set. Only its precise, known source-Ampr refusal may enter the
+         * stronger held-receipt/source-generation path. Other refusals and
+         * uncertain releases never trigger a network retry or adoption. */
+        if(!projected&&(verified!=-1||checked.release_unknown||checked.mutation_started||!checked.reason||
+           strcmp(checked.reason,"unexpected_game_reader_file")||!checked.entry_class||
+           strcmp(checked.entry_class,"unexpected-source-reader")||strcmp(checked.entry_name,"libSceAmpr.sprx")))goto done;
+        struct bw_reader_selection admitted={0};
+        if(home_observation_current(&o))goto done;
+        int opened=bw_native_launch_admission_open(&startup,backend_data_root,identity,prepared,prepared->run,home_observation_current,&o,&error);
+        if(opened){release_unknown|=opened==-2;goto done;}
+        if(bw_native_launch_admission_selection(startup,&admitted)||memcmp(&first,&admitted,sizeof first)||
+           p->ops.read_settings(p->opaque,&config,&actual)!=BW_SETUP_VALID||!bw_native_setup_generation_equal(&actual,settings)||
+           bw_native_launch_admission_source_connect(startup,&config,&first,o.deadline,&error)||
+           (projected?bw_native_launch_admission_companions(startup,&companions):bw_native_launch_admission_source_ampr(startup,&source_ampr)))goto done;
+        memset(&checked,0,sizeof checked);
+        verified=projected?bw_preload_bundle_verify_projection_checked(&bundle,companions,&checked):bw_preload_bundle_verify_source_checked(&bundle,source_ampr,&checked);release_unknown|=checked.release_unknown;
+        if(verified)goto done;
     }
+    if(home_observation_current(&o))goto done;
     struct bw_sm_connection connection={0,home_observation_current,&o};struct bw_sm_reply manual[2]={{0},{0}};
     for(unsigned i=0;i<2;i++)if(home_observation_current(&o)||
         bw_native_registration_state(backend_data_root,registration_environment.apps_root,registration_environment.database,&first)!=BW_REG_MATCH||
-        bw_sm_post(&connection,BW_SM_MANUAL_LIST,root,manual+i)||manual[i].present!=1||home_observation_current(&o))return -1;
+        bw_sm_post(&connection,BW_SM_MANUAL_LIST,root,manual+i)||manual[i].present!=1||home_observation_current(&o))goto done;
     if(manual[0].count!=manual[1].count||bw_native_launch_selection(backend_data_root,identity,prepared,prepared->run,&last)||
-       memcmp(&first,&last,sizeof first)||home_observation_current(&o))return -1;
-    return 0;
+       memcmp(&first,&last,sizeof first)||home_observation_current(&o))goto done;
+    result=0;
+done:
+    bw_share_clear(&config);if(bw_native_launch_admission_close(&startup)){release_unknown=1;result=-1;}
+    if(release_unknown){pthread_mutex_lock(&p->lock);p->control_release_unknown=1;pthread_mutex_unlock(&p->lock);}return result;
 }
 

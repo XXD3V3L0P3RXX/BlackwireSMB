@@ -56,6 +56,7 @@ struct bw_compressed_data {
     uint64_t hashed_bytes;
     uint32_t hashed_files;
     int ready,failed,error,busy;
+    enum bw_source_plan_policy plan_policy;
     /* Owned bounded input workspace; consumers still borrow <=64 KiB. Keep
      * this off the preparation worker's stack and free it on every release. */
     uint8_t *buffer;
@@ -75,6 +76,8 @@ struct bw_compressed_data {
 int bw_compressed_data_prepare(struct bw_compressed_data *,struct bw_container_smb *,
                              const struct bw_source_binding *,uint64_t local_budget,
                              struct bw_source_smb *,int (*)(void *),void *);
+int bw_compressed_data_prepare_policy(struct bw_compressed_data *,struct bw_container_smb *,
+    const struct bw_source_binding *,uint64_t,struct bw_source_smb *,int (*)(void *),void *,enum bw_source_plan_policy);
 int bw_compressed_data_current(struct bw_compressed_data *);
 /* Whole LOCAL file only, selected by immutable manifest ID. Synchronous borrowed
  * chunks <=64 KiB. Rehashes the consumed bytes against preparation's digest.

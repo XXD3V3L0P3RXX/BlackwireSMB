@@ -34,6 +34,7 @@ def main():
          HERE/'test_registration_cleanup_io.h']
     core=[LIB/name for name in ('native_registration_cleanup.c','native_registration.c',
         'registration_db.c','source_param.c','reader_selection.c','native_prepared_target.c','native_removed_sources.c')]+[STREAM/'manifest.c']
+    core += [HERE/'legacy_projection_boundary.c']
     all_sources=set(core+own+[ROOT/'vendor/sqlite/sqlite3.c'])
     # Record possible local header dependencies before compilation, and include
     # only actual compiler dependency inputs in the final proof.

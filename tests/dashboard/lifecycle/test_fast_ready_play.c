@@ -78,6 +78,8 @@ int bw_sm_post(const struct bw_sm_connection *c,enum bw_sm_operation op,const ch
 static void mutate_byte(const char *name){size_t size;uint8_t *p=file_read(name,&size);CHECK(size);p[0]^=1;struct stat st;CHECK(!stat(name,&st));file_write(name,p,size,st.st_mode&07777);free(p);}
 static int terminal_ready(const struct bw_native_prepared *p){unsigned any=0;for(unsigned i=0;i<sizeof p->record_sha256;i++)any|=p->record_sha256[i];return p->state==BW_PREPARED_VALID&&any;}
 int main(int argc,char **argv){
+    struct bw_manifest_record classified_ampr={.path="fakelib/libSceAmpr.sprx",.flags=BW_MANIFEST_LOCAL};
+    CHECK(bw_startup_mode(classified_ampr.path)==0755&&na_required(&classified_ampr,0));
     CHECK(argc==4);scenario=argv[2];unsigned streams=(unsigned)strtoul(argv[3],NULL,10);CHECK(streams&&streams<=10000);
     char data[2048],fixture[2048],log[2048],name[2048],apps[2048],database[2048];
     path(data,argv[1],"data");path(source_root,argv[1],"source");path(fixture,argv[1],"metadata");path(log,argv[1],"game.log");path(apps,argv[1],"apps");path(database,argv[1],"app.db");
@@ -97,7 +99,31 @@ int main(int argc,char **argv){
     /* Strict Send and strict verify remain actual, independent APIs. */
     struct bw_native_prepared strict={0};CHECK(!bw_native_send_verify(data,&identity,current,&provider,&strict)&&strict.state==BW_PREPARED_VALID&&strict.bytes_verified);cases++;
     char root[2048],state[2048],target[2048];snprintf(root,sizeof root,"%s/games/%s",data,identity.binding.game);snprintf(state,sizeof state,"%s/native-prepared/%s",data,identity.binding.game);
+    /* Uninstall may retain an owned legacy-classification receipt. Opening
+     * its local witness must not clear the execution upgrade requirement. */
+    struct bw_native_prepared legacy=prepared;legacy.startup_upgrade_required=1;
+    struct bw_native_launch_admission *removal_owner=NULL;const char *removal_error=NULL;
+    CHECK(bw_native_launch_admission_open(&removal_owner,data,&identity,&legacy,"dddddddddddddddddddddddddddddddd",current,&provider,&removal_error)<0&&!removal_owner);
+    unsigned removal_lookups=remote_lookups;const struct bw_preload_source_ampr *offline_ampr=NULL;
+    CHECK(!bw_native_launch_admission_open_for_removal(&removal_owner,data,&identity,&legacy,"dddddddddddddddddddddddddddddddd",current,&provider,&removal_error));
+    CHECK(!bw_native_launch_admission_source_ampr_for_removal(removal_owner,&offline_ampr)&&offline_ampr&&offline_ampr->purpose==BW_SOURCE_AMPR_REMOVAL&&remote_lookups==removal_lookups);
+    struct bw_reader_selection forbidden_selection;uint8_t forbidden_map[32];
+    CHECK(bw_native_launch_admission_selection(removal_owner,&forbidden_selection)<0);
+    CHECK(bw_native_launch_admission_map_sha256(removal_owner,forbidden_map)<0);
+    const struct bw_preload_source_ampr *forbidden_witness=NULL;
+    CHECK(bw_native_launch_admission_source_ampr(removal_owner,&forbidden_witness)<0&&!forbidden_witness);
+    CHECK(!bw_native_launch_admission_close(&removal_owner)&&!removal_owner);cases++;
+    struct bw_native_prepared bad_removal_receipt=prepared;bad_removal_receipt.record_sha256[0]^=1;
+    fail_close_once=1;
+    CHECK(bw_native_launch_admission_open_for_removal(&removal_owner,data,&identity,&bad_removal_receipt,"dddddddddddddddddddddddddddddddd",current,&provider,&removal_error)==-2&&!removal_owner&&!fail_close_once);cases++;
+    fail_close_once=1;
+    CHECK(bw_native_launch_admission_open(&removal_owner,data,&identity,&bad_removal_receipt,"dddddddddddddddddddddddddddddddd",current,&provider,&removal_error)==-2&&!removal_owner&&!fail_close_once&&removal_error&&strstr(removal_error,"released"));cases++;
     path(target,root,"eboot.bin");
+    const int source_ampr_case=!strncmp(scenario,"source-ampr",11)&&strcmp(scenario,"source-ampr-extra-local");
+    if(!strcmp(scenario,"source-ampr-local-tamper")){path(target,root,"fakelib/libSceAmpr.sprx");mutate_byte(target);}
+    if(!strcmp(scenario,"source-ampr-mode")){path(target,root,"fakelib/libSceAmpr.sprx");CHECK(!chmod(target,0644));}
+    if(!strcmp(scenario,"source-ampr-extra-local")){char directory[2048];path(directory,root,"fakelib");CHECK(!mkdir(directory,0755));
+        path(target,directory,"libSceAmpr.sprx");file_write(target,"unsealed module bytes",21,0755);}
     if(!strcmp(scenario,"missing-boot"))CHECK(!unlink(target));
     if(!strcmp(scenario,"changed-boot"))mutate_byte(target);
     if(!strcmp(scenario,"changed-module")){path(target,root,"sce_module/libfixture.sprx");mutate_byte(target);}
@@ -117,13 +143,18 @@ int main(int argc,char **argv){
     int opened=bw_native_launch_admission_open(&admission,data,&identity,&prepared,!strcmp(scenario,"zero-run")?"00000000000000000000000000000000":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",current,&provider,&error);
     unsigned expected_open_failure=!strcmp(scenario,"missing-boot")||!strcmp(scenario,"changed-boot")||!strcmp(scenario,"changed-module")||
         !strcmp(scenario,"mode-module")||!strcmp(scenario,"index-mismatch")||!strcmp(scenario,"map-mismatch")||!strcmp(scenario,"receipt-mismatch")||
-        !strcmp(scenario,"source-owner-mismatch")||!strcmp(scenario,"settings-before")||!strcmp(scenario,"linked-boot")||!strcmp(scenario,"zero-run");
+        !strcmp(scenario,"source-owner-mismatch")||!strcmp(scenario,"settings-before")||!strcmp(scenario,"linked-boot")||!strcmp(scenario,"zero-run")||!strcmp(scenario,"source-ampr-local-tamper")||!strcmp(scenario,"source-ampr-mode");
     CHECK((opened!=0)==expected_open_failure);cases++;
     if(expected_open_failure){CHECK(!admission&&error);goto finish;}
-    CHECK(admission&&admission->required_count==3&&!admission->prepared.bytes_verified);
+    CHECK(admission&&admission->required_count==3u+(unsigned)source_ampr_case&&!admission->prepared.bytes_verified);
+    const struct bw_preload_source_ampr *source_ampr=(const struct bw_preload_source_ampr *)(uintptr_t)1;
+    const struct bw_preload_source_ampr *removal_ampr=NULL;unsigned offline_lookups=remote_lookups;
+    CHECK(!bw_native_launch_admission_source_ampr_for_removal(admission,&removal_ampr)&&removal_ampr&&
+        removal_ampr->purpose==BW_SOURCE_AMPR_REMOVAL&&!bw_preload_source_ampr_current(removal_ampr,root)&&remote_lookups==offline_lookups);
+    CHECK(bw_native_launch_admission_source_ampr(admission,&source_ampr)==-1&&!source_ampr);
     unsigned hash_bytes_once=required_hash_bytes;struct bw_reader_selection selected;
     CHECK(!bw_native_launch_admission_selection(admission,&selected));
-    CHECK(selected.manifest_count==streams+4&&selected.source_kind==BW_PROVIDER_FOLDER&&!selected.prepared_policy);
+    CHECK(selected.manifest_count==streams+4u+(unsigned)source_ampr_case&&selected.source_kind==BW_PROVIDER_FOLDER&&!selected.prepared_policy);
     if(!strcmp(scenario,"settings-after"))cancel_at=guard_calls+1;
     if(!strcmp(scenario,"required-after")){path(target,root,"sce_module/libfixture.sprx");mutate_byte(target);}
     if(!strcmp(scenario,"receipt-after")){path(target,state,"prepared.bin");mutate_byte(target);}
@@ -145,6 +176,16 @@ int main(int argc,char **argv){
     CHECK((preflight_result!=0)==source_failure);cases++;
     if(source_failure){CHECK(error&&!data_admission.valid&&!checked.bytes_verified);goto close;}
     CHECK(data_admission.valid&&checked.state==BW_PREPARED_VALID&&!checked.bytes_verified&&!memcmp(data_admission.map_sha256,admission->map_sha256,32));
+    CHECK(!bw_native_launch_admission_source_ampr(admission,&source_ampr)&&source_ampr&&
+        source_ampr->purpose==BW_SOURCE_AMPR_EXECUTION&&source_ampr!=removal_ampr&&removal_ampr->purpose==BW_SOURCE_AMPR_REMOVAL&&
+        source_ampr->present==(unsigned)source_ampr_case&&!bw_preload_source_ampr_current(source_ampr,root));
+    if(source_ampr_case){unsigned found=0;for(uint32_t id=0;id<admission->manifest.count;id++){struct bw_manifest_record row;
+        CHECK(!bw_manifest_get(&admission->manifest,id,&row));if(strcmp(row.path,"fakelib/libSceAmpr.sprx"))continue;
+        CHECK(row.flags==BW_MANIFEST_LOCAL&&source_ampr->size==row.size&&!memcmp(source_ampr->sha256,admission->digests+56u+32u*id,32));found++;}CHECK(found==1);}
+    else CHECK(!source_ampr->size);
+    if(!strcmp(scenario,"source-ampr-stale")){path(target,root,"fakelib/libSceAmpr.sprx");mutate_byte(target);
+        CHECK(bw_preload_source_ampr_current(source_ampr,root)!=0);source_ampr=(const struct bw_preload_source_ampr *)(uintptr_t)1;
+        CHECK(bw_native_launch_admission_source_ampr(admission,&source_ampr)!=0&&!source_ampr);goto close;}
     /* Real registration metadata/SQLite fixture is created by the Python
      * driver, after Send chose the exact root. Transport is read-only here. */
     path(target,argv[1],"root.txt");file_write(target,root,strlen(root),0600);

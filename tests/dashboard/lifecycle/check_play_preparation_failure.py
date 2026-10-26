@@ -31,7 +31,7 @@ def main():
     sources=[fixture,LIB/'startup_runtime_idle.c',STREAM/'diagnostics/game_stop_identity.c']
     sources += [LIB/n for n in ('native_job.c','source_catalog.c','source_binding.c','source_identity.c','native_request.c','source_profile.c')]
     sources += [STREAM/'share_config.c',STREAM/'manifest.c']
-    used={Path(__file__).resolve(),HERE/'fixture_sdk.py',ROOT/'tools/build/app-recipe.json',LIB/'native_backend.c',ROOT/'tools/build/reader_patch.py',*sources}
+    used={Path(__file__).resolve(),HERE/'fixture_sdk.py',HERE/'source_ampr_admission_model.h',ROOT/'tools/build/app-recipe.json',LIB/'native_backend.c',ROOT/'tools/build/reader_patch.py',*sources}
     possible=set(used)
     for base in (ROOT/'src/blackwire',ROOT/'vendor/libsmb2/include',ROOT/'vendor/sqlite',ROOT/'vendor/ampr/third_party/lz4/lib'):
         possible.update(p.resolve() for p in base.rglob('*') if p.is_file() and p.suffix in ('.c','.h','.S'))

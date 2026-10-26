@@ -1,6 +1,6 @@
 #ifndef BW_SEND_DIAGNOSTIC_H
 #define BW_SEND_DIAGNOSTIC_H
-/* Private diagnostic build: bounded best-effort logging, no authority or retry changes. */
+/* Opt-in private diagnostics; release calls remain format checked but inert. */
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
@@ -12,6 +12,7 @@
 #define BW_SEND_LOG_PATH "/data/blackwire/send-diagnostic.log"
 #endif
 #define BW_SEND_LOG_LIMIT (1024u*1024u)
+#if defined(BW_SEND_DIAGNOSTIC) && BW_SEND_DIAGNOSTIC
 static inline void bw_send_log(const char *event,const char *format,...) __attribute__((format(printf,2,3)));
 static inline void bw_send_log(const char *event,const char *format,...) {
     int saved=errno;char line[2048];struct timespec at={0};
@@ -33,4 +34,13 @@ static inline void bw_send_log(const char *event,const char *format,...) {
     }
     errno=saved;
 }
+#else
+static inline void bw_send_log_disabled(const char *event,const char *format,...) __attribute__((format(printf,2,3)));
+static inline void bw_send_log_disabled(const char *event,const char *format,...) {
+    (void)event;(void)format;
+}
+/* The unreachable call keeps printf checking without evaluating arguments,
+ * emitting private format strings, touching errno or doing console I/O. */
+#define bw_send_log(...) do { if (0) bw_send_log_disabled(__VA_ARGS__); } while (0)
+#endif
 #endif

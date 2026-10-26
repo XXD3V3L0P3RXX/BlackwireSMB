@@ -50,6 +50,10 @@ int bw_native_prepared_inspect(const char *base,const struct bw_provider_binding
          * must not classify streamed archive contents as missing LOCAL files. */
         result=bw_native_send_inspect(base,identity,out);
         if(!result&&out->state==BW_PREPARED_VALID){
+            if(out->prepared_policy==3){
+                if(strcmp(out->prepared_component,identity->binding.game)||out->provenance_size<384||out->provenance_size>1024u*1024u){out->state=BW_PREPARED_UNKNOWN;return -1;}
+                return result; /* sealed ordinary projection; no legacy hint */
+            }
             if(out->prepared_policy){out->state=BW_PREPARED_UNKNOWN;return -1;}
             /* In this build the same hint function retains only the pure
              * recorded STREAM -> current LOCAL metadata classification check.
@@ -57,7 +61,7 @@ int bw_native_prepared_inspect(const char *base,const struct bw_provider_binding
              * classification-retirement path, never be advertised ready. */
             unsigned upgrade=0;
             if(bw_native_legacy_startup_upgrade(base,identity,out,&upgrade)){out->state=BW_PREPARED_UNKNOWN;return -1;}
-            out->startup_upgrade_required=upgrade;
+            out->startup_upgrade_required|=upgrade;
         }
         return result;
     }

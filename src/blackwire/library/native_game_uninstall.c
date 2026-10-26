@@ -8,6 +8,7 @@
 #include "preload_bundle.h"
 #include "native_json.h"
 #include "source_param.h"
+#include "source_companions.h"
 #include "send_diagnostic.h"
 #include "../streamreader/copy_fs.h"
 #include "../streamreader/copy_sha256.h"
@@ -35,6 +36,10 @@ struct gu_plan {
     unsigned lock_pinned;
     struct prepare_v2 anchor[7];
     unsigned char receipt[384],*map,*digests;
+    unsigned char *original_map,*original_digests,*companions;
+    size_t map_size,digest_size,original_map_size,original_digest_size,companion_size;
+    struct stat original_identity[2];
+    struct bw_companion_receipt *projection;
     struct bw_manifest manifest;
     struct {const char *path;uint32_t id;} *rows;
     struct gu_node *nodes;size_t count,capacity,pool;
@@ -102,7 +107,15 @@ static int gu_provider(const struct bw_provider_binding *identity){
     for(unsigned i=4;i<9;i++)if(b->title[i]<'0'||b->title[i]>'9')return -1;
     char hash[65];for(unsigned i=0;i<32;i++)snprintf(hash+2*i,3,"%02x",b->sha256[i]);return !gu_nonzero(b->sha256,32)||strcmp(hash,b->game+10)?-1:0;
 }
-static int gu_identity(const struct bw_game_uninstall_request *r){return gu_provider(&r->identity)||r->prepared.state!=BW_PREPARED_VALID||r->prepared.prepared_policy||!gu_nonce(r->operation)||!gu_nonce(r->prepared.run)||!gu_nonzero(r->prepared.record_sha256,32)||strnlen(r->confirmed_title,10)!=9||strcmp(r->confirmed_title,r->identity.binding.title)||strcmp(r->prepared.game,r->identity.binding.game)?-1:0;}
+static int gu_prepared_policy(const struct bw_native_prepared *p){
+    if(!p->prepared_policy)return 0;
+    return p->prepared_policy!=3||!memchr(p->game,0,sizeof p->game)||!memchr(p->prepared_component,0,sizeof p->prepared_component)||
+        strcmp(p->prepared_component,p->game)||!gu_nonzero(p->provenance_sha256,32)||
+        p->provenance_size<BW_COMPANION_HEADER_BYTES||p->provenance_size>BW_COMPANION_RECEIPT_LIMIT?-1:0;
+}
+static int gu_identity(const struct bw_game_uninstall_request *r){return gu_provider(&r->identity)||r->prepared.state!=BW_PREPARED_VALID||gu_prepared_policy(&r->prepared)||
+    (r->legacy_source_fakelib2&&(r->legacy_source_fakelib2!=1||r->prepared.prepared_policy||r->reader_size||gu_nonzero(r->reader_sha256,32)))||
+    !gu_nonce(r->operation)||!gu_nonce(r->prepared.run)||!gu_nonzero(r->prepared.record_sha256,32)||strnlen(r->confirmed_title,10)!=9||strcmp(r->confirmed_title,r->identity.binding.title)||strcmp(r->prepared.game,r->identity.binding.game)?-1:0;}
 /* Do not retry a failed close: ownership may already have been consumed.
  * Keep uncertainty separate from destructive intent and latch it per plan. */
 static int gu_release(struct gu_plan *p,int fd){int rc=close(fd);if(rc)p->release_unknown=1;return rc;}
@@ -236,6 +249,43 @@ static int gu_state_file(struct gu_plan *p,const char *name,const unsigned char 
     if(!strcmp(base,receipt))return mode==(previous?0600:0644)?gu_storage_json(p,body,size):-1;
     if(!strcmp(base,"source.json")&&!previous){struct bw_json json={.maximum=4096};int bad=mode!=0644||gu_binding_json(p,&json)||json.used!=size||(json.used==size&&memcmp(body,json.bytes,size));free(json.bytes);return bad?-1:0;}return -1;
 }
+/* Projection authority is entirely local: the physical BWNAT001 table pins
+ * seal a LOCAL receipt row, which in turn pins both ORIGINAL source tables.
+ * Never infer this refinement from a directory name or an arbitrary receipt. */
+static int gu_projection(struct gu_plan *p){
+    if(p->r->prepared.prepared_policy!=3)return 0;
+    uint32_t id=0;if(!gu_find(p,BW_COMPANION_RECEIPT_PATH,&id,0))return -1;
+    struct bw_manifest_record row;struct stat st;void *body=NULL;size_t size=0;
+    if(bw_manifest_get(&p->manifest,id,&row)||row.flags!=BW_MANIFEST_LOCAL||
+       row.size!=p->r->prepared.provenance_size||row.size<BW_COMPANION_HEADER_BYTES||row.size>BW_COMPANION_RECEIPT_LIMIT||
+       gu_current(p)||gu_read(p,p->root,BW_COMPANION_RECEIPT_PATH,BW_COMPANION_RECEIPT_LIMIT,&body,&size,&st))return -1;
+    p->companions=body;p->companion_size=size;unsigned char hash[32];cp_sha_bytes(body,size,hash);
+    if(size!=row.size||(st.st_mode&07777)!=bw_startup_mode(BW_COMPANION_RECEIPT_PATH)||
+       memcmp(hash,p->digests+56u+32u*id,32)||memcmp(hash,p->r->prepared.provenance_sha256,32)||gu_current(p))return -1;
+    const uint64_t map_size=gu_u64(p->companions+216),digest_size=gu_u64(p->companions+224);
+    const size_t map_limit=BW_MANIFEST_HEADER_SIZE+(size_t)BW_MANIFEST_MAX_FILES*BW_MANIFEST_RECORD_SIZE+BW_MANIFEST_MAX_PATH_BYTES;
+    if(map_size<BW_MANIFEST_HEADER_SIZE||map_size>map_limit||digest_size<56u||digest_size>56u+32u*(size_t)BW_MANIFEST_MAX_FILES)return -1;
+    if(gu_read(p,p->state,BW_COMPANION_ORIGINAL_MAP_NAME,(size_t)map_size,&body,&size,p->original_identity))return -1;
+    p->original_map=body;p->original_map_size=size;cp_sha_bytes(body,size,hash);
+    if(size!=map_size||(p->original_identity[0].st_mode&07777)!=0600||memcmp(hash,p->companions+152,32)||gu_current(p))return -1;
+    if(gu_read(p,p->state,BW_COMPANION_ORIGINAL_DIGEST_NAME,(size_t)digest_size,&body,&size,p->original_identity+1))return -1;
+    p->original_digests=body;p->original_digest_size=size;cp_sha_bytes(body,size,hash);
+    if(size!=digest_size||(p->original_identity[1].st_mode&07777)!=0600||memcmp(hash,p->companions+184,32)||gu_current(p))return -1;
+    struct bw_companion_binding binding={.provider=&p->r->identity,.prepare_run=p->r->prepared.run,
+        .source_generation_sha256=p->receipt+80,.roots={gu_u64(p->receipt+304),gu_u64(p->receipt+312),gu_u64(p->receipt+320),gu_u64(p->receipt+328)}};
+    struct bw_companion_source_tables original={p->original_map,p->original_map_size,p->original_digests,p->original_digest_size};
+    struct bw_companion_tables physical={.map=p->map,.map_size=p->map_size,.digests=p->digests,.digest_size=p->digest_size,.receipt=p->companions,.receipt_size=p->companion_size};
+    struct bw_companion_prepared_seal seal;memcpy(seal.map_sha256,p->receipt+112,32);memcpy(seal.digests_sha256,p->receipt+144,32);
+    return bw_companion_receipt_open(&p->projection,&binding,&original,&physical,&seal,NULL)||gu_current(p)?-1:0;
+}
+static int gu_original_state_file(struct gu_plan *p,const char *name,int fd,const struct stat *st){
+    if(!p->projection)return 1;
+    unsigned id=!strcmp(name,BW_COMPANION_ORIGINAL_MAP_NAME)?0u:!strcmp(name,BW_COMPANION_ORIGINAL_DIGEST_NAME)?1u:2u;
+    if(id==2)return 1;
+    const size_t size=id?p->original_digest_size:p->original_map_size;unsigned char hash[32];
+    return (st->st_mode&07777)!=0600||(uint64_t)st->st_size!=size||!gu_same(st,p->original_identity+id)||
+        gu_hash(p,fd,size,hash)||memcmp(hash,p->companions+(id?184:152),32)?-1:0;
+}
 static int gu_pin_hex(const char *text,unsigned char out[32]){for(unsigned i=0;i<32;i++){unsigned value;if(sscanf(text+2*i,"%2x",&value)!=1)return -1;out[i]=(unsigned char)value;}return 0;}
 static int gu_special(struct gu_plan *p,const char *name,int fd,const struct stat *st){
     const char *leaves[]={"blackwire.files","blackwire.generation.digests","ampr_emu.index"};
@@ -247,6 +297,11 @@ static int gu_special(struct gu_plan *p,const char *name,int fd,const struct sta
         if(!strcmp(run,p->r->prepared.run)){unsigned char hash[32];cp_sha_bytes(body,128,hash);if(memcmp(hash,p->receipt+208,32))return -1;}return 0;
     }
     if(!strncmp(name,"fakelib2/",9)){
+        if(p->r->legacy_source_fakelib2)return -1;
+        /* Projected source-owned rows were checked FIRST against the sealed
+         * physical map. Only the generated, trusted selected reader may be an
+         * extra. A legacy fixed-name module is no authority in this policy. */
+        if(p->projection&&strcmp(name,"fakelib2/libSceAmpr.sprx"))return -1;
         static const struct {const char *leaf;uint64_t size;const char *hash;} pins[]={
             {"libSceAppContent.sprx",32982,"53e485e22970c693ab70c05bd78b8f627442ed41ca9a49692b38615046494a6b"},
             {"libSceGameUpdate.sprx",9126,"1e31ddbe4809b7c5ec117e9b7e1227befe757c31d1f5f73e6c7d5a3d2d238973"},
@@ -273,7 +328,8 @@ static int gu_walk(struct gu_plan *p,int directory,const char *prefix,unsigned s
         }else{
             if(named.st_nlink!=1||named.st_size<0){bad=1;break;}fd=v2_openat(directory,entry->d_name,O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);
             if(fd<0||fstat(fd,&held)||!gu_same(&named,&held)){bad=1;goto row_done;}
-            if(state){void *body=NULL;size_t size=0;struct stat st;bad=gu_read(p,directory,entry->d_name,4096,&body,&size,&st)||!gu_same(&held,&st)||gu_state_file(p,path,body,size,held.st_mode&07777);free(body);}
+            if(state){int original=gu_original_state_file(p,path,fd,&held);if(original<0)bad=1;
+                else if(original){void *body=NULL;size_t size=0;struct stat st;bad=gu_read(p,directory,entry->d_name,4096,&body,&size,&st)||!gu_same(&held,&st)||gu_state_file(p,path,body,size,held.st_mode&07777);free(body);}}
             else {uint32_t id=0;if(gu_find(p,path,&id,0)){struct bw_manifest_record row;unsigned char hash[32];bad=bw_manifest_get(&p->manifest,id,&row)||row.size!=(uint64_t)held.st_size||(held.st_mode&07777)!=bw_startup_mode(row.path);
                     if(!bad&&row.flags==BW_MANIFEST_STREAM)bad=held.st_blocks!=0;
                     else if(!bad)bad=gu_hash(p,fd,row.size,hash)||memcmp(hash,p->digests+56u+32u*id,32);
@@ -357,15 +413,34 @@ static void gu_intent_encode(struct gu_plan *p){unsigned char *v=p->intent;const
 static int gu_load_plan(struct gu_plan *p){
     p->checking="prepared_root_identity";
     const struct bw_source_binding *b=&p->r->identity.binding;p->root=gu_open_child(p,p->games,1,b->game,4);p->state=gu_open_child(p,p->scope,2,b->game,5);if(p->root<0||p->state<0)return -1;
-    p->checking="actual_prepared_metadata";struct bw_native_prepared actual={0};if(bw_native_send_inspect(p->r->environment.data_root,&p->r->identity,&actual)||actual.state!=BW_PREPARED_VALID||memcmp(actual.record_sha256,p->r->prepared.record_sha256,32)||strcmp(actual.run,p->r->prepared.run)||gu_current(p))return -1;
+    p->checking="actual_prepared_metadata";struct bw_native_prepared actual={0};int inspected=bw_native_send_inspect(p->r->environment.data_root,&p->r->identity,&actual);if(inspected==-2)p->release_unknown=1;
+    if(inspected||actual.state!=BW_PREPARED_VALID||actual.prepared_policy!=p->r->prepared.prepared_policy||
+       (actual.prepared_policy==3&&(strcmp(actual.prepared_component,p->r->prepared.prepared_component)||memcmp(actual.provenance_sha256,p->r->prepared.provenance_sha256,32)||actual.provenance_size!=p->r->prepared.provenance_size))||
+       memcmp(actual.record_sha256,p->r->prepared.record_sha256,32)||strcmp(actual.run,p->r->prepared.run)||gu_current(p))return -1;
     p->checking="exact_receipt_and_map";
     void *body=NULL;size_t size=0;struct stat st;if(gu_read(p,p->state,"prepared.bin",384,&body,&size,&st)||size!=384||(st.st_mode&07777)!=0600||gu_receipt(p,body,size,1)){free(body);return -1;}memcpy(p->receipt,body,384);free(body);
-    if(gu_read(p,p->root,"blackwire.files",40u*1024u*1024u,&body,&size,&st)||size!=gu_u64(p->receipt+280)){free(body);return -1;}p->map=body;unsigned char hash[32];cp_sha_bytes(body,size,hash);if(memcmp(hash,p->receipt+112,32)||bw_manifest_open(&p->manifest,body,size)||p->manifest.count!=gu_u32(p->receipt+268))return -1;
-    if(gu_read(p,p->root,"blackwire.generation.digests",56u+32u*BW_MANIFEST_MAX_FILES,&body,&size,&st)||size!=gu_u64(p->receipt+288)){free(body);return -1;}p->digests=body;cp_sha_bytes(body,size,hash);if(size!=56u+32u*p->manifest.count||memcmp(hash,p->receipt+144,32)||memcmp(body,"BWDIG001",8)||gu_u32((unsigned char *)body+8)!=1||gu_u32((unsigned char *)body+12)!=p->manifest.count||gu_u64((unsigned char *)body+16)!=p->manifest.checksum||memcmp((unsigned char *)body+24,p->receipt+112,32))return -1;
+    if(gu_read(p,p->root,"blackwire.files",40u*1024u*1024u,&body,&size,&st)||size!=gu_u64(p->receipt+280)){free(body);return -1;}p->map=body;p->map_size=size;unsigned char hash[32];cp_sha_bytes(body,size,hash);if(memcmp(hash,p->receipt+112,32)||bw_manifest_open(&p->manifest,body,size)||p->manifest.count!=gu_u32(p->receipt+268))return -1;
+    if(gu_read(p,p->root,"blackwire.generation.digests",56u+32u*BW_MANIFEST_MAX_FILES,&body,&size,&st)||size!=gu_u64(p->receipt+288)){free(body);return -1;}p->digests=body;p->digest_size=size;cp_sha_bytes(body,size,hash);if(size!=56u+32u*p->manifest.count||memcmp(hash,p->receipt+144,32)||memcmp(body,"BWDIG001",8)||gu_u32((unsigned char *)body+8)!=1||gu_u32((unsigned char *)body+12)!=p->manifest.count||gu_u64((unsigned char *)body+16)!=p->manifest.checksum||memcmp((unsigned char *)body+24,p->receipt+112,32))return -1;
     p->rows=calloc(p->manifest.count,sizeof *p->rows);if(!p->rows)return -1;for(uint32_t i=0;i<p->manifest.count;i++){struct bw_manifest_record row;if(bw_manifest_get(&p->manifest,i,&row))return -1;p->rows[i].path=row.path;p->rows[i].id=i;}
     qsort(p->rows,p->manifest.count,sizeof *p->rows,gu_row_compare);
+    if(p->r->legacy_source_fakelib2){unsigned mapped=0;
+        for(uint32_t i=0;i<p->manifest.count;i++)if(!strncmp(p->rows[i].path,"fakelib2/",9))mapped++;
+        if(!mapped)return -1;
+    }
+    p->checking="sealed_companion_projection";if(gu_projection(p))return -1;
     p->checking="complete_prepared_tree";if(gu_walk(p,p->root,"",0,0))return -1;p->checking="complete_private_record_tree";if(gu_walk(p,p->state,"",1,0))return -1;
-    unsigned fake_count=0,fake_dir=0;for(size_t i=0;i<p->count;i++)if(!p->nodes[i].state){if(!strcmp(p->nodes[i].path,"fakelib2"))fake_dir++;else if(!strncmp(p->nodes[i].path,"fakelib2/",9))fake_count++;}if(fake_dir&&(!fake_count||fake_count>6))return -1;
+    unsigned fake_count=0,fake_dir=0,generated=0;
+    for(size_t i=0;i<p->count;i++)if(!p->nodes[i].state){
+        if(!strcmp(p->nodes[i].path,"fakelib2"))fake_dir++;
+        else if(!strncmp(p->nodes[i].path,"fakelib2/",9)){
+            fake_count++;uint32_t id=0;
+            if(S_ISREG(p->nodes[i].st.st_mode)&&!gu_find(p,p->nodes[i].path,&id,0))generated++;
+        }
+    }
+    /* Source-owned rows (and their required directories) were already matched
+     * exactly above. The legacy six-member budget constrains generated extras,
+     * never the number of independently owned original companion files. */
+    if(!p->projection&&fake_dir&&(!fake_count||generated>6))return -1;
     /* The complete manifest must occur exactly once; the tree walk rejects
      * extras but cannot infer missing expected entries from directory counts. */
     for(uint32_t i=0;i<p->manifest.count;i++){struct bw_manifest_record row;if(bw_manifest_get(&p->manifest,i,&row))return -1;char leaf[256],relative[1024];int parent=gu_parent(p,p->anchor+4,p->root,row.path,0,leaf,relative);if(parent<0)return -1;struct stat named;int bad=cp_fstatat(parent,leaf,&named,AT_SYMLINK_NOFOLLOW);if(gu_release(p,parent))bad=1;if(bad)return -1;}
@@ -391,7 +466,7 @@ static int gu_delete_nodes(struct gu_plan *p,unsigned state){
     if((p->continuation&&gu_continuation_guard(p))||gu_current(p)||fstat(fd,&held)||cp_fstatat(parent,p->r->identity.binding.game,&named,AT_SYMLINK_NOFOLLOW)||!gu_node_same(p->ids+a,&held)||!gu_node_same(&held,&named)||gu_rmdir(parent,p->r->identity.binding.game))return -1;
     if(state)p->state_removed=1;else p->root_removed=1;return fsync(parent)||gu_absent_at(parent,p->r->identity.binding.game)||gu_current(p)?-1:0;
 }
-static int gu_close(struct gu_plan *p){int bad=0;int *fds[]={&p->root,&p->state,&p->send_lock,&p->ledger,&p->apps,&p->scope,&p->games,&p->data};for(unsigned i=0;i<8;i++)if(*fds[i]>=0){if(gu_release(p,*fds[i]))bad=1;*fds[i]=-1;}for(size_t i=0;i<p->count;i++)free(p->nodes[i].path);free(p->nodes);free(p->rows);free(p->map);free(p->digests);return bad?-1:0;}
+static int gu_close(struct gu_plan *p){int bad=0;int *fds[]={&p->root,&p->state,&p->send_lock,&p->ledger,&p->apps,&p->scope,&p->games,&p->data};for(unsigned i=0;i<8;i++)if(*fds[i]>=0){if(gu_release(p,*fds[i]))bad=1;*fds[i]=-1;}for(size_t i=0;i<p->count;i++)free(p->nodes[i].path);free(p->nodes);free(p->rows);free(p->map);free(p->digests);bw_companion_receipt_clear(&p->projection);free(p->original_map);free(p->original_digests);free(p->companions);return bad?-1:0;}
 static int gu_complete(struct gu_plan *p){
     if(gu_all_absent(p)||p->r->ops.source_excluded(p->r->ops.opaque,&p->removed)||gu_all_absent(p))return -1;
     p->out->registration_confirmed=p->out->source_absent=p->out->prepared_record_absent=1;
@@ -437,7 +512,7 @@ int bw_native_game_uninstall_continue_files(const struct bw_game_uninstall_files
      * private view is used only by existing inventory/deletion helpers; its
      * registration_absent/source_safe pointers remain NULL throughout. */
     struct bw_game_uninstall_request r={.environment=q->environment,.identity=q->identity,.prepared=q->prepared,
-        .ops={.opaque=q->ops.opaque,.current=q->ops.current,.source_excluded=q->ops.source_excluded,.observe=q->ops.observe},.reader_size=q->reader_size};
+        .ops={.opaque=q->ops.opaque,.current=q->ops.current,.source_excluded=q->ops.source_excluded,.observe=q->ops.observe},.reader_size=q->reader_size,.legacy_source_fakelib2=q->legacy_source_fakelib2};
     memcpy(r.operation,q->operation,sizeof r.operation);memcpy(r.confirmed_title,q->confirmed_title,sizeof r.confirmed_title);memcpy(r.reader_sha256,q->reader_sha256,sizeof r.reader_sha256);
     if(gu_identity(&r)||!r.environment.data_root||!r.environment.apps_root||!r.environment.database)return -1;
     if(pthread_mutex_trylock(&gu_lock))return gu_finish(&(struct gu_plan){.out=out},BW_GAME_REMOVE_UNKNOWN,"another_removal_component_is_active",1);
@@ -495,7 +570,7 @@ int bw_native_game_uninstall_probe(const struct bw_nrc_environment *environment,
         out->can_restore=1;out->reason="removed_source_can_be_shown_again";
 visible:rc=0;goto done;
     }
-    if(prepared->state!=BW_PREPARED_VALID||prepared->prepared_policy||strcmp(prepared->game,identity->binding.game)||!gu_nonce(prepared->run)||!gu_nonzero(prepared->record_sha256,32)){rc=0;goto done;}
+    if(prepared->state!=BW_PREPARED_VALID||gu_prepared_policy(prepared)||strcmp(prepared->game,identity->binding.game)||!gu_nonce(prepared->run)||!gu_nonzero(prepared->record_sha256,32)){rc=0;goto done;}
     p.root=gu_open_child(&p,p.games,1,identity->binding.game,4);p.state=gu_open_child(&p,p.scope,2,identity->binding.game,5);if(p.root<0||p.state<0)goto done;
     void *body=NULL;size_t size=0;struct stat st;int loaded=gu_read(&p,p.state,"prepared.bin",384,&body,&size,&st);int bad=loaded||size!=384||(st.st_mode&07777)!=0600||gu_receipt(&p,body,size,1);if(!bad)memcpy(p.receipt,body,384);free(body);if(bad)goto done;
     struct bw_json json={.maximum=4096};bad=gu_binding_json(&p,&json)||gu_exact(&p,p.state,"source.json",json.bytes,json.used,0644)||gu_exact(&p,p.root,"blackwire.generation.owner",json.bytes,json.used,0644);free(json.bytes);if(bad)goto done;

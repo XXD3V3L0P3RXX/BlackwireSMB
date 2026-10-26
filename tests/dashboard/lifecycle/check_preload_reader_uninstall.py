@@ -88,7 +88,7 @@ def main():
  for d in [unit/'library',LIB,STREAM,STREAM/'diagnostics',HERE,ROOT/'vendor/libsmb2/include',ROOT/'vendor/sqlite',ROOT/'src/blackwire/tools/compressed_stream_candidate']:flags+=['-I',d]
  def compile_one(label,p,extra=()):
   obj=OUT/(label+'.o');dep=obj.with_suffix('.d');run(label,flags+list(extra)+['-MD','-MF',dep,'-c',p,'-o',obj]);deps.append(dep);return obj
- binary=OUT/'selector';run('selector-build',flags+[HERE/'test_preload_reader_selector.c',image,'-pthread',*['-Wl,--wrap='+x for x in ['close','write','fsync','renameat','closedir','clock_gettime']],'-o',binary]);used.add(HERE/'test_preload_reader_selector.c')
+ binary=OUT/'selector';run('selector-build',flags+[HERE/'test_preload_reader_selector.c',image,LIB/'source_companions.c',STREAM/'manifest.c','-pthread',*['-Wl,--wrap='+x for x in ['close','write','fsync','renameat','closedir','clock_gettime']],'-o',binary]);used.update([HERE/'test_preload_reader_selector.c',LIB/'source_companions.c',STREAM/'manifest.c'])
  with tempfile.TemporaryDirectory(prefix='blackwire-reader-select-') as tmp:selector=json.loads(run('selector-filesystem-faults',[binary,tmp]).splitlines()[-1])
  # Reuse the actual Send/core fixture. Only fixed control pin data is synthetic;
  # receipt, SQLite, namespace, hashes, deletion and Removed publication are real.
@@ -99,7 +99,7 @@ def main():
   core,count=re.subn(pattern,lambda _:'{"%s",%d,"%s"}'%(name,len(body),hashlib.sha256(body).hexdigest()),core,count=1)
   if count!=1:raise ValueError('fixed core control pin seam '+name)
  core_path=unit/'library/tested-uninstall.c';core_path.write_text(core)
- sources=[fixture_test,core_path,bundle,image]+[LIB/n for n in ['native_removed_sources.c','native_registration.c','registration_db.c','native_prepared_target.c','reader_selection.c','source_binding.c','source_identity.c','source_profile.c','source_plan.c','source_param.c','source_directory.c']]+[STREAM/'manifest.c',STREAM/'share_config.c']
+ sources=[fixture_test,core_path,bundle,image]+[LIB/n for n in ['native_removed_sources.c','native_registration.c','registration_db.c','native_prepared_target.c','reader_selection.c','source_binding.c','source_identity.c','source_namespace.c','source_companions.c','source_profile.c','source_plan.c','source_param.c','source_directory.c']]+[STREAM/'manifest.c',STREAM/'share_config.c']
  objects=[]
  for i,p in enumerate(sources):
   extra=['-include',HERE/'test_game_uninstall_io.h'] if p==core_path else []
@@ -111,7 +111,7 @@ def main():
    if len(fields)>=2:(needed if fields[-2]=='U' else defined).add(fields[-1])
  missing=sorted(x for x in needed-defined if x.startswith('bw_'))
  declarations='\n'.join(p.read_text() for d in [LIB,STREAM,ROOT/'src/blackwire/tools/compressed_stream_candidate'] for p in d.glob('*.h') if p.name!='native_json.h')
- stub=['#include "reader_preflight.h"','#include "native_register.h"','#include "native_prepared_target.h"','#include "native_derived_context.h"','#include "native_batch_context.h"','#include <stdlib.h>']
+ stub=['#include "reader_preflight.h"','#include "native_register.h"','#include "native_prepared_target.h"','#include "native_derived_context.h"','#include "native_batch_context.h"','#include "source_namespace.h"','#include <stdlib.h>']
  for name in missing:
   matches=re.findall(r'((?:int|void|const\s+struct\s+\w+\s*\*|struct\s+\w+\s*\*)\s*'+re.escape(name)+r'\s*\([^;{}]*\))\s*;',declarations)
   if not matches:raise ValueError('unmodeled unused branch '+name)

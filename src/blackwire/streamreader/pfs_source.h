@@ -43,6 +43,9 @@ typedef int (*bw_pfs_visit_fn)(void *, const char *, const struct bw_pfs_inode *
 int bw_pfs_open(struct bw_pfs *,bw_pfs_pread_fn,void *,uint64_t);
 int bw_pfs_inode_get(struct bw_pfs *,uint32_t,struct bw_pfs_inode *);
 int bw_pfs_walk(struct bw_pfs *,bw_pfs_visit_fn,void *,uint32_t *);
+/* Separate typed namespace observation: emits directories, including empty,
+ * as well as files. Existing file-only walk/count behavior is unchanged. */
+int bw_pfs_walk_nodes(struct bw_pfs *,bw_pfs_visit_fn,void *,uint32_t *);
 int bw_pfs_find(struct bw_pfs *,const char *,struct bw_pfs_inode *);
 int bw_pfs_read_file(struct bw_pfs *,uint32_t,uint64_t,void *,size_t);
 const char *bw_pfs_error(int);

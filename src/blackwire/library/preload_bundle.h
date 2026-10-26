@@ -7,11 +7,17 @@
  * 1942dd01a6a0ab5532ba51af10444d5f776f23c0, PlayGo & AMPR_EMU/
  * PlayGo_v0.5/{log,nolog} and PlayGo_v0.6/{log,nolog}/libScePlayGo.sprx.
  * The same commit includes GPL-3.0 source in each Quellcode/ directory.
+ * PlayGo 0.4 provenance: drakmor/pgo_stub tag 0.4, source commit
+ * cf03c448b5a1d974b9c4656f16c6d7587dbb8507, log/ and nolog/ artifacts
+ * in pg_stub_0.4.zip (SHA-256
+ * 615999cf2869218f0f1b07b27545dde62905887435c3c0e9fa9f119eceb85732).
  * These are exact distributed artifact identities, not a reproducible-build
  * claim or authority to accept another build with a similar filename. */
 struct bw_preload_playgo_pin {size_t size;const char *hex;};
 static inline const struct bw_preload_playgo_pin *bw_preload_playgo_pin(uint64_t size){
     static const struct bw_preload_playgo_pin pins[]={
+        {17430,"39c508a84208a81042dfe637619ece44a6b1d7f737076523aa8096e5eba3457f"},
+        {11590,"a0f20f40107713523ba1a3a0281fb7c4e238b2b5d3fda9354119352d9393d2f0"},
         {20582,"305e6e117ca3a16cb6062007e3ddee7eb184ca19c3e353d5b12a6161bc92a3bd"},
         {14390,"645caa464a7d28fab7019ba547b204ecc007f87ccec072d330eb2b72a3e9ddac"},
         {23702,"7595924889d67c33149dc152903d2f2492abbc3e846196d536c4f16a7b5560f6"},
@@ -37,6 +43,9 @@ struct bw_preload_bundle_request {
     void *opaque;
     double deadline;
 };
+struct bw_preload_source_ampr;
+struct bw_preload_companions;
+struct bw_preload_legacy_companions;
 /* First failure only. Strings name fixed stages/libraries, never paths or
  * credentials, and remain valid after return. A zero system_error means no
  * usable errno was captured; the reason still describes the refusal. */
@@ -81,6 +90,25 @@ int bw_preload_bundle_install_checked(const struct bw_preload_bundle_request *,
 /* Strict second check: no creation, predecessor adoption or upgrade. */
 int bw_preload_bundle_verify_checked(const struct bw_preload_bundle_request *,
                                     struct bw_preload_bundle_result *);
+/* Internal source-bound variants. The borrowed opaque witness comes only from
+ * a live startup admission after its sealed LOCAL table and current source
+ * generation have been checked. Original source Ampr is freshly hash-verified
+ * and retained unchanged; the destination Ampr remains the embedded reader.
+ * NULL/absent/stale/cross-root witnesses never admit a new source module. The
+ * legacy entrypoints above retain their prior source-Ampr refusal. */
+int bw_preload_bundle_install_source_checked(const struct bw_preload_bundle_request *,
+    const struct bw_preload_source_ampr *,struct bw_preload_bundle_result *);
+int bw_preload_bundle_verify_source_checked(const struct bw_preload_bundle_request *,
+    const struct bw_preload_source_ampr *,struct bw_preload_bundle_result *);
+/* New-generation projection only. The distinct opaque held witness pins the
+ * complete source-bound physical companion namespace, including metadata and
+ * unknown source modules. They are already copied/hash-verified by Send;
+ * only the compiled generated reader is created/upgraded outside that map.
+ * Legacy fixed-profile entrypoints keep their original contracts. */
+int bw_preload_bundle_install_projection_checked(const struct bw_preload_bundle_request *,
+    const struct bw_preload_companions *,struct bw_preload_bundle_result *);
+int bw_preload_bundle_verify_projection_checked(const struct bw_preload_bundle_request *,
+    const struct bw_preload_companions *,struct bw_preload_bundle_result *);
 struct bw_preload_bundle_upgrade_request {
     struct bw_preload_bundle_request bundle;
     const char *data_root,*game,*prepared_run,*launch_run;
@@ -112,6 +140,10 @@ int bw_preload_bundle_upgrade_checked(const struct bw_preload_bundle_upgrade_req
 struct bw_preload_bundle_control {int (*checkpoint)(void *);void *opaque;};
 int bw_preload_bundle_upgrade_controlled(const struct bw_preload_bundle_upgrade_request *,
     const struct bw_preload_bundle_control *,struct bw_preload_bundle_result *);
+int bw_preload_bundle_upgrade_source_controlled(const struct bw_preload_bundle_upgrade_request *,
+    const struct bw_preload_bundle_control *,const struct bw_preload_source_ampr *,struct bw_preload_bundle_result *);
+int bw_preload_bundle_upgrade_projection_controlled(const struct bw_preload_bundle_upgrade_request *,
+    const struct bw_preload_bundle_control *,const struct bw_preload_companions *,struct bw_preload_bundle_result *);
 /* Presentation/refusal only; never grants launch or migration authority.
  * 0=workspace observed absent, 1=present (any type), -1=not safely observed.
  * Call only for a trusted valid prepared game key. No hashes or writes. */
@@ -124,4 +156,14 @@ struct bw_preload_reader_pin {size_t size;uint8_t sha256[32];};
  * -2 means release uncertainty, even though mutation_started remains false. */
 int bw_preload_bundle_select_for_removal(const struct bw_preload_bundle_upgrade_request *,
                                        struct bw_preload_reader_pin *,struct bw_preload_bundle_result *);
+int bw_preload_bundle_select_source_for_removal(const struct bw_preload_bundle_upgrade_request *,
+    const struct bw_preload_source_ampr *,struct bw_preload_reader_pin *,struct bw_preload_bundle_result *);
+int bw_preload_bundle_select_projection_for_removal(const struct bw_preload_bundle_upgrade_request *,
+    const struct bw_preload_companions *,struct bw_preload_reader_pin *,struct bw_preload_bundle_result *);
+/* Old failed source-fakelib2 preparation only: complete all-mapped physical
+ * LOCAL/empty-STREAM ownership, no generated reader claim and no execution.
+ * Success returns a ZERO pin; deletion must independently rebuild this exact
+ * legacy all-mapped inventory before accepting that explicit request profile. */
+int bw_preload_bundle_select_legacy_source_for_removal(const struct bw_preload_bundle_upgrade_request *,
+    const struct bw_preload_legacy_companions *,struct bw_preload_reader_pin *,struct bw_preload_bundle_result *);
 #endif

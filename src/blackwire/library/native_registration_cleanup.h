@@ -56,6 +56,15 @@ struct bw_nrc_ticket;
  * Failed intents are retained, never blindly resumed. */
 int bw_nrc_begin(const struct bw_nrc_environment *,const struct bw_reader_selection *,
     const struct bw_nrc_ops *,struct bw_nrc_ticket **,struct bw_nrc_result *);
+/* Explicit policy3 registration intent. A live execution admission must bind
+ * the full selection and original source generation; a cached policy/filename
+ * or LOCAL-only removal owner cannot substitute. Borrow through finish(). */
+int bw_nrc_begin_projected(const struct bw_nrc_environment *,const struct bw_reader_selection *,
+    struct bw_native_launch_admission *,const struct bw_nrc_ops *,struct bw_nrc_ticket **,struct bw_nrc_result *);
+/* Shared read-only execution qualification for policy3 joined callers. This
+ * grants no ownership/mutation and never opens a source or changes policy. */
+int bw_nrc_projection_execution_current(struct bw_native_launch_admission *,
+    const char *,const struct bw_reader_selection *);
 /* Call only with that same registration job's successful result/current
  * guard, before launch. Requires registered AND add/scan attempted, exact fresh
  * normal registration verification and captured source/app/param/mount witness.

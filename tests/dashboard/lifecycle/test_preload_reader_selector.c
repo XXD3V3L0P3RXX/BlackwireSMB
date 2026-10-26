@@ -5,12 +5,23 @@ static unsigned select_cancel_at;
 #define main retained_upgrade_main
 #include "test_upgrade_fixture.c"
 #undef main
+static const struct bw_preload_source_ampr *source_ampr_witness;
+static struct bw_preload_source_ampr source_ampr_owner;
+static void source_ampr_fixture(const struct bw_preload_bundle_upgrade_request *q){
+ const char original[]="independently owned original source Ampr fixture";
+ memset(&source_ampr_owner,0,sizeof source_ampr_owner);strcpy(source_ampr_owner.root,q->bundle.root);
+ source_ampr_owner.present=1;source_ampr_owner.size=sizeof original;source_ampr_owner.purpose=BW_SOURCE_AMPR_REMOVAL;
+ source_ampr_owner.current_owner=q->bundle.current;source_ampr_owner.owner=q->bundle.opaque;
+ cp_sha_bytes(original,sizeof original,source_ampr_owner.sha256);
+ char folder[2048],file[2048];joined_path(folder,current_root,"fakelib");CHECK(!mkdir(folder,0755));joined_path(file,folder,"libSceAmpr.sprx");write_file(file,original,sizeof original,0755);
+ source_ampr_witness=&source_ampr_owner;
+}
 static void reader_remove(void){char folder[2048],name[2048];joined_path(folder,current_root,"fakelib2");for(unsigned i=0;i<5;i++){joined_path(name,folder,pb_globals[i].name);CHECK(!unlink(name));}CHECK(!rmdir(folder));}
 static void select_case(struct bw_preload_bundle_upgrade_request *q,int expected,int pin_kind){
  uint8_t receipt[32],map[32],before[32],after[32];char name[2048];joined_path(name,current_state,"prepared.bin");digest(name,receipt);joined_path(name,current_root,"blackwire.files");digest(name,map);
  joined_path(name,current_root,"fakelib2/libSceAmpr.sprx");struct stat identity,final;int present=!lstat(name,&identity),regular=present&&S_ISREG(identity.st_mode);if(regular)digest(name,before);
  unsigned opened=fd_count();struct bw_preload_reader_pin pin;memset(&pin,0xff,sizeof pin);struct bw_preload_bundle_result diagnostic={0};
- selecting=1;int result=bw_preload_bundle_select_for_removal(q,&pin,&diagnostic);selecting=0;
+ selecting=1;int result=source_ampr_witness?bw_preload_bundle_select_source_for_removal(q,source_ampr_witness,&pin,&diagnostic):bw_preload_bundle_select_for_removal(q,&pin,&diagnostic);selecting=0;
  if(result!=expected)fprintf(stderr,"selection result%d expected%d stage%s reason%s errno%d\n",result,expected,diagnostic.stage?diagnostic.stage:"",diagnostic.reason?diagnostic.reason:"",diagnostic.system_error);
  CHECK(result==expected&&!diagnostic.mutation_started&&!selection_writes);preserved(receipt,map);
  if(regular){digest(name,after);CHECK(!memcmp(before,after,32));}else if(present)CHECK(!lstat(name,&final)&&pb_same(&identity,&final));else CHECK(access(name,F_OK)<0&&errno==ENOENT);
@@ -49,5 +60,11 @@ int main(int argc,char **argv){CHECK(argc==2);struct bw_preload_bundle_upgrade_r
  q=fixture(argv[1],0);playgo_fixture(0);joined_path(name,current_root,"fakelib2/libScePlayGo.sprx");CHECK(!unlink(name));select_case(&q,-1,0);
  q=fixture(argv[1],0);playgo_fixture(0);joined_path(name,current_root,"fakelib2/libScePlayGo.sprx");CHECK(!truncate(name,1));select_case(&q,-1,0);
  q=fixture(argv[1],0);playgo_fixture(0);joined_path(name,current_root,"fakelib2/libScePlayGo.sprx");joined_path(other,current_root,"outside-playgo");CHECK(!rename(name,other)&&!symlink(other,name));select_case(&q,-1,0);
+ /* Actual source-aware selector with a purpose-bound independent owner.
+  * Receipt-to-witness production is separately tested on actual Send seals. */
+ q=fixture(argv[1],0);source_ampr_fixture(&q);source_ampr_witness=NULL;select_case(&q,-1,0);source_ampr_witness=&source_ampr_owner;select_case(&q,0,0);
+ q=fixture(argv[1],1);source_ampr_fixture(&q);select_case(&q,0,1);
+ q=fixture(argv[1],1);source_ampr_fixture(&q);source_ampr_owner.purpose=BW_SOURCE_AMPR_EXECUTION;select_case(&q,-1,1);
+ q=fixture(argv[1],0);source_ampr_fixture(&q);source_ampr_owner.sha256[0]^=1;select_case(&q,-1,0);
  printf("{\"passed\":true,\"cases\":%u,\"checks\":%u,\"selectorWrites\":%u,\"actualFilesystem\":true}\n",cases,checks,selection_writes);return 0;
 }

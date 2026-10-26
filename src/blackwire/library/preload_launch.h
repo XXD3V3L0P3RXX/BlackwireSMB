@@ -54,4 +54,10 @@ struct bw_preload_launch {
  * owner/launch/close result is retained; no mutation is automatically replayed.
  * Return 0 means lifecycle completed/released, NOT menu/gameplay/reader proof. */
 int bw_preload_launch_run(const struct bw_preload_launch_request *,struct bw_preload_launch *);
+/* Explicit v8 path; consumes this controller-verified envelope buffer on EVERY
+ * result and clears *envelope. Frees it after publication, before the Sony
+ * launch, so original source metadata is not retained during gameplay. The
+ * ordinary API refuses a projected selection. Same lifecycle/exit rules. */
+int bw_preload_launch_run_projection(const struct bw_preload_launch_request *,
+    struct bw_preload_launch *,void **envelope,size_t envelope_size);
 #endif

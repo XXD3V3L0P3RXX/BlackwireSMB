@@ -155,7 +155,6 @@
     <button class="chip" id="connectionChip" type="button" title="Open settings"><span class="dot" id="connectionDot"></span><span id="connection">Checking Blackwire</span></button>
     <button class="btn btn-ghost small" id="openSetup">⚙ Settings</button>
     <button class="link" id="openHelp">Help</button>
-    <button class="btn btn-ghost small" id="closeConsoleBrowser" type="button" hidden>Close browser</button>
   </header>
 
   <section class="hero" id="libraryStage" data-layout="carousel">
@@ -859,7 +858,6 @@
       var libraryRefresh = null;
       document.getElementById("keyboardHint").hidden=consoleClient;
       document.getElementById("consoleHint").hidden=!consoleClient;
-      document.getElementById("closeConsoleBrowser").hidden=!consoleClient;
       var dismissedSessionKey = "";
       var notice = null;
       var preparationIssue = null;
@@ -1288,7 +1286,7 @@
         text(document.getElementById("savedShare"),saved?settings.share+(settings.share2 ? " + "+settings.share2 : ""):"Not set");
         text(document.getElementById("savedUser"),!saved?"Not set":typeof settings.user === "string"?(settings.user || "No username saved"):"Saved account");
         text(document.getElementById("savedPassword"),!saved?"Not set":settings.passwordSaved === true?"********":settings.passwordSaved === false?"No password saved":"Saved sign-in hidden");
-        var savedStatus=!statusFresh?"Connection status unavailable":setup.busy || setupPosting?"Checking connection…":!saved?"Not configured":setup.phase === "error"?"Connection check failed; saved details kept":link.online?"Connected (last share check)":"Saved — share not checked";
+        var savedStatus=!statusFresh?"Connection status unavailable":setup.busy || setupPosting?"Checking connection…":setup.phase === "error" || setup.phase === "unconfirmed"?setup.message || "The library check failed.":!saved?"Not configured":link.online?"Connected (last share check)":"Saved — share not checked";
         text(document.getElementById("savedConnectionStatus"),savedStatus);
         document.getElementById("savedConnectionStatus").className=statusFresh && saved && link.online && !setup.busy && setup.phase !== "error"?"ok":"subtle";
         if (statusFresh && !settingsDirty) {
@@ -1643,7 +1641,7 @@
         var focused=document.activeElement, card=cards[selectedName];
         if (!focused) return false;
         if(!detailsOpen && ["INPUT","TEXTAREA","SELECT"].indexOf(focused.tagName) === -1) {
-          var headerControls=["connectionChip","openSetup","openHelp","closeConsoleBrowser"].map(function (id) {return document.getElementById(id);}).filter(function (button) {return !button.hidden;});
+          var headerControls=["connectionChip","openSetup","openHelp"].map(function (id) {return document.getElementById(id);}).filter(function (button) {return !button.hidden;});
           var railControls=["filter-all","filter-ready","filter-not-ready","refreshLibrary","search"].map(function (id) {return document.getElementById(id);}).filter(function (button) {return !button.disabled && button.getAttribute("aria-disabled") !== "true";});
           var headerAt=headerControls.indexOf(focused),railAt=railControls.indexOf(focused);
           if(headerAt !== -1 || railAt !== -1) {
@@ -1726,7 +1724,6 @@
           consoleBack("history");
         });
       }
-      document.getElementById("closeConsoleBrowser").addEventListener("click",function () {if(consoleClient)consoleBack("button");});
       document.addEventListener("keydown",function (event) {
         var eventKey=typeof event.key === "string" ? event.key : "";
         if(!eventKey || eventKey === "Unidentified")eventKey=({8:"Backspace",13:"Enter",27:"Escape",37:"ArrowLeft",38:"ArrowUp",39:"ArrowRight",40:"ArrowDown",166:"BrowserBack"})[event.keyCode] || "";

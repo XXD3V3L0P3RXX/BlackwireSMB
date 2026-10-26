@@ -7,6 +7,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 
 
 def function(text, start):
@@ -33,7 +34,6 @@ def main():
     out = args.out.resolve()
     out.relative_to(root)
     out.mkdir(parents=True, exist_ok=False)
-    source = out / "source"
     owned = root / "src/blackwire"
     tests = root / "tools/preload-reader/tests"
     if not tests.is_dir():
@@ -52,30 +52,30 @@ def main():
         shutil.copyfile(path, destination)
         checked.append(path)
 
+    # Use the production reader's source preparation and unit list. The old
+    # folder-only list omitted compressed provider/DATA implementations as the
+    # actual source adapter grew, so it no longer linked the retained fixtures.
+    # Keep private SMB and home control transport outside this host model, just
+    # as the canonical reader host tests and compressed-reader checker do.
+    sys.path.insert(0, str(root / "tools/build"))
+    import reader
+    units = [name for name in reader.CFILES
+             if not name.endswith("private_smb.c") and name not in reader.HOME_CFILES]
+    checked += [owned / name for name in units]
     for folder in ("library", "streamreader", "reader/preload"):
-        for path in (owned / folder).glob("*.h"):
-            copy(path, source / folder / path.name)
-    units = ["streamreader/manifest.c", "streamreader/cache.c", "streamreader/share_config.c",
-             "library/reader_selection.c", "library/source_binding.c", "library/source_profile.c",
-             "reader/preload/source.c"]
-    for name in units:
-        path = owned / name
-        text = path.read_text()
-        if name.endswith("reader_selection.c"):
-            for start in ("static int rsel_identity(", "int bw_reader_selection_load("):
-                text = text.replace(function(text, start), "")
-        elif name.endswith("source_profile.c"):
-            text = text[:text.index("static int sp_view(")]
-        elif name.endswith("share_config.c"):
-            text = text[:text.index("static int same(")]
-        (source / name).write_text(text)
-        checked.append(path)
+        checked += list((owned / folder).glob("*.h"))
+    checked += [path for path in (owned / "streamreader/vendor/miniz").iterdir() if path.is_file()]
+    checked += list((root / "tools/build").glob("*.py"))
+    checked.append(root / "metadata/dependencies.json")
+    origins = json.loads((root / "metadata/dependencies.json").read_text())["ampr"]["files"]
+    checked += [root / "vendor/ampr" / name for name in origins]
     checked += [tests / "source_test.c", tests / "cache_storage_test.c", tests / "connect_diagnostic_test.cpp",
                 owned / "reader/preload/runtime.cpp", Path(__file__).resolve()]
     for path in vendor.rglob("*.h"):
         checked.append(path)
     checked = list(dict.fromkeys(checked))
     before = {relative(path): pin(path) for path in checked}
+    source, slices = reader.prepare(root, out)
 
     def run(label, argv):
         argv = [str(value) for value in argv]
@@ -94,7 +94,7 @@ def main():
           "-fno-omit-frame-pointer", "-ffile-prefix-map=" + str(root) + "=/blackwire"]
     exe = out / "host-source"
     run("source-compile", [*cc, "-DBW_GTA_AUDIO_BOOTSTRAP=1", "-I" + relative(vendor),
-                          "-I" + relative(source), *[relative(source / name) for name in units],
+                          "-I" + relative(owned), *[relative(source / "bw" / name) for name in units],
                           relative(tests / "source_test.c"), "-Wl,--wrap=clock_gettime", "-o", relative(exe)])
     results = {"source": json.loads(run("source-cases", [relative(exe)]))}
     copy(owned / "streamreader/cache.c", out / "cache-under-test.c")
@@ -123,6 +123,7 @@ def main():
         raise RuntimeError("Checked inputs changed during the host fixtures")
     proof = {"passed": all(value.get("passed") is True for value in results.values()),
              "results": results, "source": after, "sourceBeforeAfterMatched": True,
+             "readerPreparedSlices": slices, "readerUnits": units,
              "transport": "explicitly modeled in the actual-source host fixture",
              "productionBuilds": 0, "sdkBuilds": 0, "consoleActions": 0, "networkActions": 0,
              "nativeRuntimeExecuted": False}

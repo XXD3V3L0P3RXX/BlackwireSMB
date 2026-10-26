@@ -19,6 +19,8 @@ CFILES += HOME_CFILES
 CONTAINER_CFILES = ["library/source_identity.c", "streamreader/container_source.c", "streamreader/container_manifest.c",
                     "streamreader/pfs_source.c", "streamreader/pfsc_range.c", "streamreader/pfsc_inflate.c"]
 CFILES += CONTAINER_CFILES
+PROJECTION_CFILES = ["library/source_companions.c", "library/reader_projection.c"]
+CFILES += PROJECTION_CFILES
 FLAGS = ["AMPR_PACK_ENABLE=1", "AMPR_DIRECTORY_OVERLAY=1", "AMPR_PROCESS_READ_INTERCEPT=1",
          "AMPR_PROCESS_OPEN_INTERCEPT=1", "AMPR_PROCESS_AIO_INTERCEPT=1",
          "AMPR_PROCESS_SYNC_READ_INTERCEPT=1", "AMPR_DEBUG_LOG=0", "AMPR_COMMAND_LOG=0", "BP_METADATA_PROFILE=0",
@@ -49,7 +51,7 @@ def prepare(root, out):
         for path in (root / "src/blackwire" / folder).glob("*.h"):
             copy(path, source / "bw" / folder / path.name)
     slices = {}
-    for name in [*CFILES[:6], "library/home_protocol.c", "library/source_param.c", *CONTAINER_CFILES]:
+    for name in [*CFILES[:6], "library/home_protocol.c", "library/source_param.c", *CONTAINER_CFILES, *PROJECTION_CFILES]:
         path = root / "src/blackwire" / name
         text = path.read_text()
         if name.endswith("reader_selection.c"):
@@ -172,6 +174,37 @@ def host_tests(root, out, source, runner):
     runner.run(["python3", root / "tests/dashboard/lifecycle/check_self_contained_bundle.py",
                 "--host-only", "--output", checked], "host-self-contained-bundle")
     results["self_contained_bundle"] = json.loads((checked / "proof.json").read_text())
+    checked = out / "source-ampr-witness"
+    runner.run(["python3", root / "tests/dashboard/lifecycle/check_source_ampr_witness.py",
+                "--output", checked], "host-source-ampr-witness")
+    results["source_ampr_witness"] = json.loads((checked / "proof.json").read_text())
+    checked = out / "source-connection-wrapper"
+    runner.run(["python3", root / "tests/dashboard/lifecycle/check_source_connect_wrapper.py",
+                "--output", checked], "host-source-connection-wrapper")
+    results["source_connection_wrapper"] = json.loads((checked / "proof.json").read_text())
+    checked = out / "projection-contract"
+    runner.run(["python3", root / "tests/reader/check_projection_contract.py",
+                "--output", checked], "host-projection-contract")
+    results["projection_contract"] = json.loads((checked / "proof.json").read_text())
+    for key, script, extra in (
+            ("source_namespace", "compressed/check_namespace.py", []),
+            ("source_companions", "dashboard/lifecycle/check_source_companions.py", ["--host-only"]),
+            ("reader_projection", "reader/check_reader_projection.py", []),
+            ("projected_send", "dashboard/lifecycle/check_projected_send.py", []),
+            ("projected_data_chain", "dashboard/lifecycle/check_projected_data_chain.py", []),
+            ("projected_bundle_data_chain", "dashboard/lifecycle/check_projected_bundle_data_chain.py", []),
+            ("projected_bundle", "dashboard/lifecycle/check_projected_bundle.py", ["--host-only"]),
+            ("projected_uninstall", "dashboard/lifecycle/check_projected_game_uninstall.py", ["--host-only"]),
+            ("projected_uninstall_e2e", "dashboard/lifecycle/check_projected_game_uninstall_e2e.py", []),
+            ("projected_registration", "dashboard/lifecycle/check_projected_game_uninstall_e2e.py", ["--registration"]),
+            ("legacy_source_removal", "dashboard/lifecycle/check_legacy_source_removal.py", [])):
+        checked = out / key
+        runner.run(["python3", root / "tests" / script, "--output", checked, *extra], "host-" + key)
+        results[key] = json.loads((checked / "proof.json").read_text())
+    checked = out / "projected_handoff"
+    runner.run(["python3", root / "tests/home/check_projected_handoff.py", "--root", root,
+                "--output", checked], "host-projected_handoff")
+    results["projected_handoff"] = json.loads((checked / "projected-handoff/proof.json").read_text())
     checked = out / "prepare-source-policy"
     runner.run(["python3", root / "tests/dashboard/lifecycle/check_prepare_source_policy.py",
                 "--host-only", "--output", checked], "host-prepare-source-policy")
@@ -201,6 +234,7 @@ def host_tests(root, out, source, runner):
     results["send_logging"] = json.loads((checked / "proof.json").read_text())
     for key, script in (("settings_startup", "diagnostics/check_settings_startup.py"),
                         ("settings_storage", "diagnostics/check_settings_storage.py"),
+                        ("settings_check_failure", "diagnostics/check_settings_check_failure.py"),
                         ("registration_wait", "diagnostics/check_registration_wait.py"),
                         ("two_shares", "sources/check_two_shares.py")):
         checked = out / key

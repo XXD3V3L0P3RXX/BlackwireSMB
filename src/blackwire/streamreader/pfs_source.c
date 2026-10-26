@@ -172,7 +172,7 @@ static int unique_name(struct bw_pfs *p,struct name_slot *slots,size_t mask,
     }
     return BW_PFS_LIMIT;
 }
-int bw_pfs_walk(struct bw_pfs *p,bw_pfs_visit_fn visit,void *context,uint32_t *file_count) {
+static int walk_nodes(struct bw_pfs *p,bw_pfs_visit_fn visit,void *context,uint32_t *file_count,int directories) {
     struct frame frames[BW_PFS_MAX_DEPTH+1];char path[BW_MANIFEST_MAX_PATH+1];
     uint8_t *visited=NULL;struct name_slot *names=NULL;
     size_t capacity=1;unsigned depth=0;uint32_t files=0,steps=0;
@@ -218,6 +218,7 @@ int bw_pfs_walk(struct bw_pfs *p,bw_pfs_visit_fn visit,void *context,uint32_t *f
         if ((item.type==2 && (node.mode&TYPE_MASK)!=FILE_TYPE) ||
             (item.type==3 && (node.mode&TYPE_MASK)!=DIR_TYPE)) { result=BW_PFS_FORMAT;goto done; }
         if (item.type==3) {
+            if(directories){files++;if(visit&&visit(context,path,&node)){result=BW_PFS_CALLBACK;goto done;}}
             if (depth>=BW_PFS_MAX_DEPTH) { result=BW_PFS_LIMIT;goto done; }
             struct frame *next=frames+(++depth);memset(next,0,sizeof *next);
             next->inode=node;next->parent=frame->inode.id;next->prefix=prefix+length;
@@ -232,6 +233,8 @@ int bw_pfs_walk(struct bw_pfs *p,bw_pfs_visit_fn visit,void *context,uint32_t *f
 done:
     free(names);free(visited);return result;
 }
+int bw_pfs_walk(struct bw_pfs *p,bw_pfs_visit_fn visit,void *context,uint32_t *count){return walk_nodes(p,visit,context,count,0);}
+int bw_pfs_walk_nodes(struct bw_pfs *p,bw_pfs_visit_fn visit,void *context,uint32_t *count){return walk_nodes(p,visit,context,count,1);}
 int bw_pfs_find(struct bw_pfs *p,const char *path,struct bw_pfs_inode *out) {
     if (!p || !p->ready || !path || !out) return BW_PFS_ARGUMENT;
     size_t total=0;while (total<=BW_MANIFEST_MAX_PATH && path[total]) total++;

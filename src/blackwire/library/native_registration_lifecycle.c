@@ -6,6 +6,7 @@
 #endif
 #include "native_registration_lifecycle.h"
 #include "native_cleanup_remote.h"
+#include "native_launch_admission.h"
 #include "native_document.h"
 #include "source_param.h"
 #include "registration_param_compat.h"
@@ -34,6 +35,8 @@ struct bw_nrl_owner {
 static int nrl_current(void *opaque){
     struct bw_nrl_owner *p=opaque;
     int bad=!p||!p->request.current||p->request.current(p->request.opaque,p->phase);
+    if(!bad&&p->phase==BW_NRL_REGISTER&&p->selection.prepared_policy==3)
+        bad=bw_nrc_projection_execution_current(p->request.startup,p->request.environment.data_root,&p->selection);
     if(bad&&p&&!p->failure)p->failure="registration_control_guard_refused";return bad?-1:0;
 }
 static int nrl_path(const char *path){
@@ -409,7 +412,8 @@ done:free(list);if(result&&out&&!out->reason)nrl_result(out,BW_NRC_UNKNOWN,"prev
 int bw_nrl_begin(const struct bw_nrl_request *q,struct bw_nrl_owner **out,struct bw_nrc_result *r){
     if(out)*out=NULL;
     if(!out||!r||!q||!q->selection||!q->current||!strcmp(q->selection->title,"PPSA99171")||!strcmp(q->selection->title,"PPSA99170")||(q->selection->source_kind!=BW_PROVIDER_FOLDER&&q->selection->source_kind!=BW_PROVIDER_CONTAINER)||
-       q->selection->source_policy!=BW_PROVIDER_POLICY_V1||q->selection->prepared_policy)return -1;
+       q->selection->source_policy!=BW_PROVIDER_POLICY_V1||(q->selection->prepared_policy&&q->selection->prepared_policy!=3)||
+       (q->selection->prepared_policy==3&&!q->startup))return -1;
     struct bw_nrl_owner *p=calloc(1,sizeof *p);struct bw_nrc_candidate *list=NULL;int rc=-1;if(!p)return -1;
     p->request=*q;p->selection=*q->selection;p->request.selection=&p->selection;p->phase=BW_NRL_REGISTER;
     const char *paths[]={q->environment.data_root,q->environment.apps_root,q->environment.database};
@@ -442,7 +446,9 @@ int bw_nrl_begin(const struct bw_nrl_request *q,struct bw_nrl_owner **out,struct
         nrl_result(r,p->owned?BW_NRC_OWNED:BW_NRC_UNOWNED,p->owned?"Previously committed exact registration retained.":"Preexisting registration remains unowned.",0);
     }else if(before==BW_REG_ABSENT&&!p->owned){
         struct bw_nrc_ops ops=nrl_ops(p);p->initial_absence=1;
-        int begun=bw_nrc_begin(&p->request.environment,&p->selection,&ops,&p->ticket,r);
+        int begun=p->selection.prepared_policy==3?
+            bw_nrc_begin_projected(&p->request.environment,&p->selection,p->request.startup,&ops,&p->ticket,r):
+            bw_nrc_begin(&p->request.environment,&p->selection,&ops,&p->ticket,r);
         p->initial_absence=0;if(begun){if(begun==BW_NRC_RELEASE_UNCONFIRMED)p->release_unknown=1;goto explicit_failure;}
         memcpy(p->registration_run,p->selection.run,33);
     }else goto done;
@@ -462,7 +468,7 @@ int bw_nrl_registered(struct bw_nrl_owner *p,int status,const struct bw_register
     else if(status||!registered||registered->registered!=1||nrl_current(p))rc=-1;
     else nrl_result(r,p->owned?BW_NRC_OWNED:BW_NRC_UNOWNED,p->owned?"Exact prior ownership retained.":"Preexisting registration is not owned by this Play.",0);
     if(!rc&&p->owned&&nrl_witness_capture(p)){rc=-1;nrl_result(r,BW_NRC_UNKNOWN,"Exact retained registration witnesses could not be confirmed; no game was started.",-1);}
-    if(rc)r->detail=p->failure;p->registered=!rc;return rc;
+    if(rc)r->detail=p->failure;p->registered=!rc;p->request.startup=NULL;return rc;
 }
 int bw_nrl_retire(struct bw_nrl_owner *p,const struct bw_native_reader_release *release,struct bw_nrc_retirement_result *out){
     if(!p||!out||!p->finished||!p->registered)return -1;
@@ -472,6 +478,7 @@ int bw_nrl_retire(struct bw_nrl_owner *p,const struct bw_native_reader_release *
     p->release=*release;p->phase=BW_NRL_RETIRE;
     struct bw_nrc_retirement_ops ops={.registration=nrl_ops(p),.released=nrl_released,.outside_scan_roots=nrl_outside,.manual_present=nrl_manual,.manual_remove=nrl_remove};
     int rc=bw_nrc_retire_present(&p->request.environment,p->selection.title,p->registration_run,&ops,out);
+    if(rc==BW_NRC_RELEASE_UNCONFIRMED)p->release_unknown=1;
     if(p->failure){out->registration.detail=p->failure;out->registration.reason=bw_nrc_remote_status_message(&p->remote);}return rc;
 }
 int bw_nrl_destroy(struct bw_nrl_owner **owner){

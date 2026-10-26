@@ -1,6 +1,7 @@
 /* Actual Send completion/provision integration; filesystem receipt, bundled
  * module and Sony registration transports are explicit recording models. */
 #define _DEFAULT_SOURCE 1
+#include "send_diagnostic.h"
 #include "provision-under-test.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +10,8 @@ static int fault,pending_registration;
 static struct bw_native_backend owner;static struct bw_native_prepared prepared;
 static struct bw_catalog_item item;static struct bw_native_prepared library_prepared;
 #define C(x) do{checks++;if(!(x)){fprintf(stderr,"case%u line%u %s\n",cases,__LINE__,#x);exit(1);}}while(0)
+#define BW_AMPR_MODEL_CHECK C
+#include "../dashboard/lifecycle/source_ampr_admission_model.h"
 static int prepare_current(void *v){C(v==&owner);return 0;}
 static int prepare_authority(struct bw_native_backend *p,enum bw_prepare_guard_point point){C(p==&owner);C(point==BW_PREPARE_CONTROL||point==BW_PREPARE_RELEASE);return 0;}
 static int nonce(void *v,char out[33]){C(v==&owner);memset(out,'c',32);out[32]=0;return 0;}
@@ -22,7 +25,9 @@ int bw_native_job_setup_message(const struct bw_native_job_token*t,const char*m)
 int bw_native_job_reuse_prepared(const struct bw_native_job_token*t,uint32_t count,uint64_t bytes){C(t==&owner.sending.token&&count==prepared.local_count&&bytes==prepared.local_bytes);return 0;}
 int bw_native_job_finish_setup(const struct bw_native_job_token*t,int valid,int registered,const char*m){C(t==&owner.sending.token&&valid&&registered==(fault==0)&&m&&m[0]);job_success++;return 0;}
 int bw_native_launch_admission_open(struct bw_native_launch_admission **out,const char*root,const struct bw_provider_binding*identity,const struct bw_native_prepared*expected,const char*run,int(*guard)(void*),void*opaque,const char**error){
-    C(!strcmp(root,backend_data_root)&&identity&&expected->state==BW_PREPARED_VALID&&strcmp(run,expected->run)&&guard&&!guard(opaque));(void)error;*out=(struct bw_native_launch_admission*)malloc(1);C(*out);return 0;
+    C(!strcmp(root,backend_data_root)&&identity&&expected->state==BW_PREPARED_VALID&&strcmp(run,expected->run)&&guard&&!guard(opaque));
+    if(fault==7||fault==8){C(!*out);if(error)*error="Startup admission refused.";return fault==8?-2:-1;}
+    *out=(struct bw_native_launch_admission*)malloc(1);C(*out);ampr_model_open(*out);return 0;
 }
 int bw_native_launch_admission_selection(struct bw_native_launch_admission*p,struct bw_reader_selection*out){C(p);memset(out,0,sizeof *out);strcpy(out->game,prepared.game);strcpy(out->title,"PPSA04734");strcpy(out->run,"cccccccccccccccccccccccccccccccc");return 0;}
 int bw_native_launch_admission_current(struct bw_native_launch_admission*p,const char*root,const struct bw_provider_binding*identity,const struct bw_reader_selection*s,struct bw_native_prepared*out){C(p&&!strcmp(root,backend_data_root)&&identity&&s&&!out&&!strcmp(s->game,prepared.game));return 0;}
@@ -57,5 +62,10 @@ int main(void){
     reset(0);struct bw_share_config container_config={0};strcpy(container_config.server,"192.0.2.20");strcpy(container_config.share,"OwnedBackups");
     C(!bw_provider_binding_init(&owner.sending.selection.identity,&container_config,"Owned.ffpfsc","PPSA04734",BW_PROVIDER_CONTAINER));strcpy(prepared.game,owner.sending.selection.identity.binding.game);
     C(!home_prepare_provision(&owner,&prepared,&invalid));C(!invalid&&!copies&&bundles==1&&registers==1&&owner.home_ready[0]==1);C(!pthread_mutex_destroy(&owner.lock));
+    for(int mode=7;mode<=8;mode++){
+        reset(mode);invalid=0;C(home_prepare_provision(&owner,&prepared,&invalid)<0&&invalid);
+        C(owner.control_release_unknown==(mode==8)&&!bundles&&!begins&&!registers&&!commits&&!startup_closes&&owner.home_ready[0]==2);
+        C(strstr(owner.home_setup_reason,"startup-admission"));C(!pthread_mutex_destroy(&owner.lock));
+    }
     printf("{\"passed\":true,\"cases\":%u,\"checks\":%u,\"actualSendCompletionAndProvisionOrder\":true,\"sourceReceiptBundleAndSonyBoundariesModeled\":true}\n",cases,checks);return 0;
 }

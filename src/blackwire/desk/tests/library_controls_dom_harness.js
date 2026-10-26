@@ -16,7 +16,7 @@ async function check() {
   const old=fixture(),empty=catalog();empty.catalogGeneration++;
   let app=createPage([ready,scanning,updated],'5918','',[old,clone(old),empty]);await settle();
   assert(!app.get('keyboardHint').hidden&&app.get('consoleHint').hidden);
-  assert(app.get('closeConsoleBrowser').hidden);
+  assert(!require('fs').readFileSync(process.argv[2],'utf8').includes('id="closeConsoleBrowser"'));
   assert.strictEqual(app.get('games').children.length,1);
   app.replies.push({status:202,body:{ok:true,message:'Reading the PC library'}});
   app.get('refreshLibrary').click();app.get('refreshLibrary').click();await settle();
@@ -75,8 +75,6 @@ async function check() {
   app=createPage([nativeState()],'5918','',[fixture()],consoleOptions);await settle();
   app.get('heroDetails').click();assert(app.key(undefined,{keyCode:27}).prevented);assert(app.get('selectedGame').hidden);
   assert(!app.key('BrowserBack').prevented);assert.strictEqual(app.closeCount(),1);assert(app.windowClosed());
-  app=createPage([nativeState()],'5918','',[fixture()],consoleOptions);await settle();
-  assert(!app.get('closeConsoleBrowser').hidden);app.get('closeConsoleBrowser').click();assert.strictEqual(app.closeCount(),1);assert(app.windowClosed());assert.strictEqual(app.postCount(),0);
   app=createPage([nativeState()],'5918','',[fixture()],{hostname:'127.0.0.1',closeThrows:true});await settle();
   assert(app.get('keyboardHint').hidden&&!app.get('consoleHint').hidden);
   assert(!app.key('Escape').prevented,'Even a refused close() must not block the native exit');

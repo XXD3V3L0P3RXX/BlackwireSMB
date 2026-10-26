@@ -26,6 +26,10 @@ int bw_home_session_bind(struct bw_home_session *,const struct bw_stop_identity 
 int bw_home_session_current(void *);
 /* Both names must be absent; retained publication/assignment is one-shot. */
 int bw_home_session_publish(struct bw_home_session *,const char *,const struct bw_reader_selection *,const struct bw_share_config *);
+/* Consumes and clears controller-verified envelope on every result. Its bytes
+ * are freed immediately after publication, before consumer UID assignment. */
+int bw_home_session_publish_projection(struct bw_home_session *,const char *,const struct bw_reader_selection *,
+    const struct bw_share_config *,void **envelope,size_t envelope_size);
 /* One exact normal Close at most; never a foreign/system process close. */
 int bw_home_session_close(struct bw_home_session *,const char run[33]);
 /* Authoritative exact PID absence twice, fresh (never the stopped latch), then

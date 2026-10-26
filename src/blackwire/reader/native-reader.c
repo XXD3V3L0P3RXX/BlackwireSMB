@@ -30,6 +30,7 @@
 #include "native_setup.h"
 #include "reader_runtime.h"
 #include "native_launch_admission.h"
+#include "native_projection_handoff.h"
 #include "native_registration.h"
 #include "owned_vm_window.h"
 #include "reader_user.h"
@@ -738,7 +739,14 @@ static int reader_preload_idle(void) {
 static int reader_preload_bundle(void *opaque,const char *root) {
   (void)opaque;if(reader_launch_current(NULL)||reader_preload_idle())return -1;
   struct bw_preload_bundle_request q={root,reader_launch_current,NULL,reader_preload_now(NULL)+20.0};
-  return bw_preload_bundle_verify_checked(&q,NULL);
+  if(bw_reader_selection_is_projection(&reader_selection)){
+    const struct bw_preload_companions *companions=NULL;
+    if(!reader_startup||bw_native_launch_admission_companions(reader_startup,&companions))return -1;
+    return bw_preload_bundle_verify_projection_checked(&q,companions,NULL);
+  }
+  const struct bw_preload_source_ampr *source_ampr=NULL;
+  if(!reader_startup||bw_native_launch_admission_source_ampr(reader_startup,&source_ampr))return -1;
+  return bw_preload_bundle_verify_source_checked(&q,source_ampr,NULL);
 }
 static int reader_preload_launch(void *opaque) {
   (void)opaque;launch_ctx ctx={.size=sizeof ctx};char *argv[]={NULL};
@@ -811,7 +819,13 @@ static int reader_preload_run(void) {
     .ops={NULL,reader_preload_now,reader_preload_pause,reader_launch_current,reader_preload_bundle,
       reader_preload_launch,reader_preload_discover,reader_preload_consumer,reader_preload_live,
       reader_preload_exited,reader_preload_event}};
-  int result=bw_preload_launch_run(&request,&reader_preloaded);bw_share_clear(&config);
+  int result;
+  if(bw_reader_selection_is_projection(&reader_selection)){
+    void *bytes=NULL;size_t size=0;
+    if(bw_native_projection_handoff_bytes(reader_startup,&reader_selection,&bytes,&size)){bw_share_clear(&config);return failure("The held projected reader inputs changed before launch.");}
+    result=bw_preload_launch_run_projection(&request,&reader_preloaded,&bytes,size);
+  }else result=bw_preload_launch_run(&request,&reader_preloaded);
+  bw_share_clear(&config);
   return result;
 }
 #endif
@@ -836,6 +850,15 @@ static int connect_share(void) {
   struct bw_share_config config={0},public_connection={0}; struct bw_provider_binding identity;
   struct bw_reader_data_admission admission={0};
   char root[1024]; int result=-1; struct bw_setup_generation observed={0};
+  /* Projected physical LOCAL aliases are not remote source paths. They only
+   * run through the qualified early DATA module, never the legacy late reader. */
+  if(bw_reader_selection_is_projection(&reader_selection)){
+#ifdef BW_NATIVE_PRELOAD
+    if(!reader_startup||!reader_early_active){reader_startup_failure="The verified early reader is required for this game. Choose Send files to repair it.";goto done;}
+#else
+    goto done;
+#endif
+  }
   if (bw_native_setup_read("/data/blackwire",&config,&observed)!=BW_SETUP_VALID ||
       !bw_native_setup_generation_equal(&reader_connection_generation,&observed) ||
       reader_selection.source_policy!=BW_PROVIDER_POLICY_V1 ||

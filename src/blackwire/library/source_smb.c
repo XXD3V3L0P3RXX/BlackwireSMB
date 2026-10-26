@@ -181,6 +181,7 @@ static int bs_entry(void *opaque,const char *name,const struct bw_source_info *i
     char relative[1024];int n=snprintf(relative,sizeof relative,"%s%s%s",walk->relative,*walk->relative?"/":"",name);
     if(n<0||(size_t)n>=sizeof relative)return bs_fail(p,"source_relative_path_limit");
     if(bw_manifest_validate_path(relative,(size_t)n))return bs_fail(p,"invalid_source_relative_path");
+    if(bw_source_plan_node(walk->plan,relative,!!(info->attributes&BS_ATTR_DIRECTORY)))return bs_fail(p,walk->plan->error);
     if(info->attributes&BS_ATTR_DIRECTORY){struct bs_walk child={p,walk->plan,relative,walk->depth+1,walk->snapshot,walk->limits,walk->remote,walk->prefix_depth};return bs_walk_directory(&child);}
     if(walk->snapshot&&bw_source_snapshot_add(walk->snapshot,relative,info))return bs_fail(p,walk->snapshot->error);
     if(bw_source_plan_add(walk->plan,relative,info->size,bw_source_unix_mtime(info->mtime_ticks))<0)return bs_fail(p,walk->plan->error?walk->plan->error:"invalid_source_plan");
@@ -214,12 +215,12 @@ done:
     if(bs_close(p,&directory))result=-1;
     return result;
 }
-static int bs_plan(struct bw_source_smb *p,const char *game,const char *remote,struct bw_source_map *map,struct bw_source_snapshot *snapshot,int bound){
+static int bs_plan(struct bw_source_smb *p,const char *game,const char *remote,struct bw_source_map *map,struct bw_source_snapshot *snapshot,int bound,enum bw_source_plan_policy policy){
     if(!p||!map)return -1;
     memset(map,0,sizeof *map);
     if(p->error||bs_live(p))return -1;
     struct bw_source_plan plan;
-    if(bw_source_plan_init(&plan,game)){bs_fail(p,plan.error);bw_source_plan_destroy(&plan);return -1;}
+    if(bw_source_plan_init_policy(&plan,game,policy)){bs_fail(p,plan.error);bw_source_plan_destroy(&plan);return -1;}
     struct bs_directory parents[BS_MAX_DEPTH+1];memset(parents,0,sizeof parents);unsigned count=0;int result=-1;
     if(bound){
         if(!snapshot||bs_catalog_parents(p,remote,0,parents,&count))goto done;
@@ -236,18 +237,21 @@ done:
     bw_source_plan_destroy(&plan);
     return result;
 }
-int bw_source_smb_plan(struct bw_source_smb *p,const char *game,struct bw_source_map *map){return bs_plan(p,game,game,map,NULL,0);}
+int bw_source_smb_plan(struct bw_source_smb *p,const char *game,struct bw_source_map *map){return bs_plan(p,game,game,map,NULL,0,BW_SOURCE_PLAN_LEGACY);}
 int bw_source_smb_snapshot(struct bw_source_smb *p,const char *game,struct bw_source_map *map,struct bw_source_snapshot *snapshot){
     if(!p||!map||!snapshot)return -1;
     memset(map,0,sizeof *map);
     if(bw_source_snapshot_init(snapshot,game))return bs_fail(p,snapshot->error);
-    return bs_plan(p,game,game,map,snapshot,0);
+    return bs_plan(p,game,game,map,snapshot,0,BW_SOURCE_PLAN_LEGACY);
 }
-int bw_source_smb_snapshot_bound(struct bw_source_smb *p,const char *remote,const char *game,struct bw_source_map *map,struct bw_source_snapshot *snapshot){
+int bw_source_smb_snapshot_bound_policy(struct bw_source_smb *p,const char *remote,const char *game,struct bw_source_map *map,struct bw_source_snapshot *snapshot,enum bw_source_plan_policy policy){
     if(!p||!map||!snapshot)return -1;
     memset(map,0,sizeof *map);
     if(bw_source_snapshot_init_bound(snapshot,remote,game))return bs_fail(p,snapshot->error);
-    return bs_plan(p,game,remote,map,snapshot,1);
+    return bs_plan(p,game,remote,map,snapshot,1,policy);
+}
+int bw_source_smb_snapshot_bound(struct bw_source_smb *p,const char *remote,const char *game,struct bw_source_map *map,struct bw_source_snapshot *snapshot){
+    return bw_source_smb_snapshot_bound_policy(p,remote,game,map,snapshot,BW_SOURCE_PLAN_LEGACY);
 }
 /* QUERY_INFO exposes times at microsecond precision. Directory rows retain
  * their original 100ns FILETIME in the full-tree fingerprint. */

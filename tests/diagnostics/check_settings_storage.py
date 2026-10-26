@@ -8,7 +8,7 @@ def main():
  lib=root/'src/blackwire/library';stream=root/'src/blackwire/streamreader'
  with tempfile.TemporaryDirectory(prefix='blackwire-settings-storage-') as tmp:
   scratch=Path(tmp);log=scratch/'diagnostic.log'
-  argv=['clang-18','-std=gnu11','-D_DEFAULT_SOURCE','-DBW_NATIVE_SETUP_HOST_TEST=1','-DBW_SEND_LOG_PATH="'+str(log)+'"','-O1','-g','-Wall','-Wextra','-Werror','-Wno-unused-function','-Wno-misleading-indentation','-fsanitize=address,undefined','-fno-sanitize-recover=all',
+  argv=['clang-18','-std=gnu11','-D_DEFAULT_SOURCE','-DBW_SEND_DIAGNOSTIC=1','-DBW_NATIVE_SETUP_HOST_TEST=1','-DBW_SEND_LOG_PATH="'+str(log)+'"','-O1','-g','-Wall','-Wextra','-Werror','-Wno-unused-function','-Wno-misleading-indentation','-fsanitize=address,undefined','-fno-sanitize-recover=all',
    '-I'+str(lib),str(Path(__file__).with_name('test_settings_storage.c')),str(lib/'native_setup.c'),str(lib/'native_request.c'),str(stream/'share_config.c'),str(stream/'manifest.c'),'-o',str(out/'test')]
   r=subprocess.run(argv,capture_output=True,text=True);(out/'compile.log').write_text(r.stdout+r.stderr);assert r.returncode==0,r.stderr
   r=subprocess.run([out/'test',scratch],capture_output=True,text=True,env=dict(os.environ,ASAN_OPTIONS='halt_on_error=1:detect_leaks=1',UBSAN_OPTIONS='halt_on_error=1'));(out/'run.log').write_text(r.stdout+r.stderr);assert r.returncode==0,r.stderr

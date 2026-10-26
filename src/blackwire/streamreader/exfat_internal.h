@@ -113,7 +113,7 @@ struct ex_frame {uint64_t base,size;uint32_t cluster,at;size_t prefix;};
 static int ex_equal(struct bw_exfat *p,const struct ex_item *a,const struct ex_item *b){
     if(a->length!=b->length)return 0;for(unsigned i=0;i<a->length;i++)if(p->upcase[a->name[i]]!=p->upcase[b->name[i]])return 0;return 1;
 }
-static int ex_walk(struct bw_exfat *p,bw_pfs_visit_fn visit,void *context,uint32_t *count){
+static int ex_walk_nodes(struct bw_exfat *p,bw_pfs_visit_fn visit,void *context,uint32_t *count,int directories){
     if(count)*count=0;if(!p||!p->ready)return BW_PFS_ARGUMENT;p->namespace_validated=0;
     const size_t capacity=BW_PFS_MAX_INODES*2u;struct ex_slot *slots=calloc(capacity,sizeof *slots);
     struct ex_extent *extents=calloc(BW_PFS_MAX_INODES+3u,sizeof *extents);
@@ -148,6 +148,7 @@ static int ex_walk(struct bw_exfat *p,bw_pfs_visit_fn visit,void *context,uint32
         size_t prefix=frame->prefix,length=strlen(item.text);if(prefix+!!prefix+length>BW_MANIFEST_MAX_PATH){result=BW_PFS_PATH;goto done;}
         if(prefix)path[prefix++]='/';memcpy(path+prefix,item.text,length+1);
         if(item.node.mode==0x4000){if(depth==BW_PFS_MAX_DEPTH){result=BW_PFS_LIMIT;goto done;}
+            if(directories){files++;if(visit&&visit(context,path,&item.node)){result=BW_PFS_CALLBACK;goto done;}}
             frames[++depth]=(struct ex_frame){item.node.base,item.node.logical_size,item.node.id,0,prefix+length};
         }else{files++;if(visit&&visit(context,path,&item.node)){result=BW_PFS_CALLBACK;goto done;}path[frame->prefix]=0;}
     }
@@ -155,6 +156,7 @@ static int ex_walk(struct bw_exfat *p,bw_pfs_visit_fn visit,void *context,uint32
     result=0;p->namespace_validated=1;if(count)*count=files;
 done:free(slots);free(extents);return result;
 }
+static int ex_walk(struct bw_exfat *p,bw_pfs_visit_fn visit,void *context,uint32_t *count){return ex_walk_nodes(p,visit,context,count,0);}
 static int ex_open(struct bw_exfat *p,bw_pfs_pread_fn read_source,void *context,uint64_t size){
     memset(p,0,sizeof *p);p->pread=read_source;p->source=context;p->size=size;uint8_t head[512],other[512];
     if(size<24*512u||size>BW_PFS_MAX_VOLUME)return BW_PFS_FORMAT;int r=ex_read(p,0,head,sizeof head);if(r)return r;

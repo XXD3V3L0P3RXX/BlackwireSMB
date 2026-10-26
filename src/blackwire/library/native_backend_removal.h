@@ -42,12 +42,25 @@ static int default_uninstall(void *opaque,const struct bw_native_removal_selecti
         .data_root=backend_data_root,.game=selected->identity.binding.game,.prepared_run=selected->prepared.run,
         .launch_run=selected->operation,.prepared_record_sha256=selected->prepared.record_sha256};
     struct bw_preload_reader_pin pin={0};struct bw_preload_bundle_result diagnostic={0};
-    int status=bw_preload_bundle_select_for_removal(&selection,&pin,&diagnostic);
+    struct bw_native_launch_admission *startup=NULL;const struct bw_preload_source_ampr *source_ampr=NULL;const char *error=NULL;
+    const struct bw_preload_companions *companions=NULL;int projected=selected->prepared.prepared_policy==3;
+    const struct bw_preload_legacy_companions *legacy_companions=NULL;unsigned legacy_source=0;
+    int status=bw_native_launch_admission_open_for_removal(&startup,backend_data_root,&selected->identity,&selected->prepared,
+        selected->operation,removal_default_current,&control,&error);
+    if(!status&&!projected){int applicability=bw_native_launch_admission_legacy_companions_for_removal(startup,&legacy_companions);
+        if(applicability<0)status=-1;else legacy_source=applicability==0;}
+    if(!status&&!legacy_source)status=projected?bw_native_launch_admission_companions_for_removal(startup,&companions):bw_native_launch_admission_source_ampr_for_removal(startup,&source_ampr);
+    if(!status)status=legacy_source?bw_preload_bundle_select_legacy_source_for_removal(&selection,legacy_companions,&pin,&diagnostic):
+        projected?bw_preload_bundle_select_projection_for_removal(&selection,companions,&pin,&diagnostic):bw_preload_bundle_select_source_for_removal(&selection,source_ampr,&pin,&diagnostic);
+    /* This is local sealed ownership evidence only. Never connect the PC or
+     * turn a removal witness into install/launch authority. The deletion core
+     * independently rehashes its original source manifest below. */
+    if(bw_native_launch_admission_close(&startup)){diagnostic.release_unknown=1;status=-2;}
     if(status||diagnostic.release_unknown){out->release_unknown=status==-2||diagnostic.release_unknown;out->phase=out->release_unknown?BW_GAME_REMOVE_UNKNOWN:BW_GAME_REMOVE_ERROR;
         out->reason=out->release_unknown?"Reader library checks could not be released. Refresh status without submitting removal again.":
             "The exact owned reader library set is unresolved or differs. No registration or files were changed.";
         return -1;}
-    struct bw_game_uninstall_request q={.environment=env,.identity=selected->identity,.prepared=selected->prepared,.ops={.opaque=&control,.current=removal_default_current,.observe=removal_default_observe},.reader_size=pin.size};
+    struct bw_game_uninstall_request q={.environment=env,.identity=selected->identity,.prepared=selected->prepared,.ops={.opaque=&control,.current=removal_default_current,.observe=removal_default_observe},.reader_size=pin.size,.legacy_source_fakelib2=legacy_source};
     memcpy(q.operation,selected->operation,33);memcpy(q.confirmed_title,selected->confirmed_title,10);memcpy(q.reader_sha256,pin.sha256,32);
     return bw_native_game_uninstall_normal(&q,0,out);
 #else

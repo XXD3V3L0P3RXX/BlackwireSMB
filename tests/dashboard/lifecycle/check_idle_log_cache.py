@@ -177,7 +177,7 @@ def main():
         ["-DBW_COPY_HOST_TEST=1", "-DBW_NATIVE_SEND_HOST_TEST=1", "-DBW_NATIVE_FS_HOST_TEST=1"])
     routing, callers = json.loads(caller_lines[-2]), json.loads(caller_lines[-1])
     require(callers["passed"] and callers["retainedRoutingCases"] == 64 and
-            callers["focusedCallerCases"] == 15 and callers["allCachesClosedBeforeHandoff"] and
+            callers["focusedCallerCases"] == 17 and callers["allCachesClosedBeforeHandoff"] and
             callers["releaseUnknownRetained"], "Actual caller/lifetime scenarios changed")
 
     native, linked = [], None

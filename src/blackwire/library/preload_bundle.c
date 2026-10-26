@@ -5,6 +5,9 @@
 #define BW_COPY_HOST_TEST
 #endif
 #include "preload_bundle.h"
+#include "preload_source_ampr_internal.h"
+#include "preload_companions_internal.h"
+#include "../streamreader/startup_mode.h"
 #include "send_diagnostic.h"
 #include "../streamreader/copy_fs.h"
 #include "../streamreader/copy_sha256.h"
@@ -26,6 +29,10 @@ static const char *pb_name(unsigned i){return i==PB_PLAYGO?"libScePlayGo.sprx":p
 struct pb_operation {
     const struct bw_preload_bundle_request *request;
     const struct bw_preload_bundle_control *control;
+    const struct bw_preload_source_ampr *source_ampr;
+    const struct bw_preload_companions *companions;
+    const struct bw_preload_legacy_companions *legacy_companions;
+    unsigned source_ampr_purpose;
     int root,source,folder,changed,release_unknown;
     int source_state; /* 0=unobserved, 1=absent, 2=held game/fakelib */
     unsigned source_mask,members,scanned_mask,source_extras_reported,legacy_five;
@@ -49,6 +56,12 @@ static int pb_close(struct pb_operation *p,int fd,const char *reason){
 static int pb_guard(struct pb_operation *p) {
     struct timespec t;const struct bw_preload_bundle_request *r=p->request;
     if(!r->current||!__builtin_isfinite(r->deadline)||r->deadline<=0)return pb_fail(p,"invalid_bundle_authority",0);
+    if(p->source_ampr&&(p->source_ampr->purpose!=p->source_ampr_purpose||bw_preload_source_ampr_current(p->source_ampr,r->root)))
+        return pb_fail(p,"source_ampr_witness_stale_or_mismatched",0);
+    if(p->companions&&bw_preload_companions_current(p->companions,r->root,p->source_ampr_purpose))
+        return pb_fail(p,"companion_projection_witness_stale_or_mismatched",0);
+    if(p->legacy_companions&&(p->source_ampr_purpose!=BW_SOURCE_AMPR_REMOVAL||bw_preload_legacy_companions_current(p->legacy_companions,r->root)))
+        return pb_fail(p,"legacy_source_companion_witness_stale_or_mismatched",0);
     if(clock_gettime(CLOCK_MONOTONIC,&t))return pb_fail(p,"bundle_clock_failed",errno);
     double now=(double)t.tv_sec+(double)t.tv_nsec/1e9;
     if(!__builtin_isfinite(now)||now>=r->deadline)return pb_fail(p,"bundle_deadline_expired",0);
@@ -177,7 +190,9 @@ static int pb_entries(struct pb_operation *p,int fd,int source) {
 }
 static int pb_source_open(struct pb_operation *p);
 static int pb_verify_set(struct pb_operation *p,int parent,int destination);
+static int pc_inventory(struct pb_operation *,int);
 static int pb_profile(struct pb_operation *p){
+    if(p->companions){p->members=1u;return pc_inventory(p,0);}
     const char *stage=p->stage,*library=p->library;
     if(pb_entries(p,p->folder,0))return -1;unsigned seen=p->scanned_mask;
     if(!(seen&1u))return pb_fail(p,"reader_directory_is_incomplete",0);
@@ -202,6 +217,11 @@ static int pb_hex(const char *hex,uint8_t out[32]) {
     return 0;
 }
 static int pb_material(struct pb_operation *p,unsigned i,int fd,size_t *size,uint8_t hash[32]){
+    if(i==0){
+        if(!p->source_ampr||!p->source_ampr->present||bw_preload_source_ampr_current(p->source_ampr,p->request->root))
+            return pb_fail(p,"source_ampr_witness_required",0);
+        *size=(size_t)p->source_ampr->size;memcpy(hash,p->source_ampr->sha256,32);return 0;
+    }
     if(i!=PB_PLAYGO){*size=pb_globals[i].size;return pb_hex(pb_globals[i].hex,hash)?pb_fail(p,"invalid_fixed_reader_library_hash",0):0;}
     struct stat held;if(fstat(fd,&held))return pb_fail(p,"reader_library_held_stat_failed",errno);
     if(!S_ISREG(held.st_mode)||held.st_size<0)return pb_fail(p,"reader_library_type_differs",0);
@@ -213,7 +233,7 @@ static int pb_material(struct pb_operation *p,unsigned i,int fd,size_t *size,uin
 static int pb_file(struct pb_operation *p,int parent,const char *name,int fd,size_t size,
                    const uint8_t expected[32],int destination) {
     struct stat before,named,after;struct cp_sha sha;uint8_t bytes[32768],hash[32];
-    p->stage=destination?"private-library-metadata":"game-library-metadata";p->library=name;
+    p->stage=destination?"private-library-metadata":"game-library-metadata";p->library=p->companions||p->legacy_companions?NULL:name;
     if(pb_paths(p))return -1;
     if(fstat(fd,&before))return pb_fail(p,"reader_library_held_stat_failed",errno);
     if(!S_ISREG(before.st_mode))return pb_fail(p,"reader_library_type_differs",0);
@@ -246,7 +266,80 @@ static int pb_file(struct pb_operation *p,int parent,const char *name,int fd,siz
     if(memcmp(hash,expected,32))return pb_fail(p,"reader_library_hash_differs",0);
     return pb_paths(p);
 }
+/* A projected namespace is not a fixed-name allowlist. Every selected member
+ * is bound by the opaque held receipt to its ORIGINAL LOCAL digest. Metadata
+ * and .so files receive the same complete hash check as executable suffixes.
+ * The generated reader is the sole extra slot and is qualified separately by
+ * the compiled current/predecessor image, never by these source bytes. */
+static uint32_t pc_count(struct pb_operation *p){return p->companions?bw_companion_receipt_count(p->companions->receipt):p->legacy_companions?p->legacy_companions->count:0;}
+static int pc_get(struct pb_operation *p,uint32_t id,struct bw_companion_member *out,uint32_t *flags){
+    if(flags)*flags=BW_MANIFEST_LOCAL;
+    if(p->companions)return bw_companion_receipt_member(p->companions->receipt,id,out);
+    const struct bw_preload_legacy_companions *w=p->legacy_companions;if(!w||id>=w->count)return -1;uint32_t row_id=w->rows[id];struct bw_manifest_record row;
+    if(bw_manifest_get(w->manifest,row_id,&row)||strncmp(row.path,"fakelib2/",9))return -1;
+    *out=(struct bw_companion_member){row_id,row_id,BW_COMPANION_COPY,BW_COMPANION_NS_FAKELIB2,row.size,w->digests+56u+32u*row_id,row.path,row.path,row.path_length,row.path_length};
+    if(flags)*flags=row.flags;return 0;
+}
+static int pc_member(struct pb_operation *p,const char *path,struct bw_companion_member *out,int prefix){
+    size_t size=strlen(path);uint32_t count=pc_count(p);
+    for(uint32_t i=0;i<count;i++){struct bw_companion_member member;
+        if(pc_get(p,i,&member,NULL))return -1;
+        if(prefix){if(member.destination_path_size>size&&!memcmp(member.destination_path,path,size)&&member.destination_path[size]=='/')return(int)i;}
+        else if(!strcmp(member.destination_path,path)){if(out)*out=member;return(int)i;}
+    }return -1;
+}
+static int pc_walk(struct pb_operation *p,int parent,const char *prefix,unsigned depth,uint8_t *seen){
+    if(depth>48||pb_paths(p))return pb_fail(p,"projected_companion_directory_changed",0);
+    struct stat before,after;if(fstat(parent,&before))return pb_fail(p,"projected_companion_directory_stat_failed",errno);
+    int cursor=v2_openat(parent,".",O_RDONLY|O_DIRECTORY|O_NOFOLLOW,0);if(cursor<0)return pb_fail(p,"projected_companion_directory_open_failed",errno);
+    DIR *directory=fdopendir(cursor);if(!directory){pb_close(p,cursor,"reader_directory_close_failed");return pb_fail(p,"projected_companion_directory_stream_failed",errno);}
+    int bad=0;rewinddir(directory);
+    for(;;){if(pb_paths(p)){bad=1;break;}errno=0;struct dirent *entry=readdir(directory);
+        if(!entry){if(errno){bad=1;pb_fail(p,"projected_companion_directory_read_failed",errno);}break;}
+        if(!strcmp(entry->d_name,".")||!strcmp(entry->d_name,".."))continue;
+        char path[1024];int n=snprintf(path,sizeof path,"%s/%s",prefix,entry->d_name);struct stat named,held,final;int fd=-1;
+        if(n<0||(size_t)n>=sizeof path||bw_manifest_validate_path(path,(size_t)n)||cp_fstatat(parent,entry->d_name,&named,AT_SYMLINK_NOFOLLOW)||
+           named.st_uid!=geteuid()||named.st_dev!=p->root_identity.st_dev){bad=1;pb_entry_fail(p,entry->d_name,"unbound-projected-entry","projected_companion_metadata_differs");break;}
+        if(S_ISDIR(named.st_mode)){
+            if((named.st_mode&07777)!=0755||pc_member(p,path,NULL,1)<0){bad=1;pb_entry_fail(p,entry->d_name,"unbound-projected-directory","projected_companion_names_differ");break;}
+            fd=v2_openat(parent,entry->d_name,O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_NONBLOCK,0);
+            if(fd<0||fstat(fd,&held)||!pb_same(&named,&held)||pc_walk(p,fd,path,depth+1,seen))bad=1;
+        }else if(S_ISREG(named.st_mode)){
+            struct bw_companion_member member;int id=pc_member(p,path,&member,0);uint32_t flags=0;
+            if(id<0||seen[id]||named.st_nlink!=1||named.st_size<0||(named.st_mode&07777)!=bw_startup_mode(path)){
+                bad=1;pb_entry_fail(p,entry->d_name,"unbound-projected-file","projected_companion_names_or_mode_differ");break;}
+            if(pc_get(p,(uint32_t)id,&member,&flags)){bad=1;break;}
+            seen[id]=1;fd=v2_openat(parent,entry->d_name,O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);
+            if(fd<0||fstat(fd,&held)||!pb_same(&named,&held))bad=1;
+            else if(member.role==BW_COMPANION_READER_SLOT){if(!named.st_size||(uint64_t)named.st_size>4u*1024u*1024u)bad=1;}
+            else if(flags==BW_MANIFEST_STREAM){if(!p->legacy_companions||(uint64_t)named.st_size!=member.bytes||held.st_blocks)bad=1;}
+            else if((uint64_t)named.st_size!=member.bytes||pb_file(p,parent,entry->d_name,fd,(size_t)member.bytes,member.sha256,0))bad=1;
+        }else{bad=1;pb_entry_fail(p,entry->d_name,"special-projected-entry","projected_companion_type_differs");break;}
+        if(!bad&&(fstat(fd,&held)||cp_fstatat(parent,entry->d_name,&final,AT_SYMLINK_NOFOLLOW)||!pb_same(&named,&held)||!pb_same(&held,&final)))bad=1;
+        if(fd>=0&&pb_close(p,fd,"projected_companion_close_failed"))bad=1;if(bad)break;
+    }
+    if(closedir(directory)){p->release_unknown=1;pb_fail(p,"projected_companion_directory_close_failed",errno);bad=1;}
+    if(fstat(parent,&after)||!pb_same(&before,&after))bad=1;
+    return bad?pb_fail(p,"projected_companion_inventory_changed",0):pb_paths(p);
+}
+static int pc_inventory(struct pb_operation *p,int reader_may_be_absent){
+    if((!p->companions&&!p->legacy_companions)||p->folder<0||pb_paths(p))return pb_fail(p,"companion_projection_witness_required",0);
+    uint32_t count=pc_count(p);if(!count||count>BW_COMPANION_ROW_LIMIT)return pb_fail(p,"projected_companion_row_limit",0);
+    uint8_t *seen=calloc(count,1);if(!seen)return pb_fail(p,"projected_companion_memory_limit",0);
+    int bad=pc_walk(p,p->folder,"fakelib2",0,seen);
+    for(uint32_t i=0;!bad&&i<count;i++){struct bw_companion_member member;if(pc_get(p,i,&member,NULL)){bad=1;break;}
+        if(!seen[i]&&!(reader_may_be_absent&&member.role==BW_COMPANION_READER_SLOT)){bad=1;pb_fail(p,"projected_companion_is_missing",0);}}
+    free(seen);return bad?-1:pb_paths(p);
+}
 static int pb_verify_set(struct pb_operation *p,int parent,int destination) {
+    if(p->companions){
+        if(!destination)return pb_paths(p);
+        if(pc_inventory(p,0))return -1;
+        int fd=v2_openat(p->folder,"libSceAmpr.sprx",O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);
+        if(fd<0)return pb_fail(p,"reader_library_open_failed",errno);
+        int bad=pb_file(p,p->folder,"libSceAmpr.sprx",fd,bw_preload_embedded_image.size,bw_preload_embedded_image.sha256,1);
+        if(pb_close(p,fd,"reader_library_close_failed"))bad=1;return bad?-1:0;
+    }
     p->stage=destination?"private-library-names":"game-library-names";p->library=NULL;
     if(!destination&&p->source_state!=2)return pb_paths(p);
     if(destination){if(pb_profile(p))return -1;}
@@ -270,6 +363,7 @@ static int pb_verify_set(struct pb_operation *p,int parent,int destination) {
     return pb_paths(p);
 }
 static int pb_source_open(struct pb_operation *p){
+    if(p->companions)return pb_paths(p);
     if(p->source_state)return pb_source_guard(p);
     p->stage="game-library-directory";p->library=NULL;struct stat named;
     if(pb_paths(p))return -1;
@@ -277,11 +371,15 @@ static int pb_source_open(struct pb_operation *p){
     if(n<0||(size_t)n>=sizeof p->source_path)return pb_fail(p,"game_companion_path_too_long",0);
     if(cp_fstatat(p->root,"fakelib",&named,AT_SYMLINK_NOFOLLOW)){
         if(errno!=ENOENT)return pb_fail(p,"game_companion_directory_stat_failed",errno);
-        p->source_state=1;p->source_mask=0;return pb_paths(p);
+        p->source_state=1;p->source_mask=0;
+        if(p->source_ampr&&p->source_ampr->present)return pb_fail(p,"source_ampr_missing_from_prepared_source",0);
+        return pb_paths(p);
     }
     p->source=pb_open_directory(p,p->source_path,&p->source_identity);if(p->source<0)return -1;p->source_state=2;
     if(pb_entries(p,p->source,1))return -1;
-    if(p->scanned_mask&1u)return pb_entry_fail(p,pb_globals[0].name,"unexpected-source-reader","unexpected_game_reader_file");
+    if((p->scanned_mask&1u)&&!p->source_ampr)return pb_entry_fail(p,pb_globals[0].name,"unexpected-source-reader","unexpected_game_reader_file");
+    if(p->source_ampr&&!!(p->scanned_mask&1u)!=p->source_ampr->present)
+        return pb_entry_fail(p,pb_globals[0].name,"unbound-source-ampr","source_ampr_presence_differs_from_admitted_manifest");
     p->source_mask=p->scanned_mask;return pb_verify_set(p,p->source,0);
 }
 static int pb_copy(struct pb_operation *p,unsigned i) {
@@ -341,9 +439,9 @@ done:
     if(source>=0&&pb_close(p,source,"reader_library_close_failed"))result=-1;
     return result;
 }
-static int pb_install_checked(const struct bw_preload_bundle_request *r,struct bw_preload_bundle_result *diagnostic,int create,const struct bw_preload_bundle_control *control) {
+static int pb_install_checked(const struct bw_preload_bundle_request *r,struct bw_preload_bundle_result *diagnostic,int create,const struct bw_preload_bundle_control *control,const struct bw_preload_source_ampr *source_ampr,const struct bw_preload_companions *companions) {
     if(diagnostic)memset(diagnostic,0,sizeof *diagnostic);
-    struct pb_operation p={.request=r,.control=control,.root=-1,.source=-1,.folder=-1,.diagnostic=diagnostic,.stage="request"};
+    struct pb_operation p={.request=r,.control=control,.source_ampr=source_ampr,.companions=companions,.source_ampr_purpose=BW_SOURCE_AMPR_EXECUTION,.root=-1,.source=-1,.folder=-1,.diagnostic=diagnostic,.stage="request"};
     int result=-1;uint8_t hash[32];
     if(!r||!r->root||strnlen(r->root,1024)>=1024||!r->current||
        !bw_preload_embedded_image.bytes||bw_preload_embedded_image.size<1024||bw_preload_embedded_image.size>4u*1024u*1024u||
@@ -365,10 +463,18 @@ static int pb_install_checked(const struct bw_preload_bundle_request *r,struct b
         if(!S_ISDIR(named.st_mode)){pb_fail(&p,"reader_directory_type_differs",0);goto done;}
         if((named.st_mode&07777)!=0755){pb_fail(&p,"private_reader_directory_mode_differs",0);goto done;}
         if(named.st_uid!=geteuid()){pb_fail(&p,"private_reader_directory_owner_differs",0);goto done;}
+        if(companions){
+            if(pc_inventory(&p,create))goto done;
+            struct stat reader;if(cp_fstatat(p.folder,"libSceAmpr.sprx",&reader,AT_SYMLINK_NOFOLLOW)){
+                if(errno!=ENOENT||!create){pb_fail(&p,"projected_reader_absent_or_unknown",errno);goto done;}
+                if(pb_copy(&p,0))goto done;
+            }
+        }
         if(pb_verify_set(&p,p.folder,1))goto done;
     }else {
         if(errno!=ENOENT){pb_fail(&p,"private_reader_directory_stat_failed",errno);goto done;}
         if(!create){pb_fail(&p,"private_reader_directory_absent",0);goto done;}
+        if(companions&&bw_companion_receipt_count(companions->receipt)!=1){pb_fail(&p,"projected_companion_directory_missing",0);goto done;}
         if(pb_source_open(&p))goto done;p.members=p.source_mask|1u;p.stage="private-directory";p.library=NULL;
         if(pb_paths(&p)||pb_checkpoint(&p))goto done;
         if(v2_mkdirat(p.root,"fakelib2",0755)){pb_fail(&p,"private_reader_directory_create_failed",errno);goto done;}p.changed=1;
@@ -393,13 +499,31 @@ done:
     return result&&(p.changed||p.release_unknown)?-2:result;
 }
 int bw_preload_bundle_install_checked(const struct bw_preload_bundle_request *r,struct bw_preload_bundle_result *d) {
-    return pb_install_checked(r,d,1,NULL);
+    return pb_install_checked(r,d,1,NULL,NULL,NULL);
 }
 int bw_preload_bundle_verify_checked(const struct bw_preload_bundle_request *r,struct bw_preload_bundle_result *d) {
-    return pb_install_checked(r,d,0,NULL);
+    return pb_install_checked(r,d,0,NULL,NULL,NULL);
 }
 int bw_preload_bundle_install(const struct bw_preload_bundle_request *r) {
     return bw_preload_bundle_install_checked(r,NULL);
+}
+static int pb_source_required(const struct bw_preload_source_ampr *w,struct bw_preload_bundle_result *d){
+    if(w)return 0;if(d){memset(d,0,sizeof *d);d->stage="request";d->reason="source_ampr_witness_required";}return -1;
+}
+int bw_preload_bundle_install_source_checked(const struct bw_preload_bundle_request *r,const struct bw_preload_source_ampr *w,struct bw_preload_bundle_result *d){
+    return pb_source_required(w,d)?-1:pb_install_checked(r,d,1,NULL,w,NULL);
+}
+int bw_preload_bundle_verify_source_checked(const struct bw_preload_bundle_request *r,const struct bw_preload_source_ampr *w,struct bw_preload_bundle_result *d){
+    return pb_source_required(w,d)?-1:pb_install_checked(r,d,0,NULL,w,NULL);
+}
+static int pc_required(const struct bw_preload_companions *w,struct bw_preload_bundle_result *d){
+    if(w)return 0;if(d){memset(d,0,sizeof *d);d->stage="request";d->reason="companion_projection_witness_required";}return -1;
+}
+int bw_preload_bundle_install_projection_checked(const struct bw_preload_bundle_request *r,const struct bw_preload_companions *w,struct bw_preload_bundle_result *d){
+    return pc_required(w,d)?-1:pb_install_checked(r,d,1,NULL,NULL,w);
+}
+int bw_preload_bundle_verify_projection_checked(const struct bw_preload_bundle_request *r,const struct bw_preload_companions *w,struct bw_preload_bundle_result *d){
+    return pc_required(w,d)?-1:pb_install_checked(r,d,0,NULL,NULL,w);
 }
 
 
@@ -571,6 +695,7 @@ static int pu_write(struct pu_operation *u,unsigned which,const uint8_t *bytes,s
     return 0;
 }
 static int pu_other_members(struct pu_operation *u){
+    if(u->p.companions)return pc_inventory(&u->p,0)||pu_guard(u)?-1:0;
     if(pb_profile(&u->p))return -1;
     for(unsigned i=1;i<PB_MEMBERS;i++){
         if(!(u->p.members&(1u<<i)))continue;
@@ -585,10 +710,10 @@ static int pu_owned_leaf(struct pu_operation *u,unsigned i){
     struct stat named;return pu_guard(u)||cp_fstatat(u->work,pu_names[i],&named,AT_SYMLINK_NOFOLLOW)||
         !pb_same(&named,&u->file_ids[i])?-1:0;
 }
-static int pb_upgrade_checked(const struct bw_preload_bundle_upgrade_request *q,const struct bw_preload_bundle_control *control,struct bw_preload_bundle_result *d){
+static int pb_upgrade_checked(const struct bw_preload_bundle_upgrade_request *q,const struct bw_preload_bundle_control *control,const struct bw_preload_source_ampr *source_ampr,const struct bw_preload_companions *companions,struct bw_preload_bundle_result *d){
     if(d)memset(d,0,sizeof *d);
     struct pu_operation u={.state=-1,.receipt=-1,.work=-1,.reader=-1};
-    u.p=(struct pb_operation){.root=-1,.source=-1,.folder=-1,.diagnostic=d,.stage="reader-upgrade-request"};
+    u.p=(struct pb_operation){.source_ampr=source_ampr,.companions=companions,.source_ampr_purpose=BW_SOURCE_AMPR_EXECUTION,.root=-1,.source=-1,.folder=-1,.diagnostic=d,.stage="reader-upgrade-request"};
     for(unsigned i=0;i<PU_FILES;i++)u.files[i]=-1;
     uint8_t record[384],actual[32],previous[32],intent[1024];int result=-1,locked=0;
     if(!q||!q->bundle.root||!q->bundle.current||!q->data_root||!pu_component(q->game)||
@@ -620,7 +745,7 @@ static int pb_upgrade_checked(const struct bw_preload_bundle_upgrade_request *q,
     struct stat named;if(cp_fstatat(u.p.root,"fakelib2",&named,AT_SYMLINK_NOFOLLOW)){
         if(errno!=ENOENT){pb_fail(&u.p,"private_reader_directory_stat_failed",errno);goto done;}
         struct bw_preload_bundle_result local={0};struct bw_preload_bundle_result *reported=d?d:&local;
-        result=pb_install_checked(&u.request,reported,1,control);
+        result=pb_install_checked(&u.request,reported,1,control,source_ampr,companions);
         if(reported->mutation_started)u.p.changed=1;
         if(reported->release_unknown)u.p.release_unknown=1;
         goto done;
@@ -628,6 +753,13 @@ static int pb_upgrade_checked(const struct bw_preload_bundle_upgrade_request *q,
     char folder[1152];n=snprintf(folder,sizeof folder,"%s/fakelib2",u.root_path);if(n<0||(size_t)n>=sizeof folder)goto done;
     u.p.folder=pb_open_directory(&u.p,folder,&u.p.folder_identity);
     if(u.p.folder<0||(u.p.folder_identity.st_mode&07777)!=0755||u.p.folder_identity.st_uid!=geteuid())goto done;
+    if(companions){
+        if(pc_inventory(&u.p,1))goto done;
+        if(cp_fstatat(u.p.folder,"libSceAmpr.sprx",&named,AT_SYMLINK_NOFOLLOW)){
+            if(errno!=ENOENT){pb_fail(&u.p,"projected_reader_stat_failed",errno);goto done;}
+            if(pb_copy(&u.p,0)||pb_verify_set(&u.p,u.p.folder,1)||pu_guard(&u))goto done;result=0;goto done;
+        }
+    }
     if(pb_profile(&u.p))goto done;
     u.reader=v2_openat(u.p.folder,"libSceAmpr.sprx",O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);
     if(u.reader<0){pb_fail(&u.p,"reader_upgrade_reader_open_failed",errno);goto done;}
@@ -694,17 +826,30 @@ done:
 }
 
 int bw_preload_bundle_upgrade_checked(const struct bw_preload_bundle_upgrade_request *q,struct bw_preload_bundle_result *d){
-    return pb_upgrade_checked(q,NULL,d);
+    return pb_upgrade_checked(q,NULL,NULL,NULL,d);
 }
 int bw_preload_bundle_upgrade_controlled(const struct bw_preload_bundle_upgrade_request *q,
     const struct bw_preload_bundle_control *control,struct bw_preload_bundle_result *d){
     if(!control||!control->checkpoint){if(d){memset(d,0,sizeof *d);d->stage="request";d->reason="invalid_bundle_checkpoint";}return -1;}
-    return pb_upgrade_checked(q,control,d);
+    return pb_upgrade_checked(q,control,NULL,NULL,d);
+}
+int bw_preload_bundle_upgrade_source_controlled(const struct bw_preload_bundle_upgrade_request *q,
+    const struct bw_preload_bundle_control *control,const struct bw_preload_source_ampr *w,struct bw_preload_bundle_result *d){
+    if(pb_source_required(w,d))return -1;
+    if(!control||!control->checkpoint){if(d){memset(d,0,sizeof *d);d->stage="request";d->reason="invalid_bundle_checkpoint";}return -1;}
+    return pb_upgrade_checked(q,control,w,NULL,d);
+}
+int bw_preload_bundle_upgrade_projection_controlled(const struct bw_preload_bundle_upgrade_request *q,
+    const struct bw_preload_bundle_control *control,const struct bw_preload_companions *w,struct bw_preload_bundle_result *d){
+    if(pc_required(w,d))return -1;
+    if(!control||!control->checkpoint){if(d){memset(d,0,sizeof *d);d->stage="request";d->reason="invalid_bundle_checkpoint";}return -1;}
+    return pb_upgrade_checked(q,control,NULL,w,d);
 }
 
 /* Same held private directory, with no dependency on global library state:
  * deleting an owned copy does not repair or adopt the global source set. */
 static int pr_entries(struct pu_operation *u){
+    if(u->p.companions||u->p.legacy_companions){u->p.members=1u;return pc_inventory(&u->p,1)||pu_guard(u)?-1:0;}
     if(pu_guard(u))return -1;
     int fd=dup(u->p.folder);if(fd<0)return pb_fail(&u->p,"reader_removal_directory_dup_failed",errno);
     DIR *dir=fdopendir(fd);if(!dir){pb_fail(&u->p,"reader_removal_directory_open_failed",errno);pb_close(&u->p,fd,"reader_removal_directory_close_failed");return -1;}
@@ -721,11 +866,11 @@ static int pr_entries(struct pu_operation *u){
     if(!bad&&pb_profile(&u->p))bad=1;
     return bad?-1:pu_guard(u);
 }
-int bw_preload_bundle_select_for_removal(const struct bw_preload_bundle_upgrade_request *q,
+static int pb_select_for_removal(const struct bw_preload_bundle_upgrade_request *q,const struct bw_preload_source_ampr *source_ampr,const struct bw_preload_companions *companions,const struct bw_preload_legacy_companions *legacy,
     struct bw_preload_reader_pin *out,struct bw_preload_bundle_result *d){
     if(d)memset(d,0,sizeof *d);if(out)memset(out,0,sizeof *out);
     struct pu_operation u={.state=-1,.receipt=-1,.work=-1,.reader=-1};
-    u.p=(struct pb_operation){.root=-1,.source=-1,.folder=-1,.diagnostic=d,.stage="reader-removal-selection"};
+    u.p=(struct pb_operation){.source_ampr=source_ampr,.companions=companions,.legacy_companions=legacy,.source_ampr_purpose=BW_SOURCE_AMPR_REMOVAL,.root=-1,.source=-1,.folder=-1,.diagnostic=d,.stage="reader-removal-selection"};
     for(unsigned i=0;i<PU_FILES;i++)u.files[i]=-1;
     struct bw_preload_reader_pin selected={0};uint8_t record[384],hash[32],expected[32];int locked=0,result=-1;
     if(!q||!out||!q->bundle.root||!q->bundle.current||!q->data_root||!pu_component(q->game)||
@@ -755,6 +900,7 @@ int bw_preload_bundle_select_for_removal(const struct bw_preload_bundle_upgrade_
     selected.size=bw_preload_embedded_image.size;memcpy(selected.sha256,bw_preload_embedded_image.sha256,32);
     struct stat named;if(cp_fstatat(u.p.root,"fakelib2",&named,AT_SYMLINK_NOFOLLOW)){
         if(errno!=ENOENT){pb_fail(&u.p,"reader_removal_directory_stat_failed",errno);goto done;}
+        if(legacy){pb_fail(&u.p,"legacy_source_companion_directory_missing",0);goto done;}
         if(pu_guard(&u))goto done;result=0;goto done;
     }
     char path[1152];n=snprintf(path,sizeof path,"%s/fakelib2",u.root_path);
@@ -763,7 +909,9 @@ int bw_preload_bundle_select_for_removal(const struct bw_preload_bundle_upgrade_
     if(u.p.folder<0||(u.p.folder_identity.st_mode&07777)!=0755||u.p.folder_identity.st_uid!=geteuid()){
         pb_fail(&u.p,"reader_removal_directory_metadata_differs",0);goto done;}
     if(pr_entries(&u))goto done;
+    if(legacy){memset(&selected,0,sizeof selected);if(pu_guard(&u))goto done;result=0;goto done;}
     u.reader=v2_openat(u.p.folder,"libSceAmpr.sprx",O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);
+    if(u.reader<0&&companions&&errno==ENOENT){if(pr_entries(&u)||pu_guard(&u))goto done;result=0;goto done;}
     if(u.reader<0){pb_fail(&u.p,"reader_removal_library_open_failed",errno);goto done;}
     if(pu_digest(&u,u.p.folder,"libSceAmpr.sprx",u.reader,0755,(size_t)-1,hash,&u.reader_id,NULL))goto done;
     if((uint64_t)u.reader_id.st_size!=selected.size||memcmp(hash,selected.sha256,32)){
@@ -789,4 +937,22 @@ done:;
     if(d){d->mutation_started=0;d->release_unknown=(unsigned)(u.close_unknown||u.p.release_unknown);if(!result&&!u.close_unknown&&!u.p.release_unknown)d->stage="complete";}
     if(result||u.close_unknown||u.p.release_unknown)return u.close_unknown||u.p.release_unknown?-2:-1;
     *out=selected;return 0;
+}
+int bw_preload_bundle_select_for_removal(const struct bw_preload_bundle_upgrade_request *q,
+    struct bw_preload_reader_pin *out,struct bw_preload_bundle_result *d){
+    return pb_select_for_removal(q,NULL,NULL,NULL,out,d);
+}
+int bw_preload_bundle_select_source_for_removal(const struct bw_preload_bundle_upgrade_request *q,
+    const struct bw_preload_source_ampr *w,struct bw_preload_reader_pin *out,struct bw_preload_bundle_result *d){
+    if(pb_source_required(w,d)){if(out)memset(out,0,sizeof *out);return -1;}
+    return pb_select_for_removal(q,w,NULL,NULL,out,d);
+}
+int bw_preload_bundle_select_projection_for_removal(const struct bw_preload_bundle_upgrade_request *q,
+    const struct bw_preload_companions *w,struct bw_preload_reader_pin *out,struct bw_preload_bundle_result *d){
+    if(pc_required(w,d)){if(out)memset(out,0,sizeof *out);return -1;}return pb_select_for_removal(q,NULL,w,NULL,out,d);
+}
+int bw_preload_bundle_select_legacy_source_for_removal(const struct bw_preload_bundle_upgrade_request *q,
+    const struct bw_preload_legacy_companions *w,struct bw_preload_reader_pin *out,struct bw_preload_bundle_result *d){
+    if(!w){if(out)memset(out,0,sizeof *out);if(d){memset(d,0,sizeof *d);d->stage="request";d->reason="legacy_source_companion_witness_required";}return -1;}
+    return pb_select_for_removal(q,NULL,NULL,w,out,d);
 }

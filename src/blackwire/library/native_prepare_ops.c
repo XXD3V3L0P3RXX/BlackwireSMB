@@ -4,6 +4,8 @@
 #define BW_COPY_EMBEDDED
 #include "../streamreader/prepare_copy.c"
 #include "source_provider.h"
+#include "source_companions.h"
+#include "source_namespace.h"
 struct np_context {
     struct cp_plan *plan;
     struct bw_source_smb *source;
@@ -13,6 +15,8 @@ struct np_context {
     void *selection;
     uint32_t sparse_created;
     uint64_t local_completed_bytes;
+    struct bw_companion_projection *projection;
+    struct bw_source_companion_namespace *source_namespace;
 };
 /* One explicit operation owns this translation unit; no detached workers. */
 static struct np_context *np_active;
@@ -22,8 +26,33 @@ static int cp_refresh(const struct cp_plan *p){
         v2_fail("Native preparation selection changed or expired"):0;
 }
 static int np_generation(struct np_context *ctx){
-    return cp_refresh(ctx->plan)||bw_source_provider_current(ctx->provider)||cp_refresh(ctx->plan)?
+    return cp_refresh(ctx->plan)||(ctx->source_namespace?
+        bw_source_companion_namespace_matches(ctx->source_namespace,ctx->provider):bw_source_provider_current(ctx->provider))||cp_refresh(ctx->plan)?
         v2_fail("Native preparation source generation changed or expired"):0;
+}
+static int np_read(struct np_context *ctx,uint32_t id,const char *path,bw_source_consume_fn consume,void *opaque){
+    if(!ctx->projection)return bw_source_provider_read(ctx->provider,path,consume,opaque);
+    if(!ctx->source_namespace||cp_refresh(ctx->plan))return -1;
+    struct bw_companion_tables tables;if(bw_companion_projection_tables(ctx->projection,&tables))return -1;
+    if(!strcmp(path,BW_COMPANION_RECEIPT_PATH)){
+        for(size_t at=0;at<tables.receipt_size;){if(cp_refresh(ctx->plan))return -1;size_t n=tables.receipt_size-at;if(n>65536)n=65536;
+            if(consume(opaque,(const uint8_t *)tables.receipt+at,n))return -1;at+=n;}
+        return cp_refresh(ctx->plan);
+    }
+    for(uint32_t i=0;i<bw_companion_projection_count(ctx->projection);i++){
+        struct bw_companion_member member;if(bw_companion_projection_member(ctx->projection,i,&member))return -1;
+        if(member.destination_row!=id)continue;
+        if(member.role!=BW_COMPANION_COPY&&member.role!=BW_COMPANION_ALIAS)return -1;
+        if(member.source_path_size>BW_MANIFEST_MAX_PATH||member.destination_path_size!=strlen(path)||memcmp(member.destination_path,path,member.destination_path_size))return -1;
+        char original[BW_MANIFEST_MAX_PATH+1];memcpy(original,member.source_path,member.source_path_size);original[member.source_path_size]=0;
+        return bw_source_provider_read(ctx->provider,original,consume,opaque);
+    }
+    /* These copied bytes are provisional until np_generation rechecks the
+     * complete typed source namespace before index/record publication. Original
+     * reads still use each provider's held/named per-file/image fences.
+     * Ordinary noncompanion rows retain their original path and digest. The
+     * authoritative provider only supplies its exact original LOCAL members. */
+    return bw_source_provider_read(ctx->provider,path,consume,opaque);
 }
 struct np_writer {struct cp_plan *plan;struct np_context *context;int root,parent,fd;const char *relative;uint64_t size;struct cp_sha hash;};
 static int np_write(void *opaque,const void *bytes,size_t size){
@@ -48,7 +77,7 @@ static int np_copy(struct np_context *ctx,int root,uint32_t id){
     if(fd<0)goto done;
     known=!fstat(fd,&created);if(!known||cp_regular(parent,temp,fd,0,NULL)||fchmod(fd,mode))goto done;
     struct np_writer writer={.plan=p,.context=ctx,.root=root,.parent=parent,.fd=fd,.relative=parent_rel};cp_sha_init(&writer.hash);
-    if(bw_source_provider_read(ctx->provider,r.path,np_write,&writer)||writer.size!=r.size)goto done;
+    if(np_read(ctx,id,r.path,np_write,&writer)||writer.size!=r.size)goto done;
     uint8_t actual[32];cp_sha_final(&writer.hash,actual);memcpy(cp_diagnostic.source_sha,actual,32);cp_diagnostic.hash_flags|=2;
     if(memcmp(actual,expected,32)||cp_refresh(p)||fsync(fd)||cp_regular(parent,temp,fd,r.size,NULL)||
         cp_file_hash(fd,r.size,actual)||memcmp(actual,expected,32)||cp_publish(&p->cfg,root,parent,parent_rel,temp,leaf,fd,r.size,mode,expected,p->deadline))goto done;

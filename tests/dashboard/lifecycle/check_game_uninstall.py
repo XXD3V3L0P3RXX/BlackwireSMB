@@ -59,9 +59,9 @@ def main():
     if not out.is_relative_to(ROOT/'build/native-dashboard'):raise ValueError('Use a new scoped native-dashboard output')
     out.mkdir(parents=True,exist_ok=False);commands=[];deps=[]
     owned=[LIB/n for n in ['native_game_uninstall.c','native_game_uninstall.h','native_removed_sources.c','native_removed_sources.h']]+[Path(__file__).resolve(),HERE/'test_game_uninstall.c',HERE/'test_game_uninstall_io.h']
-    sources=[HERE/'test_game_uninstall.c']+[LIB/n for n in ['native_game_uninstall.c','native_removed_sources.c','native_registration.c','registration_db.c','native_prepared_target.c','reader_selection.c','source_binding.c','source_identity.c','source_profile.c','source_plan.c','source_param.c','source_directory.c']]+[STREAM/'manifest.c',STREAM/'share_config.c']
+    sources=[HERE/'test_game_uninstall.c']+[LIB/n for n in ['native_game_uninstall.c','native_removed_sources.c','native_registration.c','registration_db.c','native_prepared_target.c','reader_selection.c','source_binding.c','source_identity.c','source_namespace.c','source_companions.c','source_profile.c','source_plan.c','source_param.c','source_directory.c']]+[STREAM/'manifest.c',STREAM/'share_config.c']
     possible=set(owned+sources)|set(LIB.glob('*.h'))|set(STREAM.rglob('*.h'))|set((ROOT/'vendor/libsmb2/include').rglob('*.h'))|set((ROOT/'vendor/sqlite').glob('*.h'))|set((ROOT/'src/blackwire/tools/compressed_stream_candidate').rglob('*.h'))
-    possible|={LIB/'native_send.c',LIB/'native_prepare_ops.c',LIB/'native_startup_upgrade.c',LIB/'native_launch_admission.c',HERE/'test_fast_ready_play.c',STREAM/'prepare_copy.c',ROOT/'vendor/sqlite/sqlite3.c'}
+    possible|={LIB/'native_send.c',LIB/'native_companion_state.c',LIB/'native_prepare_ops.c',LIB/'native_startup_upgrade.c',LIB/'native_launch_admission.c',HERE/'test_fast_ready_play.c',STREAM/'prepare_copy.c',ROOT/'vendor/sqlite/sqlite3.c'}
     before={p.resolve():pin(p) for p in possible}
     def run(label,argv):
         argv=list(map(str,argv));r=subprocess.run(argv,cwd=ROOT,capture_output=True,text=True,timeout=180,env={**os.environ,'ASAN_OPTIONS':'detect_leaks=1:abort_on_error=1','UBSAN_OPTIONS':'halt_on_error=1'})
@@ -83,7 +83,7 @@ def main():
     missing=sorted(n for n in needed-defined if n.startswith('bw_'))
     headers=[p for d in (LIB,STREAM,ROOT/'src/blackwire/tools/compressed_stream_candidate') for p in d.glob('*.h') if p.name!='native_json.h']
     declaration='\n'.join(p.read_text() for p in headers)
-    stubs=['#include "reader_preflight.h"','#include "native_register.h"','#include "native_prepared_target.h"','#include "native_derived_context.h"','#include "native_batch_context.h"','#include <stdlib.h>']
+    stubs=['#include "reader_preflight.h"','#include "native_register.h"','#include "native_prepared_target.h"','#include "native_derived_context.h"','#include "native_batch_context.h"','#include "source_namespace.h"','#include <stdlib.h>']
     for name in missing:
         matches=re.findall(r'((?:int|void|const\s+struct\s+\w+\s*\*|struct\s+\w+\s*\*)\s*'+re.escape(name)+r'\s*\([^;{}]*\))\s*;',declaration)
         if not matches:raise ValueError('Missing explicit abort-stub declaration: '+name)

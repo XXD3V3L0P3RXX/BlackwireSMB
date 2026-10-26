@@ -67,3 +67,5 @@ Vendored AMPR Git attributes disable text conversion so clones and source archiv
 ## Optional logging diagnostic
 
 The optional `v0.2.0-preview.1-sendlog.1` release has [separate diagnostic instructions](DIAGNOSTICS.md), including the exact artifact identity, build command, log collection and rollback. The normal preview remains unchanged.
+
+In the unreleased development recipe, normal builds leave verbose Send logging, launch timing and startup tracing disabled. User-facing errors remain available. Private diagnostics must be selected explicitly with `--diagnostic`; bounded startup trace files additionally require `--startup-trace-file`. Those flags identify a separate test artifact and are not release defaults. The builder checks the actual packaged ELF and compile flags before accepting its diagnostic classification.

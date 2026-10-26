@@ -16,7 +16,7 @@ def main():
         commands.append({'label':label,'argv':list(map(str,argv)),'exitCode':r.returncode,'stdout':r.stdout,'stderr':r.stderr});(out/'commands.json').write_text(json.dumps(commands,indent=2)+'\n')
         if r.returncode or re.search(r'ERROR: AddressSanitizer|runtime error:',r.stderr):raise RuntimeError(label+' failed; see commands.json')
         return r.stdout
-    flags=['-std=gnu11','-Wall','-Wextra','-Werror','-Wno-unused-function','-Wno-unused-variable','-Wno-misleading-indentation','-ffunction-sections','-fdata-sections','-I',LIB,'-I',ROOT/'src/blackwire/streamreader','-I',ROOT/'vendor/libsmb2/include','-I',ROOT/'vendor/sqlite','-I',ROOT/'src/blackwire/tools/compressed_stream_candidate']
+    flags=['-std=gnu11','-DBW_SEND_DIAGNOSTIC=1','-Wall','-Wextra','-Werror','-Wno-unused-function','-Wno-unused-variable','-Wno-misleading-indentation','-ffunction-sections','-fdata-sections','-I',LIB,'-I',ROOT/'src/blackwire/streamreader','-I',ROOT/'vendor/libsmb2/include','-I',ROOT/'vendor/sqlite','-I',ROOT/'src/blackwire/tools/compressed_stream_candidate']
     log=out/'identity.log';binary=out/'identity';dep=out/'host.d'
     run('host-build',['clang-18',*flags,'-O1','-g','-fsanitize=address,undefined','-fno-sanitize-recover=all','-fno-omit-frame-pointer','-DBW_COPY_HOST_TEST=','-DBW_NATIVE_SEND_HOST_TEST=1','-DBW_NATIVE_FS_HOST_TEST=1','-DBW_NATIVE_PRELOAD=1','-DBW_SEND_LOG_PATH="'+str(log)+'"','-MD','-MF',dep,HERE/'test_uninstall_identity_diagnostic.c','-Wl,--gc-sections','-pthread','-o',binary])
     with tempfile.TemporaryDirectory(prefix='blackwire-uninstall-identity-') as tmp:result=json.loads(run('host-cases',[binary,tmp]).splitlines()[-1])

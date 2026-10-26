@@ -6,6 +6,11 @@
 static int inspect_expected(const char *base,const struct bw_provider_binding *identity,
     const struct bw_native_prepared *expected,struct bw_native_prepared *out){
     if(!expected->prepared_policy)return bw_native_send_inspect(base,identity,out);
+    if(expected->prepared_policy==3){
+        if(!memchr(expected->prepared_component,0,sizeof expected->prepared_component)||strcmp(expected->prepared_component,identity->binding.game)||
+           expected->provenance_size<384||expected->provenance_size>1024u*1024u)return -1;
+        return bw_native_send_inspect(base,identity,out);
+    }
     if(expected->prepared_policy==BW_DERIVED_PLAN_POLICY){
         struct bw_native_derived_snapshot snapshot={0};
         int result=bw_native_derived_send_inspect(base,identity,&snapshot);

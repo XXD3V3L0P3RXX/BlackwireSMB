@@ -34,6 +34,7 @@ def main():
  possible=set(own)|set(LIB.glob('*.h'))|set(LIB.glob('*.c'))|set(STREAM.rglob('*.h'))|set((ROOT/'vendor/libsmb2/include').rglob('*.h'))|set((ROOT/'vendor/sqlite').glob('*.h'))|set((ROOT/'src/blackwire/tools/compressed_stream_candidate').glob('*.h'))|set((ROOT/'src/blackwire/tools/compressed_stream_candidate').glob('*.c'))
  core=[LIB/n for n in ('native_registration_lifecycle.c','native_registration_cleanup.c','native_cleanup_remote.c','native_registration.c','registration_db.c','source_param.c','reader_selection.c','native_prepared_target.c')]+[STREAM/'manifest.c',HERE/'test_registration_lifecycle.c']
  core += [STREAM/n for n in ('container_source.c','pfs_source.c','pfsc_range.c','pfsc_inflate.c')]
+ core += [HERE/'legacy_projection_boundary.c']
  possible.update(core+[ROOT/'vendor/sqlite/sqlite3.c',HERE/'test_registration_cleanup.c',HERE/'test_registration_cleanup_io.h',STREAM/'share_config.c'])
  possible.update((STREAM/'vendor/miniz').glob('*.c'))
  before={p.resolve():pin(p) for p in possible};includes=['-I',LIB,'-I',STREAM,'-I',STREAM/'diagnostics','-I',ROOT/'vendor/sqlite','-I',ROOT/'vendor/libsmb2/include','-I',ROOT/'src/blackwire/tools/compressed_stream_candidate']
@@ -62,7 +63,7 @@ def main():
    run('actual-backend-build-'+src.stem,[*host,'-pthread','-DBW_NATIVE_SEND_HOST_TEST=1','-DBW_NATIVE_FS_HOST_TEST=1','-MD','-MF',dep,'-c',src,'-o',obj]);caller_objects.append(obj)
   run('actual-backend-link',['clang-18','-fsanitize=address,undefined',*caller_objects,*['-Wl,--wrap='+name for name in ('open','dup','close','fclose','fgets','clock_gettime')],'-Wl,--gc-sections','-pthread','-lm','-o',backend])
   caller_lines=run('actual-backend-routing',[backend]).splitlines();routing=json.loads(caller_lines[-2]);cache_callers=json.loads(caller_lines[-1])
-  if not(cache_callers['passed'] and cache_callers['retainedRoutingCases']==66 and cache_callers['focusedCallerCases']==15 and cache_callers['allCachesClosedBeforeHandoff'] and cache_callers['releaseUnknownRetained']):raise RuntimeError('Actual caller/lifetime scenarios changed')
+  if not(cache_callers['passed'] and cache_callers['retainedRoutingCases']==66 and cache_callers['focusedCallerCases']==17 and cache_callers['allCachesClosedBeforeHandoff'] and cache_callers['releaseUnknownRetained']):raise RuntimeError('Actual caller/lifetime scenarios changed')
  # Actual SDK production flags/paths, outputs only redirected. Newly linked
  # lifecycle/ledger/remote/transport use the same native_register compilation.
  native=[];cache_link=None

@@ -2,6 +2,19 @@
 
 Changes are grouped by published preview. A build pass, initial menu and controllable gameplay are recorded separately in [testing](docs/TESTING.md).
 
+## Unreleased — verification in progress
+
+- Report the failing SMB share and connection, catalog, source-validation or artwork stage in the setup form. Failed checks preserve saved settings.
+- Preserve and verify a game's original Ampr module against its prepared source receipt while installing Blackwire's embedded reader separately. Use a distinct local-only verification path for uninstalling owned preparations.
+- Preserve source `fakelib`/`fakelib2` precedence, including an empty preferred directory. Keep source companion files separate from Blackwire's reader and private launch inputs, with source-bound hashes checked throughout preparation, launch and removal.
+- Allow normal removal of a verified older partial preparation containing source-owned `fakelib2` files. Unrelated or changed files still refuse removal.
+- Recognize the exact official PlayGo 0.4 log and no-log modules alongside the supported newer artifacts.
+- Keep ordinary Ready checks local so refreshing a prepared library does not add an SMB reconnect for every game.
+- Remove the top-right **Close browser** button. Preserve Circle and dialog Back controls.
+- Make startup tracing, launch timing and verbose setup logging explicit private diagnostic build options. Ordinary builds retain user-facing errors.
+
+These changes are not a published release. The source-companion preparation, bundle, reader handoff and DATA-read paths pass focused host tests. The full integrated build, console retesting and final review remain in progress; these tests do not establish firmware or title compatibility.
+
 ## v0.3.0-beta.2 — connection settings recovery
 
 - Read and publish saved connection settings before startup library discovery. A slow scan no longer leaves a valid saved connection unreported and opens a blank, disabled setup form.

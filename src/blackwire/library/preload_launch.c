@@ -1,6 +1,7 @@
 #include "preload_launch.h"
 #include "launch_timing.h"
 #include <string.h>
+#include <stdlib.h>
 
 struct pl_operation {
     const struct bw_preload_launch_request *request;
@@ -38,7 +39,7 @@ static void pl_pause(struct pl_operation *p) {
     if(p->request->ops.pause(p->request->ops.opaque,100))
         pl_event(p,"error","Waiting for the exact game to exit; the observation delay failed.");
 }
-int bw_preload_launch_run(const struct bw_preload_launch_request *q,struct bw_preload_launch *s) {
+static int pl_run(const struct bw_preload_launch_request *q,struct bw_preload_launch *s,void **projection,size_t projection_size) {
     if(!q||!s||!q->connection||!q->root||!q->selection||!pl_valid(&q->ops)) {
         if(q&&q->connection)bw_share_clear(q->connection);
         return -1;
@@ -55,7 +56,7 @@ int bw_preload_launch_run(const struct bw_preload_launch_request *q,struct bw_pr
     struct pl_operation p={q,s,0,0,0};double started=pl_now(&p);
     if(!__builtin_isfinite(started)||started<0){bw_share_clear(q->connection);s->busy=0;return -1;}
     p.deadline=started+30.0;int result=-1,failure_reported=0;
-    if(pl_guard(&p))goto no_publish;
+    if((bw_reader_selection_is_projection(q->selection)?(!projection||!*projection||!projection_size):(projection||projection_size))||pl_guard(&p))goto no_publish;
     int bundled=BW_LT_CALL(BW_LT_BUNDLE,q->ops.bundle(q->ops.opaque,q->root));
     if(bundled) {
         s->bundle_uncertain=bundled==-2;s->blocked=s->bundle_uncertain;
@@ -64,7 +65,10 @@ int bw_preload_launch_run(const struct bw_preload_launch_request *q,struct bw_pr
     }
     s->bundle_verified=1;
     struct bw_preload_handoff_request handoff={q->root,q->selection,q->connection,pl_guard,&p,p.deadline};
-    int published=pl_guard(&p)?BW_PRELOAD_HANDOFF_REFUSED:BW_LT_CALL(BW_LT_HANDOFF,bw_preload_handoff_publish_retained(&handoff,&s->handoff));
+    int published=pl_guard(&p)?BW_PRELOAD_HANDOFF_REFUSED:BW_LT_CALL(BW_LT_HANDOFF,
+        projection?bw_preload_handoff_publish_projection_retained(&handoff,*projection,projection_size,&s->handoff):
+        bw_preload_handoff_publish_retained(&handoff,&s->handoff));
+    if(projection){free(*projection);*projection=NULL;}
     bw_share_clear(q->connection);
     if(published) {
         pl_event(&p,"error","Private reader inputs were not fully published; no game launch was requested.");
@@ -148,4 +152,8 @@ cleanup:
     s->busy=0;return result;
 no_publish:
     bw_share_clear(q->connection);s->busy=0;return -1;
+}
+int bw_preload_launch_run(const struct bw_preload_launch_request *q,struct bw_preload_launch *s){return pl_run(q,s,NULL,0);}
+int bw_preload_launch_run_projection(const struct bw_preload_launch_request *q,struct bw_preload_launch *s,void **projection,size_t size){
+    if(!projection)return -1;int result=pl_run(q,s,projection,size);free(*projection);*projection=NULL;return result;
 }

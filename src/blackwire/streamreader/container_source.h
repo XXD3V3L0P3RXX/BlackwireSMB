@@ -37,6 +37,9 @@ struct bw_container {
  */
 int bw_container_open(struct bw_container *,const struct bw_container_ops *,void *,uint64_t);
 int bw_container_walk(struct bw_container *,bw_pfs_visit_fn,void *,uint32_t *);
+/* Generation-fenced typed metadata walk; emits files AND directories, including
+ * empty directories. No file bytes or writes. Never infer presence from map. */
+int bw_container_walk_nodes(struct bw_container *,bw_pfs_visit_fn,void *,uint32_t *);
 int bw_container_find(struct bw_container *,const char *,struct bw_pfs_inode *);
 int bw_container_read(struct bw_container *,const char *,uint64_t,void *,size_t);
 /* Path resolution is performed once. Tokens belong to this exact open session;

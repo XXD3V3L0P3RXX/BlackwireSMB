@@ -11,6 +11,7 @@ struct ns_upgrade {
     uint8_t intent_sha[32];
     char game_path[2048],journal_leaf[112];
     unsigned active,game_moved,state_moved;
+    unsigned projection_transition;
     enum bw_native_retirement_state state_code;
     const char *error;
 };
@@ -120,7 +121,10 @@ static int ns_upgrade_begin(struct ns_operation *o,const struct cp_plan *next,st
     char state_path[2048],games_path[2048],states_path[2048];
     if(ns_paths(o->request->data_root,&identity->binding,state_path))goto done;
     cp_io_guard=ns_current;cp_io_opaque=o;
-    if(old.state!=BW_PREPARED_VALID){bad=0;goto done;}
+    if(old.state!=BW_PREPARED_VALID){
+        if(o->projection_requested&&old.state!=BW_PREPARED_ABSENT){us_fail(u,"The existing companion preparation is partial or unconfirmed; inspect it before creating a new projection.");goto done;}
+        bad=0;goto done;
+    }
     int n=snprintf(u->game_path,sizeof u->game_path,"%s/games/%s",o->request->data_root,identity->binding.game);
     int a=snprintf(games_path,sizeof games_path,"%s/games",o->request->data_root),b=snprintf(states_path,sizeof states_path,"%s/native-prepared",o->request->data_root);
     if(n<0||(size_t)n>=sizeof u->game_path||a<0||(size_t)a>=sizeof games_path||b<0||(size_t)b>=sizeof states_path)goto done;
@@ -132,6 +136,11 @@ static int ns_upgrade_begin(struct ns_operation *o,const struct cp_plan *next,st
     const uint8_t *r=record;
     if(ns_read(u->game,"blackwire.files",CP_MAX_MANIFEST,&map,&mn,NULL)||ns_read(u->game,"blackwire.generation.digests",56u+32u*BW_MANIFEST_MAX_FILES,&digests,&dn,NULL))goto done;
     cp_sha_bytes(map,mn,hash);if(memcmp(hash,r+112,32))goto done;cp_sha_bytes(digests,dn,hash);if(memcmp(hash,r+144,32))goto done;
+    /* A new physical companion projection cannot adopt an old original
+     * fakelib2 (or a prior run/root-bound projection) in place. Retire the
+     * positively owned old generation through the SAME unmapped/full-byte
+     * transaction, preserving it without editing source images or journals. */
+    if(o->projection_requested||old.prepared_policy==3){if(old.prepared_policy&&old.prepared_policy!=3)goto done;u->projection_transition=1;goto retire_owned;}
     if(mn==provider->bundle.map.size&&dn==provider->bundle.digest_size&&!memcmp(map,provider->bundle.map.bytes,mn)&&!memcmp(digests,provider->bundle.digests,dn)){bad=0;goto done;}
     struct bw_manifest prior;unsigned promotions=0;
     if(identity->kind!=BW_PROVIDER_FOLDER||identity->policy!=1||memcmp(provider->bundle.generation_sha256,r+80,32)||
@@ -144,6 +153,7 @@ static int ns_upgrade_begin(struct ns_operation *o,const struct cp_plan *next,st
         else{bad=0;goto done;}
     }
     if(!promotions){bad=0;goto done;}
+retire_owned:
     if(ns_upgrade_admit(o,u))goto done;
     if(ns_inspect_locked(o->request->data_root,identity,old.record_sha256,NULL,us_pure_current,o,&verified)||verified.state!=BW_PREPARED_VALID||!verified.bytes_verified)goto done;
     if(ns_paths(o->request->data_root,&identity->binding,state_path))goto done;cp_io_guard=ns_current;cp_io_opaque=o;
@@ -154,7 +164,8 @@ static int ns_upgrade_begin(struct ns_operation *o,const struct cp_plan *next,st
     if(n<0||(size_t)n>=sizeof u->journal_leaf||v2_mkdirat(u->scope,u->journal_leaf,0700))goto done;
     u->active=1;u->journal=v2_openat(u->scope,u->journal_leaf,O_RDONLY|O_DIRECTORY|O_NOFOLLOW,0);
     if(u->journal<0||us_private(u->journal,&u->journal_id)||u->journal_id.st_dev!=u->scope_id.st_dev||fsync(u->scope))goto done;
-    struct bw_json j={.maximum=8160};bw_json_text(&j,"{\"version\":1,\"operation\":\"owned-startup-metadata-retirement\",\"original\":");
+    struct bw_json j={.maximum=8160};bw_json_text(&j,"{\"version\":1,\"operation\":");
+    bw_json_string(&j,u->projection_transition?"owned-companion-projection-retirement":"owned-startup-metadata-retirement");bw_json_text(&j,",\"original\":");
     if(ns_provider_json(identity,&j)){free(j.bytes);goto done;}if(j.used&&j.bytes[j.used-1]=='\n')j.used--;
     bw_json_text(&j,",\"acceptedRun\":");bw_json_string(&j,next->cfg.run_id);char hex[65];
     const uint8_t *values[]={old.record_sha256,r+80,r+112,provider->bundle.digests};const char *keys[]={",\"oldReceiptSha256\":",",\"sourceSeal\":",",\"oldMapSha256\":",",\"newDigestsSha256\":"};

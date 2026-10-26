@@ -6,6 +6,7 @@
 #include "shadowmount_client.h"
 
 enum bw_nrl_control { BW_NRL_REGISTER, BW_NRL_RETIRE };
+struct bw_native_launch_admission;
 struct bw_nrl_request {
     struct bw_nrc_environment environment;
     const struct bw_reader_selection *selection;
@@ -16,6 +17,11 @@ struct bw_nrl_request {
      * Never called with the backend/service mutex held. */
     int (*current)(void *,enum bw_nrl_control);
     void *opaque;
+    /* Mandatory for policy3 REGISTER only: the borrowed execution admission
+     * must bind this exact selection and prove its original source generation.
+     * Keep it alive through registered(); retirement uses independently held
+     * local witnesses after the reader/startup owner has been released. */
+    struct bw_native_launch_admission *startup;
 };
 struct bw_nrl_owner;
 /* New ABSENT registrations require a durable intent before any add/scan.

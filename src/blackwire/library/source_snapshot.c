@@ -80,6 +80,11 @@ const struct bw_source_info *bw_source_snapshot_find(const struct bw_source_snap
     const struct bw_source_snapshot_entry *found=bsearch(&key,p->entries,p->count,sizeof *p->entries,compare);
     return found&&!strcmp(found->path,path)?&found->info:NULL;
 }
+int bw_source_snapshot_visit(const struct bw_source_snapshot *p,bw_source_visit_fn visit,void *opaque){
+    if(!visit||bw_source_snapshot_validate(p))return -1;
+    for(size_t i=0;i<p->count;i++)if(visit(opaque,p->entries[i].path,&p->entries[i].info))return -1;
+    return bw_source_snapshot_validate(p);
+}
 int bw_source_snapshot_equal(const struct bw_source_snapshot *a,const struct bw_source_snapshot *b){return a&&b&&a->sealed&&b->sealed&&!a->error&&!b->error&&a->count==b->count&&a->parent_count==b->parent_count&&!strcmp(a->game,b->game)&&!strcmp(a->source,b->source)&&!memcmp(a->sha256,b->sha256,32);}
 void bw_source_snapshot_destroy(struct bw_source_snapshot *p){if(p){free(p->entries);free(p->paths);memset(p,0,sizeof *p);}}
 

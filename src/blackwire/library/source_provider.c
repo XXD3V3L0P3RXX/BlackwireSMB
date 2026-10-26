@@ -72,19 +72,22 @@ int bw_source_provider_current(struct bw_source_provider *p) {
     if (!p || !p->bundle.ready || p->busy) return p?failure(p,BW_COMPRESSED_DATA_STATE):-1;
     p->busy=1;int result=view_current(p);p->busy=0;return result;
 }
-int bw_source_provider_prepare(struct bw_source_provider *p,const struct bw_provider_binding *identity,
+int bw_source_provider_prepare_policy(struct bw_source_provider *p,const struct bw_provider_binding *identity,
     struct bw_source_smb *source,struct bw_container_smb *image,const char *run,uint64_t budget,
-    int (*current)(void *),void *opaque) {
+    int (*current)(void *),void *opaque,enum bw_source_plan_policy policy) {
     if (!p || p->source || p->busy || p->failed || !identity || !source || !current || !run || bw_generation_run(run) ||
         identity->policy!=BW_PROVIDER_POLICY_V1 || !budget || budget>BW_PROVIDER_MAX_LOCAL_BYTES ||
-        (identity->kind!=BW_PROVIDER_FOLDER && identity->kind!=BW_PROVIDER_CONTAINER)) return -1;
-    p->identity=*identity;p->source=source;p->budget=budget;p->current=current;p->opaque=opaque;p->busy=1;
+        (identity->kind!=BW_PROVIDER_FOLDER && identity->kind!=BW_PROVIDER_CONTAINER)||
+        (policy!=BW_SOURCE_PLAN_LEGACY&&policy!=BW_SOURCE_PLAN_COMPANIONS_V1)) return -1;
+    p->identity=*identity;p->source=source;p->budget=budget;p->current=current;p->opaque=opaque;p->busy=1;p->plan_policy=policy;
     int result=guard(p);struct bw_provider_bundle *view=&p->bundle;
     if (result) goto done;
     const struct bw_source_binding *binding=&identity->binding;
     if (identity->kind==BW_PROVIDER_FOLDER) {
         struct observed watch={p,source->observe,source->observe_opaque};source->observe=observe;source->observe_opaque=&watch;
-        result=bw_source_prepare_bound(source,binding->source,binding->game,binding->title,run,&p->folder);
+        result=policy==BW_SOURCE_PLAN_COMPANIONS_V1?
+            bw_source_prepare_bound_policy(source,binding->source,binding->game,binding->title,run,&p->folder,policy):
+            bw_source_prepare_bound(source,binding->source,binding->game,binding->title,run,&p->folder);
         source->observe=watch.prior;source->observe_opaque=watch.opaque;
         if (result || p->failed) goto done;
         view->map=p->folder.map;view->digests=p->folder.digests;view->digest_size=p->folder.digest_size;
@@ -96,7 +99,9 @@ int bw_source_provider_prepare(struct bw_source_provider *p,const struct bw_prov
         p->image_generation=image->admitted;
         p->image_ops=image->container.ops;p->image_source=image->container.source;
         image->container.ops=(struct bw_container_ops){image_read,image_current};image->container.source=p;
-        result=bw_compressed_data_prepare(&p->container,image,binding,budget,source,guard,p);
+        result=policy==BW_SOURCE_PLAN_COMPANIONS_V1?
+            bw_compressed_data_prepare_policy(&p->container,image,binding,budget,source,guard,p,policy):
+            bw_compressed_data_prepare(&p->container,image,binding,budget,source,guard,p);
         if (result) goto done;
         view->map=p->container.map;view->digests=p->container.digests;view->digest_size=p->container.digest_size;
         image_generation(p,&p->image_generation,view->generation_sha256);
@@ -113,7 +118,7 @@ int bw_source_provider_prepare(struct bw_source_provider *p,const struct bw_prov
         if (n<0 || (size_t)n>=sizeof view->selection) {result=-1;goto done;}
     }
     memcpy(view->source,binding->source,sizeof view->source);memcpy(view->game,binding->game,sizeof view->game);
-    memcpy(view->title,binding->title,sizeof view->title);view->ready=1;
+    memcpy(view->title,binding->title,sizeof view->title);view->ready=1;view->plan_policy=policy;
     result=view_current(p);
 done:
     p->busy=0;
@@ -121,6 +126,10 @@ done:
     bw_source_smb_progress(source,BW_SOURCE_VERIFIED,view->map.local_count,view->map.local_count,view->map.local_bytes,view->map.local_bytes);
     if (guard(p)) {view->ready=0;return -1;}
     return 0;
+}
+int bw_source_provider_prepare(struct bw_source_provider *p,const struct bw_provider_binding *identity,
+    struct bw_source_smb *source,struct bw_container_smb *image,const char *run,uint64_t budget,int (*current)(void *),void *opaque){
+    return bw_source_provider_prepare_policy(p,identity,source,image,run,budget,current,opaque,BW_SOURCE_PLAN_LEGACY);
 }
 struct consuming {struct bw_source_provider *provider;bw_source_consume_fn consume;void *opaque;};
 static int consume(void *opaque,const void *bytes,size_t size) {

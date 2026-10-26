@@ -48,6 +48,11 @@ struct bw_game_uninstall_request {
      * no client-supplied hash or arbitrary extra-file allowlist. */
     unsigned char reader_sha256[32];
     uint64_t reader_size;
+    /* Daemon-selected removal profile only, never ownership authority. For an
+     * old policy0 partial setup, a zero reader pin is allowed ONLY when this
+     * core independently proves at least one sealed source-fakelib2 row and
+     * every descendant is mapped source material/a required directory. */
+    unsigned legacy_source_fakelib2;
 };
 struct bw_game_uninstall_result {
     enum bw_game_uninstall_phase phase;
@@ -59,7 +64,13 @@ struct bw_game_uninstall_result {
     uint32_t files_removed,files_total;
     const char *reason;
 };
-/* First candidate is exact raw FOLDER/V1 policy0 only. Send-only copies are
+/* Exact ordinary FOLDER/CONTAINER V1 policy0 and sealed companion policy3.
+ * Projection removal is offline: the owned parent receipt must seal the
+ * complete physical tables, LOCAL companion receipt, original source tables
+ * and exact root/run/generation relation. Source-owned material is matched
+ * before generated extras; only the trusted selected reader may be extra.
+ * Parsed receipt fields or a cached policy bit alone never grant deletion.
+ * Send-only copies are
  * eligible through their durable preparation ownership and independent title
  * absence; no registration-event ledger is required when no title exists.
  * Inventory must match receipt/map/root identity before the first deletion.
@@ -88,6 +99,7 @@ struct bw_game_uninstall_files_request {
     struct bw_game_uninstall_files_ops ops;
     unsigned char reader_sha256[32];
     uint64_t reader_size;
+    unsigned legacy_source_fakelib2;
 };
 /* Explicit continuation of ONE authenticated original operation. A valid
  * durable .intent and .registration must already exist; this API accepts NO

@@ -31,6 +31,7 @@ static char cache_log_path[256];
 static unsigned cache_owned[8192],cache_live;
 
 #define CHECK(x) do{checks++;if(!(x)){fprintf(stderr,"fast routing case%u line%d: %s\n",cases,__LINE__,#x);exit(1);}}while(0)
+#include "source_ampr_admission_model.h"
 int bw_native_setup_generation_equal(const struct bw_setup_generation *a,const struct bw_setup_generation *b){return !memcmp(a,b,sizeof *a);}
 int bw_native_setup_idle(void *p){(void)p;return 0;}
 static int settings(void *p,struct bw_share_config *c,struct bw_setup_generation *g){CHECK(p==&owner&&!pthread_mutex_trylock(&owner.lock));CHECK(!pthread_mutex_unlock(&owner.lock));setting_calls++;memset(c,0,sizeof *c);*g=owner.playing.selection.connection;if(settings_changed)g->sha256[0]^=1;if(query_mutation)owner.setup_operation++;return settings_status;}
@@ -62,8 +63,8 @@ int bw_startup_idle_ps5_cached(const struct bw_startup_idle_request *q,struct bw
 
 int bw_native_launch_admission_open(struct bw_native_launch_admission **p,const char *root,const struct bw_provider_binding *id,const struct bw_native_prepared *expected,const char *run,int (*guard)(void *),void *opaque,const char **error){
     CHECK(p&&!live&&!*p&&root&&id==&owner.playing.selection.identity&&expected==&owner.playing.selection.prepared&&run&&!guard(opaque));opened++;
-    if(fail_open){*error="Required startup receipt changed; choose Send to repair it.";return -1;}
-    live=*p=(struct bw_native_launch_admission *)(uintptr_t)0x1234;return 0;
+    if(fail_open){*error="Required startup receipt changed; choose Send to repair it.";return fail_open==2?-2:-1;}
+    live=*p=(struct bw_native_launch_admission *)(uintptr_t)0x1234;ampr_model_open(live);return 0;
 }
 int bw_native_launch_admission_selection(struct bw_native_launch_admission *p,struct bw_reader_selection *out){CHECK(live&&p==live&&out);selected_calls++;*out=selection;return 0;}
 int bw_native_launch_admission_current(struct bw_native_launch_admission *p,const char *root,const struct bw_provider_binding *id,const struct bw_reader_selection *s,struct bw_native_prepared *out){
@@ -253,7 +254,12 @@ int main(void){
     strcpy(cache_log_path,"/tmp/blackwire-cache-callers-XXXXXX");int fd=mkstemp(cache_log_path);CHECK(fd>=0);
     FILE *f=fdopen(fd,"w");CHECK(f);for(unsigned i=0;i<20;i++)CHECK(fputs("ordinary complete line\n",f)>=0);CHECK(!fclose(f));
     CHECK(!retained_routing_main());unsigned retained=cases,focused=0;
-    reset();cache_repeats=32;CHECK(!execute());CHECK(cache_calls==35&&cache_queries==140&&cache_lines==40);CHECK(!owner.control_release_unknown);focused++;
+    reset();fail_open=1;CHECK(execute()!=0&&opened==1&&!closed&&!selected_calls&&!bundle_calls&&!register_calls&&!reader_calls&&!owner.control_release_unknown);focused++;
+    reset();fail_open=2;CHECK(execute()!=0&&opened==1&&!closed&&!selected_calls&&!bundle_calls&&!register_calls&&!reader_calls&&owner.control_release_unknown);focused++;
+    reset();cache_repeats=32;CHECK(!execute());
+    /* The source-generation check adds one full control checkpoint before
+     * witness minting. It must reuse the cached log and release it normally. */
+    CHECK(cache_calls==36&&cache_queries==144&&cache_lines==40);CHECK(!owner.control_release_unknown);focused++;
     reset();cache_repeats=32;fail_bundle=1;CHECK(execute()!=0&&!reader_calls&&!register_calls&&cache_lines==20&&owner.control_release_unknown);
     reset();cache_repeats=32;fail_bundle=2;CHECK(execute()!=0&&!reader_calls&&!register_calls&&cache_lines==20&&!owner.control_release_unknown);focused++;
     reset();cache_fault=1;CHECK(execute()!=0&&owner.control_release_unknown&&!register_calls&&!reader_calls&&!begin_calls);focused++;

@@ -22,6 +22,14 @@ struct bw_container_manifest {
  * No source mutation, extraction, cache allocation or process operations.
  */
 int bw_container_manifest_bind(struct bw_container_manifest *,struct bw_container *,const struct bw_manifest *);
+/* DATA-only mapping for a separately verified companion projection. LOCAL
+ * copies/aliases and generated receipt rows are deliberately not looked up in
+ * the remote image and never receive a DATA token. Every STREAM row must match
+ * an exact regular remote path and size. This function grants no projection or
+ * source authority: its caller must first verify the sealed physical tables,
+ * companion receipt and ORIGINAL source generation. Never substitute this for
+ * the legacy full-map binder during source CONTROL verification. */
+int bw_container_manifest_bind_streams(struct bw_container_manifest *,struct bw_container *,const struct bw_manifest *);
 const struct bw_container_file *bw_container_manifest_file(struct bw_container_manifest *,uint32_t);
 void bw_container_manifest_destroy(struct bw_container_manifest *);
 #endif

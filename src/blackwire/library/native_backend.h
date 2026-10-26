@@ -9,6 +9,12 @@
 #include "../streamreader/share_config.h"
 #define BW_NATIVE_COVER_LIMIT (16u*1024u*1024u)
 struct bw_native_cover {uint8_t *bytes;size_t size;};
+/* Public-safe discovery diagnostics only. Never retain a config, account,
+ * password or libsmb2's free-form error text in this record. */
+struct bw_native_check_failure {
+    char share[128],stage[32],reason[129],source_reason[129];
+    int result;uint32_t nt_status;
+};
 struct bw_native_library {
     struct bw_source_catalog catalog;
     struct bw_native_cover *covers;
@@ -17,6 +23,7 @@ struct bw_native_library {
     struct bw_game_uninstall_capability *removal;
     uint32_t requests,entries;
     uint64_t content_bytes;
+    struct bw_native_check_failure failure;
 };
 struct bw_native_prepare_selection {
     /* Controller-owned typed selection. Actual outer image metadata is a
