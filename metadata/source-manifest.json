@@ -1560,8 +1560,8 @@
       "sha256": "4d571bd3d5959fc1d120de39ad232b5220f19695e947b18bc2e6dc2154b4497d"
     },
     "tests/dashboard/lifecycle/check_prepare_source_policy.py": {
-      "bytes": 6817,
-      "sha256": "26c19d2fa14517bf8652a70ae04e293c784cd02c92e5aa4dc6a5d404b105e755"
+      "bytes": 6856,
+      "sha256": "635521b16769e9aac76ba3d70521e4876cc1324b6c019f5d88defd7daf7b275b"
     },
     "tests/dashboard/lifecycle/check_projected_bundle.py": {
       "bytes": 4060,
@@ -2088,5 +2088,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "1ed398203bf04dd98c3663d8e36137e78cd04bab"
+  "runtimeSourceCommit": "d5666da1a92e238153568fd201226d80584e5887"
 }
