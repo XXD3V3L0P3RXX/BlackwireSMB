@@ -84,7 +84,7 @@ static int execute(struct bw_preload_bundle_upgrade_request *q,int expected,unsi
  preserved(receipt,map);joined_path(file,current_root,"fakelib2/libSceAmpr.sprx");digest(file,h);
  if(expect_current==1)CHECK(!memcmp(h,bw_preload_embedded_image.sha256,32));else{uint8_t old[32];cp_sha_bytes(expect_current==2?fixture_public07:fixture_previous,expect_current==2?fixture_public07_size:fixture_previous_size,old);CHECK(!memcmp(h,old,32));}
  if(held_fault_fd>=0){CHECK(fd_count()==open_before+1);CHECK(!__real_close(held_fault_fd));held_fault_fd=-1;}CHECK(fd_count()==open_before);
- if(expected)CHECK(r.reason||expected==-2);else CHECK(!r.reason&&!strcmp(r.stage,"complete"));return result;}
+ if(expected)CHECK(r.reason||expected==-2);else {CHECK(!r.reason&&!strcmp(r.stage,"complete"));CHECK(access(workspace,F_OK)<0&&errno==ENOENT);CHECK(!bw_preload_bundle_upgrade_workspace(q->data_root,q->game));}return result;}
 static void playgo_fixture(unsigned variant){
  char folder[2048],source[2048],target[2048],leaf[64];joined_path(folder,current_root,"fakelib");CHECK(!mkdir(folder,0755));
  for(unsigned i=1;i<5;i++){joined_path(source,BW_PRELOAD_GLOBAL_ROOT,pb_globals[i].name);joined_path(target,folder,pb_globals[i].name);copy_file(source,target);}
@@ -106,6 +106,9 @@ int main(int argc,char **argv){CHECK(argc==2);char file[2048];struct bw_preload_
  CHECK(pu_previous_match(831168,dev6_hash));
  CHECK(!pu_previous_match(831169,dev6_hash));
  dev6_hash[0]^=1;CHECK(!pu_previous_match(831168,dev6_hash));
+ uint8_t beta2_hash[32];CHECK(!pb_hex("39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441",beta2_hash));
+ CHECK(pu_previous_match(843696,beta2_hash));CHECK(!pu_previous_match(843695,beta2_hash));CHECK(!pu_previous_match(843697,beta2_hash));
+ beta2_hash[0]^=1;CHECK(!pu_previous_match(843696,beta2_hash));
  struct bw_preload_bundle_upgrade_request q=fixture(argv[1],0);CHECK(!bw_preload_bundle_upgrade_workspace(q.data_root,q.game));execute(&q,0,1);CHECK(access(workspace,F_OK)<0&&errno==ENOENT);CHECK(!bw_preload_bundle_upgrade_workspace(q.data_root,q.game));CHECK(!bw_preload_bundle_verify_checked(&q.bundle,&r));
  q=fixture(argv[1],1);struct stat before,after;joined_path(file,current_root,"fakelib2/libSceAmpr.sprx");CHECK(!lstat(file,&before));execute(&q,0,1);CHECK(!lstat(file,&after)&&pb_same(&before,&after));
  /* Reader-only owned installations migrate without any global pack. */

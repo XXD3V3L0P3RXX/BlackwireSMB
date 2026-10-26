@@ -446,8 +446,17 @@ static const struct pb_pin pu_compressed_dev5={"libSceAmpr.sprx",829328,
 /* Exact SDK-qualified two-source reader, for copies prepared by dev.6. */
 static const struct pb_pin pu_two_sources_dev6={"libSceAmpr.sprx",831168,
     "c9d069b520c367c971e52432a053d7105a7019cb19ee97185120bffb6190e025"};
+/* Exact embedded reader shared by published v0.3.0-beta.1/beta.2.
+ * Beta.2 package ad3505cca3c6b409152e8c12024d81582a351aee473d7fecee4d82bc4e1e252c
+ * independently contains these complete reader bytes. Its verified source
+ * manifest scope is 8b945ecde010223cf7e462cc399ad480d237f1cef67a6bcb925ec0b903ee3911
+ * (metadata/build-manifest.json, frozen commit 974ac247b1461e7a116e13c556192dec055f3e7a).
+ * Only this exact size/hash is recognized; no caller-provided predecessor or
+ * source scope can widen migration or destructive removal authority. */
+static const struct pb_pin pu_beta03_2={"libSceAmpr.sprx",843696,
+    "39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441"};
 static int pu_previous_match(uint64_t size,const uint8_t actual[32]){
-    const struct pb_pin *known[]={&pu_previous,&pu_public07,&pu_public09,&pu_public10a,&pu_live10a,&pu_reference348,&pu_home7944,&pu_home_diag7c,&pu_standalone_preview1,&pu_compressed_dev2,&pu_compressed_dev3,&pu_compressed_dev5,&pu_two_sources_dev6};uint8_t expected[32];
+    const struct pb_pin *known[]={&pu_previous,&pu_public07,&pu_public09,&pu_public10a,&pu_live10a,&pu_reference348,&pu_home7944,&pu_home_diag7c,&pu_standalone_preview1,&pu_compressed_dev2,&pu_compressed_dev3,&pu_compressed_dev5,&pu_two_sources_dev6,&pu_beta03_2};uint8_t expected[32];
     for(unsigned i=0;i<sizeof known/sizeof known[0];i++)
         if(size==known[i]->size&&!pb_hex(known[i]->hex,expected)&&!memcmp(actual,expected,32))return 1;
     return 0;

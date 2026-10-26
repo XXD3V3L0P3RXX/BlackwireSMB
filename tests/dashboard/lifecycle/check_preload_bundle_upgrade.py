@@ -21,6 +21,7 @@ def main():
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--sdk',type=Path,default=Path('/opt/ps5-payload-sdk'))
     parser.add_argument('--cc',default=os.environ.get('CC','clang-18'))
+    parser.add_argument('--published-reader',type=Path,help='Optional exact published beta.1/beta.2 reader bytes, treated only as host fixture data')
     args=parser.parse_args();out=args.output.resolve();sdk=args.sdk.resolve()
     if not out.is_relative_to(ROOT/'build') or out.exists():raise ValueError('Use a fresh absent output below build/')
     out.mkdir(parents=True);commands=[];dependencies=[]
@@ -37,7 +38,11 @@ def main():
         return r.stdout
     names=['libSceAmpr.sprx','libSceAppContent.sprx','libSceGameUpdate.sprx','libSceNpEntitlementAccess.sprx','libSceAmpr.sprx.orig']
     bodies=[bytes((i*13+11)%251 for i in range(2048)),b'fixture-app-content'*91,b'fixture-game-update'*81,b'fixture-entitlement'*79];bodies.append(bodies[0])
-    previous=bytes((i*17+3)%251 for i in range(3072));public07=bytes((i*19+5)%251 for i in range(4608));current=bytes((i*31+7)%251 for i in range(4096))
+    synthetic_previous=bytes((i*17+3)%251 for i in range(3072));previous=synthetic_previous
+    if args.published_reader:
+        previous=args.published_reader.read_bytes()
+        if len(previous)!=843696 or hashlib.sha256(previous).hexdigest()!='39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441':raise ValueError('Exact published beta reader required')
+    public07=bytes((i*19+5)%251 for i in range(4608));current=bytes((i*31+7)%251 for i in range(4096))
     globals_dir=out/'globals';globals_dir.mkdir()
     for name,body in zip(names,bodies):(globals_dir/name).write_bytes(body)
     unit=out/'unit';(unit/'library').mkdir(parents=True);(unit/'streamreader').mkdir()
@@ -54,7 +59,7 @@ def main():
     table='static const struct pb_pin pb_globals[5]={\n'+',\n'.join('    {"%s",%d,"%s"}'%(n,len(b),hashlib.sha256(b).hexdigest()) for n,b in zip(names,bodies))+'\n};'
     tested,count=re.subn(r'static const struct pb_pin pb_globals\[5\]=\{.*?\n\};',lambda _:table,production,count=1,flags=re.S)
     if count!=1:raise ValueError('Fixed global data table seam changed')
-    predecessor='static const struct pb_pin pu_previous={"libSceAmpr.sprx",3072,"'+hashlib.sha256(previous).hexdigest()+'"};'
+    predecessor='static const struct pb_pin pu_previous={"libSceAmpr.sprx",3072,"'+hashlib.sha256(synthetic_previous).hexdigest()+'"};'
     tested,count=re.subn(r'static const struct pb_pin pu_previous=\{.*?\};',lambda _:predecessor,tested,count=1,flags=re.S)
     if count!=1:raise ValueError('Fixed predecessor data table seam changed')
     public07_pin='static const struct pb_pin pu_public07={"libSceAmpr.sprx",4608,"'+hashlib.sha256(public07).hexdigest()+'"};'
@@ -123,6 +128,9 @@ def main():
         limits=['Only host fixtures execute; native SDK products are not executed.',
             'Host current callbacks are modeled; separate composition tests qualify actual Send/admission/backend routing.',
             'No native timing or game compatibility claim is made.'])
+    if args.published_reader:
+        if pin(args.published_reader)!={'bytes':843696,'sha256':'39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441'}:raise ValueError('Published fixture changed')
+        proof['publishedPredecessor']={'exactPublishedBytes':True,**pin(args.published_reader),'executed':False}
     (out/'proof.json').write_text(json.dumps(proof,indent=2)+'\n')
     print(json.dumps(dict(passed=True,host=result,sdkUnits=len(native),proof=pin(out/'proof.json'))))
 if __name__=='__main__':main()

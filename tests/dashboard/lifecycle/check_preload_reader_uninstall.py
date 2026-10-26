@@ -42,7 +42,7 @@ def add_companion_fixture(area,bodies,playgo):
  return {str(path.relative_to(source)):pin(path) for path in (source/'fakelib').iterdir()}
 
 def main():
- parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,required=True);args=parser.parse_args();OUT=args.output.resolve()
+ parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--published-reader',type=Path,help='Optional exact published beta reader as host data only');args=parser.parse_args();published_reader=args.published_reader;OUT=args.output.resolve()
  if not OUT.is_relative_to(ROOT/'build') or OUT.exists():raise ValueError('Use a fresh absent output below build/')
  OUT.mkdir(parents=True);commands=[];deps=[];used=set();external={}
  candidates={p.resolve() for d in [LIB,STREAM,HERE,ROOT/'vendor/libsmb2/include',ROOT/'vendor/sqlite',ROOT/'src/blackwire/tools/compressed_stream_candidate',ROOT/'src/blackwire'] for p in d.rglob('*') if p.is_file() and p.suffix in ('.c','.h','.py')}
@@ -67,11 +67,15 @@ def main():
  header,count=re.subn(r'static const struct bw_preload_playgo_pin pins\[\]=\{.*?\n    \};',lambda _:playgo_table,header,count=1,flags=re.S)
  if count!=1:raise ValueError('Fixed PlayGo pin seam changed')
  (unit/'library/preload_bundle.h').write_text(header)
- previous=bytes((i*17+3)%251 for i in range(3072));public07=bytes((i*19+5)%251 for i in range(4608));current=bytes((i*31+7)%251 for i in range(4096))
+ synthetic_previous=bytes((i*17+3)%251 for i in range(3072));previous=synthetic_previous
+ if published_reader:
+  previous=published_reader.read_bytes()
+  if len(previous)!=843696 or hashlib.sha256(previous).hexdigest()!='39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441':raise ValueError('Exact published beta reader required')
+ public07=bytes((i*19+5)%251 for i in range(4608));current=bytes((i*31+7)%251 for i in range(4096))
  c=(LIB/'preload_bundle.c').read_text()
  table='static const struct pb_pin pb_globals[5]={\n'+',\n'.join('    {"%s",%d,"%s"}'%(n,len(b),hashlib.sha256(b).hexdigest()) for n,b in zip(names,bodies))+'\n};'
  c,n=re.subn(r'static const struct pb_pin pb_globals\[5\]=\{.*?\n\};',lambda _:table,c,count=1,flags=re.S);assert n==1
- c,n=re.subn(r'static const struct pb_pin pu_previous=\{.*?\};',lambda _:'static const struct pb_pin pu_previous={"libSceAmpr.sprx",3072,"'+hashlib.sha256(previous).hexdigest()+'"};',c,count=1,flags=re.S);assert n==1
+ c,n=re.subn(r'static const struct pb_pin pu_previous=\{.*?\};',lambda _:'static const struct pb_pin pu_previous={"libSceAmpr.sprx",3072,"'+hashlib.sha256(synthetic_previous).hexdigest()+'"};',c,count=1,flags=re.S);assert n==1
  c,n=re.subn(r'static const struct pb_pin pu_public07=\{.*?\};',lambda _:'static const struct pb_pin pu_public07={"libSceAmpr.sprx",4608,"'+hashlib.sha256(public07).hexdigest()+'"};',c,count=1,flags=re.S);assert n==1
  bundle=unit/'library/under-test.c';bundle.write_text(c)
  image=OUT/'fixture-image.c';fixture_image(image,current,previous,public07)
@@ -155,5 +159,8 @@ def main():
  proof=dict(passed=True,selector=selector,actualSendCore=results,defaultWrapper=wrapper_result,source={str(p.relative_to(ROOT)):before[p.resolve()] for p in sorted(used)},sourceBeforeAfterMatch=True,
   dataOnlyFixturePins=True,foreignReaderRefusedByUnchangedCore=True,pcOriginalAndSavesPreserved=True,externalCompilerInputsAfter=external,sdkUnits=3,sdkRelocatableLinks=1,
   consoleActions=0,fullBuilds=0,hardwareQualified=False,sdkProducts={p.name:pin(p) for p in sdk.glob('*.o')})
+ if published_reader:
+  if pin(published_reader)!={'bytes':843696,'sha256':'39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441'}:raise ValueError('Published fixture changed')
+  proof['publishedPredecessor']={'exactPublishedBytes':True,**pin(published_reader),'executed':False}
  (OUT/'proof.json').write_text(json.dumps(proof,indent=2)+'\n');print(json.dumps(dict(passed=True,selector=selector,actualSendCore=results,defaultWrapper=wrapper_result,proof=pin(OUT/'proof.json'))))
 if __name__=='__main__':main()
