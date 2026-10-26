@@ -118,8 +118,8 @@
       "sha256": "1cfb44add29f594b5058642357d7595381014f696bcacc3cca4c00b85f215b99"
     },
     "src/blackwire/desk/index.html": {
-      "bytes": 150929,
-      "sha256": "d1d033c7b35d31fbab2a67c14dce3d215f775104dd4329ef7aa16789b545c28c"
+      "bytes": 151232,
+      "sha256": "38611c5f20ecd9fafa7610a4c361479117862cb2bdaa20f8d96df68f4cd0d29b"
     },
     "src/blackwire/desk/tests/browser_handoff_harness.js": {
       "bytes": 12691,
@@ -158,8 +158,8 @@
       "sha256": "f528f296a7c4d7755784da5adfe38969cac8b298adcf96f922cd0dd313c0ff6e"
     },
     "src/blackwire/desk/tests/test_ui.py": {
-      "bytes": 66646,
-      "sha256": "002646ec5aeff14126cb04a7cd1e593de218ffd246c7f437f28ad104f1bc8621"
+      "bytes": 67019,
+      "sha256": "a23e54877c994e6e5ee9e435fe76c5fa362a145954c7481d391ca10cae94403d"
     },
     "src/blackwire/desk/tests/verify_combined_browser.js": {
       "bytes": 8483,
@@ -298,8 +298,8 @@
       "sha256": "0f6c64dda1456217dd67226c84fcbaeac625c3d28db8244e9465399171e1a79f"
     },
     "src/blackwire/library/native_backend.c": {
-      "bytes": 147663,
-      "sha256": "c4fa63d4270c287bd7a56df2bdadd68ecc5de962ac4e8adb5f0b286b430d78a8"
+      "bytes": 149027,
+      "sha256": "d7835b07557157de7002708f839c2d588f66809055a23c9995163d0b35af24c3"
     },
     "src/blackwire/library/native_backend.h": {
       "bytes": 9720,
@@ -550,8 +550,8 @@
       "sha256": "d1c8c613a1c01daeee276c4a98f2b9c33a10b4bdbcb3a4676f819e18c403825d"
     },
     "src/blackwire/library/native_setup.c": {
-      "bytes": 10373,
-      "sha256": "15e8a4480123ab35390bb4ced269797710df75c3edd7669b16423368feea3b07"
+      "bytes": 12195,
+      "sha256": "2599f0f9289bd3d570e764229398958e79fa9e8f330c0e26f99613d91e0278c6"
     },
     "src/blackwire/library/native_setup.h": {
       "bytes": 1376,
@@ -1164,8 +1164,8 @@
   },
   "ui": {
     "desk/index.html": {
-      "bytes": 150929,
-      "sha256": "d1d033c7b35d31fbab2a67c14dce3d215f775104dd4329ef7aa16789b545c28c"
+      "bytes": 151232,
+      "sha256": "38611c5f20ecd9fafa7610a4c361479117862cb2bdaa20f8d96df68f4cd0d29b"
     },
     "desk/tests/browser_handoff_harness.js": {
       "bytes": 12691,
@@ -1208,8 +1208,8 @@
       "sha256": "f528f296a7c4d7755784da5adfe38969cac8b298adcf96f922cd0dd313c0ff6e"
     },
     "desk/tests/test_ui.py": {
-      "bytes": 66646,
-      "sha256": "002646ec5aeff14126cb04a7cd1e593de218ffd246c7f437f28ad104f1bc8621"
+      "bytes": 67019,
+      "sha256": "a23e54877c994e6e5ee9e435fe76c5fa362a145954c7481d391ca10cae94403d"
     },
     "desk/tests/verify_combined_browser.js": {
       "bytes": 8483,
@@ -1287,7 +1287,7 @@
     },
     "tools/build/app.py": {
       "bytes": 9964,
-      "sha256": "20cda080f1baa59dccda5fad3ee854c2f2476523592bf290678acc6124e361a9"
+      "sha256": "f5fc0533ed023a5992ac8fe005e9c952c68771bca5d92dbf9564bc0091a2d903"
     },
     "tools/build/common.py": {
       "bytes": 4240,
@@ -1306,8 +1306,8 @@
       "sha256": "4c9ee4a7eb3e46a2621fa27d389b6c06f8f3bbc8fe5ef8c9e561dafda472d96a"
     },
     "tools/build/reader.py": {
-      "bytes": 17408,
-      "sha256": "43ac783c93d191cb19f5bbd364d60d6f01f1a0b90b98751080b2b78dc7676cef"
+      "bytes": 17847,
+      "sha256": "1131699954651647d9775d9bb8b51ad75e766dfd2ea16def2b77ed07cdabb2b8"
     },
     "tools/build/reader_patch.py": {
       "bytes": 12211,
@@ -1635,9 +1635,17 @@
       "bytes": 1583,
       "sha256": "ba19a0ea0a3c61c31d2cd47e87d4f09c61f16764a43ab940ee66b78fcfe7ed3c"
     },
+    "tests/diagnostics/check_settings_startup.py": {
+      "bytes": 2037,
+      "sha256": "d0387c87c33fe63d6902f3b6fc057351d4db3bfa54e82f51a67f8ce6d344cde6"
+    },
+    "tests/diagnostics/check_settings_storage.py": {
+      "bytes": 1741,
+      "sha256": "e27d5894bef79c99c326e6b5c6a8d4dcfe41ae2bebc0c96af5eec8675cf30fa9"
+    },
     "tests/diagnostics/test_collect_diagnostics.py": {
-      "bytes": 1986,
-      "sha256": "6f6ceb3eaf52f2df0d701cecca8173457509db6eb937123cf8a1d3a471fa3532"
+      "bytes": 2671,
+      "sha256": "e6d60b0f384713a3abc7ebd8623351f76c843ae1599cded449cc97aa83572282"
     },
     "tests/diagnostics/test_send_directory.c": {
       "bytes": 1944,
@@ -1646,6 +1654,18 @@
     "tests/diagnostics/test_send_logger.c": {
       "bytes": 1975,
       "sha256": "72a2015bc3ca3aca4490a99c2704cae73716692ac1f1573584f1c2e219cdea53"
+    },
+    "tests/diagnostics/test_settings_restart.js": {
+      "bytes": 1855,
+      "sha256": "f56f1974fef3301eb2cd1a2a1acbe5ffe5780656621e8b3387210a832680cb8a"
+    },
+    "tests/diagnostics/test_settings_startup.c": {
+      "bytes": 2702,
+      "sha256": "59b4ca45f7907927476c6be70e5c173619aacb8029794ecba04ce4c58af7bc75"
+    },
+    "tests/diagnostics/test_settings_storage.c": {
+      "bytes": 2721,
+      "sha256": "83ed778eb66d70c6b798cbe061b44bcdd79f49efc82e695e8492cfeb998094f8"
     },
     "tests/home/README.md": {
       "bytes": 1521,
@@ -1750,7 +1770,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Self-contained reader setup and MkPFS exFAT; beta logging build requires exact-artifact verification recorded separately",
+  "developmentQualification": "Connection settings startup and resident-restart recovery; exact artifact verification recorded separately",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -1759,6 +1779,6 @@
     "beforeFixFailed": true,
     "consoleQualificationPending": true
   },
-  "releaseVersion": "v0.3.0-beta.1",
-  "runtimeSourceCommit": "27a7565320c1d6951e7f846b6751eb7e0e039b4d"
+  "releaseVersion": "v0.3.0-beta.2",
+  "runtimeSourceCommit": "9db35d2084412c738ab11628728c4f7013d0e88e"
 }
