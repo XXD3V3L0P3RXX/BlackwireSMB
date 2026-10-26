@@ -2,6 +2,14 @@
 
 Changes are grouped by published preview. A build pass, initial menu and controllable gameplay are recorded separately in [testing](docs/TESTING.md).
 
+## v0.3.0-beta.2 — connection settings recovery
+
+- Read and publish saved connection settings before startup library discovery. A slow scan no longer leaves a valid saved connection unreported and opens a blank, disabled setup form.
+- Recover the browser's pending connection check when the resident restarts. Keep the draft, release the obsolete operation watch and offer **Reload settings status**. Require an explicit action before saving again; never replay the old request automatically.
+- Add credential-free settings-file status and bounded diagnostics distinguishing settings-file checks, SMB connection, catalog parsing and artwork failures. Include selected setup fields in the optional read-only collector.
+- Retain strict settings-file identity checks and the rule that a failed connection/library check does not replace saved settings. The file is `/data/blackwire/share.conf`; do not delete it to change residents.
+- Preserve beta.1's reader, exFAT scope and self-contained installer. This is not a loading-speed claim or a native Dashboard release. The reporter's exact remaining failure still needs their status/log capture.
+
 ## v0.3.0-beta.1 â€” MkPFS exFAT and self-contained reader setup
 
 - Publish the standalone test beta with bounded Send/setup diagnostics and [one-attempt test instructions](docs/BETA-TESTING.md). Keep existing preview downloads and the normal Payload Manager catalog unchanged.

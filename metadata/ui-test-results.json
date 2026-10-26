@@ -1,35 +1,12 @@
 {
-  "kind": "blackwire-inherited-ui-checks/1",
-  "pageUnchangedFromPreviousPreview": true,
-  "betaUiTestsRepeated": false,
-  "historicalRecord": {
-    "kind": "blackwire-ui-test-summary/1",
-    "passed": true,
-    "tests": 90,
-    "sourcePins": {
-      "src/blackwire/desk/index.html": {
-        "sha256": "d1d033c7b35d31fbab2a67c14dce3d215f775104dd4329ef7aa16789b545c28c"
-      },
-      "src/blackwire/desk/tests/redesign_dom_harness.js": {
-        "sha256": "a180b4d0435d274b41c47d2e12b18a4985c9354a16d15ad9e6088ea3d3e2d462"
-      },
-      "src/blackwire/desk/tests/library_controls_dom_harness.js": {
-        "sha256": "e775a8a1f4aa5b2b4cca88845d5fb2d7fc7c12871a2d4aed292a5a0555c6a0ae"
-      },
-      "src/blackwire/desk/tests/setup_dom_harness.js": {
-        "sha256": "d16eaae20431b7fb8dc8b329173b1e7aed51ecaadc2b747b0549f1450f85cc8a"
-      },
-      "src/blackwire/desk/tests/test_ui.py": {
-        "sha256": "002646ec5aeff14126cb04a7cd1e593de218ffd246c7f437f28ad104f1bc8621"
-      }
-    },
-    "actualEmbeddedPageExercised": true,
-    "nativeClosePolicyModeledOnly": true,
-    "consoleResults": {
-      "rootCircleToDashboard": true,
-      "detailsCircleToLibrary": true,
-      "extraCloseBrowserButtonWorks": false,
-      "settingsHelpPhysicalChecksRepeated": false
-    }
+  "kind": "blackwire-ui-test-summary/1",
+  "passed": true,
+  "tests": 91,
+  "browserHandoffCases": 19,
+  "actualEmbeddedPage": true,
+  "restartRecoveryNoAutomaticReplay": true,
+  "page": {
+    "bytes": 151232,
+    "sha256": "38611c5f20ecd9fafa7610a4c361479117862cb2bdaa20f8d96df68f4cd0d29b"
   }
 }

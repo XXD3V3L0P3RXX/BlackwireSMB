@@ -1,31 +1,31 @@
 {
   "kind": "blackwire-standalone-beta-build/1",
   "product": "Blackwire",
-  "version": "v0.3.0-beta.1",
+  "version": "v0.3.0-beta.2",
   "artifact": "Blackwire-Beta.elf",
-  "runtimeBuildId": "blackwire-v0.3.0-beta.1",
-  "runtimeSourceCommit": "27a7565320c1d6951e7f846b6751eb7e0e039b4d",
-  "frozenBuildSourceCommit": "85c66956361e41ffaf98012f7e1c1f20bcb5944d",
+  "runtimeBuildId": "blackwire-v0.3.0-beta.2",
+  "runtimeSourceCommit": "9db35d2084412c738ab11628728c4f7013d0e88e",
+  "frozenBuildSourceCommit": "974ac247b1461e7a116e13c556192dec055f3e7a",
   "package": {
-    "bytes": 5772536,
-    "sha256": "98d35b094f4d2585525434e2af9fab03ed5c71b17e39bd6a1e1aed484ce8d6a9"
+    "bytes": 5772600,
+    "sha256": "ad3505cca3c6b409152e8c12024d81582a351aee473d7fecee4d82bc4e1e252c"
   },
   "reader": {
     "bytes": 843696,
     "sha256": "39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441"
   },
   "page": {
-    "bytes": 150929,
-    "sha256": "d1d033c7b35d31fbab2a67c14dce3d215f775104dd4329ef7aa16789b545c28c"
+    "bytes": 151232,
+    "sha256": "38611c5f20ecd9fafa7610a4c361479117862cb2bdaa20f8d96df68f4cd0d29b"
   },
   "sourceManifest": {
-    "bytes": 73302,
-    "sha256": "bae8433e799775938e4ba7f0b84e5d5feba26bd9769115163759fc44f3a503ac"
+    "bytes": 74123,
+    "sha256": "8b945ecde010223cf7e462cc399ad480d237f1cef67a6bcb925ec0b903ee3911"
   },
   "runtimeRebuiltForRelease": true,
   "buildPassed": true,
   "sourceBeforeAfterMatch": true,
-  "commands": 164,
+  "commands": 167,
   "standaloneWeb": true,
   "nativeFrontendIncluded": false,
   "compressedFormats": [

@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "version": "v0.3.0-beta.1",
+  "version": "v0.3.0-beta.2",
   "sourceBuiltRuntime": {
     "passed": true,
     "sourceCommit": "f5d40f02770e9b0001dd9e18056eca70b3da8b40",
@@ -9,8 +9,8 @@
     "externalHeaders": 0,
     "sourceBeforeAfterMatch": true,
     "sourceManifest": {
-      "bytes": 73302,
-      "sha256": "100352b888a4d4cc7d77baaed182eb1d3d695a2f3c0ce23a127fdfc08b1555f1"
+      "bytes": 74123,
+      "sha256": "8b945ecde010223cf7e462cc399ad480d237f1cef67a6bcb925ec0b903ee3911"
     },
     "dependencies": {
       "bytes": 71090,
@@ -509,6 +509,5 @@
     "installedStaticRuntimeUsed": false,
     "nativeRuntimeProved": false
   },
-  "usedSourceInputs": 112,
   "sourceBeforeAfterMatch": true
 }

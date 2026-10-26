@@ -4,6 +4,24 @@ This record distinguishes copied files, a running game process, a visible menu, 
 
 No title-specific compatibility blocker has been identified in testing so far. The limited coverage below does not establish that every title or every stage of a title will work.
 
+## v0.3.0-beta.2
+
+Exact standalone resident: 5,772,600 bytes, SHA-256 `ad3505cca3c6b409152e8c12024d81582a351aee473d7fecee4d82bc4e1e252c`; build ID `blackwire-v0.3.0-beta.2`. The reader remains the beta.1 reader `39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441`. This release repairs settings reporting and client recovery; the native Dashboard is excluded.
+
+| Check | Observed result and scope |
+| --- | --- |
+| Clean SDK build | 167 successful commands, fifteen host suites, unchanged source throughout. |
+| Actual-page behavior | 91 UI tests and 19 browser-handoff cases passed. An accepted settings check followed by a resident-token change reproduced the old stuck form; the repair releases its stale watch, keeps the share draft and requires explicit reload/save without request replay. |
+| Startup settings | Actual startup functions with a held scan worker pass seven cases covering valid, absent, invalid and unsafe settings, an already active worker, legacy loading and worker-start failure. The old code fails the valid-saved-settings case. |
+| Private settings files | Actual persistence code saves and reads a fresh disposable configuration; linked, invalid and oversized files remain refused. Seven filesystem cases pass under ASan/UBSan, with credential-free failure diagnostics. Two-share regression: forty cases and 7,770 checks. |
+| Console startup | On the recorded 13.00-family console, valid saved settings were already reported while the initial scan was running. Seven library entries returned; settings became editable after discovery. |
+| Failed connection | A deliberately nonexistent test share failed at SMB connection. The settings file's bytes and metadata stayed unchanged, the fields unlocked, and the new diagnostic identified `smb-connect`. |
+| Valid connection | An explicit check of the existing share passed and returned all seven entries in about 14.3 seconds. Unchanged settings were kept. This is a functional observation, not a comparative speed benchmark. |
+| Preserved state | Thirty-five preparation/global control-file hashes match before and after; saved settings and the matching served page were checked. No preparations were removed for these tests. |
+| Collector | Read-only console summary includes the new setup status and excludes the saved password, server address and browser token. |
+
+The reporter's remaining no-games/settings failure has not yet been confirmed on their environment. A separate Reddit report says preparation was refused before acceptance because frontend/idle authority could not be retained; beta.2 does not claim a verified repair for that specific refusal. Collect its exact build ID, browser context, payload versions and lifecycle evidence. Gameplay, physical controller/browser-exit behavior and controlled loading-speed comparisons were not repeated for this resident.
+
 ## Compressed and two-share preview
 
 The unreleased exFAT experiment is recorded [separately below](#unreleased-exfat-test). It does not replace these release observations.

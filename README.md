@@ -2,7 +2,7 @@
 
 Stream PS5 games from an ordinary PC SMB share, with a smaller startup copy on the console. Supports extracted folders and the tested PFS/PFSC compressed layouts, including supported `.ffpfsc` images.
 
-**v0.3.0-beta.1 is available for testing:** it adds the MkPFS exFAT reader, fixes step 7's optional global-library dependency, and includes bounded setup logging. [Download the beta](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.1) · [Etawen mirror — beta pending](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB) · [Beta test instructions](docs/BETA-TESTING.md). Existing preview downloads and the normal Payload Manager catalog are preserved.
+**v0.3.0-beta.2 is available for testing:** it fixes two reproduced connection-settings bugs and adds settings/connection failure diagnostics. It retains the MkPFS exFAT reader and the self-contained step-7 repair from beta.1. [Download the beta](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.2) · [Etawen mirror — beta pending](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB) · [Beta test instructions](docs/BETA-TESTING.md). Existing preview downloads and the normal Payload Manager catalog are preserved.
 
 [Download working and logging ELFs](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.2.0-preview.1-sendlog.1) · [Etawen mirror](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB) · [Changelog](CHANGELOG.md) · [Video](#video) · [Setup](docs/SETUP.md) · [Requirements](docs/REQUIREMENTS.md) · [Test results](docs/TESTING.md) · [Build from source](docs/BUILD.md)
 
@@ -31,7 +31,7 @@ The released preview has a setup bug: it requires a particular optional global p
 
 ## Beta download
 
-Use **Blackwire-Beta.elf** from [v0.3.0-beta.1](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.1) to test the reported missing-image and step-7 failures. Keep your original game images and share layout; there is no need to repack the whole library or create `/data/shadowmount/fakelib`. Stop the old resident before loading the beta. Follow the [one-attempt test and logging instructions](docs/BETA-TESTING.md), including the build ID check.
+Use **Blackwire-Beta.elf** from [v0.3.0-beta.1](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.2) to test the reported missing-image and step-7 failures. Keep your original game images and share layout; there is no need to repack the whole library or create `/data/shadowmount/fakelib`. Stop the old resident before loading the beta. Follow the [one-attempt test and logging instructions](docs/BETA-TESTING.md), including the build ID check.
 
 The [exFAT format scope](docs/EXFAT-DEVELOPMENT.md), [installer repair](docs/RUNTIME-BUNDLE-DEVELOPMENT.md) and [exact test records](docs/TESTING.md) describe what has been verified. Test results on our 13.00-family console do not establish universal firmware or title compatibility.
 

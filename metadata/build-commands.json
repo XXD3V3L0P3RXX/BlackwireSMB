@@ -1,6 +1,6 @@
 {
   "kind": "blackwire-public-build-commands/1",
-  "version": "v0.3.0-beta.1",
+  "version": "v0.3.0-beta.2",
   "rawPrivateOutputIncluded": false,
   "commands": [
     {
@@ -273,6 +273,36 @@
         "{ROOT}/tests/diagnostics/check_send_logging.py",
         "--output",
         "{OUT}/send-logging"
+      ],
+      "exitCode": 0
+    },
+    {
+      "label": "host-settings_startup",
+      "argv": [
+        "python3",
+        "{ROOT}/tests/diagnostics/check_settings_startup.py",
+        "--output",
+        "{OUT}/settings_startup"
+      ],
+      "exitCode": 0
+    },
+    {
+      "label": "host-settings_storage",
+      "argv": [
+        "python3",
+        "{ROOT}/tests/diagnostics/check_settings_storage.py",
+        "--output",
+        "{OUT}/settings_storage"
+      ],
+      "exitCode": 0
+    },
+    {
+      "label": "host-two_shares",
+      "argv": [
+        "python3",
+        "{ROOT}/tests/sources/check_two_shares.py",
+        "--output",
+        "{OUT}/two_shares"
       ],
       "exitCode": 0
     },
@@ -1142,7 +1172,7 @@
       "label": "app-compile-00",
       "argv": [
         "{SDK}/bin/prospero-clang",
-        "-DBW_RESIDENT_BUILD_ID=\"blackwire-v0.3.0-beta.1\"",
+        "-DBW_RESIDENT_BUILD_ID=\"blackwire-v0.3.0-beta.2\"",
         "-DBW_WEB_ONLY=1",
         "-I",
         "{ROOT}/src/blackwire/dashboard/service",

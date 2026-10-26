@@ -24,6 +24,12 @@ python3 tools/test_ui.py
 
 These commands describe the public recipe; they do not assert that every listed check was rerun for a particular release. Read its attached build manifest and the [hardware test record](TESTING.md).
 
+## v0.3.0-beta.2 build record
+
+Clean frozen source `974ac247b1461e7a116e13c556192dec055f3e7a` (runtime source `9db35d2084412c738ab11628728c4f7013d0e88e`) passed all 167 SDK/build commands and fifteen host suites without a source-change override. Inputs matched before and after the build. The source-built settings startup, filesystem persistence/refusal and two-share suites are now part of the ordinary host build. The actual embedded-page suite passed 91 tests plus 19 browser-handoff cases.
+
+`Blackwire-Beta.elf` is 5,772,600 bytes, SHA-256 `ad3505cca3c6b409152e8c12024d81582a351aee473d7fecee4d82bc4e1e252c`, with build ID `blackwire-v0.3.0-beta.2`. Its reader is unchanged from beta.1: 843,696 bytes, SHA-256 `39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441`. Independent relinking reproduces the exact packaged ELF. The [beta.2 observations](TESTING.md#v030-beta2) cover settings startup, failure preservation and reconnection; gameplay was not repeated for this settings repair.
+
 ## v0.3.0-beta.1 build record
 
 The beta is a complete clean-export SDK build of frozen source commit `85c66956361e41ffaf98012f7e1c1f20bcb5944d`, with runtime/logging source commit `27a7565320c1d6951e7f846b6751eb7e0e039b4d`. All 164 commands and twelve host suites passed without `--allow-source-changes`, and source hashes matched across the build. The attached `Blackwire-Beta.elf` is the unchanged tested output renamed for download: 5,772,536 bytes, SHA-256 `98d35b094f4d2585525434e2af9fab03ed5c71b17e39bd6a1e1aed484ce8d6a9`. Its build ID is `blackwire-v0.3.0-beta.1`.

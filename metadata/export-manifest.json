@@ -1,6 +1,6 @@
 {
   "kind": "standalone-source-export-files/1",
-  "version": "v0.3.0-beta.1",
+  "version": "v0.3.0-beta.2",
   "files": {
     ".editorconfig": {
       "bytes": 215,
@@ -19,8 +19,8 @@
       "sha256": "7a02b133c7036a7474614a6f9a7fc373dab927a987e0ddc0654c9a15d8c01891"
     },
     "CHANGELOG.md": {
-      "bytes": 7519,
-      "sha256": "732dc3563a0e39b2e80317456d3b11a6f3e7f651c88d7da4e79e6da70ffffa5c"
+      "bytes": 8661,
+      "sha256": "8f0c6d2d9f2ba7716f40079a3df4c92cc6bb365fc54a0f90b90ac069619379bb"
     },
     "CONTRIBUTING.md": {
       "bytes": 2975,
@@ -87,8 +87,8 @@
       "sha256": "d5b36e1bb6857b803447f470b52cc6127ca061031f1b7210e52bc2f0f7f4ee50"
     },
     "README.md": {
-      "bytes": 15599,
-      "sha256": "f9b933f82f20f2050e5746b856478cb6bfe6450e871c847dd20bd14142908419"
+      "bytes": 15663,
+      "sha256": "09b7797d5f52382678130e5533b9fb4f0285f4c48661f738b265765931afd0cd"
     },
     "SECURITY.md": {
       "bytes": 1186,
@@ -99,20 +99,20 @@
       "sha256": "6b3f6ce2c5f53d0cd910310e0c6e7529aba95777ad2af39c94e00ab915a388da"
     },
     "docs/BETA-TESTING.md": {
-      "bytes": 5383,
-      "sha256": "8b6bc86c0ad4ac5d146485f6b5ce888bca25297eefbb8c10b2b4e2b310654d45"
+      "bytes": 6691,
+      "sha256": "c703c10e1405d11ee53df69b56518cf0a75173fd3879c995e222f26c4bdbfbd6"
     },
     "docs/BUILD.md": {
-      "bytes": 7301,
-      "sha256": "a89131cf17ad8569f95f4c1d2ac1d12bc959726521b1d9dee12ef5e15194706b"
+      "bytes": 8305,
+      "sha256": "3392111af58b7269345760d2ec030e73aa900aebdba7c787bf0b83eb3a3efa19"
     },
     "docs/COMPRESSED-DEVELOPMENT.md": {
       "bytes": 16541,
       "sha256": "285407639e327706957b8b78f0449f1033ee234d926a2aa56560f74ed045876b"
     },
     "docs/DIAGNOSTICS.md": {
-      "bytes": 7873,
-      "sha256": "2eeb6cfc5bc8606a76c4e24103ee1f708b8b7cd5fd67495b72ba623849544c90"
+      "bytes": 7923,
+      "sha256": "e162afc2e46ead5ea5fa7ef3e42dcda45dc73596af66f529f396cf8567b90324"
     },
     "docs/EXFAT-DEVELOPMENT.md": {
       "bytes": 4699,
@@ -139,16 +139,16 @@
       "sha256": "895b4b4a6fbcbc487036063c27f36c0a698c824c922c6ee04098ff455b939124"
     },
     "docs/SETUP.md": {
-      "bytes": 10831,
-      "sha256": "e02aec7938c835b9b2961017c8162eaf90cde497c8016415a1b6b6c6f0799f7f"
+      "bytes": 11226,
+      "sha256": "ed12a8fcd8ceb973be09de6a170595d02c2d477eb59cf927ac40228af98b9b42"
     },
     "docs/STATUS.md": {
       "bytes": 4391,
       "sha256": "251e0c08fc799c65b3b0eb0a643fc117975b34a8609943a10938478a9d23816a"
     },
     "docs/TESTING.md": {
-      "bytes": 21294,
-      "sha256": "7990a70ae01f5128fdb822988cd168ae0c7c817325649263c470425165f952b7"
+      "bytes": 24162,
+      "sha256": "50f273ab264cbbe5881360e9fd3e36da8c6e513aa032558a6a669856d462984b"
     },
     "docs/TWO-SOURCES-DEVELOPMENT.md": {
       "bytes": 5520,
@@ -159,32 +159,32 @@
       "sha256": "100352b888a4d4cc7d77baaed182eb1d3d695a2f3c0ce23a127fdfc08b1555f1"
     },
     "metadata/beta-qualification.json": {
-      "bytes": 1776,
-      "sha256": "350b5b083b4b813bf10442650fede6dfb356c43bd03fb6ec8211b94e630fc89a"
+      "bytes": 5903,
+      "sha256": "9703d5876da9b739b1e5ce3da83e3e38e5b03f132506765712357a772eb82b0b"
     },
     "metadata/beta-sdk-inputs.json": {
       "bytes": 151321,
-      "sha256": "fdb3b186936236f514c7251a263760e7fbd52f9bd6dddf1d6bf3b2f140e1baf6"
+      "sha256": "f9a98cc5690d38d4078397e429a09beb82ced5f642c54647320cd1f3beacca69"
     },
     "metadata/build-commands.json": {
-      "bytes": 151375,
-      "sha256": "18cca41f852ef48533b5b42f1f7a7dca44a29279de50d1e6aff2f2225d5828fc"
+      "bytes": 152049,
+      "sha256": "26382f71ebd39f5b0758b1ba3ee37a668f7903551cd61e80d7e7eceb8c251df8"
     },
     "metadata/build-manifest.json": {
       "bytes": 1386,
-      "sha256": "eb551984535da9ba4808cfa81cc668b01eb8338f9634bc89a7227f8048120586"
+      "sha256": "f6afa174724d9f0881c320a2e27bb9bd5b97a1c2e048cc3413852df33bd29d79"
     },
     "metadata/delivery-status.json": {
-      "bytes": 1059,
-      "sha256": "b054e1ccc8f62df98c682e44068bb7b1100025b0c7a79a820359b64a01435bab"
+      "bytes": 980,
+      "sha256": "80ded89c8f9a1f67f204962f3b9f5f0fa3dc1ba7bab99c4a274d55b847a4024d"
     },
     "metadata/dependencies.json": {
       "bytes": 71090,
       "sha256": "35e608bc3a3bd8374e31ba63611697c7d3eef58e0fbcdd1f6d5b19490fc08945"
     },
     "metadata/export-inputs.json": {
-      "bytes": 143052,
-      "sha256": "2c68e16229541e2298ba238e9facdf2b94e9b8e02e11526a7c01cd510c6767cc"
+      "bytes": 143867,
+      "sha256": "db3a8fb3b75105f394b474c6c92f151a99e3e06348e2989b9921815e646d3672"
     },
     "metadata/license-inputs.json": {
       "bytes": 2208,
@@ -196,23 +196,23 @@
     },
     "metadata/relink-manifest.json": {
       "bytes": 1037,
-      "sha256": "d79534877f99689b945369be7b2fd380316ce10b92eaf7018a8f9654140a4f23"
+      "sha256": "4bf785ad1b7b3f1dd951cec31c7e2716b56ec09738ef65f65e47cd3a86e69536"
     },
     "metadata/sdk-reference.json": {
       "bytes": 155000,
       "sha256": "56aa5f0c50ef7437e807a7261d325d739122eaf50a49a26adce3ae641aea65ae"
     },
     "metadata/source-manifest.json": {
-      "bytes": 73302,
-      "sha256": "bae8433e799775938e4ba7f0b84e5d5feba26bd9769115163759fc44f3a503ac"
+      "bytes": 74123,
+      "sha256": "8b945ecde010223cf7e462cc399ad480d237f1cef67a6bcb925ec0b903ee3911"
     },
     "metadata/source-runtime-build.json": {
-      "bytes": 19054,
-      "sha256": "0d09bcf3d7ae6d8644110105d99691ac3a2b225defd7a6700aaab1faa6bad738"
+      "bytes": 19027,
+      "sha256": "f10637b3cbe893770e19f2b099fe1bd8842009de1d5bf40ac46a144fdffc0906"
     },
     "metadata/ui-test-results.json": {
-      "bytes": 1285,
-      "sha256": "4457eb9c153fd420b4567f76e927d7cf90b25d11573b4428b593fea207b30280"
+      "bytes": 299,
+      "sha256": "bf0dc86a07eb0b528f9c4918d61e730e036dedd670ee0f009ec0d8ec528a52eb"
     },
     "payloads.json": {
       "bytes": 920,
@@ -335,8 +335,8 @@
       "sha256": "1cfb44add29f594b5058642357d7595381014f696bcacc3cca4c00b85f215b99"
     },
     "src/blackwire/desk/index.html": {
-      "bytes": 150929,
-      "sha256": "d1d033c7b35d31fbab2a67c14dce3d215f775104dd4329ef7aa16789b545c28c"
+      "bytes": 151232,
+      "sha256": "38611c5f20ecd9fafa7610a4c361479117862cb2bdaa20f8d96df68f4cd0d29b"
     },
     "src/blackwire/desk/tests/browser_handoff_harness.js": {
       "bytes": 12691,
@@ -379,8 +379,8 @@
       "sha256": "f528f296a7c4d7755784da5adfe38969cac8b298adcf96f922cd0dd313c0ff6e"
     },
     "src/blackwire/desk/tests/test_ui.py": {
-      "bytes": 66646,
-      "sha256": "002646ec5aeff14126cb04a7cd1e593de218ffd246c7f437f28ad104f1bc8621"
+      "bytes": 67019,
+      "sha256": "a23e54877c994e6e5ee9e435fe76c5fa362a145954c7481d391ca10cae94403d"
     },
     "src/blackwire/desk/tests/verify_combined_browser.js": {
       "bytes": 8483,
@@ -519,8 +519,8 @@
       "sha256": "0f6c64dda1456217dd67226c84fcbaeac625c3d28db8244e9465399171e1a79f"
     },
     "src/blackwire/library/native_backend.c": {
-      "bytes": 147663,
-      "sha256": "c4fa63d4270c287bd7a56df2bdadd68ecc5de962ac4e8adb5f0b286b430d78a8"
+      "bytes": 149027,
+      "sha256": "d7835b07557157de7002708f839c2d588f66809055a23c9995163d0b35af24c3"
     },
     "src/blackwire/library/native_backend.h": {
       "bytes": 9720,
@@ -771,8 +771,8 @@
       "sha256": "d1c8c613a1c01daeee276c4a98f2b9c33a10b4bdbcb3a4676f819e18c403825d"
     },
     "src/blackwire/library/native_setup.c": {
-      "bytes": 10373,
-      "sha256": "15e8a4480123ab35390bb4ced269797710df75c3edd7669b16423368feea3b07"
+      "bytes": 12195,
+      "sha256": "2599f0f9289bd3d570e764229398958e79fa9e8f330c0e26f99613d91e0278c6"
     },
     "src/blackwire/library/native_setup.h": {
       "bytes": 1376,
@@ -1678,9 +1678,17 @@
       "bytes": 1583,
       "sha256": "ba19a0ea0a3c61c31d2cd47e87d4f09c61f16764a43ab940ee66b78fcfe7ed3c"
     },
+    "tests/diagnostics/check_settings_startup.py": {
+      "bytes": 2037,
+      "sha256": "d0387c87c33fe63d6902f3b6fc057351d4db3bfa54e82f51a67f8ce6d344cde6"
+    },
+    "tests/diagnostics/check_settings_storage.py": {
+      "bytes": 1741,
+      "sha256": "e27d5894bef79c99c326e6b5c6a8d4dcfe41ae2bebc0c96af5eec8675cf30fa9"
+    },
     "tests/diagnostics/test_collect_diagnostics.py": {
-      "bytes": 1986,
-      "sha256": "6f6ceb3eaf52f2df0d701cecca8173457509db6eb937123cf8a1d3a471fa3532"
+      "bytes": 2671,
+      "sha256": "e6d60b0f384713a3abc7ebd8623351f76c843ae1599cded449cc97aa83572282"
     },
     "tests/diagnostics/test_send_directory.c": {
       "bytes": 1944,
@@ -1689,6 +1697,18 @@
     "tests/diagnostics/test_send_logger.c": {
       "bytes": 1975,
       "sha256": "72a2015bc3ca3aca4490a99c2704cae73716692ac1f1573584f1c2e219cdea53"
+    },
+    "tests/diagnostics/test_settings_restart.js": {
+      "bytes": 1855,
+      "sha256": "f56f1974fef3301eb2cd1a2a1acbe5ffe5780656621e8b3387210a832680cb8a"
+    },
+    "tests/diagnostics/test_settings_startup.c": {
+      "bytes": 2702,
+      "sha256": "59b4ca45f7907927476c6be70e5c173619aacb8029794ecba04ce4c58af7bc75"
+    },
+    "tests/diagnostics/test_settings_storage.c": {
+      "bytes": 2721,
+      "sha256": "83ed778eb66d70c6b798cbe061b44bcdd79f49efc82e695e8492cfeb998094f8"
     },
     "tests/home/README.md": {
       "bytes": 1521,
@@ -1800,7 +1820,7 @@
     },
     "tools/build/app.py": {
       "bytes": 9964,
-      "sha256": "20cda080f1baa59dccda5fad3ee854c2f2476523592bf290678acc6124e361a9"
+      "sha256": "f5fc0533ed023a5992ac8fe005e9c952c68771bca5d92dbf9564bc0091a2d903"
     },
     "tools/build/common.py": {
       "bytes": 4240,
@@ -1819,8 +1839,8 @@
       "sha256": "4c9ee4a7eb3e46a2621fa27d389b6c06f8f3bbc8fe5ef8c9e561dafda472d96a"
     },
     "tools/build/reader.py": {
-      "bytes": 17408,
-      "sha256": "43ac783c93d191cb19f5bbd364d60d6f01f1a0b90b98751080b2b78dc7676cef"
+      "bytes": 17847,
+      "sha256": "1131699954651647d9775d9bb8b51ad75e766dfd2ea16def2b77ed07cdabb2b8"
     },
     "tools/build/reader_patch.py": {
       "bytes": 12211,
@@ -1831,8 +1851,8 @@
       "sha256": "1a1b0312b36edcbe6e6fe0fdd08b49d4e3e53c14297358c66ba18e6dd985cf66"
     },
     "tools/diagnostics/collect-diagnostics.py": {
-      "bytes": 3039,
-      "sha256": "64791cd6906efe45876c38912022ffbbba8ce2ba6c352e1ae9b3e0153386290b"
+      "bytes": 3278,
+      "sha256": "4215c247c1feb30916cbfb9e8ee8038f9854bf17d328e18c50beea21681abec1"
     },
     "tools/smb-transport-tests/README.md": {
       "bytes": 5091,

@@ -1,11 +1,11 @@
 {
   "kind": "blackwire-beta-delivery/1",
   "product": "Blackwire",
-  "version": "v0.3.0-beta.1",
+  "version": "v0.3.0-beta.2",
   "readyToPublish": true,
   "application": {
-    "bytes": 5772536,
-    "sha256": "98d35b094f4d2585525434e2af9fab03ed5c71b17e39bd6a1e1aed484ce8d6a9"
+    "bytes": 5772600,
+    "sha256": "ad3505cca3c6b409152e8c12024d81582a351aee473d7fecee4d82bc4e1e252c"
   },
   "reader": {
     "bytes": 843696,
@@ -16,9 +16,9 @@
   "catalogChanged": false,
   "previousReleasesChanged": false,
   "knownLimits": [
-    "Hardware observations cover the recorded 13.00-family environment, fresh setup, initial menu and normal exit.",
-    "Driving, direct Games-icon and repeat launch remain unqualified for this exact beta.",
-    "Only the documented contiguous exFAT layouts are supported; broader compatibility and controlled speed benchmarks remain open."
+    "Reporter exact remaining connection/discovery failure needs status and logs.",
+    "Hardware settings tests cover the recorded 13.00-family environment.",
+    "Gameplay was not repeated for this resident; no controlled loading-speed improvement is claimed."
   ],
   "excluded": [
     "credentials and settings",
