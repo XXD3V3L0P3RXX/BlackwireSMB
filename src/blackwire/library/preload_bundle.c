@@ -21,12 +21,15 @@ static const struct pb_pin pb_globals[5]={
     {"libSceNpEntitlementAccess.sprx",43286,"3f1826f20e174ff0f7aaa8d7f3f7e386dfcca1136c9e4c0e72a49e041c0b1488"},
     {"libSceAmpr.sprx.orig",423350,"69e6c4d5e4f5fb83c9e01815db5861c4c75734acbf4595cafa50d4c218116d1a"}
 };
+enum {PB_PLAYGO=5,PB_MEMBERS=6};
+static const char *pb_name(unsigned i){return i==PB_PLAYGO?"libScePlayGo.sprx":pb_globals[i].name;}
 struct pb_operation {
     const struct bw_preload_bundle_request *request;
     const struct bw_preload_bundle_control *control;
     int root,source,folder,changed,release_unknown;
-    int source_state; /* 0=unobserved, 1=absent, 2=held game/fakelib, -1=legacy */
-    unsigned source_mask,members,scanned_mask;
+    int source_state; /* 0=unobserved, 1=absent, 2=held game/fakelib */
+    unsigned source_mask,members,scanned_mask,source_extras_reported,legacy_five;
+    const struct bw_preload_playgo_pin *playgo;
     char source_path[1152];
     struct stat root_identity,source_identity,folder_identity;
     struct bw_preload_bundle_result *diagnostic;
@@ -114,32 +117,79 @@ static int pb_open_directory(struct pb_operation *p,const char *path,struct stat
     bw_send_log("directory-open-ok","stage=%s path=%s dev=%llu ino=%llu mode=%o uid=%lu gid=%lu",p->stage?p->stage:"",path,(unsigned long long)held.st_dev,(unsigned long long)held.st_ino,(unsigned)held.st_mode,(unsigned long)held.st_uid,(unsigned long)held.st_gid);
     *identity=held;return fd;
 }
-static int pb_entries(struct pb_operation *p,int fd) {
+/* Never retain a dirent pointer or interpolate unescaped entry bytes into a
+ * log. 256 output bytes bound even malformed/control/non-ASCII names. */
+static void pb_entry_name(const char *name,char out[257],unsigned *truncated){
+    static const char hex[]="0123456789abcdef";const unsigned char *s=(const unsigned char *)name;size_t n=0;
+    while(*s){unsigned char c=*s;unsigned take=(c>=33&&c<=126&&c!='\\'&&c!='"')?1u:4u;
+        if(n+take>=257)break;
+        if(take==1)out[n++]=(char)c;else{out[n++]='\\';out[n++]='x';out[n++]=hex[c>>4];out[n++]=hex[c&15];}s++;
+    }out[n]=0;*truncated=*s!=0;
+}
+static int pb_entry_fail(struct pb_operation *p,const char *name,const char *kind,const char *reason){
+    char escaped[257];unsigned truncated;pb_entry_name(name,escaped,&truncated);
+    if(p->diagnostic&&!p->diagnostic->reason){
+        p->diagnostic->entry_class=kind;memcpy(p->diagnostic->entry_name,escaped,strlen(escaped)+1);
+        p->diagnostic->entry_name_truncated=truncated;
+    }
+    bw_send_log("bundle-entry-refused","stage=%s class=%s name=\"%s\" truncated=%u",p->stage?p->stage:"",kind,escaped,truncated);
+    return pb_fail(p,reason,0);
+}
+/* Module-like original entries cannot be silently discarded by our exclusive
+ * fakelib2. All names not on the bounded pin list with .sprx/.prx/.so (any
+ * ASCII case) refuse; other entries are opaque metadata, never followed. */
+static int pb_module_name(const char *name){
+    const char *dot=strrchr(name,'.');if(!dot)return 0;char suffix[6];size_t n=strlen(dot);
+    if(n>=sizeof suffix)return 0;for(size_t i=0;i<=n;i++){unsigned char c=(unsigned char)dot[i];suffix[i]=(char)(c>='A'&&c<='Z'?c+('a'-'A'):c);}
+    return !strcmp(suffix,".sprx")||!strcmp(suffix,".prx")||!strcmp(suffix,".so");
+}
+/* A source fakelib is not our owned private bundle. Stock ShadowMount chooses
+ * fakelib2 exclusively before fakelib (sm_fakelib.c, 1.7beta7). Only the fixed,
+ * hash-qualified companion names below can enter that private directory.
+ * PlayGo has a separate bounded exact-artifact pin list. Unqualified source
+ * modules refuse; opaque metadata/links are not opened, followed or copied.
+ * No ignored source entry grants execution or deletion authority.
+ * Private enumeration remains exact-set and rejects every unselected name. */
+static int pb_entries(struct pb_operation *p,int fd,int source) {
     int duplicate=dup(fd);if(duplicate<0)return pb_fail(p,"reader_directory_dup_failed",errno);
     DIR *d=fdopendir(duplicate);if(!d){pb_fail(p,"reader_directory_enumeration_open_failed",errno);pb_close(p,duplicate,"reader_directory_close_failed");return -1;}
-    rewinddir(d);unsigned seen=0;int bad=0;
+    rewinddir(d);unsigned seen=0,ignored=0;int bad=0;
     for(;;) {
         if(pb_paths(p)){bad=1;break;}
         errno=0;struct dirent *e=readdir(d);
         if(!e){if(errno){bad=1;pb_fail(p,"reader_directory_enumeration_failed",errno);}break;}
         if(!strcmp(e->d_name,".")||!strcmp(e->d_name,".."))continue;
-        unsigned i=0;while(i<5&&strcmp(e->d_name,pb_globals[i].name))i++;
-        if(i==5||(seen&(1u<<i))){bad=1;pb_fail(p,"reader_directory_names_differ",0);break;}
+        unsigned i=0;while(i<PB_MEMBERS&&strcmp(e->d_name,pb_name(i)))i++;
+        if(i==PB_MEMBERS&&source){
+            if(pb_module_name(e->d_name)){bad=1;pb_entry_fail(p,e->d_name,"unqualified-source-module","unqualified_game_companion_module");break;}
+            if(ignored!=~0u)ignored++;
+            if(!p->source_extras_reported){char escaped[257];unsigned truncated;pb_entry_name(e->d_name,escaped,&truncated);
+                bw_send_log("bundle-source-extra-retained","stage=%s class=unselected-source-entry name=\"%s\" truncated=%u selected=0",p->stage?p->stage:"",escaped,truncated);
+                p->source_extras_reported=1;}
+            continue;
+        }
+        if(i==PB_MEMBERS||(seen&(1u<<i))){bad=1;pb_entry_fail(p,e->d_name,i==PB_MEMBERS?"unselected-private-entry":"duplicate-known-entry","reader_directory_names_differ");break;}
         seen|=1u<<i;
     }
     if(closedir(d)){p->release_unknown=1;bad=1;pb_fail(p,"reader_directory_close_failed",errno);}
-    if(!bad)p->scanned_mask=seen;
+    if(!bad){p->scanned_mask=seen;if(source&&p->diagnostic)p->diagnostic->source_entries_ignored=ignored;}
     return bad?-1:0;
 }
 static int pb_source_open(struct pb_operation *p);
+static int pb_verify_set(struct pb_operation *p,int parent,int destination);
 static int pb_profile(struct pb_operation *p){
     const char *stage=p->stage,*library=p->library;
-    if(pb_entries(p,p->folder))return -1;unsigned seen=p->scanned_mask;
+    if(pb_entries(p,p->folder,0))return -1;unsigned seen=p->scanned_mask;
     if(!(seen&1u))return pb_fail(p,"reader_directory_is_incomplete",0);
-    if(!p->source_state&&seen==31u){p->source_state=-1;p->source_mask=30u;}
-    else if(!p->source_state&&pb_source_open(p))return -1;
+    /* Preserve complete legacy fixed five-file bundles, including those made
+     * before optional per-game companions. A present source is nevertheless
+     * enumerated and fully qualified: unknown modules or changed known bytes
+     * cannot bypass validation merely because the private set looks legacy. */
+    if(!p->source_state){if(pb_source_open(p))return -1;}
+    else if(p->source_state==2&&pb_verify_set(p,p->source,0))return -1;
+    if(seen==31u&&!(p->source_mask&(1u<<PB_PLAYGO)))p->legacy_five=1;
     p->stage=stage;p->library=library;
-    if(seen!=(p->source_mask|1u)||(p->members&&seen!=p->members))
+    if(seen!=(p->legacy_five?31u:(p->source_mask|1u))||(p->members&&seen!=p->members))
         return pb_fail(p,"reader_directory_is_incomplete",0);
     p->members=seen;return 0;
 }
@@ -150,6 +200,15 @@ static int pb_hex(const char *hex,uint8_t out[32]) {
         out[i]=(uint8_t)(((a-digits)<<4)|(b-digits));
     }
     return 0;
+}
+static int pb_material(struct pb_operation *p,unsigned i,int fd,size_t *size,uint8_t hash[32]){
+    if(i!=PB_PLAYGO){*size=pb_globals[i].size;return pb_hex(pb_globals[i].hex,hash)?pb_fail(p,"invalid_fixed_reader_library_hash",0):0;}
+    struct stat held;if(fstat(fd,&held))return pb_fail(p,"reader_library_held_stat_failed",errno);
+    if(!S_ISREG(held.st_mode)||held.st_size<0)return pb_fail(p,"reader_library_type_differs",0);
+    const struct bw_preload_playgo_pin *pin=bw_preload_playgo_pin((uint64_t)held.st_size);
+    if(!pin)return pb_entry_fail(p,pb_name(i),"unqualified-playgo-variant","unqualified_game_playgo_variant");
+    if(p->playgo&&p->playgo!=pin)return pb_fail(p,"game_playgo_variant_changed",0);
+    p->playgo=pin;*size=pin->size;return pb_hex(pin->hex,hash)?pb_fail(p,"invalid_fixed_reader_library_hash",0):0;
 }
 static int pb_file(struct pb_operation *p,int parent,const char *name,int fd,size_t size,
                    const uint8_t expected[32],int destination) {
@@ -191,21 +250,24 @@ static int pb_verify_set(struct pb_operation *p,int parent,int destination) {
     p->stage=destination?"private-library-names":"game-library-names";p->library=NULL;
     if(!destination&&p->source_state!=2)return pb_paths(p);
     if(destination){if(pb_profile(p))return -1;}
-    else if(pb_entries(p,parent)||p->scanned_mask!=p->source_mask)return pb_fail(p,"game_companion_names_changed",0);
+    else if(pb_entries(p,parent,1)||p->scanned_mask!=p->source_mask)return pb_fail(p,"game_companion_names_changed",0);
     unsigned mask=destination?p->members:p->source_mask;
-    for(unsigned i=0;i<5;i++) {
+    for(unsigned i=0;i<PB_MEMBERS;i++) {
         if(!(mask&(1u<<i)))continue;
-        uint8_t hash[32];size_t size=pb_globals[i].size;
-        if(destination&&i==0){size=bw_preload_embedded_image.size;memcpy(hash,bw_preload_embedded_image.sha256,32);}
-        else if(pb_hex(pb_globals[i].hex,hash))return pb_fail(p,"invalid_fixed_reader_library_hash",0);
-        p->stage=destination?"private-library-open":"game-library-open";p->library=pb_globals[i].name;
-        int fd=v2_openat(parent,pb_globals[i].name,O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);
+        uint8_t hash[32];size_t size=0;
+        p->stage=destination?"private-library-open":"game-library-open";p->library=pb_name(i);
+        int fd=v2_openat(parent,pb_name(i),O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);
         if(fd<0)return pb_fail(p,"reader_library_open_failed",errno);
-        int result=pb_file(p,parent,pb_globals[i].name,fd,size,hash,destination);
+        int result=0;
+        if(destination&&i==0){size=bw_preload_embedded_image.size;memcpy(hash,bw_preload_embedded_image.sha256,32);}
+        else result=pb_material(p,i,fd,&size,hash);
+        if(!result)result=pb_file(p,parent,pb_name(i),fd,size,hash,destination);
         if(pb_close(p,fd,"reader_library_close_failed"))result=-1;if(result)return -1;
     }
     p->stage=destination?"private-library-names":"game-library-names";p->library=NULL;
-    return pb_entries(p,parent)||p->scanned_mask!=mask||pb_paths(p)?-1:0;
+    if(pb_entries(p,parent,!destination))return -1;
+    if(p->scanned_mask!=mask)return pb_fail(p,destination?"reader_directory_is_incomplete":"game_companion_names_changed",0);
+    return pb_paths(p);
 }
 static int pb_source_open(struct pb_operation *p){
     if(p->source_state)return pb_source_guard(p);
@@ -218,25 +280,24 @@ static int pb_source_open(struct pb_operation *p){
         p->source_state=1;p->source_mask=0;return pb_paths(p);
     }
     p->source=pb_open_directory(p,p->source_path,&p->source_identity);if(p->source<0)return -1;p->source_state=2;
-    if(pb_entries(p,p->source))return -1;
-    if(p->scanned_mask&1u)return pb_fail(p,"unexpected_game_reader_file",0);
+    if(pb_entries(p,p->source,1))return -1;
+    if(p->scanned_mask&1u)return pb_entry_fail(p,pb_globals[0].name,"unexpected-source-reader","unexpected_game_reader_file");
     p->source_mask=p->scanned_mask;return pb_verify_set(p,p->source,0);
 }
 static int pb_copy(struct pb_operation *p,unsigned i) {
-    const struct pb_pin *pin=pb_globals+i;int source=-1,fd=-1,result=-1;size_t size=pin->size;uint8_t hash[32],bytes[32768];
+    const char *name=pb_name(i);int source=-1,fd=-1,result=-1;size_t size=0;uint8_t hash[32],bytes[32768];
     struct stat source_identity={0},source_after={0};
-    p->stage="game-library-open";p->library=pin->name;
+    p->stage="game-library-open";p->library=name;
     if(i==0){size=bw_preload_embedded_image.size;memcpy(hash,bw_preload_embedded_image.sha256,32);}
     else {
-        if(pb_hex(pin->hex,hash))return pb_fail(p,"invalid_fixed_reader_library_hash",0);
-        source=v2_openat(p->source,pin->name,O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);
+        source=v2_openat(p->source,name,O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);
         if(source<0)return pb_fail(p,"reader_library_open_failed",errno);
-        if(pb_file(p,p->source,pin->name,source,size,hash,0))goto done;
+        if(pb_material(p,i,source,&size,hash)||pb_file(p,p->source,name,source,size,hash,0))goto done;
         if(fstat(source,&source_identity)){pb_fail(p,"reader_library_held_stat_failed",errno);goto done;}
     }
     if(pb_paths(p)||pb_checkpoint(p))goto done;
     p->stage="private-library-create";
-    fd=v2_openat(p->folder,pin->name,O_CREAT|O_EXCL|O_NOFOLLOW|O_RDWR,0755);
+    fd=v2_openat(p->folder,name,O_CREAT|O_EXCL|O_NOFOLLOW|O_RDWR,0755);
     if(fd<0){pb_fail(p,"private_reader_library_create_failed",errno);goto done;}p->changed=1;
     if(fchmod(fd,0755)){pb_fail(p,"private_reader_library_chmod_failed",errno);goto done;}
     p->stage="private-library-write";
@@ -265,14 +326,14 @@ static int pb_copy(struct pb_operation *p,unsigned i) {
     if(pb_paths(p)||pb_checkpoint(p))goto done;
     p->stage="private-library-sync";
     if(fsync(fd)){pb_fail(p,"private_reader_library_sync_failed",errno);goto done;}
-    if(pb_file(p,p->folder,pin->name,fd,size,hash,1))goto done;
+    if(pb_file(p,p->folder,name,fd,size,hash,1))goto done;
     p->stage="private-directory-sync";
     if(fsync(p->folder)){pb_fail(p,"private_reader_directory_sync_failed",errno);goto done;}
     if(pb_paths(p))goto done;
     if(i){
         if(fstat(source,&source_after)){pb_fail(p,"reader_library_final_stat_failed",errno);goto done;}
         if(!pb_same(&source_identity,&source_after)){pb_fail(p,"reader_library_held_identity_changed",0);goto done;}
-        if(pb_file(p,p->source,pin->name,source,size,hash,0))goto done;
+        if(pb_file(p,p->source,name,source,size,hash,0))goto done;
     }
     result=0;
 done:
@@ -319,7 +380,7 @@ static int pb_install_checked(const struct bw_preload_bundle_request *r,struct b
         if(p.folder_identity.st_uid!=geteuid()){pb_fail(&p,"private_reader_directory_owner_differs",0);goto done;}
         if(fsync(p.root)){pb_fail(&p,"prepared_reader_directory_sync_failed",errno);goto done;}
         if(pb_paths(&p))goto done;
-        for(unsigned i=0;i<5;i++)if((p.members&(1u<<i))&&pb_copy(&p,i))goto done;
+        for(unsigned i=0;i<PB_MEMBERS;i++)if((p.members&(1u<<i))&&pb_copy(&p,i))goto done;
         if(pb_verify_set(&p,p.folder,1))goto done;
     }
     if(pb_verify_set(&p,p.source,0)||pb_paths(&p)||pb_checkpoint(&p))goto done;
@@ -502,12 +563,12 @@ static int pu_write(struct pu_operation *u,unsigned which,const uint8_t *bytes,s
 }
 static int pu_other_members(struct pu_operation *u){
     if(pb_profile(&u->p))return -1;
-    for(unsigned i=1;i<5;i++){
+    for(unsigned i=1;i<PB_MEMBERS;i++){
         if(!(u->p.members&(1u<<i)))continue;
-        uint8_t hash[32];if(pb_hex(pb_globals[i].hex,hash))return -1;
-        int fd=v2_openat(u->p.folder,pb_globals[i].name,O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);
+        uint8_t hash[32];size_t size=0;
+        int fd=v2_openat(u->p.folder,pb_name(i),O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);
         if(fd<0)return pb_fail(&u->p,"reader_upgrade_companion_open_failed",errno);
-        int bad=pb_file(&u->p,u->p.folder,pb_globals[i].name,fd,pb_globals[i].size,hash,1);
+        int bad=pb_material(&u->p,i,fd,&size,hash)||pb_file(&u->p,u->p.folder,pb_name(i),fd,size,hash,1);
         if(pu_close(u,&fd))bad=-1;if(bad)return -1;
     }return pu_guard(u);
 }
@@ -643,8 +704,8 @@ static int pr_entries(struct pu_operation *u){
         if(pu_guard(u)){bad=1;break;}errno=0;struct dirent *entry=readdir(dir);
         if(!entry){if(errno){pb_fail(&u->p,"reader_removal_directory_read_failed",errno);bad=1;}break;}
         if(!strcmp(entry->d_name,".")||!strcmp(entry->d_name,".."))continue;
-        unsigned i=0;while(i<5&&strcmp(entry->d_name,pb_globals[i].name))i++;
-        if(i==5||(seen&(1u<<i))){pb_fail(&u->p,"reader_removal_library_names_differ",0);bad=1;break;}seen|=1u<<i;
+        unsigned i=0;while(i<PB_MEMBERS&&strcmp(entry->d_name,pb_name(i)))i++;
+        if(i==PB_MEMBERS||(seen&(1u<<i))){pb_entry_fail(&u->p,entry->d_name,i==PB_MEMBERS?"unselected-private-entry":"duplicate-known-entry","reader_removal_library_names_differ");bad=1;break;}seen|=1u<<i;
     }
     if(closedir(dir)){u->p.release_unknown=1;pb_fail(&u->p,"reader_removal_directory_close_failed",errno);bad=1;}
     if(!(seen&1u)){pb_fail(&u->p,"reader_removal_library_set_incomplete",0);bad=1;}
@@ -701,11 +762,11 @@ int bw_preload_bundle_select_for_removal(const struct bw_preload_bundle_upgrade_
             pb_fail(&u.p,"reader_removal_reader_unknown",0);goto done;}
         selected.size=(size_t)u.reader_id.st_size;memcpy(selected.sha256,hash,32);
     }
-    for(unsigned i=1;i<5;i++){
+    for(unsigned i=1;i<PB_MEMBERS;i++){
         if(!(u.p.members&(1u<<i)))continue;
-        int fd=v2_openat(u.p.folder,pb_globals[i].name,O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);
+        int fd=v2_openat(u.p.folder,pb_name(i),O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);size_t size=0;
         if(fd<0){pb_fail(&u.p,"reader_removal_companion_open_failed",errno);goto done;}
-        int bad=pb_hex(pb_globals[i].hex,expected)||pu_digest(&u,u.p.folder,pb_globals[i].name,fd,0755,pb_globals[i].size,hash,NULL,NULL)||memcmp(hash,expected,32);
+        int bad=pb_material(&u.p,i,fd,&size,expected)||pu_digest(&u,u.p.folder,pb_name(i),fd,0755,size,hash,NULL,NULL)||memcmp(hash,expected,32);
         if(pu_close(&u,&fd))bad=-1;
         if(bad){pb_fail(&u.p,"reader_removal_companion_differs",0);goto done;}
     }

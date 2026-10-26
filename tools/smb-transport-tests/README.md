@@ -83,3 +83,35 @@ and crypto deferral, not a complete login, key derivation, guest admission,
 server interoperability, or session reauthentication exchange. No production
 artifact was rebuilt or exercised. Source changes require a future authorized
 production rebuild before they affect deployed readers.
+
+## AES-CMAC key schedule check
+
+Run the focused offline CMAC fixture with a new output directory:
+
+```sh
+python3 tools/smb-transport-tests/check_cmac.py --output /tmp/blackwire-cmac-check
+```
+
+The fixture compiles the actual vendored CMAC and AES implementation with ASan
+and UBSan. It checks the four [RFC 4493 section 4](https://www.rfc-editor.org/rfc/rfc4493#section-4)
+vectors, empty/partial/full/multiple-block and long messages, compatibility ECB
+wrappers, independently keyed immutable contexts and per-message key-schedule
+initialization counts. A reference through the existing per-block ECB entry
+point is compared byte for byte with production CMAC. One 1 MiB message requires
+one expanded schedule instead of 65,537 per-block expansions. These counts
+describe work removed; they are not a measured console throughput improvement.
+
+The production change keeps one caller-owned schedule on the stack for one
+CMAC message, then clears it. There is no shared last-key cache or new heap
+allocation. Required signing, algorithm selection, signature comparison and
+receive acceptance rules remain unchanged; the receive fixture above must also
+pass after changing the cryptographic implementation.
+
+On supported x86 compilers, context initialization checks CPUID for AES and
+SSE2 before selecting the isolated AES-NI encryptor. Other CPUs retain the
+pure-C implementation. The helper explicitly disables AVX so its instructions
+match that feature gate even when the SDK has a broader default CPU baseline.
+The fixture runs both automatic selection and a separate compile forced to
+software, then checks that generic entry points contain no AES instructions.
+The forced-software define exists only for offline test compilation; there is
+no user-facing signing toggle or instruction-set override.

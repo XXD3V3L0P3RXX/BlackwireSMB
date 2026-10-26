@@ -43,7 +43,13 @@ def main():
     unit=out/'unit';(unit/'library').mkdir(parents=True);(unit/'streamreader').mkdir()
     for name in ('copy_fs.h','copy_sha256.h','manifest.h'):
         p=STREAM/name;(unit/'streamreader'/name).write_bytes(p.read_bytes());used.add(p)
-    (unit/'library/preload_bundle.h').write_bytes((LIB/'preload_bundle.h').read_bytes());used.add(LIB/'preload_bundle.h')
+    playgo=[bytes((i*(v+7)+v+19)%251 for i in range(1103+v*137)) for v in range(4)]
+    for v,body in enumerate(playgo):(globals_dir/('playgo-%d.sprx'%v)).write_bytes(body)
+    header=(LIB/'preload_bundle.h').read_text();used.add(LIB/'preload_bundle.h')
+    playgo_table='static const struct bw_preload_playgo_pin pins[]={\n'+',\n'.join('        {%d,"%s"}'%(len(b),hashlib.sha256(b).hexdigest()) for b in playgo)+'\n    };'
+    header,count=re.subn(r'static const struct bw_preload_playgo_pin pins\[\]=\{.*?\n    \};',lambda _:playgo_table,header,count=1,flags=re.S)
+    if count!=1:raise ValueError('Fixed PlayGo pin seam changed')
+    (unit/'library/preload_bundle.h').write_text(header)
     production=(LIB/'preload_bundle.c').read_text();used.add(LIB/'preload_bundle.c')
     table='static const struct pb_pin pb_globals[5]={\n'+',\n'.join('    {"%s",%d,"%s"}'%(n,len(b),hashlib.sha256(b).hexdigest()) for n,b in zip(names,bodies))+'\n};'
     tested,count=re.subn(r'static const struct pb_pin pb_globals\[5\]=\{.*?\n\};',lambda _:table,production,count=1,flags=re.S)
@@ -74,7 +80,7 @@ def main():
     baseline=out/'host-bundle-diagnostics'
     run('host-retained-bundle-build',[args.cc,'-std=gnu11','-Wall','-Wextra','-Werror','-Wno-misleading-indentation','-Wno-unused-function',
         '-O1','-g','-fsanitize=address,undefined','-fno-sanitize-recover=all','-fno-omit-frame-pointer','-I',unit/'library','-I',LIB,
-        '-DBW_PRELOAD_GLOBAL_ROOT="'+str(globals_dir)+'"',HERE/'test_preload_bundle.c',image,
+        '-DBW_PRELOAD_PLAYGO_FIXTURES=1','-DBW_PRELOAD_GLOBAL_ROOT="'+str(globals_dir)+'"',HERE/'test_preload_bundle.c',image,
         '-pthread','-Wl,--wrap=close','-Wl,--wrap=write','-Wl,--wrap=fsync','-o',baseline])
     with tempfile.TemporaryDirectory(prefix='blackwire-bundle-diagnostics-') as tmp:
         retained=json.loads(run('retained-bundle-close-diagnostics',[baseline,tmp]).splitlines()[-1])

@@ -154,12 +154,19 @@ static int nrl_absence_current(void *opaque,const struct bw_nrc_subject *s){
         bw_registration_db_match(p->env->database,s->title,s->content)!=0||nrl_directory_current(&p->apps)||
         p->remote->connection.current(p->remote->connection.opaque)?-1:0;
 }
-int bw_nrl_absent_sources(const struct bw_nrc_environment *env,struct bw_nrc_remote *remote,const struct bw_nrc_subject *subject){
+static int nrl_absent_sources_policy(const struct bw_nrc_environment *env,struct bw_nrc_remote *remote,const struct bw_nrc_subject *subject,int preparation){
     if(!env||!env->apps_root||!env->database||!remote||!remote->connection.current||!subject)return -1;
     struct nrl_absence proof={.env=env,.remote=remote,.subject=*subject,.apps={.fd=-1}};int rc=-1;
     if(remote->connection.current(remote->connection.opaque)||nrl_directory_open(&proof.apps,env->apps_root))goto done;
-    rc=bw_nrc_remote_absent_sources(remote,subject,nrl_absence_current,&proof);
-done:if(proof.apps.fd>=0&&close(proof.apps.fd))rc=-1;return rc;
+    rc=preparation?bw_nrc_remote_prepare_sources(remote,subject,nrl_absence_current,&proof):
+        bw_nrc_remote_absent_sources(remote,subject,nrl_absence_current,&proof);
+done:if(proof.apps.fd>=0&&close(proof.apps.fd)){
+        remote->observation_release_unknown=1;remote->substage="apps_observer_close";remote->observation_error=errno;
+        remote->reason="cleanup_apps_observer_release_unknown";rc=-1;
+    }return rc;
+}
+int bw_nrl_absent_sources(const struct bw_nrc_environment *env,struct bw_nrc_remote *remote,const struct bw_nrc_subject *subject){
+    return nrl_absent_sources_policy(env,remote,subject,0);
 }
 /* Keep every opened ancestor until the root observation has been checked.
  * ENOENT is accepted only under those still-named canonical held parents.
@@ -278,17 +285,28 @@ static int nrl_released_registration(void *opaque,const struct bw_nrc_subject *s
     }
     return nrl_witness_current(p)?-1:1;
 }
+/* Prepare snapshots never establish MATCH. The real readonly verifier must
+ * positively bind the exact selected app/param/mount/source/DB every time. */
+static int nrl_prepare_registered(void *opaque,const struct bw_nrc_subject *s){
+    struct bw_nrl_owner *p=opaque;char root[BW_NRC_PATH_BYTES];
+    int n=p?snprintf(root,sizeof root,"%s/games/%s",p->roots[0],p->selection.game):-1;
+    if(!p||!s||p->phase!=BW_NRL_REGISTER||p->initial_absence||n<0||(size_t)n>=sizeof root||
+       strcmp(s->source,root)||strcmp(s->title,p->selection.title)||strcmp(s->game,p->selection.game)||strcmp(s->run,p->registration_run)||nrl_current(p)||
+       bw_registration_db_match(p->roots[2],s->title,s->content)!=1||bw_native_registration_verify(p->roots[0],p->roots[1],p->roots[2],&p->selection)||nrl_current(p))return -1;
+    return 1;
+}
 static int nrl_sources(void *opaque,const struct bw_nrc_subject *s){
     struct bw_nrl_owner *p=opaque;if(nrl_current(p))return -1;
     /* Only the initial intent is collected while the real app and DB are
      * independently absent. A stale uninstalled cache row is not ownership.
      * Commit/post-registration keeps its exact registration policy. */
     int checked=p->phase==BW_NRL_REGISTER?(p->initial_absence?
-        bw_nrl_absent_sources(&p->request.environment,&p->remote,s):
-        bw_nrc_remote_registration_sources(&p->remote,s)):
+        nrl_absent_sources_policy(&p->request.environment,&p->remote,s,1):
+        bw_nrc_remote_prepare_sources(&p->remote,s,nrl_prepare_registered,p)):
         p->owned?bw_nrc_remote_confirmed_sources(&p->remote,s,nrl_released_registration,p):
         bw_nrl_absent_sources(&p->request.environment,&p->remote,s);
     if(checked){
+        if(p->remote.observation_release_unknown)p->release_unknown=1;
         if(!p->failure)p->failure=p->remote.reason?p->remote.reason:"registration_source_collector_refused";return -1;
     }
     return nrl_current(p);

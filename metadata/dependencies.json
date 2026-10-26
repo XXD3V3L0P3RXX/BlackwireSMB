@@ -667,8 +667,8 @@
         "bytes": 36160
       },
       "lib/aes.h": {
-        "sha256": "28f11bb2262c0041236f553ea92599c12ee4829d9dcebfa8cca523ce61e67a64",
-        "bytes": 1156
+        "bytes": 1893,
+        "sha256": "e5ab27c5e751585cabca73a207d001c178770d0c7b9168c512919b245404ee35"
       },
       "lib/asn1-ber.c": {
         "sha256": "d8463e9532059f5c5b65dd48132f2193892211311d1b41657b3ae9c5bc9c1d02",
@@ -835,12 +835,12 @@
         "bytes": 1582
       },
       "lib/aes.c": {
-        "sha256": "c6a3ce31229cf49c6a0b6eb361ca671ad3a393302fcaeff867c404c972a112a0",
-        "bytes": 18827
+        "bytes": 21333,
+        "sha256": "5b644b9b4e74b102723294d4bca39157bbb36fe936b9ac985429a9eab0fefe33"
       },
       "lib/smb2-signing.c": {
-        "sha256": "0e792e1d3d156e31abb27dd0be46ea631b4007fc410bc882e96132dc250daad1",
-        "bytes": 7797
+        "bytes": 8281,
+        "sha256": "481c5b6122d4cb2d13ca9d60c88817dcbbe03964a5e76e2c8c8fec4aa6b906d7"
       },
       "lib/smb2-cmd-read.c": {
         "sha256": "02606bc638e3006497d78f96e1514b79dc9e74d9dae9ef324a84e0136f79dc80",
@@ -1277,6 +1277,39 @@
         "beforeSha256": "7f8d463441ffcddf12c51ed3961d54a3b83c6938ec06ae8dfdd61d5662dc0c88",
         "afterSha256": "20e103358712321c36d7fd606c66aac435e49f86eff454b253193629aa4fc582",
         "description": "Required client receive integrity, correlated reply commands, final SMB3.1.1 signing presence, and retained compound header position. Host-only tests; not deployed."
+      },
+      "lib/aes.c": {
+        "beforeSha256": "c6a3ce31229cf49c6a0b6eb361ca671ad3a393302fcaeff867c404c972a112a0",
+        "afterSha256": "5b644b9b4e74b102723294d4bca39157bbb36fe936b9ac985429a9eab0fefe33",
+        "description": "Blackwire per-message AES-128 key schedule reuse for CMAC, with runtime AES+SSE2 hardware acceleration and pure-C fallback. Existing SMB signing policy and signature rejection remain unchanged. Context is caller-owned and cleared after use.",
+        "validation": [
+          "tools/smb-transport-tests/check_cmac.py",
+          "tools/smb-transport-tests/run.py --sanitize",
+          "tools/smb-transport-tests/run.py --sanitize --force-software"
+        ],
+        "reference": "https://www.rfc-editor.org/rfc/rfc4493#section-4"
+      },
+      "lib/aes.h": {
+        "beforeSha256": "28f11bb2262c0041236f553ea92599c12ee4829d9dcebfa8cca523ce61e67a64",
+        "afterSha256": "e5ab27c5e751585cabca73a207d001c178770d0c7b9168c512919b245404ee35",
+        "description": "Blackwire per-message AES-128 key schedule reuse for CMAC, with runtime AES+SSE2 hardware acceleration and pure-C fallback. Existing SMB signing policy and signature rejection remain unchanged. Context is caller-owned and cleared after use.",
+        "validation": [
+          "tools/smb-transport-tests/check_cmac.py",
+          "tools/smb-transport-tests/run.py --sanitize",
+          "tools/smb-transport-tests/run.py --sanitize --force-software"
+        ],
+        "reference": "https://www.rfc-editor.org/rfc/rfc4493#section-4"
+      },
+      "lib/smb2-signing.c": {
+        "beforeSha256": "0e792e1d3d156e31abb27dd0be46ea631b4007fc410bc882e96132dc250daad1",
+        "afterSha256": "481c5b6122d4cb2d13ca9d60c88817dcbbe03964a5e76e2c8c8fec4aa6b906d7",
+        "description": "Blackwire per-message AES-128 key schedule reuse for CMAC, with runtime AES+SSE2 hardware acceleration and pure-C fallback. Existing SMB signing policy and signature rejection remain unchanged. Context is caller-owned and cleared after use.",
+        "validation": [
+          "tools/smb-transport-tests/check_cmac.py",
+          "tools/smb-transport-tests/run.py --sanitize",
+          "tools/smb-transport-tests/run.py --sanitize --force-software"
+        ],
+        "reference": "https://www.rfc-editor.org/rfc/rfc4493#section-4"
       }
     }
   },

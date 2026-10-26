@@ -6,6 +6,7 @@
 #include "../streamreader/container_smb.h"
 
 #define BW_COMPRESSED_DATA_CHUNK 65536u
+#define BW_COMPRESSED_DATA_READ_CHUNK (1024u * 1024u)
 #define BW_COMPRESSED_DATA_MAX_FILES 4096u
 #define BW_COMPRESSED_DATA_MAX_PATH_BYTES (1024u * 1024u)
 #define BW_COMPRESSED_DATA_MAX_LOCAL_BYTES (5ULL * 1024u * 1024u * 1024u)
@@ -52,7 +53,9 @@ struct bw_compressed_data {
     uint64_t hashed_bytes;
     uint32_t hashed_files;
     int ready,failed,error,busy;
-    uint8_t buffer[BW_COMPRESSED_DATA_CHUNK];
+    /* Owned bounded input workspace; consumers still borrow <=64 KiB. Keep
+     * this off the preparation worker's stack and free it on every release. */
+    uint8_t *buffer;
 };
 
 /* Enumerate and bind supported logical files, validate bounded param.json,

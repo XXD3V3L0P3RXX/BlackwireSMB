@@ -85,6 +85,12 @@ static int execute(struct bw_preload_bundle_upgrade_request *q,int expected,unsi
  if(expect_current==1)CHECK(!memcmp(h,bw_preload_embedded_image.sha256,32));else{uint8_t old[32];cp_sha_bytes(expect_current==2?fixture_public07:fixture_previous,expect_current==2?fixture_public07_size:fixture_previous_size,old);CHECK(!memcmp(h,old,32));}
  if(held_fault_fd>=0){CHECK(fd_count()==open_before+1);CHECK(!__real_close(held_fault_fd));held_fault_fd=-1;}CHECK(fd_count()==open_before);
  if(expected)CHECK(r.reason||expected==-2);else CHECK(!r.reason&&!strcmp(r.stage,"complete"));return result;}
+static void playgo_fixture(unsigned variant){
+ char folder[2048],source[2048],target[2048],leaf[64];joined_path(folder,current_root,"fakelib");CHECK(!mkdir(folder,0755));
+ for(unsigned i=1;i<5;i++){joined_path(source,BW_PRELOAD_GLOBAL_ROOT,pb_globals[i].name);joined_path(target,folder,pb_globals[i].name);copy_file(source,target);}
+ snprintf(leaf,sizeof leaf,"playgo-%u.sprx",variant);joined_path(source,BW_PRELOAD_GLOBAL_ROOT,leaf);joined_path(target,folder,"libScePlayGo.sprx");copy_file(source,target);
+ joined_path(target,current_root,"fakelib2/libScePlayGo.sprx");copy_file(source,target);
+}
 int main(int argc,char **argv){CHECK(argc==2);char file[2048];struct bw_preload_bundle_result r;
  /* The development reader is admitted only at its exact independently
   * observed digest and size; neither near-match may enter owned migration. */
@@ -145,4 +151,7 @@ int main(int argc,char **argv){CHECK(argc==2);char file[2048];struct bw_preload_
  CHECK(bw_preload_bundle_upgrade_checked(&q,&r)==-2&&fault_used==1&&!r.mutation_started&&access(file,F_OK)<0&&access(workspace,F_OK)<0);
  q=fixture(argv[1],0);fault=EXPIRE_INITIAL;execute(&q,-1,0);CHECK(fault_used==1&&access(workspace,F_OK)<0);
  q=fixture(argv[1],0);fault=EXPIRE_NEW;execute(&q,-2,0);CHECK(fault_used==1&&access(workspace,F_OK)==0);
+ for(unsigned v=0;v<4;v++){q=fixture(argv[1],0);playgo_fixture(v);execute(&q,0,1);}
+ q=fixture(argv[1],0);playgo_fixture(0);joined_path(file,current_root,"fakelib2/libScePlayGo.sprx");CHECK(!unlink(file));execute(&q,-1,0);
+ q=fixture(argv[1],0);playgo_fixture(0);joined_path(file,current_root,"fakelib2/libScePlayGo.sprx");int playgo_fd=open(file,O_RDWR|O_NOFOLLOW);CHECK(playgo_fd>=0);unsigned char playgo_byte;CHECK(pread(playgo_fd,&playgo_byte,1,0)==1);playgo_byte^=1;CHECK(pwrite(playgo_fd,&playgo_byte,1,0)==1&&!__real_close(playgo_fd));execute(&q,-1,0);
  printf("{\"passed\":true,\"cases\":%u,\"checks\":%u,\"sameWorker\":true,\"actualFilesystem\":true}\n",cases,checks);return 0;}

@@ -174,6 +174,10 @@ int main(int argc,char **argv){
     if(old||public07){uint8_t expected[32];cp_sha_bytes(public07?fixture_public07:fixture_previous,public07?fixture_public07_size:fixture_previous_size,expected);CHECK(selected_pin.size==(public07?fixture_public07_size:fixture_previous_size)&&!memcmp(expected,selected_pin.sha256,32));}
     if(!strcmp(argv[2],"reader-old-wrong-pin")||!strcmp(argv[2],"reader-public07-wrong-pin")){request.reader_size=bw_preload_embedded_image.size;memcpy(request.reader_sha256,bw_preload_embedded_image.sha256,32);test_scenario=scenario="reader-wrong-pin";}
     else if(!strcmp(argv[2],"reader-changed-after")||!strcmp(argv[2],"reader-public07-changed-after")){path(name,test_root,"fakelib2/libSceAmpr.sprx");mutate_byte(name);test_scenario=scenario="reader-changed-after-selection";}
+    else if(!strcmp(argv[2],"reader-playgo-changed-after")){path(name,test_root,"fakelib2/libScePlayGo.sprx");mutate_byte(name);test_scenario=scenario="reader-changed-after-selection";}
+    else if(!strcmp(argv[2],"reader-playgo-source-changed-after")){path(name,test_root,"fakelib/libScePlayGo.sprx");mutate_byte(name);test_scenario=scenario="reader-changed-after-selection";}
+    else if(!strcmp(argv[2],"reader-playgo-linked-after")){char original[2100];path(name,test_root,"fakelib2/libScePlayGo.sprx");snprintf(original,sizeof original,"%s.original",name);CHECK(!rename(name,original)&&!symlink(original,name));test_scenario=scenario="reader-changed-after-selection";}
+    else if(!strcmp(argv[2],"reader-playgo-foreign-after")){path(name,test_root,"fakelib2/foreign.sprx");file_write(name,"preserve",8,0755);test_scenario=scenario="reader-changed-after-selection";}
     else test_scenario=scenario="normal";
 
     if(!strncmp(test_scenario,"continue-",9)){
@@ -214,6 +218,7 @@ int main(int argc,char **argv){
         if(strcmp(test_scenario,"partial-done")&&strcmp(test_scenario,"close-uncertain")){struct stat st;CHECK(!lstat(test_root,&st));}
     }
     if(owned_root_mode_case()||!strcmp(test_scenario,"shared-apps-symlink"))CHECK(!registrations&&!unlinks&&!result.mutation_started);
+    if(!strncmp(argv[2],"reader-playgo-",14)&&strstr(argv[2],"after"))CHECK(!registrations&&!unlinks&&!result.mutation_started);
     if(!strcmp(test_scenario,"owned-data-0770")||!strcmp(test_scenario,"owned-games-0770")||!strcmp(test_scenario,"owned-prepared-0770")||!strcmp(test_scenario,"shared-apps-symlink"))CHECK(!writes);
     if(!strcmp(test_scenario,"late-shared-apps-mode")||!strcmp(test_scenario,"late-shared-apps-replacement"))CHECK(!registrations&&!unlinks);
     preserve_after(argv[1]);CHECK(module_opens==module_closes);

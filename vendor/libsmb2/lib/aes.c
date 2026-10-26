@@ -41,6 +41,19 @@ NOTE:   String length must be evenly divisible by 16byte (str_len % 16 == 0)
 #include <string.h> // CBC mode, for memset
 #include "aes.h"
 
+/* Blackwire: compiler-isolated AES-NI is optional. Only the initialized local
+ * context selects it after CPUID; generic entry points contain no AES opcode.
+ * The forced-software define is for offline fallback tests, not a runtime or
+ * user-facing signing policy. No process-global feature/key cache is kept. */
+#if (defined(__i386__) || defined(__x86_64__)) && \
+    (defined(__GNUC__) || defined(__clang__)) && \
+    !(defined(BLACKWIRE_AES_TEST_FORCE_SOFTWARE) && BLACKWIRE_AES_TEST_FORCE_SOFTWARE)
+#define BLACKWIRE_AES_HAVE_AESNI 1
+#include <cpuid.h>
+#else
+#define BLACKWIRE_AES_HAVE_AESNI 0
+#endif
+
 
 /*****************************************************************************/
 /* Defines:                                                                  */
@@ -210,7 +223,7 @@ static void KeyExpansion(const uint8_t* Key, uint8_t* roundKey)
 
 // This function adds the round key to state.
 // The round key is added to the state by an XOR function.
-static void AddRoundKey(uint8_t* roundKey, state_t* state, uint8_t round)
+static void AddRoundKey(const uint8_t* roundKey, state_t* state, uint8_t round)
 {
   uint8_t i,j;
   for(i=0;i<4;++i)
@@ -374,7 +387,7 @@ static void InvShiftRows(state_t* state)
 
 
 // Cipher is the main function that encrypts the PlainText.
-static void Cipher(uint8_t* roundKey, state_t* state)
+static void Cipher(const uint8_t* roundKey, state_t* state)
 {
   uint8_t round = 0;
 
@@ -424,7 +437,7 @@ static void InvCipher(uint8_t* roundKey, state_t* state)
   AddRoundKey(roundKey, state, 0);
 }
 
-static void BlockCopy(uint8_t* output, uint8_t* input)
+static void BlockCopy(uint8_t* output, const uint8_t* input)
 {
   uint8_t i;
   for (i=0;i<KEYLEN;++i)
@@ -440,15 +453,63 @@ static void BlockCopy(uint8_t* output, uint8_t* input)
 /*****************************************************************************/
 #if defined(ECB) && ECB
 
+/* Blackwire: the schedule belongs to one caller/operation. Reusing this
+ * explicit immutable schedule avoids expanding the same key for every block. */
+void AES128_init_ctx(struct AES128_ctx *context, const uint8_t *key)
+{
+  KeyExpansion(key, context->round_key);
+  context->use_aesni = 0;
+#if BLACKWIRE_AES_HAVE_AESNI
+  unsigned eax, ebx, ecx, edx;
+  if (__get_cpuid(1, &eax, &ebx, &ecx, &edx) &&
+      (ecx & bit_AES) && (edx & bit_SSE2)) context->use_aesni = 1;
+#endif
+}
+
+#if BLACKWIRE_AES_HAVE_AESNI
+__attribute__((target("aes,sse2,no-avx"), noinline))
+static void AES128_encrypt_aesni(const struct AES128_ctx *context,
+                                 const uint8_t *input, uint8_t *output)
+{
+  /* Direct compiler builtins avoid intrinsic wrappers inheriting an AVX
+   * baseline from the PS5 SDK. This no-AVX helper needs only AES and SSE2.
+   * Fixed-size copies also keep unaligned byte buffers free of type punning. */
+  typedef long long aes_block __attribute__((vector_size(16)));
+  aes_block block, round_key;
+  memcpy(&block, input, sizeof block);
+  memcpy(&round_key, context->round_key, sizeof round_key);
+  block ^= round_key;
+  for (unsigned round = 1; round < Nr; round++) {
+    memcpy(&round_key, context->round_key + round * 16, sizeof round_key);
+    block = __builtin_ia32_aesenc128(block, round_key);
+  }
+  memcpy(&round_key, context->round_key + Nr * 16, sizeof round_key);
+  block = __builtin_ia32_aesenclast128(block, round_key);
+  memcpy(output, &block, sizeof block);
+}
+#endif
+
+void AES128_ECB_encrypt_ctx(const struct AES128_ctx *context,
+                            const uint8_t *input, uint8_t *output)
+{
+#if BLACKWIRE_AES_HAVE_AESNI
+  if (context->use_aesni) {
+    AES128_encrypt_aesni(context, input, output);
+    return;
+  }
+#endif
+  BlockCopy(output, input);
+  Cipher(context->round_key, (state_t*)output);
+}
 
 void AES128_ECB_encrypt(uint8_t* input, const uint8_t* key, uint8_t* output)
 {
-  // The array that stores the round keys.
   uint8_t roundKey[176];
 
   // Copy input to output, and work in-memory on output
   BlockCopy(output, input);
 
+  /* Preserve the wrapper's original copy-before-key-expansion ordering. */
   KeyExpansion(key, roundKey);
 
   // The next function call encrypts the PlainText with the Key using AES algorithm.

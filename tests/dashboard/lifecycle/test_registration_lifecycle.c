@@ -101,7 +101,7 @@ static void start(struct lifecycle_fixture *t){
     struct bw_nrc_result r;int opened=bw_nrl_begin(&t->request,&t->owner,&r);
     if(opened)fprintf(stderr,"lifecycle begin rc=%d state=%d reason=%s registration=%d guards=%u observations=%u\n",opened,r.state,r.reason?r.reason:"none",bw_native_registration_state(t->f.data,t->f.apps,t->f.db,&t->f.selected),t->register_guards,t->observations);
     CHECK(!opened&&t->owner&&r.state==BW_NRC_INTENT);
-    registered(&t->f);struct bw_register_result reg={1,1,0,1,"actual fixed registration fixture",0,0};
+    registered(&t->f);struct bw_register_result reg={.add_attempted=1,.add_confirmed=1,.scan_attempted=0,.registered=1,.message="actual fixed registration fixture"};
     CHECK(!bw_nrl_registered(t->owner,0,&reg,&r)&&r.state==BW_NRC_OWNED&&t->register_guards);
 }
 static struct bw_native_reader_release release_of(struct lifecycle_fixture *t){
@@ -170,10 +170,10 @@ int main(int argc,char **argv){
     init_lifecycle(&t,"postabsence-cache-empty-is-not-app-absence");start(&t);release=release_of(&t);t.source_empty=1;
     CHECK(retire(&t,&release,&rr)<0&&!t.removes&&!t.uninstall_calls);finish(&t);
     init_lifecycle(&t,"preexisting-match-never-adopted");registered(&t.f);CHECK(!bw_nrl_begin(&t.request,&t.owner,&r)&&r.state==BW_NRC_UNOWNED);
-    struct bw_register_result reg={0,0,0,1,"preexisting",0,0};CHECK(!bw_nrl_registered(t.owner,0,&reg,&r));release=release_of(&t);CHECK(!retire(&t,&release,&rr)&&rr.registration.state==BW_NRC_UNOWNED&&!t.removes&&!t.uninstall_calls);finish(&t);
-    init_lifecycle(&t,"registration-failed-no-retirement");CHECK(!bw_nrl_begin(&t.request,&t.owner,&r));registered(&t.f);reg=(struct bw_register_result){1,0,0,0,"unknown",0,0};CHECK(bw_nrl_registered(t.owner,-1,&reg,&r)<0);release=release_of(&t);CHECK(retire(&t,&release,&rr)<0&&!t.removes&&!t.uninstall_calls);finish(&t);
-    init_lifecycle(&t,"no-real-mutation-no-new-owner");CHECK(!bw_nrl_begin(&t.request,&t.owner,&r));registered(&t.f);reg=(struct bw_register_result){0,0,0,1,"race",0,0};CHECK(bw_nrl_registered(t.owner,0,&reg,&r)<0);finish(&t);
-    init_lifecycle(&t,"commit-control-refusal-diagnostic");CHECK(!bw_nrl_begin(&t.request,&t.owner,&r));registered(&t.f);reg=(struct bw_register_result){1,1,0,1,"actual",0,0};t.current_error=-1;
+    struct bw_register_result reg={.add_attempted=0,.add_confirmed=0,.scan_attempted=0,.registered=1,.message="preexisting"};CHECK(!bw_nrl_registered(t.owner,0,&reg,&r));release=release_of(&t);CHECK(!retire(&t,&release,&rr)&&rr.registration.state==BW_NRC_UNOWNED&&!t.removes&&!t.uninstall_calls);finish(&t);
+    init_lifecycle(&t,"registration-failed-no-retirement");CHECK(!bw_nrl_begin(&t.request,&t.owner,&r));registered(&t.f);reg=(struct bw_register_result){.add_attempted=1,.add_confirmed=0,.scan_attempted=0,.registered=0,.message="unknown"};CHECK(bw_nrl_registered(t.owner,-1,&reg,&r)<0);release=release_of(&t);CHECK(retire(&t,&release,&rr)<0&&!t.removes&&!t.uninstall_calls);finish(&t);
+    init_lifecycle(&t,"no-real-mutation-no-new-owner");CHECK(!bw_nrl_begin(&t.request,&t.owner,&r));registered(&t.f);reg=(struct bw_register_result){.add_attempted=0,.add_confirmed=0,.scan_attempted=0,.registered=1,.message="race"};CHECK(bw_nrl_registered(t.owner,0,&reg,&r)<0);finish(&t);
+    init_lifecycle(&t,"commit-control-refusal-diagnostic");CHECK(!bw_nrl_begin(&t.request,&t.owner,&r));registered(&t.f);reg=(struct bw_register_result){.add_attempted=1,.add_confirmed=1,.scan_attempted=0,.registered=1,.message="actual"};t.current_error=-1;
     CHECK(bw_nrl_registered(t.owner,0,&reg,&r)<0&&!strcmp(r.stage,"ownership_commit_current_sources")&&!strcmp(r.detail,"registration_control_guard_refused"));finish(&t);
     init_lifecycle(&t,"commit-collector-refusal-diagnostic");CHECK(!bw_nrl_begin(&t.request,&t.owner,&r));registered(&t.f);t.source_conflict=1;
     CHECK(bw_nrl_registered(t.owner,0,&reg,&r)<0&&!strcmp(r.stage,"ownership_commit_current_sources")&&!strcmp(r.detail,"cleanup_game_snapshot_conflict_or_unknown"));finish(&t);
@@ -202,7 +202,7 @@ int main(int argc,char **argv){
     CHECK(!retire(&t,&release,&rr)&&rr.registration.state==BW_NRC_PENDING&&!rr.registration.uninstall_accepted&&t.uninstall_calls==1);CHECK(!retire(&t,&release,&rr)&&t.uninstall_calls==1);finish(&t);
     remove_registration(&t.f);t.source_empty=1;CHECK(!bw_nrl_observe(&t.f.env,t.f.selected.title,t.f.selected.run,0,control,&t,&rr)&&rr.registration.state==BW_NRC_ABSENT&&t.uninstall_calls==1);
     init_lifecycle(&t,"retained-owner-new-play-release");owned(&t.f,0);char original[33];strcpy(original,t.f.selected.run);t.f.selected.run[0]='f';
-    CHECK(!bw_nrl_begin(&t.request,&t.owner,&r)&&r.state==BW_NRC_OWNED);reg=(struct bw_register_result){0,0,0,1,"retained owner",0,0};CHECK(!bw_nrl_registered(t.owner,0,&reg,&r));
+    CHECK(!bw_nrl_begin(&t.request,&t.owner,&r)&&r.state==BW_NRC_OWNED);reg=(struct bw_register_result){.add_attempted=0,.add_confirmed=0,.scan_attempted=0,.registered=1,.message="retained owner"};CHECK(!bw_nrl_registered(t.owner,0,&reg,&r));
     release=release_of(&t);/* Marker probes use the historical registration run. */strcpy(t.f.selected.run,original);memcpy(release.run,t.request.selection->run,33);
     /* The public selection pointer is mutable only in this test; correct it
      * back to the captured Play run for the release, retaining marker paths. */

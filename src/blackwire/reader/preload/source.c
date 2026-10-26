@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <poll.h>
 /* Experimental source-only policy. Default STRICT retains every per-read
  * metadata fence. ON_OPEN assumes shared files remain immutable for the whole
  * open-handle lifetime: it does not detect in-place edits/path replacement on
@@ -116,6 +117,59 @@ static int poison(struct bp_source *p,unsigned stage){
 }
 static int current(struct bp_source *p){return !p||p->failed||!p->ready||!p->smb||!p->current||p->current(p->opaque)?-1:0;}
 static int error_code(struct bp_source *p){return p&&p->failed?EIO:p&&p->current&&p->current(p->opaque)?ECANCELED:EIO;}
+/* Queue the independent named/held metadata requests together on this exact
+ * DATA worker. Both replies must finish before identity comparison or return.
+ * Callback state and destinations remain on this stack until normal completion
+ * or SAME-worker context destruction has drained every pending destination.
+ * Callbacks record results only: destroying a context from smb2_service's own
+ * callback would reenter its queue traversal. Ordinary cancellation drains both
+ * requests, bounded by the configured SMB timeout, before returning canceled. */
+struct bp_metadata_op {
+    struct bp_source *source;struct bp_io_performance *performance;
+    struct bp_stamp stamp;int done,raw,error;unsigned stage;
+};
+static void metadata_done(struct smb2_context *smb,int status,void *data,void *opaque){
+    (void)smb;(void)data;struct bp_metadata_op *op=opaque;int error=errno;
+    if(op->done)return;
+    op->raw=status;op->error=error;op->done=1;
+    perf_end(op->source,op->performance,op->stamp);errno=error;
+}
+static int metadata_failure(struct bp_source *p,struct bp_metadata_op *op,int raw,int error){
+    p->progress.stage=op->stage;progress_end(p,raw,error,1);
+    return poison(p,op->stage);
+}
+static int paired_stat(struct bp_source *p,const char *path,struct smb2fh *fh,
+    struct smb2_stat_64 *named,struct smb2_stat_64 *held,unsigned ns,unsigned hs){
+    if(current(p)||!fh)return -1;
+    struct bp_metadata_op ops[2]={{.source=p,.performance=&p->performance.named_stat,.stage=ns},
+                                  {.source=p,.performance=&p->performance.held_stat,.stage=hs}};
+    progress_begin(p,ns);ops[0].stamp=perf_begin(p,ops[0].performance);
+    int rc=smb2_stat_async(p->smb,path,named,metadata_done,&ops[0]);int error=errno;
+    if(rc<0){if(!ops[0].done)perf_end(p,ops[0].performance,ops[0].stamp);return metadata_failure(p,&ops[0],rc,error);}
+    progress_begin(p,hs);ops[1].stamp=perf_begin(p,ops[1].performance);
+    rc=smb2_fstat_async(p->smb,fh,held,metadata_done,&ops[1]);error=errno;
+    if(rc<0){if(!ops[1].done)perf_end(p,ops[1].performance,ops[1].stamp);return metadata_failure(p,&ops[1],rc,error);}
+    while(!ops[0].done||!ops[1].done){
+        struct bp_metadata_op *pending=ops[0].done?&ops[1]:&ops[0];
+        struct pollfd fd={smb2_get_fd(p->smb),(short)smb2_which_events(p->smb),0};
+        if(fd.fd<0)return metadata_failure(p,pending,-1,EIO);
+        rc=poll(&fd,1,250);error=errno;
+        if(rc<0&&error==EINTR)continue;
+        if(rc<0)return metadata_failure(p,pending,rc,error);
+        /* service(0) also expires timed-out PDUs; polling without servicing on
+         * an idle socket could otherwise leave callback storage live forever. */
+        rc=smb2_service(p->smb,rc?fd.revents:0);error=errno;
+        if(rc<0)return metadata_failure(p,pending,rc,error);
+        for(unsigned i=0;i<2;i++)if(ops[i].done&&ops[i].raw)
+            return metadata_failure(p,&ops[i],ops[i].raw,ops[i].error);
+    }
+    for(unsigned i=0;i<2;i++)if(ops[i].raw)
+        return metadata_failure(p,&ops[i],ops[i].raw,ops[i].error);
+    p->progress.stage=hs;progress_end(p,0,0,0);
+    /* The caller must compare both identities BEFORE observing cancellation:
+     * a real replacement plus cancellation remains a permanent source error. */
+    return 0;
+}
 static int stat_same(const struct smb2_stat_64 *a,const struct smb2_stat_64 *b){
     return a->smb2_type==SMB2_TYPE_FILE&&b->smb2_type==SMB2_TYPE_FILE&&
         a->smb2_size==b->smb2_size&&a->smb2_ino==b->smb2_ino&&
@@ -157,8 +211,7 @@ static int image_fence(struct bp_source *p,int final){
     struct bp_handle *h=&p->handles[0];struct smb2_stat_64 named,held;
     unsigned ns=final?BP_SOURCE_FINAL_NAMED:BP_SOURCE_ENTRY_NAMED,hs=final?BP_SOURCE_FINAL_HELD:BP_SOURCE_ENTRY_HELD;
     if(current(p)||!h->fh)return -1;
-    if(named_stat(p,p->binding.source,&named,ns))return poison(p,ns);
-    if(held_stat(p,h->fh,&held,hs))return poison(p,hs);
+    if(paired_stat(p,p->binding.source,h->fh,&named,&held,ns,hs))return -1;
     if(!stat_same(&named,&held)||!stat_same(&h->admitted,&held))return poison(p,final?BP_SOURCE_FINAL_IDENTITY:BP_SOURCE_ENTRY_IDENTITY);
     return current(p);
 }
@@ -208,7 +261,9 @@ static struct bp_handle *remote(struct bp_source *p,uint32_t id){
     }
 #endif
     struct smb2_stat_64 named,held;
-    if(named_stat(p,path,&named,BP_SOURCE_ENTRY_NAMED)){poison(p,BP_SOURCE_ENTRY_NAMED);return NULL;}
+    if(slot){
+        if(paired_stat(p,path,slot->fh,&named,&held,BP_SOURCE_ENTRY_NAMED,BP_SOURCE_ENTRY_HELD))return NULL;
+    }else if(named_stat(p,path,&named,BP_SOURCE_ENTRY_NAMED)){poison(p,BP_SOURCE_ENTRY_NAMED);return NULL;}
     if(named.smb2_type!=SMB2_TYPE_FILE||named.smb2_size!=row.size||named.smb2_mtime!=row.mtime_sec){poison(p,BP_SOURCE_ENTRY_METADATA);return NULL;}
     if(!slot){
         slot=victim;
@@ -216,8 +271,8 @@ static struct bp_handle *remote(struct bp_source *p,uint32_t id){
         slot->fh=open_file(p,path);
         if(!slot->fh){poison(p,BP_SOURCE_OPEN);return NULL;}
         slot->admitted=named;slot->id=id;
+        if(held_stat(p,slot->fh,&held,BP_SOURCE_ENTRY_HELD)){poison(p,BP_SOURCE_ENTRY_HELD);return NULL;}
     }
-    if(held_stat(p,slot->fh,&held,BP_SOURCE_ENTRY_HELD)){poison(p,BP_SOURCE_ENTRY_HELD);return NULL;}
     if(!stat_same(&named,&held)||!stat_same(&slot->admitted,&held)){poison(p,BP_SOURCE_ENTRY_IDENTITY);return NULL;}
     if(current(p))return NULL;
     if(p->clock==UINT64_MAX){poison(p,BP_SOURCE_COUNTER);return NULL;}
@@ -244,9 +299,8 @@ static int remote_finish(const struct bp_read_scope *scope){
     char path[2048];struct bw_manifest_record row;
     if(remote_path(p,scope->id,path,&row))return poison(p,BP_SOURCE_FINAL_PATH);
     struct smb2_stat_64 named,held;
-    if(named_stat(p,path,&named,BP_SOURCE_FINAL_NAMED))return poison(p,BP_SOURCE_FINAL_NAMED);
+    if(paired_stat(p,path,scope->fh,&named,&held,BP_SOURCE_FINAL_NAMED,BP_SOURCE_FINAL_HELD))return -1;
     if(named.smb2_type!=SMB2_TYPE_FILE||named.smb2_size!=row.size||named.smb2_mtime!=row.mtime_sec)return poison(p,BP_SOURCE_FINAL_METADATA);
-    if(held_stat(p,scope->fh,&held,BP_SOURCE_FINAL_HELD))return poison(p,BP_SOURCE_FINAL_HELD);
     if(!stat_same(&named,&held)||!stat_same(&scope->slot->admitted,&held))return poison(p,BP_SOURCE_FINAL_IDENTITY);
     if(scope_current(scope,scope->id))return -1;
 #endif

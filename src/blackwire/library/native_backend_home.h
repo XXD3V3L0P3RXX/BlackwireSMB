@@ -278,11 +278,14 @@ static int home_prepare_provision(struct bw_native_backend *p,const struct bw_na
     if(startup_invalid)*startup_invalid=0;
     if(!prepared||prepared->state!=BW_PREPARED_VALID||prepared->prepared_policy||
        (p->sending.selection.identity.kind!=BW_PROVIDER_FOLDER&&p->sending.selection.identity.kind!=BW_PROVIDER_CONTAINER)){if(startup_invalid)*startup_invalid=1;return -1;}
-    struct home_prepare h={.p=p,.identity=p->sending.selection.identity,.prepared=*prepared,.deadline=now()+120};
+    struct home_prepare h={.p=p,.identity=p->sending.selection.identity,.prepared=*prepared,.deadline=now()+BW_REGISTER_WAIT_SECONDS+60};
     pthread_mutex_lock(&p->lock);h.generation=p->generation;h.revision=p->settings_revision;pthread_mutex_unlock(&p->lock);
     char run[33];const char *failure=NULL;struct bw_nrl_owner *owner=NULL;int result=-1,unknown=0,step_result=0;
     struct home_prepare_failure first={0};
     bw_send_log("setup-begin","game=%s prepared_run=%s",prepared->game,prepared->run);
+#ifdef BW_RESIDENT_BUILD_ID
+    bw_send_log("setup-build","build=%s",BW_RESIDENT_BUILD_ID);
+#endif
     bw_send_log("setup-step","game=%s step=2",prepared->game);
     step_result=p->ops.nonce(p->opaque,run);
     if(step_result||!nonce_valid(run)||!strcmp(run,prepared->run)){
@@ -309,6 +312,7 @@ static int home_prepare_provision(struct bw_native_backend *p,const struct bw_na
     struct bw_native_register_request registration={.data_root=backend_data_root,.apps=env.apps_root,.database=env.database,.identity=&h.identity,.selected=&h.selection,.current=home_prepare_control,.guard=&h,.startup=h.startup};
     bw_send_log("setup-step","game=%s step=9",prepared->game);
     struct bw_register_result checked={0};int registered=bw_native_register(&registration,&checked);
+    bw_send_log("registration-result","result=%d cause=%s capabilities=%u observations=%u state=%d manual=%u post_result=%d add=%u scan=%u reattach=%u",registered,checked.cause?checked.cause:"none",checked.capabilities,checked.observations,checked.last_state,checked.last_manual,checked.last_post_result,checked.add_attempted,checked.scan_attempted,checked.reattach_attempted);
     if(registered)home_prepare_first_failure(&first,9,"registration",checked.message?checked.message:"registration refused",registered,errno);
     bw_send_log("setup-step","game=%s step=10",prepared->game);
     struct bw_nrc_result committed={0};int committed_status=bw_nrl_registered(owner,registered,&checked,&committed);

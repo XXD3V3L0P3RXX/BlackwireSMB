@@ -153,7 +153,9 @@ def host_tests(root, out, source, runner):
     home_out = out / "home-startup-host"
     runner.run(["python3", tests / "check_home.py", "--root", root, "--out", home_out], "host-home-startup")
     results["home_startup"] = json.loads((home_out / "proof.json").read_text())
-    for key, script in (("exfat_metadata", "check_exfat.py"), ("compressed_stream", "check_synthetic.py")):
+    for key, script in (("exfat_metadata", "check_exfat.py"), ("compressed_stream", "check_synthetic.py"),
+                        ("pfsc_batching", "check_pfsc_batching.py"), ("preparation_batching", "check_prepare_batching.py"),
+                        ("folder_preparation_batching", "check_source_smb_batching.py")):
         checked = out / key
         runner.run(["python3", root / "tests/compressed" / script, "--output", checked], "host-" + key)
         results[key] = json.loads((checked / "proof.json").read_text())
@@ -161,11 +163,27 @@ def host_tests(root, out, source, runner):
     runner.run(["python3", root / "tests/dashboard/lifecycle/check_self_contained_bundle.py",
                 "--host-only", "--output", checked], "host-self-contained-bundle")
     results["self_contained_bundle"] = json.loads((checked / "proof.json").read_text())
+    checked = out / "prepare-source-policy"
+    runner.run(["python3", root / "tests/dashboard/lifecycle/check_prepare_source_policy.py",
+                "--host-only", "--output", checked], "host-prepare-source-policy")
+    results["prepare_source_policy"] = json.loads((checked / "proof.json").read_text())
+    checked = out / "smb-cmac"
+    runner.run(["python3", root / "tools/smb-transport-tests/check_cmac.py", "--output", checked], "host-smb-cmac")
+    results["smb_cmac"] = json.loads((checked / "proof.json").read_text())
+    for mode, extra in (("automatic", []), ("software", ["--force-software"])):
+        report = runner.run(["python3", root / "tools/smb-transport-tests/run.py", "--sanitize", *extra],
+                            "host-smb-transport-" + mode)
+        expected = "SMB transport signing: 83 cases passed (real receive/parser/crypto; no network)"
+        if expected not in report:
+            raise ValueError("SMB transport regression result missing: " + mode)
+        results["smb_transport_" + mode] = {"passed": True, "cases": 83, "sanitized": True,
+                                              "mode": mode, "consoleContacted": False}
     checked = out / "send-logging"
     runner.run(["python3", root / "tests/diagnostics/check_send_logging.py", "--output", checked], "host-send-logging")
     results["send_logging"] = json.loads((checked / "proof.json").read_text())
     for key, script in (("settings_startup", "diagnostics/check_settings_startup.py"),
                         ("settings_storage", "diagnostics/check_settings_storage.py"),
+                        ("registration_wait", "diagnostics/check_registration_wait.py"),
                         ("two_shares", "sources/check_two_shares.py")):
         checked = out / key
         runner.run(["python3", root / "tests" / script, "--output", checked], "host-" + key)

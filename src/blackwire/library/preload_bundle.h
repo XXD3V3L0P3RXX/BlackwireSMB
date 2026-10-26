@@ -2,6 +2,24 @@
 #define BW_PRELOAD_BUNDLE_H
 #include <stddef.h>
 #include <stdint.h>
+/* Optional source-provided PlayGo emulator pins, never embedded module bytes.
+ * Provenance: strongt1me/PS5-Dump-Image-Converter commit
+ * 1942dd01a6a0ab5532ba51af10444d5f776f23c0, PlayGo & AMPR_EMU/
+ * PlayGo_v0.5/{log,nolog} and PlayGo_v0.6/{log,nolog}/libScePlayGo.sprx.
+ * The same commit includes GPL-3.0 source in each Quellcode/ directory.
+ * These are exact distributed artifact identities, not a reproducible-build
+ * claim or authority to accept another build with a similar filename. */
+struct bw_preload_playgo_pin {size_t size;const char *hex;};
+static inline const struct bw_preload_playgo_pin *bw_preload_playgo_pin(uint64_t size){
+    static const struct bw_preload_playgo_pin pins[]={
+        {20582,"305e6e117ca3a16cb6062007e3ddee7eb184ca19c3e353d5b12a6161bc92a3bd"},
+        {14390,"645caa464a7d28fab7019ba547b204ecc007f87ccec072d330eb2b72a3e9ddac"},
+        {23702,"7595924889d67c33149dc152903d2f2492abbc3e846196d536c4f16a7b5560f6"},
+        {18150,"f5fdb0ed6cc7413e6dcac79a62e0efd8cfbae04cca0bf932e7a741aed850d213"}
+    };
+    for(unsigned i=0;i<sizeof pins/sizeof pins[0];i++)if(size==pins[i].size)return pins+i;
+    return NULL;
+}
 struct bw_preload_image {
     const uint8_t *bytes;
     size_t size;
@@ -30,12 +48,27 @@ struct bw_preload_bundle_result {
      * an owned descriptor/directory stream or worker lock could not be
      * positively released. Zero never permits checkpoint replay/adoption. */
     unsigned release_unknown;
+    /* A rejected entry name is copied and byte-escaped before readdir storage
+     * is released. Truncation is explicit; no path or dirent pointer escapes.
+     * Ignored source entries are never selected, opened, copied or adopted. */
+    const char *entry_class;
+    char entry_name[257];
+    unsigned entry_name_truncated,source_entries_ignored;
 };
 /* Install the embedded reader into an absent per-game fakelib2. No global
  * library folder is required or opened. Qualified optional companions already
  * present in the prepared game's fakelib are copied without changing them.
+ * Optional PlayGo is copied only when its size and complete hash match one
+ * of the fixed source-backed emulator artifacts above. Unknown source modules
+ * refuse rather than silently losing functionality under an exclusive bundle.
+ * Original metadata entries are left untouched and are not opened, followed,
+ * copied or granted execution/ownership authority. ShadowMount's
+ * exclusive fakelib2 selection is distinct from its composable source fakelib.
+ * The owned private fakelib2 always retains its exact qualified inventory.
  * An existing complete legacy five-file bundle remains admitted independently
- * of global state. New bundles must match the game's qualified companion set.
+ * of global state; any present game source is still scanned/qualified, and
+ * source PlayGo requires its matching private companion. New bundles must
+ * match the game's qualified companion set.
  * Other backports, foreign files, stale inputs, changed game companions,
  * partial writes and unknown closes refuse. No overwrite, rename or delete.
  * Returns 0=verified, -1=no destination mutation, -2=partial/uncertain outcome.

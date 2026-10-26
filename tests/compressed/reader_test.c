@@ -19,12 +19,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <poll.h>
 
 static unsigned checks,files,ranges,contexts,destroys,preads,nstats,hstats,pending_drained,cancellation_cases;
 static int canceled,changed,fail_read,fail_named,fail_held,fail_close,cancel_during_read,cancel_after_stat,cancel_on_io_error;
 static const char *live_image;
 struct smb2fh {int fd;};
-struct smb2_context {struct smb2fh *fh;uint8_t *pending;};
+struct metadata_request {int active;const char *path;struct smb2fh *fh;struct smb2_stat_64 *out;smb2_command_cb cb;void *opaque;};
+struct smb2_context {struct smb2fh *fh;uint8_t *pending;struct metadata_request metadata[2];};
 #define CHECK(x) do{checks++;if(!(x)){fprintf(stderr,"compressed-reader line %d: %s\n",__LINE__,#x);exit(1);}}while(0)
 static void stat_convert(const struct stat *s,struct smb2_stat_64 *out){
     memset(out,0,sizeof *out);out->smb2_type=SMB2_TYPE_FILE;out->smb2_size=(uint64_t)s->st_size;
@@ -33,6 +35,8 @@ static void stat_convert(const struct stat *s,struct smb2_stat_64 *out){
 }
 struct smb2_context *smb2_init_context(void){contexts++;return calloc(1,sizeof(struct smb2_context));}
 void smb2_destroy_context(struct smb2_context *c){CHECK(c);if(c->pending){memset(c->pending,0xee,16);pending_drained++;}
+    for(unsigned i=0;i<2;i++)if(c->metadata[i].active){struct metadata_request *r=&c->metadata[i];r->active=0;
+        memset(r->out,0xee,sizeof *r->out);r->cb(c,-ESHUTDOWN,NULL,r->opaque);}
     if(c->fh){close(c->fh->fd);free(c->fh);}destroys++;free(c);}
 void smb2_set_timeout(struct smb2_context *c,int n){CHECK(c&&n==10);}
 void smb2_set_user(struct smb2_context *c,const char *s){CHECK(c&&s&&!strcmp(s,"fixture"));}
@@ -48,6 +52,18 @@ int smb2_stat(struct smb2_context *c,const char *path,struct smb2_stat_64 *out){
 int smb2_fstat(struct smb2_context *c,struct smb2fh *fh,struct smb2_stat_64 *out){
     CHECK(c&&fh==c->fh);struct stat st;hstats++;if(fail_held){fail_held=0;c->pending=(uint8_t *)out;return -EIO;}
     if(fstat(fh->fd,&st))return -EIO;stat_convert(&st,out);return 0;}
+int smb2_stat_async(struct smb2_context *c,const char *path,struct smb2_stat_64 *out,smb2_command_cb cb,void *opaque){
+    CHECK(c&&out&&cb&&!c->metadata[0].active);c->metadata[0]=(struct metadata_request){1,path,NULL,out,cb,opaque};return 0;}
+int smb2_fstat_async(struct smb2_context *c,struct smb2fh *fh,struct smb2_stat_64 *out,smb2_command_cb cb,void *opaque){
+    CHECK(c&&out&&cb&&fh&&!c->metadata[1].active);c->metadata[1]=(struct metadata_request){1,NULL,fh,out,cb,opaque};return 0;}
+int smb2_get_fd(struct smb2_context *c){CHECK(c);return 42;}
+int smb2_which_events(struct smb2_context *c){CHECK(c);return POLLIN|POLLOUT;}
+int poll(struct pollfd *fd,nfds_t count,int timeout){CHECK(fd&&count==1&&fd->fd==42&&timeout==250);fd->revents=fd->events;return 1;}
+int smb2_service(struct smb2_context *c,int events){
+    CHECK(c&&events==(POLLIN|POLLOUT));
+    for(unsigned i=0;i<2;i++)if(c->metadata[i].active){struct metadata_request *r=&c->metadata[i];r->active=0;
+        int raw=i?smb2_fstat(c,r->fh,r->out):smb2_stat(c,r->path,r->out);r->cb(c,raw,NULL,r->opaque);}
+    return 0;}
 struct smb2fh *smb2_open(struct smb2_context *c,const char *path,int flags){
     CHECK(c&&!c->fh&&!strcmp(path,"fixture.ffpfsc")&&flags==O_RDONLY);int fd=open(live_image,O_RDONLY|O_NOFOLLOW);
     if(fd<0)return NULL;c->fh=calloc(1,sizeof *c->fh);CHECK(c->fh);c->fh->fd=fd;return c->fh;}

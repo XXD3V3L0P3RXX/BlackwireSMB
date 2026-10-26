@@ -127,7 +127,7 @@ static void start(struct lifecycle_fixture *t){
     struct bw_nrc_result r;int opened=bw_nrl_begin(&t->request,&t->owner,&r);
     if(opened)fprintf(stderr,"lifecycle begin rc=%d state=%d reason=%s registration=%d guards=%u observations=%u\n",opened,r.state,r.reason?r.reason:"none",bw_native_registration_state(t->f.data,t->f.apps,t->f.db,&t->f.selected),t->register_guards,t->observations);
     CHECK(!opened&&t->owner&&r.state==BW_NRC_INTENT);
-    registered(&t->f);struct bw_register_result reg={1,1,0,1,"actual fixed registration fixture",0,0};
+    registered(&t->f);struct bw_register_result reg={.add_attempted=1,.add_confirmed=1,.scan_attempted=0,.registered=1,.message="actual fixed registration fixture"};
     CHECK(!bw_nrl_registered(t->owner,0,&reg,&r)&&r.state==BW_NRC_OWNED&&t->register_guards);
 }
 static struct bw_native_reader_release release_of(struct lifecycle_fixture *t){
@@ -178,7 +178,10 @@ static void no_add_or_owner(struct lifecycle_fixture *t){
     char p[P];struct stat st;CHECK(!t->owner&&!t->adds&&!t->removes&&!t->uninstall_calls&&!t->unmount_calls);
     marker_path(&t->f,"owner",p);CHECK(lstat(p,&st)<0&&errno==ENOENT);CHECK(open_count==close_count);
 }
-int main(int argc,char **argv){
+#ifndef BW_INITIAL_ABSENCE_MAIN
+#define BW_INITIAL_ABSENCE_MAIN main
+#endif
+int BW_INITIAL_ABSENCE_MAIN(int argc,char **argv){
     program=argv[0];case_name="startup";CHECK((argc==2||argc==3)&&strlen(argv[1])<P);strcpy(suite,argv[1]);make(suite,0700);
     struct lifecycle_fixture t;struct bw_nrc_result r;struct bw_register_result reg;struct bw_nrc_retirement_result rr;
     cached_absent(&t,"core-begin-failed-context-close");t.f.sources_value=-1;arm_release_close(t.f.data);struct bw_nrc_ticket *ticket=NULL;

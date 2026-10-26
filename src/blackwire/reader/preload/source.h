@@ -27,8 +27,9 @@ struct bp_read_witness {
 };
 struct bp_io_performance {uint64_t calls,nanoseconds;};
 /* Fixed-size worker-owned aggregates only; no paths, credentials or samples.
- * Read timing is inclusive of all metadata/payload/copy work; operation times
- * are its components, not additional time. Counts include failed attempts.
+ * Read timing is inclusive of all metadata/payload/copy work. Paired metadata
+ * operation times overlap and must not be summed as elapsed wall time. Counts
+ * include failed attempts.
  * completed/cache-hit bytes count only reads passing their final identity and
  * cancellation fences; payload/cache counters include provisional failed work.
  * Additional counters saturate rather than changing source behavior. Clock faults only
@@ -113,7 +114,9 @@ int bp_source_match(const struct bp_source *,const char *,size_t,uint64_t,uint32
  * Every payload call is clamped to the negotiated server limit. Positive short
  * replies complete the run before any block publication. No cross-request
  * speculation is active. Cache validity remains64KiB. STRICT keeps remote
- * entry/final identity checks even on cache hits. Explicit experimental ON_OPEN
+ * entry/final identity checks even on cache hits. Independent named/held checks
+ * are queued as a pair; both complete before comparison and publication.
+ * Explicit experimental ON_OPEN
  * checks new/reopened handles, assumes immutable files, and uses current/exact-slot
  * RAM checks for admitted reads. It does not retain per-read mutation detection.
  * Transport failures

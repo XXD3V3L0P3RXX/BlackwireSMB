@@ -6,6 +6,11 @@
 struct bw_nrc_remote {
     struct bw_sm_connection connection;
     const char *reason; /* static nonsecret diagnostic */
+    /* Observation diagnostics only, never ownership or absence evidence. */
+    const char *substage,*path_class;
+    unsigned row_index,missing_fields,unknown_game_rows,unknown_manual_paths;
+    unsigned preparation_only,observation_release_unknown;
+    int observation_error;
 };
 /* These are the sources/uninstall adapters for a trusted cleanup reservation.
  * The connection guard must exclude every frontend/game and conflicting worker.
@@ -49,5 +54,14 @@ int bw_nrc_remote_registration_documents(struct bw_nrc_remote *,const struct bw_
 int bw_nrc_remote_absent_documents(struct bw_nrc_remote *,const struct bw_nrc_subject *,
     const void *,size_t,const void *,size_t,bw_nrc_remote_absent_fn,void *);
 int bw_nrc_remote_confirmed_documents(struct bw_nrc_remote *,const struct bw_nrc_subject *,
+    const void *,size_t,const void *,size_t,bw_nrc_remote_registered_fn,void *);
+/* Non-destructive registration preparation only. The callback must repeatedly
+ * prove independent app+DB absence (0), or exact app/param/mount/source/DB MATCH
+ * (1), or return -1. Disjoint unknown unrelated entries are counted, never
+ * called absent/owned. Target rows and overlapping/aliased paths remain strict.
+ * A successful result is NOT a destructive source proof. Every later removal
+ * must call the original strict adapters with its positive ownership witness. */
+int bw_nrc_remote_prepare_sources(void *,const struct bw_nrc_subject *,bw_nrc_remote_registered_fn,void *);
+int bw_nrc_remote_prepare_documents(struct bw_nrc_remote *,const struct bw_nrc_subject *,
     const void *,size_t,const void *,size_t,bw_nrc_remote_registered_fn,void *);
 #endif

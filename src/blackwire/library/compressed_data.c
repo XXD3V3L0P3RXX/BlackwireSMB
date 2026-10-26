@@ -13,12 +13,16 @@ static int fail(struct bw_compressed_data *p,int error) {
     if (p) {p->failed=1;if (!p->error) p->error=error;}
     return error;
 }
-static int live(struct bw_compressed_data *p) {
+static int active(struct bw_compressed_data *p) {
     if (!p || !p->image || p->failed) return BW_COMPRESSED_DATA_STATE;
     if (!p->current || p->current(p->current_opaque)) return fail(p,BW_COMPRESSED_DATA_CANCELLED);
     if (!p->image->handle || p->image->container.session!=p->session ||
         strcmp(p->image->path,p->binding.source)) return fail(p,BW_CONTAINER_STALE);
-    int result=bw_container_validate(&p->image->container);
+    return 0;
+}
+static int live(struct bw_compressed_data *p) {
+    int result=active(p);if(result)return result;
+    result=bw_container_validate(&p->image->container);
     return result?fail(p,result):0;
 }
 static int intact(struct bw_compressed_data *p) {
@@ -56,23 +60,32 @@ static int add(void *opaque,const char *path,const struct bw_pfs_inode *node) {
 static void put32(uint8_t *out,uint32_t n) {for (unsigned i=0;i<4;i++) out[i]=(uint8_t)(n>>(8*i));}
 static void put64(uint8_t *out,uint64_t n) {for (unsigned i=0;i<8;i++) out[i]=(uint8_t)(n>>(8*i));}
 
-/* Internal read: every decoded chunk has passed the container's before/after
- * held+named generation check before a consumer sees it, including cache hits.
- * Session/generation are checked again after each consumer and at EOF. */
+/* Each bounded logical input run passes the container's before/after held+
+ * named generation checks before a consumer sees it. Consumer pieces remain
+ * <=64 KiB, with current job/session checks between pieces. Remote generation
+ * is checked again after consuming the complete run and at EOF; the caller
+ * must discard the whole provisional copy on any failure. */
 static int transfer(struct bw_compressed_data *p,uint32_t id,
                     bw_compressed_data_consume_fn consume,void *opaque,uint8_t digest[32]) {
     int result=live(p);if (result) return result;
     const struct bw_container_file *file=bw_container_manifest_file(&p->files,id);
     if (!file) return fail(p,BW_CONTAINER_STALE);
+    if(!p->buffer)return fail(p,BW_COMPRESSED_DATA_STATE);
     struct cp_sha hash;cp_sha_init(&hash);
     for (uint64_t at=0;at<file->size;) {
-        size_t size=file->size-at>sizeof p->buffer?sizeof p->buffer:(size_t)(file->size-at);
+        size_t size=file->size-at>BW_COMPRESSED_DATA_READ_CHUNK?BW_COMPRESSED_DATA_READ_CHUNK:(size_t)(file->size-at);
         result=bw_container_file_read(file,at,p->buffer,size);
         if (result) return fail(p,result);
         cp_sha_update(&hash,p->buffer,size);
         if (!p->ready) bw_source_smb_progress(p->progress,BW_SOURCE_HASHING,p->hashed_files,
             p->map.local_count,p->hashed_bytes+at+size,p->map.local_bytes);
-        if (consume && consume(opaque,p->buffer,size)) return fail(p,BW_COMPRESSED_DATA_CONSUMER);
+        if(consume)for(size_t used=0;used<size;){
+            if((result=active(p)))return result;
+            size_t piece=size-used;if(piece>BW_COMPRESSED_DATA_CHUNK)piece=BW_COMPRESSED_DATA_CHUNK;
+            if(consume(opaque,p->buffer+used,piece))return fail(p,BW_COMPRESSED_DATA_CONSUMER);
+            if((result=active(p)))return result;
+            used+=piece;
+        }
         result=live(p);if (result) return result;
         at+=size;
     }
@@ -81,6 +94,7 @@ static int transfer(struct bw_compressed_data *p,uint32_t id,
 }
 static void release(struct bw_compressed_data *p) {
     bw_container_manifest_destroy(&p->files);bw_source_map_destroy(&p->map);
+    free(p->buffer);p->buffer=NULL;
     free(p->digests);p->digests=NULL;p->digest_size=0;memset(&p->manifest,0,sizeof p->manifest);
     p->ready=0;
 }
@@ -91,7 +105,7 @@ void bw_compressed_data_destroy(struct bw_compressed_data *p) {
 int bw_compressed_data_prepare(struct bw_compressed_data *p,struct bw_container_smb *image,
                               const struct bw_source_binding *binding,uint64_t budget,
                               struct bw_source_smb *progress,int (*current)(void *),void *opaque) {
-    if (!p || p->image || p->map.bytes || p->digests || p->files.files || p->ready || p->failed || p->busy)
+    if (!p || p->image || p->map.bytes || p->digests || p->buffer || p->files.files || p->ready || p->failed || p->busy)
         return BW_COMPRESSED_DATA_STATE;
     if (!image || !binding || !progress || !current || !budget || budget>BW_COMPRESSED_DATA_MAX_LOCAL_BYTES)
         return fail(p,BW_COMPRESSED_DATA_BUDGET);
@@ -131,6 +145,8 @@ int bw_compressed_data_prepare(struct bw_compressed_data *p,struct bw_container_
     result=bw_container_manifest_bind(&p->files,&image->container,&p->manifest);if (result) goto done;
     const struct bw_container_file *param=bw_container_manifest_file(&p->files,param_id);
     if (!param) {result=BW_CONTAINER_STALE;goto done;}
+    p->buffer=malloc(BW_COMPRESSED_DATA_READ_CHUNK);
+    if(!p->buffer){result=BW_PFS_MEMORY;goto done;}
     result=bw_container_file_read(param,0,p->buffer,(size_t)param_size);if (result) goto done;
     char title[10];
     if (bw_source_param_title(p->buffer,(size_t)param_size,title) || strcmp(title,binding->title)) {

@@ -2,6 +2,9 @@
 #define BW_REGISTER_JOB_H
 #include "native_registration.h"
 #include "shadowmount_client.h"
+/* Only read-only confirmation may use this extended budget. The number of
+ * add, scan and qualified reattach mutations remains unchanged. */
+#define BW_REGISTER_WAIT_SECONDS 180u
 struct bw_register_ops {
     void *opaque;
     int (*current)(void *);
@@ -15,7 +18,11 @@ struct bw_register_result {unsigned add_attempted,add_confirmed,scan_attempted,r
     /* Distinct changed-state repair, never a retry of an ambiguous install.
      * The initial acknowledged add must precede independently stable MATCH.
      * These report attempts only; neither flag grants ownership or Ready. */
-    unsigned reattach_attempted,reattach_confirmed;};
+    unsigned reattach_attempted,reattach_confirmed;
+    unsigned observations,last_manual,capabilities;
+    int last_state,last_post_result;
+    const char *cause; /* static nonsecret first refusal category */
+};
 /* Queue this one owned source using the public API, then independently verify
  * its actual registration. Never uninstall/switch a conflicting title. An
  * ambiguous add is checked with a read-only list, never blindly repeated.

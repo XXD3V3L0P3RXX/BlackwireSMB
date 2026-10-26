@@ -100,7 +100,7 @@ void aes_cmac_xor(
 
 static
 void aes_cmac_sub_keys(
-    uint8_t key[AES128_KEY_LEN],
+    const struct AES128_ctx *context,
     uint8_t sub_key1[AES128_KEY_LEN],
     uint8_t sub_key2[AES128_KEY_LEN]
     )
@@ -108,7 +108,7 @@ void aes_cmac_sub_keys(
         uint8_t zero[AES128_KEY_LEN] = {0};
         static const uint8_t rb[AES128_KEY_LEN] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0x87};
 
-        AES128_ECB_encrypt(zero, key, sub_key1);
+        AES128_ECB_encrypt_ctx(context, zero, sub_key1);
         if (aes_cmac_shift_left(sub_key1)) {
                 aes_cmac_xor(sub_key1, rb);
         }
@@ -126,6 +126,7 @@ void smb3_aes_cmac_128(uint8_t key[AES128_KEY_LEN],
                    uint8_t mac[AES128_KEY_LEN]
                   )
 {
+        struct AES128_ctx context;
         uint8_t sub_key1[AES128_KEY_LEN] = {0};
         uint8_t sub_key2[AES128_KEY_LEN] = {0};
         uint8_t scratch[AES128_KEY_LEN] = {0};
@@ -138,13 +139,16 @@ void smb3_aes_cmac_128(uint8_t key[AES128_KEY_LEN],
                 n = 1;
         }
 
-        aes_cmac_sub_keys(key, sub_key1, sub_key2);
+        /* Blackwire: one local schedule per message, including subkey
+         * generation. Signing/verification bytes and policy are unchanged. */
+        AES128_init_ctx(&context, key);
+        aes_cmac_sub_keys(&context, sub_key1, sub_key2);
 
         memset(mac, 0, AES128_KEY_LEN);
 
         for (i = 0; i < n - 1; i++) {
                 aes_cmac_xor(mac, &msg[i*AES128_KEY_LEN]);
-                AES128_ECB_encrypt(mac, key, scratch);
+                AES128_ECB_encrypt_ctx(&context, mac, scratch);
                 memcpy(mac, scratch, AES128_KEY_LEN);
         }
 
@@ -152,15 +156,18 @@ void smb3_aes_cmac_128(uint8_t key[AES128_KEY_LEN],
                 memcpy(scratch, &msg[i*AES128_KEY_LEN], AES128_KEY_LEN);
                 aes_cmac_xor(scratch, sub_key1);
         } else {
-                memcpy(scratch, &msg[i*AES128_KEY_LEN], (size_t)rem);
+                if (rem) memcpy(scratch, &msg[i*AES128_KEY_LEN], (size_t)rem);
                 scratch[rem] = 0x80;
                 memset(&scratch[rem + 1], 0, AES128_KEY_LEN - ((size_t)rem + 1));
                 aes_cmac_xor(scratch, sub_key2);
         }
 
         aes_cmac_xor(mac, scratch);
-        AES128_ECB_encrypt(mac, key, scratch);
+        AES128_ECB_encrypt_ctx(&context, mac, scratch);
         memcpy(mac, scratch, AES128_KEY_LEN);
+        /* Do not retain this expanded signing key beyond the current MAC. */
+        volatile uint8_t *schedule = (volatile uint8_t *)&context;
+        for (size_t j = 0; j < sizeof context; j++) schedule[j] = 0;
 }
 
 int

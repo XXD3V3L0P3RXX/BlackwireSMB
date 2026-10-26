@@ -81,9 +81,6 @@ int bw_pfsc_open(struct bw_pfsc *p, bw_pfsc_pread_fn read_source, void *source,
 static int decode(struct bw_pfsc *p, uint64_t index,uint64_t last_index) {
     uint64_t start, end;
     if (p->decoded_valid && p->decoded_index == index) return 0;
-#if BW_PFSC_READAHEAD
-    int sequential=p->decoded_valid&&index==p->decoded_index+1;
-#endif
     p->decoded_valid = 0;
     int result = table_entry(p, index, &start);
     if (result) return result;
@@ -96,12 +93,19 @@ static int decode(struct bw_pfsc *p, uint64_t index,uint64_t last_index) {
     if(p->window_size&&start>=p->window_at&&start-p->window_at<=p->window_size&&
        packed_size<=p->window_size-(size_t)(start-p->window_at)){
         memcpy(p->packed,p->window+(size_t)(start-p->window_at),packed_size);result=0;
-    }else if(sequential&&index<last_index&&packed_size<=sizeof p->window){
+    }else if(index<last_index&&packed_size<=sizeof p->window){
         p->window_size=0;
-        uint64_t last=index+(sizeof p->window/BW_PFSC_BLOCK)-1,fetch_end;
-        if(last>last_index)last=last_index;
-        result=table_entry(p,last+1,&fetch_end);if(result)return result;
-        if(fetch_end<end||fetch_end>p->stored_size||fetch_end-start>sizeof p->window)return BW_PFSC_FORMAT;
+        /* Batch from the first cold block, using physical compressed bytes
+         * rather than a fixed number of logical blocks. Only blocks already
+         * covered by this request are considered; decoding remains lazy. */
+        uint64_t last=index,fetch_end=end;
+        while(last<last_index){
+            uint64_t next;
+            result=table_entry(p,last+2,&next);if(result)return result;
+            if(next<=fetch_end||next>p->stored_size||next-fetch_end>BW_PFSC_BLOCK)return BW_PFSC_FORMAT;
+            if(next-start>sizeof p->window)break;
+            fetch_end=next;last++;
+        }
         size_t fetch=(size_t)(fetch_end-start);
         result=raw(p,start,p->window,fetch);
         if(!result){p->window_at=start;p->window_size=fetch;memcpy(p->packed,p->window,packed_size);}

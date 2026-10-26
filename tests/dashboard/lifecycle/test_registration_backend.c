@@ -40,7 +40,7 @@ int bw_native_launch_admission_current(struct bw_native_launch_admission *p,cons
 int bw_native_launch_admission_close(struct bw_native_launch_admission **p){CHECK(p);if(*p){CHECK(live==*p);closed++;live=NULL;*p=NULL;}return 0;}
 int bw_native_launch_selection(const char *a,const struct bw_provider_binding *b,const struct bw_native_prepared *c,const char *d,struct bw_reader_selection *e){(void)a;(void)b;(void)c;(void)d;(void)e;strict_calls++;CHECK(0);return -1;}
 int bw_native_owned_registration(const struct bw_native_register_request *r,struct bw_native_owned_registration_result *out){CHECK(r&&r->startup==live&&out);owned_calls++;return 0;}
-int bw_native_register(const struct bw_native_register_request *r,struct bw_register_result *out){CHECK(r&&r->startup==live&&out&&!r->current(r->guard)&&begin_calls==1);register_calls++;*out=(struct bw_register_result){1,1,0,!fail_register,"Registered source mismatch",0,0};return fail_register?-1:0;}
+int bw_native_register(const struct bw_native_register_request *r,struct bw_register_result *out){CHECK(r&&r->startup==live&&out&&!r->current(r->guard)&&begin_calls==1);register_calls++;*out=(struct bw_register_result){.add_attempted=1,.add_confirmed=1,.scan_attempted=0,.registered=!fail_register,.message="Registered source mismatch"};return fail_register?-1:0;}
 int bw_native_registration_verify(const char *root,const char *apps,const char *db,const struct bw_reader_selection *s){CHECK(root&&apps&&db&&s);return foreign_registration?-1:0;}
 int bw_native_reader_run(const struct bw_native_reader_request *r){
     CHECK(live&&r&&r->startup==live&&!r->current(r->opaque)&&!r->data_current(r->opaque));reader_calls++;

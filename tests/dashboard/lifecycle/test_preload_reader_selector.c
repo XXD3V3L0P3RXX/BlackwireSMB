@@ -45,5 +45,9 @@ int main(int argc,char **argv){CHECK(argc==2);struct bw_preload_bundle_upgrade_r
  q=fixture(argv[1],0);fault=CLOSE_CURRENT;select_case(&q,-2,0);CHECK(fault_used==1);
  q=fixture(argv[1],0);fault=CLOSE_DIR;select_case(&q,-2,0);CHECK(fault_used==1);
  q=fixture(argv[1],0);fault=CLOSE_STATE;select_case(&q,-2,0);CHECK(fault_used==1);
+ for(unsigned v=0;v<4;v++){q=fixture(argv[1],0);playgo_fixture(v);select_case(&q,0,0);}
+ q=fixture(argv[1],0);playgo_fixture(0);joined_path(name,current_root,"fakelib2/libScePlayGo.sprx");CHECK(!unlink(name));select_case(&q,-1,0);
+ q=fixture(argv[1],0);playgo_fixture(0);joined_path(name,current_root,"fakelib2/libScePlayGo.sprx");CHECK(!truncate(name,1));select_case(&q,-1,0);
+ q=fixture(argv[1],0);playgo_fixture(0);joined_path(name,current_root,"fakelib2/libScePlayGo.sprx");joined_path(other,current_root,"outside-playgo");CHECK(!rename(name,other)&&!symlink(other,name));select_case(&q,-1,0);
  printf("{\"passed\":true,\"cases\":%u,\"checks\":%u,\"selectorWrites\":%u,\"actualFilesystem\":true}\n",cases,checks,selection_writes);return 0;
 }

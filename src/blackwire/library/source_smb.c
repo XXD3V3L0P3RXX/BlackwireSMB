@@ -19,6 +19,8 @@
 #define BS_ATTR_DIRECTORY 0x10u
 #define BS_ATTR_DEVICE 0x40u
 #define BS_ATTR_REPARSE 0x400u
+#define BS_READ_BYTES (1024u*1024u)
+#define BS_CONSUME_BYTES 65536u
 struct bs_op {
     int done,bad;
     uint32_t status;
@@ -62,6 +64,12 @@ static int bs_poison(struct bw_source_smb *p,const char *error){
 static int bs_live(struct bw_source_smb *p){
     double now=bs_now();
     return !p->smb||now<0||now>=p->deadline?bs_fail(p,"source_scan_expired"):0;
+}
+static int bs_read_capacity(struct bw_source_smb *p,uint32_t *out){
+    if(bs_live(p))return -1;
+    uint32_t maximum=smb2_get_max_read_size(p->smb);
+    if(!maximum)return bs_fail(p,"source_max_read_unavailable");
+    *out=maximum<BS_READ_BYTES?maximum:BS_READ_BYTES;return 0;
 }
 static int bs_wait(struct bw_source_smb *p,struct smb2_pdu *pdu,struct bs_op *op){
     if(!pdu)return bs_fail(p,"source_request_allocation_failed");
@@ -285,14 +293,26 @@ int bw_source_smb_read(struct bw_source_smb *p,const struct bw_source_snapshot *
     }
     int n=snprintf(remote,sizeof remote,"%s/%s",snapshot->source,path);
     if(n<0||(size_t)n>=sizeof remote||bs_file_open(p,remote,expected,&file))goto done;
-    buffer=malloc(65536);if(!buffer){bs_fail(p,"source_read_buffer_allocation_failed");goto done;}
+    uint32_t capacity=0;
+    if(expected->size&&(bs_read_capacity(p,&capacity)||!(buffer=malloc(capacity)))){bs_fail(p,"source_read_buffer_allocation_failed");goto done;}
     for(uint64_t at=0;at<expected->size;){
         struct smb2_read_request request={0};struct bs_op op={0};
-        request.length=expected->size-at<65536?(uint32_t)(expected->size-at):65536;request.offset=at;request.buf=buffer;
-        op.capacity=request.length;memcpy(request.file_id,file.id,SMB2_FD_SIZE);
-        if(bs_wait(p,smb2_cmd_read_async(p->smb,&request,bs_read,&op),&op)||op.status||!op.size){bs_fail(p,"source_file_read_failed_or_truncated");goto done;}
+        request.length=expected->size-at<capacity?(uint32_t)(expected->size-at):capacity;request.offset=at;request.buf=buffer;
+        memcpy(request.file_id,file.id,SMB2_FD_SIZE);
+        struct smb2_pdu *pdu=smb2_cmd_read_async(p->smb,&request,bs_read,&op);
+        /* libsmb2 may clip length for a server without multi-credit support.
+         * Bound the reply to that actual request, not the larger allocation. */
+        op.capacity=request.length;
+        if(bs_wait(p,pdu,&op)||op.status||!op.size){bs_fail(p,"source_file_read_failed_or_truncated");goto done;}
+        if(op.size>UINT64_MAX-p->content_bytes){bs_fail(p,"source_file_content_counter_overflow");goto done;}
         p->content_bytes+=op.size;
-        if(consume(opaque,buffer,op.size)){bs_fail(p,"source_file_consumer_failed");goto done;}
+        for(size_t used=0;used<op.size;){
+            if(bs_live(p))goto done;
+            size_t piece=op.size-used;if(piece>BS_CONSUME_BYTES)piece=BS_CONSUME_BYTES;
+            if(consume(opaque,buffer+used,piece)){bs_fail(p,"source_file_consumer_failed");goto done;}
+            if(bs_live(p))goto done;
+            used+=piece;
+        }
         at+=op.size;
     }
     {struct bw_source_info after;if(bs_info(p,&file,&after)||!bs_same(&file.before,&after)){bs_fail(p,"source_file_changed_while_reading");goto done;}}
@@ -416,8 +436,8 @@ done:
     free(page);if(bs_catalog_close(p,parents,count))result=-1;return result;
 }
 
-/* Exact-range companion only. The preceding admitted implementation is retained
- * verbatim; no whole-file/catalog/scan behavior is changed. */
+/* Exact-range companion. Network fetches may be larger than consumer pieces;
+ * every <=64KiB piece retains its own job/deadline checks. */
 #include <float.h>
 static int bs_range_finite(double value){return value>=-DBL_MAX&&value<=DBL_MAX;}
 static int bs_range_current(struct bw_source_smb *p,bw_source_range_current_fn current,void *job){
@@ -504,19 +524,27 @@ int bw_source_smb_read_range(struct bw_source_smb *p,const struct bw_source_snap
     }
     int n=snprintf(remote,sizeof remote,"%s/%s",snapshot->source,path);
     if(n<0||(size_t)n>=sizeof remote||bs_file_open(p,remote,expected,&file))goto done;
-    if(length)buffer=malloc(65536);if(length&&!buffer){bs_fail(p,"source_read_buffer_allocation_failed");goto done;}
+    uint32_t capacity=0;
+    if(length&&(bs_read_capacity(p,&capacity)||!(buffer=malloc(capacity)))){bs_fail(p,"source_read_buffer_allocation_failed");goto done;}
     unsigned read_calls=0;
     for(uint64_t at=0;at<length;){
         if(bs_range_current(p,current,job)||read_calls++==BW_SOURCE_RANGE_MAX_READ_CALLS){bs_fail(p,"source_range_read_call_limit");goto done;}
         struct smb2_read_request request={0};struct bs_op op={0};
-        request.length=length-at<65536?(uint32_t)(length-at):65536;request.offset=offset+at;request.buf=buffer;
-        op.capacity=request.length;memcpy(request.file_id,file.id,SMB2_FD_SIZE);
-        if(bs_range_wait(p,smb2_cmd_read_async(p->smb,&request,bs_read,&op),&op,current,job)||op.status||!op.size){bs_fail(p,"source_file_read_failed_or_truncated");goto done;}
+        request.length=length-at<capacity?(uint32_t)(length-at):capacity;request.offset=offset+at;request.buf=buffer;
+        memcpy(request.file_id,file.id,SMB2_FD_SIZE);
+        struct smb2_pdu *pdu=smb2_cmd_read_async(p->smb,&request,bs_read,&op);
+        op.capacity=request.length;
+        if(bs_range_wait(p,pdu,&op,current,job)||op.status||!op.size){bs_fail(p,"source_file_read_failed_or_truncated");goto done;}
         if(bs_range_current(p,current,job))goto done;
         if(op.size>UINT64_MAX-p->content_bytes){bs_fail(p,"source_range_content_counter_overflow");goto done;}
         p->content_bytes+=op.size;
-        if(consume(opaque,buffer,op.size)){bs_fail(p,"source_file_consumer_failed");goto done;}
-        if(bs_range_current(p,current,job))goto done;
+        for(size_t used=0;used<op.size;){
+            if(bs_range_current(p,current,job))goto done;
+            size_t piece=op.size-used;if(piece>BS_CONSUME_BYTES)piece=BS_CONSUME_BYTES;
+            if(consume(opaque,buffer+used,piece)){bs_fail(p,"source_file_consumer_failed");goto done;}
+            if(bs_range_current(p,current,job))goto done;
+            used+=piece;
+        }
         at+=op.size;
     }
     {struct bw_source_info after;if(bs_info(p,&file,&after)||!bs_same(&file.before,&after)){bs_fail(p,"source_file_changed_while_reading");goto done;}}

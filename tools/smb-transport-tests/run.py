@@ -15,6 +15,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--vendor", type=Path, help="libsmb2 source directory")
     parser.add_argument("--sanitize", action="store_true", help="enable ASan and UBSan")
+    parser.add_argument("--force-software", action="store_true", help="test the compile-time AES software fallback")
     args = parser.parse_args()
     here = Path(__file__).resolve().parent
     root = here.parent.parent
@@ -44,6 +45,8 @@ TIME_H SYS_TIME_H UNISTD_H ERRNO_H""".split()
                    "-I" + str(vendor / "include"), "-I" + str(vendor / "include/smb2")]
         if args.sanitize:
             command += ["-fsanitize=address,undefined", "-fno-omit-frame-pointer"]
+        if args.force_software:
+            command += ["-DBLACKWIRE_AES_TEST_FORCE_SOFTWARE=1"]
         command += [str(here / "transport_signing_test.c"), *map(str, sources),
                     "-o", str(out / "transport-signing-test")]
         subprocess.run(command, check=True)

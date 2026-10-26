@@ -6,7 +6,7 @@ receipt, namespace, deletion and read-only SQLite logic are actual source.
 No historical reader, private build proof, network or console is required.
 """
 from pathlib import Path
-import argparse, hashlib, importlib.util, json, os, re, shlex, subprocess, tempfile
+import argparse, hashlib, importlib.util, json, os, re, shlex, struct, subprocess, tempfile
 HERE=Path(__file__).resolve().parent
 from fixture_sdk import production_rows
 ROOT=HERE.parents[2];LIB=ROOT/'src/blackwire/library';STREAM=ROOT/'src/blackwire/streamreader'
@@ -22,6 +22,25 @@ def pin(p):
  b=p.read_bytes();return dict(bytes=len(b),sha256=hashlib.sha256(b).hexdigest())
 def load(name,path):
  spec=importlib.util.spec_from_file_location(name,path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
+def add_companion_fixture(area,bodies,playgo):
+ # Extend the actual Send input manifest and digests, rather than adding
+ # unowned original files after preparation. All payloads are synthetic data.
+ meta=area/'metadata';source=area/'source';raw=(meta/'map.bin').read_bytes()
+ count=struct.unpack_from('<I',raw,16)[0];pool=raw[40+count*32:];factory=load('companion_manifest',HERE/'manifest_fixture.py');rows=[]
+ for i in range(count):
+  at,length,flags,_,size,mtime=struct.unpack_from('<IIIIQQ',raw,40+i*32)
+  rows.append(factory.File(pool[at:at+length].decode(),size,mtime,flags))
+ names=['libSceAppContent.sprx','libSceGameUpdate.sprx','libSceNpEntitlementAccess.sprx','libSceAmpr.sprx.orig','libScePlayGo.sprx']
+ (source/'fakelib').mkdir()
+ for name,body in zip(names,[*bodies[1:],playgo]):
+  path=source/'fakelib'/name;path.write_bytes(body);os.utime(path,(1700000000,1700000000));rows.append(factory.File('fakelib/'+name,len(body),1700000000,factory.LOCAL))
+ rows.sort(key=lambda row:factory.ascii_key(row.path));raw=factory.encode(rows);(meta/'map.bin').write_bytes(raw);checksum=struct.unpack_from('<Q',raw,32)[0]
+ digest=b'BWDIG001'+struct.pack('<IIQ',1,len(rows),checksum)+hashlib.sha256(raw).digest()
+ digest+=b''.join(hashlib.sha256((source/row.path).read_bytes()).digest() if row.flags==factory.LOCAL else bytes(32) for row in rows)
+ (meta/'digests.bin').write_bytes(digest);selection=(meta/'selection.txt').read_text()
+ selection=re.sub(r'manifest_count=\d+',f'manifest_count={len(rows)}',selection);selection=re.sub(r'manifest_hash=[0-9a-f]+',f'manifest_hash={checksum:016x}',selection);(meta/'selection.txt').write_text(selection)
+ return {str(path.relative_to(source)):pin(path) for path in (source/'fakelib').iterdir()}
+
 def main():
  parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,required=True);args=parser.parse_args();OUT=args.output.resolve()
  if not OUT.is_relative_to(ROOT/'build') or OUT.exists():raise ValueError('Use a fresh absent output below build/')
@@ -41,6 +60,13 @@ def main():
  names=['libSceAmpr.sprx','libSceAppContent.sprx','libSceGameUpdate.sprx','libSceNpEntitlementAccess.sprx','libSceAmpr.sprx.orig']
  bodies=[bytes((i*13+11)%251 for i in range(2048)),b'fixture-app-content'*91,b'fixture-game-update'*81,b'fixture-entitlement'*79];bodies.append(bodies[0])
  for n,b in zip(names,bodies):(globals_dir/n).write_bytes(b)
+ playgo=[bytes((i*(v+7)+v+19)%251 for i in range(1103+v*137)) for v in range(4)]
+ for v,body in enumerate(playgo):(globals_dir/('playgo-%d.sprx'%v)).write_bytes(body)
+ header=(LIB/'preload_bundle.h').read_text()
+ playgo_table='static const struct bw_preload_playgo_pin pins[]={\n'+',\n'.join('        {%d,"%s"}'%(len(b),hashlib.sha256(b).hexdigest()) for b in playgo)+'\n    };'
+ header,count=re.subn(r'static const struct bw_preload_playgo_pin pins\[\]=\{.*?\n    \};',lambda _:playgo_table,header,count=1,flags=re.S)
+ if count!=1:raise ValueError('Fixed PlayGo pin seam changed')
+ (unit/'library/preload_bundle.h').write_text(header)
  previous=bytes((i*17+3)%251 for i in range(3072));public07=bytes((i*19+5)%251 for i in range(4608));current=bytes((i*31+7)%251 for i in range(4096))
  c=(LIB/'preload_bundle.c').read_text()
  table='static const struct pb_pin pb_globals[5]={\n'+',\n'.join('    {"%s",%d,"%s"}'%(n,len(b),hashlib.sha256(b).hexdigest()) for n,b in zip(names,bodies))+'\n};'
@@ -90,9 +116,13 @@ def main():
  sql=OUT/'sqlite.o';run('sqlite-compile',['clang-18','-O0','-std=gnu11','-DSQLITE_THREADSAFE=1','-DSQLITE_OMIT_LOAD_EXTENSION','-DSQLITE_TEMP_STORE=3','-c',ROOT/'vendor/sqlite/sqlite3.c','-o',sql]);objects.append(sql);used.add(ROOT/'vendor/sqlite/sqlite3.c')
  core_binary=OUT/'core';run('core-link',['clang-18','-fsanitize=address,undefined',*objects,*['-Wl,--wrap='+n for n in ['openat','readdir','pread','close']],'-Wl,--gc-sections','-pthread','-lm','-o',core_binary])
  factory=load('game_uninstall_fixture',HERE/'check_game_uninstall.py');used.add(HERE/'check_game_uninstall.py');results=[]
- for mode in ['reader-old','reader-current','reader-legacy-current','reader-absent','reader-old-wrong-pin','reader-changed-after','reader-public07','reader-public07-wrong-pin','reader-public07-changed-after']:
+ for mode in ['reader-old','reader-current','reader-legacy-current','reader-absent','reader-old-wrong-pin','reader-changed-after','reader-public07','reader-public07-wrong-pin','reader-public07-changed-after',*[f'reader-playgo-{v}' for v in range(4)],'reader-playgo-changed-after','reader-playgo-source-changed-after','reader-playgo-linked-after','reader-playgo-foreign-after']:
   with tempfile.TemporaryDirectory(prefix='blackwire-reader-remove-') as tmp:
-   factory.fixture(Path(tmp),'normal',8);results.append(json.loads(run('actual-send-delete-'+mode,[core_binary,tmp,mode]).splitlines()[-1]))
+   area=Path(tmp);factory.fixture(area,'normal',8);original={}
+   if mode.startswith('reader-playgo-'):
+    variant=int(mode[-1]) if mode[-1].isdigit() else 0;original=add_companion_fixture(area,bodies,playgo[variant])
+   results.append(json.loads(run('actual-send-delete-'+mode,[core_binary,tmp,mode]).splitlines()[-1]))
+   if original!={name:pin(area/'source'/name) for name in original}:raise ValueError('Original companions changed')
  # Actual default wrapper and joined removal worker: only helper/remote effects
  # are narrow spies in this binary; actual selector and actual core run above.
  backend_test=HERE/'test_preload_reader_uninstall_wrapper.c';used.add(backend_test)

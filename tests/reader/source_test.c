@@ -14,6 +14,7 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <poll.h>
 static unsigned checks,cases,contexts,destroys,opens,closes,reads,connects,pending_drained;
 static int canceled,fail_read,fail_close,changed,change_after_read,cancel_after_read;
 static unsigned stat_calls,fstat_calls,final_named_at,fail_at_read;
@@ -28,8 +29,12 @@ static struct read_trace trace[4096];
 static uint64_t stream_size=131079;
 static unsigned char borrowed_storage[BW_CACHE_BYTES];
 static unsigned char large_out[1024u*1024u],large_expected[sizeof large_out];
+static unsigned services,paired_services,async_drained;
+static int async_fail_queue,async_inline_error,async_service_fail,async_poll_error,async_poll_eintr;
+static int async_one_at_time,async_reverse,async_cancel,async_timeout,async_idle;
 struct smb2fh {unsigned id;struct smb2fh *next;};
-struct smb2_context {struct smb2fh *handles;unsigned char *pending;int signing;uint16_t security_mode;};
+struct async_stat {int active,kind;const char *path;struct smb2fh *fh;struct smb2_stat_64 *out;smb2_command_cb cb;void *opaque;};
+struct smb2_context {struct smb2fh *handles;unsigned char *pending;int signing;uint16_t security_mode;struct async_stat metadata[2];};
 #define CHECK(x) do{checks++;if(!(x)){fprintf(stderr,"check failed %s:%d: %s\n",__FILE__,__LINE__,#x);exit(1);}}while(0)
 static unsigned char body(unsigned id,uint64_t at){return (unsigned char)((at*17+id*29)%251);}
 int __wrap_clock_gettime(clockid_t clock,struct timespec *stamp){
@@ -40,6 +45,8 @@ int __wrap_clock_gettime(clockid_t clock,struct timespec *stamp){
 struct smb2_context *smb2_init_context(void){contexts++;return calloc(1,sizeof(struct smb2_context));}
 void smb2_destroy_context(struct smb2_context *c){
     CHECK(c);if(c->pending){*c->pending=0x57;pending_drained++;}
+    for(unsigned i=0;i<2;i++)if(c->metadata[i].active){struct async_stat *r=&c->metadata[i];
+        r->active=0;((unsigned char*)r->out)[0]=0x57;async_drained++;r->cb(c,-ESHUTDOWN,NULL,r->opaque);}
     while(c->handles){struct smb2fh *h=c->handles;c->handles=h->next;free(h);}
     destroys++;free(c);
 }
@@ -64,6 +71,37 @@ int smb2_stat(struct smb2_context *c,const char *p,struct smb2_stat_64 *s){
     stat_of((unsigned)id,s);return 0;
 }
 int smb2_fstat(struct smb2_context *c,struct smb2fh *h,struct smb2_stat_64 *s){CHECK(c&&h);fstat_calls++;stat_of(h->id,s);return 0;}
+static int queue_stat(struct smb2_context *c,int kind,const char *path,struct smb2fh *fh,
+    struct smb2_stat_64 *out,smb2_command_cb cb,void *opaque){
+    CHECK(c&&out&&cb&&!c->metadata[kind].active);
+    if(async_inline_error==kind+1){async_inline_error=0;cb(c,-ENOMEM,NULL,opaque);return -1;}
+    if(async_fail_queue==kind+1){async_fail_queue=0;return -ENOMEM;}
+    c->metadata[kind]=(struct async_stat){1,kind,path,fh,out,cb,opaque};return 0;
+}
+int smb2_stat_async(struct smb2_context *c,const char *path,struct smb2_stat_64 *out,smb2_command_cb cb,void *opaque){return queue_stat(c,0,path,NULL,out,cb,opaque);}
+int smb2_fstat_async(struct smb2_context *c,struct smb2fh *fh,struct smb2_stat_64 *out,smb2_command_cb cb,void *opaque){return queue_stat(c,1,NULL,fh,out,cb,opaque);}
+int smb2_get_fd(struct smb2_context *c){CHECK(c);return 42;}
+int smb2_which_events(struct smb2_context *c){CHECK(c);return POLLIN|POLLOUT;}
+int poll(struct pollfd *fd,nfds_t count,int timeout){
+    CHECK(fd&&count==1&&fd->fd==42&&timeout==250);
+    if(async_poll_error){async_poll_error=0;errno=EIO;return -1;}
+    if(async_poll_eintr){async_poll_eintr=0;errno=EINTR;return -1;}
+    if(async_idle){async_idle=0;fd->revents=0;return 0;}
+    fd->revents=fd->events;return 1;
+}
+int smb2_service(struct smb2_context *c,int events){
+    CHECK(c&&(events==0||events==(POLLIN|POLLOUT)));services++;
+    if(async_service_fail&&!--async_service_fail)return -1;
+    if(c->metadata[0].active&&c->metadata[1].active)paired_services++;
+    if(async_cancel){async_cancel=0;canceled=1;}
+    for(unsigned i=0;i<2;i++){
+        unsigned at=async_reverse?1u-i:i;struct async_stat *r=&c->metadata[at];if(!r->active)continue;
+        r->active=0;int raw;
+        if(async_timeout==r->kind+1){async_timeout=0;raw=-ETIMEDOUT;}
+        else raw=r->kind?smb2_fstat(c,r->fh,r->out):smb2_stat(c,r->path,r->out);
+        r->cb(c,raw,NULL,r->opaque);if(async_one_at_time)break;
+    }return 0;
+}
 struct smb2fh *smb2_open(struct smb2_context *c,const char *p,int flags){int id=path_id(p);CHECK(c&&id>=0&&flags==O_RDONLY);struct smb2fh *h=calloc(1,sizeof *h);h->id=(unsigned)id;h->next=c->handles;c->handles=h;opens++;return h;}
 int smb2_close(struct smb2_context *c,struct smb2fh *h){struct smb2fh **at=&c->handles;while(*at&&*at!=h)at=&(*at)->next;CHECK(*at==h);*at=h->next;free(h);closes++;if(fail_close){fail_close=0;return -EIO;}return 0;}
 int smb2_pread(struct smb2_context *c,struct smb2fh *h,uint8_t *out,uint32_t count,uint64_t at){
@@ -87,6 +125,8 @@ static void fixture(void){
     change_on_final=cancel_on_final=fail_final_stat=zero_read=oversized_read=0;alter_output=NULL;
     short_limit=8191;stream_size=131079;
     negotiated_limit=BP_COALESCE_BYTES;trace_count=clock_fault=clock_reverse=0;
+    async_fail_queue=async_inline_error=async_service_fail=async_poll_error=async_poll_eintr=0;
+    async_one_at_time=async_reverse=async_cancel=async_timeout=async_idle=0;
     memset(map,0,sizeof map);memcpy(map,"BWMAP002",8);put32(map+8,2);put32(map+12,32);put32(map+16,20);
     size_t pool=40+20*32,offset=0;
     for(unsigned i=0;i<20;i++){
@@ -198,7 +238,7 @@ int main(void){
     CHECK(perf.cache_hit_bytes==sizeof large_out&&perf.payload_bytes==sizeof large_out&&perf.cache_hits==16&&perf.cache_misses==16);
     CHECK(perf.coalesced_runs==1&&perf.coalesced_blocks==16&&perf.scratch_bytes==BP_COALESCE_BYTES&&perf.largest_pread_request==BP_COALESCE_BYTES);
     CHECK(perf.named_stat.calls==4&&perf.held_stat.calls==4&&perf.open.calls==1&&perf.pread.calls==1&&perf.read.calls==2);
-    CHECK(perf.named_stat.nanoseconds==4000&&perf.held_stat.nanoseconds==4000&&perf.open.nanoseconds==1000&&perf.pread.nanoseconds==1000&&!perf.clock_failures);
+    CHECK(perf.named_stat.nanoseconds==7000&&perf.held_stat.nanoseconds==7000&&perf.open.nanoseconds==1000&&perf.pread.nanoseconds==1000&&!perf.clock_failures);
     CHECK(!bp_source_close(p));
     /* Source mutation after payload still fails the final fence and poisons
      * any cache entries already populated by the provisional logical read. */
@@ -228,7 +268,7 @@ int main(void){
     CHECK(reads==before+1&&stat_calls==1&&fstat_calls==1);CHECK(!bp_source_close(p));
     fixture();cases++;p=open_source();id=match(p,0);fail_final_stat=1;before=destroys;drained_before=pending_drained;
     CHECK(bp_source_read_observed(p,id,0,out,5,&witness)==-EIO&&empty_witness(&witness));
-    CHECK(stat_calls==2&&fstat_calls==1&&destroys==before+1&&pending_drained==drained_before+1);CHECK(!bp_source_close(p));
+    CHECK(stat_calls==2&&fstat_calls==2&&destroys==before+1&&pending_drained==drained_before+1);CHECK(!bp_source_close(p));
     /* A hit splits transport runs. Planning neither counts a hit nor changes
      * LRU, and never fetches the existing middle block again. */
     fixture();cases++;set_stream_size(2u*BP_COALESCE_BYTES);short_limit=BP_COALESCE_BYTES;
@@ -298,6 +338,50 @@ int main(void){
     CHECK(bp_source_read(p,id,0,out,5)==5&&errno==EBUSY);bp_source_performance(p,&perf);CHECK(perf.clock_failures>0&&!perf.read.nanoseconds&&!perf.named_stat.nanoseconds);CHECK(!bp_source_close(p));
     fixture();cases++;p=open_source();id=match(p,0);clock_reverse=1;
     CHECK(bp_source_read(p,id,0,out,5)==5);bp_source_performance(p,&perf);CHECK(perf.clock_failures>0&&!perf.read.nanoseconds&&!perf.pread.nanoseconds);CHECK(!bp_source_close(p));
+    /* A retained-handle cache hit still checks BOTH identities before and
+     * after the logical read, in two service rounds rather than four waits. */
+    fixture();cases++;p=open_source();id=match(p,0);CHECK(bp_source_read(p,id,0,out,5)==5);
+    unsigned service_before=services,pairs_before=paired_services;before=reads;
+    CHECK(bp_source_read(p,id,0,out,5)==5&&reads==before);
+    CHECK(services-service_before==2&&paired_services-pairs_before==2&&stat_calls==4&&fstat_calls==4);CHECK(!bp_source_close(p));
+    /* Reply ordering and a partial service round cannot expose uninitialized
+     * metadata or return with the other callback still borrowing stack data. */
+    for(unsigned reverse=0;reverse<2;reverse++){
+        fixture();cases++;p=open_source();id=match(p,0);CHECK(bp_source_read(p,id,0,out,5)==5);
+        async_reverse=(int)reverse;async_one_at_time=1;service_before=services;unsigned drained=async_drained;
+        CHECK(bp_source_read_observed(p,id,0,out,5,&witness)==5&&witness.valid);
+        CHECK(services-service_before==4&&async_drained==drained);CHECK(!bp_source_close(p));
+    }
+    /* Faults after either queue leave all borrowed destinations live until
+     * the same worker destroys/drains the context. ASan covers stack lifetime. */
+    for(unsigned fault=0;fault<8;fault++){
+        fixture();cases++;p=open_source();id=match(p,0);CHECK(bp_source_read(p,id,0,out,5)==5);
+        before=destroys;unsigned drained=async_drained;
+        if(fault==0)async_fail_queue=1;
+        if(fault==1)async_fail_queue=2;
+        if(fault==2)async_poll_error=1;
+        if(fault==3)async_service_fail=1;
+        if(fault==4){async_one_at_time=1;async_service_fail=2;}
+        if(fault==5){async_idle=1;async_timeout=1;}
+        if(fault==6)async_inline_error=1;
+        if(fault==7)async_inline_error=2;
+        CHECK(bp_source_read_observed(p,id,0,out,5,&witness)==-EIO&&empty_witness(&witness)&&destroys==before+1);
+        unsigned wanted=fault==0||fault==5||fault==6?0:fault==1||fault==4||fault==7?1:2;
+        CHECK(async_drained==drained+wanted);before=reads;
+        CHECK(bp_source_read(p,id,0,out,5)==-EIO&&reads==before);CHECK(!bp_source_close(p));
+    }
+    /* Cancellation drains the pair and preserves the reusable source; an
+     * interrupted poll is retried without losing either queued request. */
+    fixture();cases++;p=open_source();id=match(p,0);CHECK(bp_source_read(p,id,0,out,5)==5);
+    async_cancel=1;async_one_at_time=1;before=destroys;unsigned drained=async_drained;
+    CHECK(bp_source_read_observed(p,id,0,out,5,&witness)==-ECANCELED&&empty_witness(&witness)&&destroys==before&&async_drained==drained);
+    canceled=0;async_one_at_time=0;async_poll_eintr=1;CHECK(bp_source_read(p,id,0,out,5)==5);CHECK(!bp_source_close(p));
+    for(unsigned reverse=0;reverse<2;reverse++){
+        fixture();cases++;p=open_source();id=match(p,0);CHECK(bp_source_read(p,id,0,out,5)==5);
+        async_reverse=(int)reverse;change_on_final=cancel_on_final=1;final_named_at=stat_calls+1;before=destroys;
+        CHECK(bp_source_read_observed(p,id,0,out,5,&witness)==-EIO&&empty_witness(&witness)&&canceled&&destroys==before+1);
+        canceled=changed=0;CHECK(bp_source_read(p,id,0,out,5)==-EIO);CHECK(!bp_source_close(p));
+    }
     memset(&perf,0xa5,sizeof perf);bp_source_performance(NULL,&perf);struct bp_source_performance empty={0};CHECK(!memcmp(&perf,&empty,sizeof perf));
     CHECK(contexts==destroys);printf("{\"passed\":true,\"cases\":%u,\"checks\":%u,\"transportModelOnly\":true,\"nativeReadProved\":false,\"requestScopedFences\":true,\"coalescingMaximumBytes\":%u,\"scratchSeparateFrom64MiBCache\":true,\"cold1MiB\":{\"namedStats\":2,\"heldStats\":2,\"fullDataCalls\":1},\"cached1MiB\":{\"namedStats\":2,\"heldStats\":2,\"dataCalls\":0},\"partialThreeBlockRead\":{\"namedStats\":2,\"heldStats\":2,\"dataCalls\":17},\"contextsDestroyed\":%u,\"pendingDestinationDrainedBeforeReuse\":%u,\"telemetryClock\":\"modeled monotonic nanoseconds; faults nonauthoritative\"}\n",cases,checks,BP_COALESCE_BYTES,destroys,pending_drained);return 0;
 }

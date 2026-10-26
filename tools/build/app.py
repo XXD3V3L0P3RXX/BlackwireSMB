@@ -28,7 +28,7 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
     for row in commands:
         argv = row["argv"]
         # Preserve the accepted standalone Media path in the resident entry.
-        if row["label"] == "compile-00":
+        if row["label"].startswith("compile-"):
             argv.insert(1, "-DBW_MEDIA_PUBLIC_TRIAL=1")
             # Diagnostic development runs launch games from the PC browser.
             # The PS5 Media shortcut remains available when explicitly opened.
@@ -41,9 +41,11 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
             ("native_backend.c", "native_prepared_target.c", "native_startup_hint.c") for s in argv):
             argv.insert(1, "-DBW_NATIVE_PRELOAD=1")
         if "-c" in argv:
-            # This TU hashes every required local startup file. Keep those
-            # exact checks while compiling their portable SHA loops at O2.
-            if argv[argv.index("-c") + 1].endswith("/library/native_send.c"):
+            # Keep all startup hashes and decoder checks; optimize their pure
+            # compute loops as well as the existing local-copy verifier.
+            compute_units=("/library/native_send.c", "/library/source_prepare.c",
+                           "/library/compressed_data.c", "/streamreader/pfsc_inflate.c")
+            if argv[argv.index("-c") + 1].endswith(compute_units):
                 if any(flag.startswith("-O") for flag in argv):
                     raise ValueError("Startup verifier optimization already selected")
                 argv.insert(1, "-O2")
@@ -126,7 +128,7 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
     for row in commands:
         argv = [expand(value) for value in row["argv"]]
         if row["label"] == "compile-00":
-            argv.insert(1, '-DBW_RESIDENT_BUILD_ID="blackwire-v0.3.0-beta.2"')
+            argv.insert(1, '-DBW_RESIDENT_BUILD_ID="blackwire-v0.3.0-beta.3"')
         if row is link:
             argv = sdk_runtime.link_arguments(root, out, argv, runtime)
         if "-o" in argv:
