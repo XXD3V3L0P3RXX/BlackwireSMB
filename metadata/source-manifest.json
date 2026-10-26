@@ -742,8 +742,8 @@
       "sha256": "6dd351eb2c5c29bf8b6df143f5f093a8aef8bc55ae69b892863e767f106798af"
     },
     "src/blackwire/library/source_catalog.c": {
-      "bytes": 22125,
-      "sha256": "5117577a4ccfc19403df890530dbab17f8ccc0b55a20a5f6b1321b65ab082f65"
+      "bytes": 22952,
+      "sha256": "2e706ea4f666a3b54eb0afe9074ae385f8cd14f37f53b58a4291e7d4b2bcbaa7"
     },
     "src/blackwire/library/source_catalog.h": {
       "bytes": 4005,
@@ -966,8 +966,8 @@
       "sha256": "c24e361a01c63c38f73b16581f7c225750e561d2f6cb11d13b05de0c85551b3f"
     },
     "src/blackwire/streamreader/container_smb.c": {
-      "bytes": 3759,
-      "sha256": "8b9c636e5527331100a330ead7fac2b9ac5b11d2dca0866fa3a7b75361b36adf"
+      "bytes": 7318,
+      "sha256": "7f1e5884cca8c13f1bc258ef3684db78f1330c8b21545f64bea2446306965b67"
     },
     "src/blackwire/streamreader/container_smb.h": {
       "bytes": 1493,
@@ -1875,6 +1875,10 @@
       "bytes": 11251,
       "sha256": "b2d0bd0921717a669e7d538f1e7cc1f18da4c78e7e265a52346ab61b284cefa8"
     },
+    "tests/diagnostics/check_catalog_image_failure.py": {
+      "bytes": 9225,
+      "sha256": "6b3d173f64476ca16d529f6c8aa8c2c0b0ae933feafb5ea488c81af28a3acfa4"
+    },
     "tests/diagnostics/check_registration_wait.py": {
       "bytes": 1844,
       "sha256": "8dc48422568fb0ac34cf69ecb9b0ea68a01338c461c550668e469eaa4274c3e6"
@@ -1898,6 +1902,10 @@
     "tests/diagnostics/registration_wait_test.c": {
       "bytes": 4133,
       "sha256": "e1a0ff644d7e0f43e8fe8100a36ad444b6f5c3e8e33f630f8b3b002ecd4d576b"
+    },
+    "tests/diagnostics/test_catalog_image_failure.c": {
+      "bytes": 6128,
+      "sha256": "e1055265b8fadacf7840844a48adf93015e03cb8e41d8a5dba78163c847696b6"
     },
     "tests/diagnostics/test_collect_diagnostics.py": {
       "bytes": 2671,
@@ -2088,5 +2096,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "43db93bdad3f0fbc0c8794cf9c01da4227d4a1da"
+  "runtimeSourceCommit": "0bb2926cc252eb5d38b284f3c5323fc259083ab8"
 }
