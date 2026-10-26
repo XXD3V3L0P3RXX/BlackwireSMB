@@ -298,8 +298,8 @@
       "sha256": "0f6c64dda1456217dd67226c84fcbaeac625c3d28db8244e9465399171e1a79f"
     },
     "src/blackwire/library/native_backend.c": {
-      "bytes": 149948,
-      "sha256": "976941d7cece79408d0af5d23f54405ed998fa663e7ece887e0d1a09827b3429"
+      "bytes": 150796,
+      "sha256": "4ec85b9a8f11e497376b98475e46d7fa9ecd3a4a40f81a23ae9b995166a1ff55"
     },
     "src/blackwire/library/native_backend.h": {
       "bytes": 9720,
@@ -310,8 +310,8 @@
       "sha256": "443109aa744e8b85d41883aa322426185e395acfadb4fc0837c1a963086a99f4"
     },
     "src/blackwire/library/native_backend_removal.h": {
-      "bytes": 19350,
-      "sha256": "10d93d58b1014641846ee16817a786f0ba455c66b6834e172fa832337878b32d"
+      "bytes": 19688,
+      "sha256": "8605dba59eb838718f6902b596f2210526d43d36772f74094c275d398e9ef1dd"
     },
     "src/blackwire/library/native_batch_context.c": {
       "bytes": 20303,
@@ -394,8 +394,8 @@
       "sha256": "3f83418bec58422456a46ee998f562f11c1b6ba09f5030bf324c3a580918b3ba"
     },
     "src/blackwire/library/native_game_uninstall_remote.c": {
-      "bytes": 37916,
-      "sha256": "beb01dca372c0f0138d16717227423e4e238c6d14596bac1a64b436cf4314cf8"
+      "bytes": 41855,
+      "sha256": "532eceb82b807096c825f3d7b8d8e1a9e06bba0e327700b8bef415f973cdb1e3"
     },
     "src/blackwire/library/native_game_uninstall_remote.h": {
       "bytes": 1072,
@@ -478,16 +478,16 @@
       "sha256": "0146b705bad52e85ed718141cf01a4a3c3ed51a553c3af27e1d17e931b50081d"
     },
     "src/blackwire/library/native_registration_cleanup.c": {
-      "bytes": 54681,
-      "sha256": "40035a7053c6048cefd8a7f7a6ff6713ababc14854a1bbbb41a884e656e057e4"
+      "bytes": 54919,
+      "sha256": "dd99f7399ab537e791a7d127245630548bda5d7a0dc1c7ca6258f0ff2c76aa2a"
     },
     "src/blackwire/library/native_registration_cleanup.h": {
-      "bytes": 7140,
-      "sha256": "ca1597082fcc182cd13f61da9e2d4ed7decd5a94e97d9f1c7542e9e2349f0479"
+      "bytes": 7372,
+      "sha256": "213f65e3d5aaaf7050c869505ffe915041c970923fd5e74abc3d24bbd2f3fdf0"
     },
     "src/blackwire/library/native_registration_lifecycle.c": {
-      "bytes": 35358,
-      "sha256": "4aa2c20f0f27b363105f8e0c2dd7292bb57dfdef97dd1100d467d12cfacc49ca"
+      "bytes": 35484,
+      "sha256": "5d536f1532219092a4725283d1d32225057ee73c32df6dfcffd194949c62e791"
     },
     "src/blackwire/library/native_registration_lifecycle.h": {
       "bytes": 4425,
@@ -1306,8 +1306,8 @@
       "sha256": "4c9ee4a7eb3e46a2621fa27d389b6c06f8f3bbc8fe5ef8c9e561dafda472d96a"
     },
     "tools/build/reader.py": {
-      "bytes": 19995,
-      "sha256": "3602649f3bd87d2cf713d2c0b8e0e55311046e4e8aebd97dc09775e0db27eff5"
+      "bytes": 20092,
+      "sha256": "f7c431685541f44a95083d6418e80a8c3cd2b1b180d81ec7b9528fc829dbbb9c"
     },
     "tools/build/reader_patch.py": {
       "bytes": 12211,
@@ -1535,13 +1535,17 @@
       "bytes": 3311,
       "sha256": "1a7a9267bb4915539a4e5b136df0d121ac028ae6d5dc46facd27aff71c093277"
     },
+    "tests/dashboard/lifecycle/check_uninstall_finish_diagnostic.py": {
+      "bytes": 4792,
+      "sha256": "ba2d8d8d60093b1e3a7dffbf9e493bda6fc36df886fd2ade7a6808a89ce28fb8"
+    },
     "tests/dashboard/lifecycle/check_uninstall_identity_diagnostic.py": {
       "bytes": 3827,
       "sha256": "a3cbc722d7e9ce8c46f7515a5c7158731a352e0029775da7441fd6e24cd843b2"
     },
     "tests/dashboard/lifecycle/check_uninstall_release_unknown.py": {
-      "bytes": 5105,
-      "sha256": "ce75458c2fc2673279bf3cd4879626941d776de8e8546530fb807ce562b15cb6"
+      "bytes": 5577,
+      "sha256": "df66ad735e70f37d9e3cb9ad6b0be3e9906ad487dfe63ab83ff1a05839943ead"
     },
     "tests/dashboard/lifecycle/fixture_sdk.py": {
       "bytes": 2899,
@@ -1708,12 +1712,12 @@
       "sha256": "61a687ffb046e477333aeaa3c0ae97cde5a380ee8322abca9085dfd4b7e07517"
     },
     "tests/dashboard/lifecycle/test_uninstall_release_unknown.c": {
-      "bytes": 3366,
-      "sha256": "16003890fee7edc3855fc7dbc192b122414726761a596512439e2bf897b0d98f"
+      "bytes": 5737,
+      "sha256": "a6199255f3c83093f0b69530f8d6368689ea514b80feb5bd25a95e1743a05a64"
     },
     "tests/dashboard/lifecycle/test_uninstall_release_worker.c": {
-      "bytes": 5077,
-      "sha256": "9a26bec37b46d64ceb43fed4275b24b0a8fad6127c0baa9ee8b39402114efe00"
+      "bytes": 11251,
+      "sha256": "b2d0bd0921717a669e7d538f1e7cc1f18da4c78e7e265a52346ab61b284cefa8"
     },
     "tests/diagnostics/check_registration_wait.py": {
       "bytes": 1844,
@@ -1862,7 +1866,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Signed SMB performance, prepare-only existing-library compatibility, qualified optional PlayGo companions, published beta.2 reader upgrade, bounded registration confirmation, aligned large compressed namespaces and strict known-source status exclusion and sticky uninstall resource-release uncertainty; exact hardware evidence recorded separately",
+  "developmentQualification": "Signed SMB performance, prepare-only existing-library compatibility, qualified optional PlayGo companions, published beta.2 reader upgrade, bounded registration confirmation, aligned large compressed namespaces and strict known-source status exclusion and sticky uninstall resource-release uncertainty, candidate helper close propagation, uncertain-removal settings locks and bounded normal-uninstall diagnostics; exact hardware evidence recorded separately",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -1872,5 +1876,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "a5c88ba503815015c5f48ab608ad7245edadf18f"
+  "runtimeSourceCommit": "8a1e53603ffdae9ab061821589e09cc1af6b45de"
 }
