@@ -12,6 +12,12 @@
  * cryptographic authentication against a malicious or non-coherent server.
  * No share, source, mount, game or console-cache mutation is performed.
  */
+enum bw_container_smb_failure_operation {
+    BW_IMAGE_FAILURE_NONE=0,BW_IMAGE_FAILURE_ADMIT_STAT,BW_IMAGE_FAILURE_ADMIT_METADATA,
+    BW_IMAGE_FAILURE_OPEN,BW_IMAGE_FAILURE_FSTAT,BW_IMAGE_FAILURE_GENERATION_STAT,
+    BW_IMAGE_FAILURE_GENERATION_METADATA,BW_IMAGE_FAILURE_READ_BOUNDS,
+    BW_IMAGE_FAILURE_MAX_READ,BW_IMAGE_FAILURE_PREAD,BW_IMAGE_FAILURE_CLOSE
+};
 struct bw_container_smb {
     struct bw_container container;
     struct smb2_context *smb;
@@ -21,6 +27,12 @@ struct bw_container_smb {
     char path[1024];
     uint64_t read_calls,read_bytes,generation_checks;
     int failed,last_transport_error;
+    /* Observation only: retain the FIRST refused operation independently of
+     * last_transport_error's existing context-drain/close behavior. A NULL
+     * open has a synthesized -1, not a known integer -EPERM result. */
+    int first_failure_result;
+    enum bw_container_smb_failure_operation first_failure_operation;
+    unsigned first_failure_seen,first_failure_result_known;
 };
 int bw_container_smb_open(struct bw_container_smb *,struct smb2_context *,const char *);
 /* Same worker owns *transport_owner through close. A failed synchronous SMB

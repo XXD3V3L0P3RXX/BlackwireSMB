@@ -76,6 +76,7 @@ with tempfile.TemporaryDirectory(prefix='blackwire-image-failure-') as temp:
     # zero/max-read refusal and the deadline preserve the original behavior.
     cases = [('valid', None, 'validated', False), ('short-read', None, 'validated', False),
              ('admit-stat', 'admit-stat', 'container_open', True),
+             ('admit-stat-eperm', 'admit-stat', 'container_open', True),
              ('admit-metadata', 'admit-metadata', 'container_open', False),
              ('open-readonly', 'open-readonly', 'container_open', True),
              ('generation-fstat', 'generation-fstat', 'container_open', True),
@@ -83,6 +84,7 @@ with tempfile.TemporaryDirectory(prefix='blackwire-image-failure-') as temp:
              ('pread-error', 'pread-return', 'container_open', True),
              ('pread-eof', 'pread-return', 'container_open', False),
              ('pread-eof-close', 'pread-return', 'container_open', True),
+             ('pread-eof-close-denied', 'pread-return', 'container_open', True),
              ('pread-oversize', 'pread-return', 'container_open', True),
              ('pread-max-read', 'pread-max-read', 'container_open', False),
              ('close', 'close', 'validated', True),
@@ -99,6 +101,14 @@ with tempfile.TemporaryDirectory(prefix='blackwire-image-failure-') as temp:
                 log.unlink()
             value = json.loads(run([binaries[diagnostic], malformed if case == 'decoder-format' else image, case]))
             assert value['stage'] == stage and value['ownerPresentBeforeCleanup'] == (not cleared), (case, value)
+            if case in ('admit-stat', 'admit-stat-eperm'):
+                assert value['reason'] == 'catalog_image_access_refused' and value['failureTransportResultKnown'] and value['failureTransportResult'] == (-13 if case == 'admit-stat' else -1), value
+            if case == 'open-readonly':
+                assert value['failureTransportResult'] == -1 and not value['failureTransportResultKnown'] and value['reason'] != 'catalog_image_access_refused', value
+            if case == 'pread-eof-close-denied':
+                assert value['failureTransportResult'] == 0 and value['failureOperation'] == 'pread' and value['reason'] != 'catalog_image_access_refused', value
+            if case == 'deadline':
+                assert value['reason'] == 'catalog_image_scan_expired', value
             lines = log.read_text().splitlines() if log.exists() else []
             low = [line for line in lines if 'event=container-image-failure ' in line]
             high = [line for line in lines if 'event=catalog-image-failure ' in line]

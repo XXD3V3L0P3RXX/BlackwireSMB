@@ -13,6 +13,9 @@ struct bw_native_cover {uint8_t *bytes;size_t size;};
  * password or libsmb2's free-form error text in this record. */
 struct bw_native_check_failure {
     char share[128],stage[32],reason[129],source_reason[129];
+    char source[1024],source_stage[32],source_operation[32];
+    int container_result,transport_result;
+    unsigned transport_result_known;
     int result;uint32_t nt_status;
 };
 struct bw_native_library {

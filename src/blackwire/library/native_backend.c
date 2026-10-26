@@ -69,7 +69,7 @@ struct bw_native_backend {
     int (*preparation_idle)(void *,const char[33],const char[33],enum bw_prepare_guard_point);void *preparation_idle_owner;
     int settings_enabled,settings_known,settings_status,setup_phase,setup_error,setup_blocked,setup_checked_only;
     uint32_t settings_revision,setup_operation;char setup_token[33];struct bw_setup_generation settings_generation;
-    struct bw_native_check_failure check_failure;char check_message[768];unsigned check_settings_saved;
+    struct bw_native_check_failure check_failure;char check_message[2048];unsigned check_settings_saved;
     struct {struct bw_share_config config;struct bw_setup_generation expected;char nonce[33];int unchanged;} pending;
     struct {struct bw_share_config config;struct bw_setup_generation expected;struct bw_native_prepare_selection selection;struct bw_native_job_token token;size_t item;char authority[33];
         struct bw_native_prepared retained;unsigned setup_only;} sending;
@@ -747,6 +747,21 @@ static void check_failure(struct bw_native_check_failure *out,const char *share,
     if(stage&&strnlen(stage,sizeof out->stage)<sizeof out->stage)strcpy(out->stage,stage);
     check_reason(out->reason,reason);check_reason(out->source_reason,source_reason);out->result=result;out->nt_status=status;
 }
+static void check_source_failure(struct bw_native_check_failure *out,const struct bw_catalog_failure *source){
+    size_t n=strnlen(source->source,sizeof source->source);char stage[129],operation[129];
+    if(!n||n>=sizeof out->source||bw_manifest_validate_path(source->source,n)||!bw_json_utf8(source->source))return;
+    if(strnlen(source->stage,sizeof source->stage)>=sizeof source->stage)return;
+    if(strnlen(source->operation,sizeof source->operation)>=sizeof source->operation)return;
+    check_reason(stage,source->stage);if(strlen(stage)>=sizeof out->source_stage||!strcmp(stage,"detail_unavailable"))return;
+    check_reason(operation,source->operation);if(strlen(operation)>=sizeof out->source_operation||!strcmp(operation,"detail_unavailable"))return;
+    memcpy(out->source,source->source,n+1);strcpy(out->source_stage,stage);
+    strcpy(out->source_operation,operation);
+    out->container_result=source->container_result;out->transport_result=source->transport_result;
+    out->transport_result_known=source->transport_result_known==1;
+    /* Synchronous image operations have their own negative errno result; the
+     * raw directory NT-status slot can legitimately still be zero. */
+    if(source->transport_result<0)out->result=source->transport_result;
+}
 static void check_failure_message(struct bw_native_backend *p,const struct bw_native_check_failure *failure,int saved){
     p->check_failure=*failure;p->check_settings_saved=saved!=0;const char *what="The library could not be validated";
     if(!strcmp(failure->stage,"smb-connect")){
@@ -754,16 +769,24 @@ static void check_failure_message(struct bw_native_backend *p,const struct bw_na
             failure->nt_status==UINT32_C(0xc000006d)||failure->nt_status==UINT32_C(0xc000006a)||failure->nt_status==UINT32_C(0xc0000064)?"SMB sign-in was refused":
             failure->nt_status==UINT32_C(0xc0000022)?"SMB share access was refused":
             failure->result==-ETIMEDOUT?"The SMB connection timed out":"The SMB connection or sign-in failed";
-    }else if(strstr(failure->reason,"expired")||strstr(failure->source_reason,"expired"))what="The library scan timed out";
+    }else if(*failure->source&&failure->transport_result_known&&
+             (!strcmp(failure->source_operation,"admit_stat")||!strcmp(failure->source_operation,"generation_fstat")||
+              !strcmp(failure->source_operation,"generation_stat")||!strcmp(failure->source_operation,"pread"))&&
+             (failure->transport_result==-EACCES||failure->transport_result==-EPERM))
+        what="The share connected, but read access to a game file was refused. Check both the SMB share permissions and Windows file Read permissions for this game file";
+    else if(strstr(failure->reason,"expired")||strstr(failure->source_reason,"expired"))what="The library scan timed out";
+    else if(*failure->source&&failure->container_result==BW_PFS_IO)what="The share connected, but a game file could not be read or verified";
     else if(strstr(failure->reason,"changed")||strstr(failure->source_reason,"changed")||strstr(failure->reason,"generation")||strstr(failure->source_reason,"generation"))what="The source changed or could not be read consistently";
     else if(!strcmp(failure->stage,"artwork"))what="The share connected, but artwork could not be read";
     else if(!strcmp(failure->stage,"catalog"))what="The share connected, but its game catalog could not be read";
     else if(!strcmp(failure->stage,"library-merge"))what="The two share catalogs could not be combined";
-    snprintf(p->check_message,sizeof p->check_message,"%s%s%s: %s. Stage: %s; reason: %s%s%s; result: %d; SMB status: 0x%08x. %s",
+    snprintf(p->check_message,sizeof p->check_message,"%s%s%s: %s. Stage: %s; reason: %s%s%s; result: %d; SMB status: 0x%08x. %s%s%s%s%s%s",
         *failure->share?"Shared folder \"":"Configured library",failure->share,*failure->share?"\"":"",what,
         *failure->stage?failure->stage:"validation",*failure->reason?failure->reason:"unavailable",
         *failure->source_reason?" / ":"",failure->source_reason,failure->result,failure->nt_status,
-        saved?"The settings were saved; refresh the library to check its current status.":"Saved settings were not replaced.");
+        saved?"The settings were saved; refresh the library to check its current status.":"Saved settings were not replaced.",
+        *failure->source?" File: ":"",failure->source,*failure->source?"; file stage: ":"",failure->source_stage,
+        *failure->source?".":"");
 }
 static int discover_one(void *opaque,struct bw_share_config *share,struct bw_native_library *out,size_t cover_limit){
     (void)opaque;struct bw_source_smb source={0};double start=now();if(start<0)return -1;source.deadline=start+180;
@@ -798,6 +821,7 @@ done:
     if(result){
         uint32_t status=!strcmp(stage,"smb-connect")&&source.smb?(uint32_t)smb2_get_nterror(source.smb):source.last_status;
         check_failure(&out->failure,share_name,stage,result,status,out->catalog.error,source.error);
+        check_source_failure(&out->failure,&out->catalog.failure);
         bw_send_log("connection-source-failure","share=%.127s stage=%s result=%d smb_status=0x%08x catalog_reason=%.128s source_reason=%.128s requests=%u entries=%u",share_name,stage,result,status,out->failure.reason,out->failure.source_reason,source.requests,source.entries);
     }
     out->requests=source.requests;out->entries=source.entries;out->content_bytes=source.content_bytes;
@@ -1033,6 +1057,10 @@ static void setup_failure_json(struct bw_json *json,const struct bw_native_backe
     bw_json_text(json,",\"stage\":");bw_json_string(json,f->stage);
     bw_json_text(json,",\"reason\":");bw_json_string(json,f->reason);
     bw_json_text(json,",\"sourceReason\":");bw_json_string(json,f->source_reason);
+    bw_json_text(json,",\"sourcePath\":");bw_json_string(json,f->source);
+    bw_json_text(json,",\"sourceStage\":");bw_json_string(json,f->source_stage);
+    bw_json_text(json,",\"sourceOperation\":");bw_json_string(json,f->source_operation);
+    bw_json_format(json,",\"containerResult\":%d,\"transportResult\":%d,\"transportResultKnown\":%s",f->container_result,f->transport_result,f->transport_result_known?"true":"false");
     bw_json_format(json,",\"result\":%d,\"ntStatus\":\"0x%08x\",\"settingsSaved\":%s}",f->result,f->nt_status,p->check_settings_saved?"true":"false");
 }
 static const char *setup_message(const struct bw_native_backend *p){

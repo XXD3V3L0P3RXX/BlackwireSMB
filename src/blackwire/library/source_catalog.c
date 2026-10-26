@@ -12,6 +12,7 @@ int bw_source_catalog_binding(struct bw_provider_binding *out,const struct bw_sh
 #include "source_param.h"
 #include "send_diagnostic.h"
 #include "../streamreader/copy_sha256.h"
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,7 +43,9 @@ void bw_source_catalog_image_hash(const struct smb2_stat_64 *p,uint8_t out[32]){
     for(unsigned i=0;i<7;i++){uint8_t bytes[8];for(unsigned j=0;j<8;j++)bytes[j]=(uint8_t)(fields[i]>>(8*j));cp_sha_update(&sha,bytes,8);}
     cp_sha_final(&sha,out);
 }
-static int live(const struct bw_source_smb *p){struct timespec at;return !p->smb||clock_gettime(CLOCK_MONOTONIC,&at)||((double)at.tv_sec+(double)at.tv_nsec/1e9)>=p->deadline?-1:0;}
+/* Existing callers use this as a boolean; -2 additionally preserves a proven
+ * deadline expiry instead of labelling it a changed image generation. */
+static int live(const struct bw_source_smb *p){struct timespec at;if(!p->smb||clock_gettime(CLOCK_MONOTONIC,&at))return -1;return ((double)at.tv_sec+(double)at.tv_nsec/1e9)>=p->deadline?-2:0;}
 static int listed_time(uint64_t ticks,uint64_t seconds,uint64_t nsec){
     const uint64_t epoch=UINT64_C(116444736000000000);
     return ticks>=epoch&&(ticks-epoch)/10000000==seconds&&((ticks-epoch)%10000000)/10==nsec/1000;
@@ -52,12 +55,23 @@ static int listed_image(const struct bw_source_info *listed,const struct smb2_st
         listed_time(listed->mtime_ticks,actual->smb2_mtime,actual->smb2_mtime_nsec)&&listed_time(listed->ctime_ticks,actual->smb2_ctime,actual->smb2_ctime_nsec);
 }
 static int fail(struct bw_source_catalog *p,const char *error){if(!p->error)p->error=error;return -1;}
+static const char *image_operation(enum bw_container_smb_failure_operation operation){
+    static const char *const names[]={"none","admit_stat","admit_metadata","open_readonly","generation_fstat","generation_stat",
+        "generation_metadata","read_bounds","max_read","pread","close"};
+    return (unsigned)operation<sizeof names/sizeof names[0]?names[operation]:"unknown";
+}
+static int image_access_refused(const struct bw_container_smb *image){
+    return image->first_failure_seen&&image->first_failure_result_known&&
+        (image->first_failure_operation==BW_IMAGE_FAILURE_ADMIT_STAT||image->first_failure_operation==BW_IMAGE_FAILURE_FSTAT||
+         image->first_failure_operation==BW_IMAGE_FAILURE_GENERATION_STAT||image->first_failure_operation==BW_IMAGE_FAILURE_PREAD)&&
+        (image->first_failure_result==-EACCES||image->first_failure_result==-EPERM);
+}
 struct candidate {char source[1024],name[241];struct bw_source_info info;unsigned depth;};
 struct scan {struct bw_source_smb *source;struct bw_source_catalog *catalog;struct candidate *pending;size_t count,capacity;const char *relative;unsigned depth;};
-struct logical_metadata {struct bw_source_smb *source;struct bw_pfs_inode boot,param,icon;size_t path_bytes;uint32_t files;int error;};
+struct logical_metadata {struct bw_source_smb *source;struct bw_pfs_inode boot,param,icon;size_t path_bytes;uint32_t files;int error,expired;};
 static int logical(void *opaque,const char *path,const struct bw_pfs_inode *node){
     struct logical_metadata *p=opaque;
-    if(live(p->source)){p->error=BW_CONTAINER_STALE;return -1;}
+    int state=live(p->source);if(state){p->error=BW_CONTAINER_STALE;p->expired=state==-2;return -1;}
     size_t length=strnlen(path,BW_MANIFEST_MAX_PATH+1u);
     if(bw_manifest_validate_path(path,length)){p->error=BW_PFS_PATH;return -1;}
     if(bw_source_excluded(path))return 0;
@@ -78,7 +92,8 @@ static int inspect_image(struct scan *scan,const struct candidate *candidate,str
     if(candidate->info.size<48||candidate->info.size>BW_PFS_MAX_VOLUME){result=BW_PFS_UNSUPPORTED;goto done;}
     item->container_stage=BW_CATALOG_IMAGE_OPEN;
     result=bw_container_smb_open_owned(image,&source->smb,candidate->source);
-    if(result==BW_PFS_IO||result==BW_CONTAINER_STALE){bad=fail(scan->catalog,"catalog_image_generation_or_io_failed");goto done;}
+    if(result==BW_PFS_IO||result==BW_CONTAINER_STALE){bad=fail(scan->catalog,
+        image_access_refused(image)?"catalog_image_access_refused":"catalog_image_generation_or_io_failed");goto done;}
     if(!listed_image(&candidate->info,&image->admitted)){item->container_stage=BW_CATALOG_IMAGE_LISTING;bad=fail(scan->catalog,"catalog_image_listing_changed");goto done;}
     item->image=image->admitted;bw_source_catalog_image_hash(&item->image,item->image_sha256);
     item->container_kind=image->container.kind;
@@ -87,6 +102,7 @@ static int inspect_image(struct scan *scan,const struct candidate *candidate,str
     struct logical_metadata metadata={.source=source};result=bw_container_walk(&image->container,logical,&metadata,NULL);
     item->namespace_files=metadata.files;item->namespace_path_bytes=(uint32_t)metadata.path_bytes;
     if(metadata.error)result=metadata.error;
+    if(metadata.expired)bad=fail(scan->catalog,"catalog_image_scan_expired");
     if(result)goto done;
     item->container_stage=BW_CATALOG_IMAGE_BOOT;
     if(!metadata.boot.id||!metadata.boot.logical_size||metadata.boot.logical_size>UINT64_C(2147483648)){result=BW_PFS_FORMAT;goto done;}
@@ -117,7 +133,15 @@ done:
     /* open() closes a refused format itself; retain any close/transport error
      * from that path too, and discard this whole partially scanned library. */
     if(image->last_transport_error)bad=fail(scan->catalog,"catalog_image_transport_failed");
-    if(result==BW_PFS_IO||result==BW_CONTAINER_STALE)bad=fail(scan->catalog,"catalog_image_generation_or_io_failed");
+    if(result==BW_PFS_IO||result==BW_CONTAINER_STALE)bad=fail(scan->catalog,image_access_refused(image)?"catalog_image_access_refused":"catalog_image_generation_or_io_failed");
+    if(bad&&!scan->catalog->failure.source[0]){
+        struct bw_catalog_failure *failure=&scan->catalog->failure;
+        memcpy(failure->source,candidate->source,strlen(candidate->source)+1);
+        const char *stage=bw_source_catalog_stage_name(item);memcpy(failure->stage,stage,strlen(stage)+1);
+        const char *operation=image_operation(image->first_failure_operation);memcpy(failure->operation,operation,strlen(operation)+1);
+        failure->container_result=result;failure->transport_result=image->first_failure_result;
+        failure->transport_result_known=image->first_failure_result_known;
+    }
     if(bad)bw_send_log("catalog-image-failure",
         "path=%.1023s stage=%s containerResult=%d containerError=%s catalogReason=%.128s transportResult=%d "
         "connectionPresent=%u containerKind=%d decoderResult=%d imageFailed=%d reads=%llu readBytes=%llu generationChecks=%llu namespaceFiles=%u deadline=%.6f",

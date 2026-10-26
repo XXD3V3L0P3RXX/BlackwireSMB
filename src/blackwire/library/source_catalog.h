@@ -33,11 +33,20 @@ struct bw_catalog_item {
      * configured share so equal relative paths remain distinct sources. */
     char source_share[128];
 };
+/* Owned first failing image observation, retained when the partial catalog is
+ * discarded. Relative source path and fixed stage only; no configuration,
+ * account, password, errno inference or free-form transport error text. */
+struct bw_catalog_failure {
+    char source[1024],stage[32],operation[32];
+    int container_result,transport_result;
+    unsigned transport_result_known;
+};
 struct bw_source_catalog {
     struct bw_catalog_item *items;
     size_t count,capacity;
     uint32_t collections,entries,skipped,unsearched;
     const char *error;
+    struct bw_catalog_failure failure;
 };
 /* Read bounded logical title metadata without startup hashing/copying. PFSC
  * may decode bounded physical blocks containing neighboring logical bytes.

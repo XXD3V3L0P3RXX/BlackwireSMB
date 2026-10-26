@@ -51,7 +51,9 @@ static int same(const struct smb2_stat_64 *a,const struct smb2_stat_64 *b) {
         a->smb2_mtime==b->smb2_mtime && a->smb2_mtime_nsec==b->smb2_mtime_nsec &&
         a->smb2_ctime==b->smb2_ctime && a->smb2_ctime_nsec==b->smb2_ctime_nsec;
 }
-static int failure(struct bw_container_smb *p,int transport) {
+static int failure(struct bw_container_smb *p,int transport,enum bw_container_smb_failure_operation operation,unsigned integer_result) {
+    if(!p->first_failure_seen){p->first_failure_seen=1;p->first_failure_result=transport;
+        p->first_failure_operation=operation;p->first_failure_result_known=integer_result;}
     p->failed=1;p->last_transport_error=transport;
     if(transport&&p->transport_owner&&p->smb){
         struct smb2_context *smb=p->smb;
@@ -69,12 +71,12 @@ static int generation(void *context) {
     if (p->failed || !p->handle) return -1;
     p->generation_checks++;
     int result=smb2_fstat(p->smb,p->handle,&held);
-    if (result) { BW_IMAGE_FAILURE(p,"generation-fstat",result,0,0,NULL,NULL);return failure(p,result); }
+    if (result) { BW_IMAGE_FAILURE(p,"generation-fstat",result,0,0,NULL,NULL);return failure(p,result,BW_IMAGE_FAILURE_FSTAT,1); }
     result=smb2_stat(p->smb,p->path,&named);
-    if (result) { BW_IMAGE_FAILURE(p,"generation-stat",result,0,0,&held,NULL);return failure(p,result); }
+    if (result) { BW_IMAGE_FAILURE(p,"generation-stat",result,0,0,&held,NULL);return failure(p,result,BW_IMAGE_FAILURE_GENERATION_STAT,1); }
     if (!same(&p->admitted,&held) || !same(&p->admitted,&named)) {
         BW_IMAGE_FAILURE(p,!same(&p->admitted,&held)?"generation-held-mismatch":"generation-named-mismatch",0,0,0,&held,&named);
-        return failure(p,0);
+        return failure(p,0,BW_IMAGE_FAILURE_GENERATION_METADATA,0);
     }
     return 0;
 }
@@ -82,16 +84,16 @@ static int exact_read(void *context,uint64_t at,void *out,size_t size) {
     struct bw_container_smb *p=context;
     if (p->failed || !p->handle || (!out && size) || size>BW_PFSC_MAX_READ ||
         at>p->admitted.smb2_size || size>p->admitted.smb2_size-at) {
-        BW_IMAGE_FAILURE(p,!p->handle?"pread-state":"pread-bounds",0,at,size,NULL,NULL);return failure(p,0);
+        BW_IMAGE_FAILURE(p,!p->handle?"pread-state":"pread-bounds",0,at,size,NULL,NULL);return failure(p,0,BW_IMAGE_FAILURE_READ_BOUNDS,0);
     }
     for (size_t used=0;used<size;) {
         uint32_t want=(uint32_t)(size-used);
         uint32_t maximum=smb2_get_max_read_size(p->smb);
-        if(!maximum){BW_IMAGE_FAILURE(p,"pread-max-read",0,at+used,want,NULL,NULL);return failure(p,0);}
+        if(!maximum){BW_IMAGE_FAILURE(p,"pread-max-read",0,at+used,want,NULL,NULL);return failure(p,0,BW_IMAGE_FAILURE_MAX_READ,0);}
         if(want>maximum)want=maximum;
         p->read_calls++;
         int got=smb2_pread(p->smb,p->handle,(uint8_t *)out+used,want,at+used);
-        if (got<=0 || (uint32_t)got>want) {BW_IMAGE_FAILURE(p,"pread-return",got,at+used,want,NULL,NULL);return failure(p,got);}
+        if (got<=0 || (uint32_t)got>want) {BW_IMAGE_FAILURE(p,"pread-return",got,at+used,want,NULL,NULL);return failure(p,got,BW_IMAGE_FAILURE_PREAD,1);}
         used+=(size_t)got;p->read_bytes+=(uint64_t)got;
     }
     return 0;
@@ -106,10 +108,10 @@ static int open_image(struct bw_container_smb *p,struct smb2_context *smb,const 
     int result=smb2_stat(smb,path,&p->admitted);
     if (result || p->admitted.smb2_type!=SMB2_TYPE_FILE || p->admitted.smb2_size<48 ||
         p->admitted.smb2_size>BW_PFS_MAX_VOLUME) {
-        BW_IMAGE_FAILURE(p,result?"admit-stat":"admit-metadata",result,0,0,NULL,NULL);failure(p,result);return BW_PFS_IO;
+        BW_IMAGE_FAILURE(p,result?"admit-stat":"admit-metadata",result,0,0,NULL,NULL);failure(p,result,result?BW_IMAGE_FAILURE_ADMIT_STAT:BW_IMAGE_FAILURE_ADMIT_METADATA,result!=0);return BW_PFS_IO;
     }
     p->handle=smb2_open(smb,path,O_RDONLY);
-    if (!p->handle) { BW_IMAGE_FAILURE(p,"open-readonly",-1,0,0,NULL,NULL);failure(p,-1);return BW_PFS_IO; }
+    if (!p->handle) { BW_IMAGE_FAILURE(p,"open-readonly",-1,0,0,NULL,NULL);failure(p,-1,BW_IMAGE_FAILURE_OPEN,0);return BW_PFS_IO; }
     struct bw_container_ops ops={exact_read,generation};
     result=bw_container_open(&p->container,&ops,p,p->admitted.smb2_size);
     if (result) { bw_container_smb_close(p);return result; }
@@ -125,6 +127,6 @@ int bw_container_smb_close(struct bw_container_smb *p) {
     if (p->handle) result=smb2_close(p->smb,p->handle);
     if(result)BW_IMAGE_FAILURE(p,"close",result,0,0,NULL,NULL);
     p->handle=NULL;p->container.ready=0;p->failed=1;
-    if (result) failure(p,result);
+    if (result) failure(p,result,BW_IMAGE_FAILURE_CLOSE,1);
     return result;
 }
