@@ -262,8 +262,8 @@
       "sha256": "1063cd5a8ca15683b2de062ae3e9433d60828bfb49e00c3787f5974c801efb84"
     },
     "src/blackwire/library/home_session.c": {
-      "bytes": 5072,
-      "sha256": "5ce01d7226d7f19a2a37b76970a5d35aac942e8c6a040111fe1ca9a45e2fddcc"
+      "bytes": 4910,
+      "sha256": "7bf24f70bb9e10f8777872741b8db65f9ebd0b3c88f90e538070b89ef48237c4"
     },
     "src/blackwire/library/home_session.h": {
       "bytes": 2385,
@@ -626,16 +626,16 @@
       "sha256": "02fbbd4ad3080e5ace0bbd28f72f6ce989a533005f7e5ca2c9b1c71e5088a10f"
     },
     "src/blackwire/library/preload_handoff.c": {
-      "bytes": 20341,
-      "sha256": "0d3edc64020f2947955ce98f18af6d25be697c81bdb8e7060a8e7b4467ae9e40"
+      "bytes": 21320,
+      "sha256": "099aa4fc57cd31ce135d4011840984726d356e7bb0a9cca0b315c845dc572305"
     },
     "src/blackwire/library/preload_handoff.h": {
-      "bytes": 6716,
-      "sha256": "50181e5d7a3d8497e8be2aea1a8b39b7263c3d321965075acba576723efcd4a3"
+      "bytes": 7160,
+      "sha256": "ca66212eeadec5c4a925d9bc98f36a0edddbce463b6eaf3af0d479b378b0157a"
     },
     "src/blackwire/library/preload_launch.c": {
-      "bytes": 8308,
-      "sha256": "19ec0121ea852b8cf51840cd42b6b007aebc78d4337d968c9da95f5bc999715d"
+      "bytes": 8644,
+      "sha256": "340a809ccd0b044048d94de18f760697124f48cd16ecd5a6794be20290fbba3c"
     },
     "src/blackwire/library/preload_launch.h": {
       "bytes": 3356,
@@ -1544,16 +1544,16 @@
       "sha256": "8685efb3141534229e4babc4d9abe1e37b1241dec8b614c0a67248b19cbe0863"
     },
     "tests/dashboard/lifecycle/check_preload_bundle.py": {
-      "bytes": 5208,
-      "sha256": "d5b7c190e69bf73d6bce41bb26d05381727016466ccc1faea8fc6d03186030a5"
+      "bytes": 5573,
+      "sha256": "5eca33e0b00025582653f185e1639ca3430495217d955cb9f2df5b6f437600b2"
     },
     "tests/dashboard/lifecycle/check_preload_bundle_upgrade.py": {
-      "bytes": 12009,
-      "sha256": "42053a33d04ac5c046d1096c499073426f30bb0d1b7e40de78a1f9f689b20549"
+      "bytes": 12372,
+      "sha256": "9592a5d49b513cd81dc6bedff1ec80f1572099307492bfd5babaa2e92706d1e5"
     },
     "tests/dashboard/lifecycle/check_preload_bundle_upgrade_backend.py": {
-      "bytes": 7781,
-      "sha256": "2f86a0c7eb55d52463a93a67c6eb839804a266a36c7c50925b3eb30aa481871b"
+      "bytes": 8032,
+      "sha256": "7fe338e1c694be40606e40dcaaf6fbe10a3ec3792acdd2301104b9df1097e430"
     },
     "tests/dashboard/lifecycle/check_preload_reader_uninstall.py": {
       "bytes": 17051,
@@ -1620,12 +1620,12 @@
       "sha256": "3a83b9e8c5c35a4817815dbb9cb9bb036d55de94de5c7627b48c8e0002ea2169"
     },
     "tests/dashboard/lifecycle/check_self_contained_bundle.py": {
-      "bytes": 3311,
-      "sha256": "1a7a9267bb4915539a4e5b136df0d121ac028ae6d5dc46facd27aff71c093277"
+      "bytes": 3699,
+      "sha256": "f21934449f4515c253f07987f67f4e4a80ecbf1f84c5c73ccadbb09c13fc4e25"
     },
     "tests/dashboard/lifecycle/check_source_ampr_witness.py": {
-      "bytes": 5126,
-      "sha256": "229709ac35cc08256afaf89d0249e8ac3737ddfd7dbf5cda40e3f1b2aaf5eb11"
+      "bytes": 5277,
+      "sha256": "2c055bf54a7c22f612e98786ad527aba7b9768596982d670b84348ccadba17d5"
     },
     "tests/dashboard/lifecycle/check_source_companions.py": {
       "bytes": 4547,
@@ -1952,8 +1952,8 @@
       "sha256": "3422a6201d32ebd9f6f8887526512a916be45645b77e6b79245cc923dcdbdb10"
     },
     "tests/home/check_projected_handoff.py": {
-      "bytes": 1908,
-      "sha256": "ac89bb7aea44c3e1b938facd42ab2aecac3ce42272e385aee8a031878a95df38"
+      "bytes": 2646,
+      "sha256": "b67fc03024e57fa42d04712a145e20da101ab926d12e702b1d2f04d530a77a39"
     },
     "tests/home/check_provision.py": {
       "bytes": 3907,
@@ -1980,8 +1980,8 @@
       "sha256": "9fd61efbcbf0e7011722efa4bd93b3a99daa8b3e40a854f1d9e127add856d36c"
     },
     "tests/home/projected_handoff_test.c": {
-      "bytes": 7152,
-      "sha256": "2e4199fad0dd44cfce9a3bebeabfb690e48bfa5fa02928adb958608741862fc8"
+      "bytes": 11651,
+      "sha256": "840096aeb7c60361b74298ffefa6cde8b11817074d97a832eebba782d00ef80d"
     },
     "tests/home/provision_test.c": {
       "bytes": 8597,
@@ -2088,5 +2088,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "9ffa91f556018d7fcacc1c7681a2b05d62fe1802"
+  "runtimeSourceCommit": "1ed398203bf04dd98c3663d8e36137e78cd04bab"
 }
