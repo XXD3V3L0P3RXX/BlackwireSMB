@@ -178,12 +178,12 @@
       "sha256": "9f1263cf843d5bfa225f1ca6aa3aa1e6067b4f81df34c0f5e32c0b4f7408ebae"
     },
     "src/blackwire/library/compressed_data.c": {
-      "bytes": 10722,
-      "sha256": "38bf8f2da534e3f76a04e10b8b3df7db0f7e6e7302fa3ca22e5e2b5fd7b9b811"
+      "bytes": 11038,
+      "sha256": "9dc9aa8eaf6c2bd15186c32e42195c283ebbd0bf3ba2a546a2cc1d7d1064da94"
     },
     "src/blackwire/library/compressed_data.h": {
-      "bytes": 4055,
-      "sha256": "027c3a6c3a9cc415417ae05ce1f93bcb24fba9bb1691baaa17c86f20bf5a2f01"
+      "bytes": 4474,
+      "sha256": "4daa9146832f09f23fb2468b3f9c90f6c5bd3bfbd609cae80ab47992060a5005"
     },
     "src/blackwire/library/derived_batch.c": {
       "bytes": 43875,
@@ -298,8 +298,8 @@
       "sha256": "0f6c64dda1456217dd67226c84fcbaeac625c3d28db8244e9465399171e1a79f"
     },
     "src/blackwire/library/native_backend.c": {
-      "bytes": 149027,
-      "sha256": "d7835b07557157de7002708f839c2d588f66809055a23c9995163d0b35af24c3"
+      "bytes": 149948,
+      "sha256": "976941d7cece79408d0af5d23f54405ed998fa663e7ece887e0d1a09827b3429"
     },
     "src/blackwire/library/native_backend.h": {
       "bytes": 9720,
@@ -354,12 +354,12 @@
       "sha256": "d4c11f6e06164c01c7dd95bce743e56ab388e576d2f99bb57268166278c9840c"
     },
     "src/blackwire/library/native_cleanup_remote.c": {
-      "bytes": 29062,
-      "sha256": "9530d1423934b83cb107289003ece1a1918458b1895e0195fac81d19756fa789"
+      "bytes": 43877,
+      "sha256": "ded0eba5e2ea6a99133cf93bcab56ed3c27f64321bf6226b22720f164b79f756"
     },
     "src/blackwire/library/native_cleanup_remote.h": {
-      "bytes": 4717,
-      "sha256": "c4ec6186c95abf066cfd558e1bd2c43ce30103637b33de7a60fb81813f428126"
+      "bytes": 4932,
+      "sha256": "3e6c6f27ae483fa86e7838f4a73ead4759afc5736744300d6c768738c156c2ba"
     },
     "src/blackwire/library/native_derived_context.c": {
       "bytes": 7251,
@@ -386,8 +386,8 @@
       "sha256": "031b53ac5a163204bd88af43023e2de3a45075b85dc0bd70671a049e9881d86e"
     },
     "src/blackwire/library/native_game_uninstall.c": {
-      "bytes": 51986,
-      "sha256": "f1ef46f9e05eabed3f18eb8cffb34ddf94fb8ef9425d9e2c3b8f80c5effd8db4"
+      "bytes": 57044,
+      "sha256": "ece8fa1129d27f89a0cdf1745de9c6494e7e47e0403d4f293c79bb025c9d8824"
     },
     "src/blackwire/library/native_game_uninstall.h": {
       "bytes": 5998,
@@ -718,12 +718,12 @@
       "sha256": "6dd351eb2c5c29bf8b6df143f5f093a8aef8bc55ae69b892863e767f106798af"
     },
     "src/blackwire/library/source_catalog.c": {
-      "bytes": 18775,
-      "sha256": "aff241b02aa23db174b4d9b8cb28abe58e5daba1372e68053e8b2d93be4a365c"
+      "bytes": 22125,
+      "sha256": "5117577a4ccfc19403df890530dbab17f8ccc0b55a20a5f6b1321b65ab082f65"
     },
     "src/blackwire/library/source_catalog.h": {
-      "bytes": 3032,
-      "sha256": "51c61533b680adffbf4c3cbfc9fe4b6ec829bd98e873f3639c3e0d565bf722ad"
+      "bytes": 4005,
+      "sha256": "12c477697f4b430cbb5bdee6713ded96c5211832293b87e7ddc4fe01c7c9a748"
     },
     "src/blackwire/library/source_directory.c": {
       "bytes": 2581,
@@ -1306,8 +1306,8 @@
       "sha256": "4c9ee4a7eb3e46a2621fa27d389b6c06f8f3bbc8fe5ef8c9e561dafda472d96a"
     },
     "tools/build/reader.py": {
-      "bytes": 19320,
-      "sha256": "ada16fd5df628dfa6ca7f83627f2e3fe9c1fcd7f64a8233a17a5576f217341fa"
+      "bytes": 19910,
+      "sha256": "bbdb74effb2461843595a553eacee4c0469a541e3242aec3322ccad7e662a1c6"
     },
     "tools/build/reader_patch.py": {
       "bytes": 12211,
@@ -1351,9 +1351,21 @@
       "bytes": 12292,
       "sha256": "011a9240f8993ad2eb356832706d1d7c2821a6bcbc4457e192e546f816862696"
     },
+    "tests/compressed/backend_catalog_diagnostic_test.c": {
+      "bytes": 2589,
+      "sha256": "5fc17f09022a58b85060f0769b4f54eca260abb89d7e8127f281ce061a1165cc"
+    },
+    "tests/compressed/catalog_admission_test.c": {
+      "bytes": 6762,
+      "sha256": "176ca1647d8176b160d037fba2eda11ae3afb21c40f3a8d12d83ea7e5886f549"
+    },
     "tests/compressed/catalog_cover_test.c": {
       "bytes": 5372,
       "sha256": "d083bb1d7bbf9fcbf4202a7f52b01ceec876eeebc42f3042c84591d1a5867e67"
+    },
+    "tests/compressed/check_catalog_admission.py": {
+      "bytes": 15501,
+      "sha256": "8233ced097dd937e4d19b2c960e800556d1ebee07177c725628551282e18dd6c"
     },
     "tests/compressed/check_catalog_covers.py": {
       "bytes": 3532,
@@ -1395,6 +1407,10 @@
       "bytes": 4443,
       "sha256": "609f139ff102b87e0130a923b29c3580bc9179dee8781ee8f0719767a05bcad9"
     },
+    "tests/compressed/namespace_limit_test.c": {
+      "bytes": 5048,
+      "sha256": "012280d10f7fa46e944b2c41320b64f1bf286e00d592f50fdc1424d999581692"
+    },
     "tests/compressed/pfsc_batch_test.c": {
       "bytes": 4031,
       "sha256": "7d7f849aa1fefde40c6a7b3b66aea3aa5a415e820ebdaa1ab8a0f0762c7ad067"
@@ -1428,8 +1444,8 @@
       "sha256": "7611e185a807cbe5b8e54cd2208f2a08a4643600ac1a9606ad015fc253e8240b"
     },
     "tests/dashboard/lifecycle/check_game_uninstall_remote.py": {
-      "bytes": 11175,
-      "sha256": "1cfb640348704eb4e925d78beece6bf792c87495267ab0a0809e628149940fff"
+      "bytes": 11339,
+      "sha256": "e12533405f0f5c044e987f09af079f199adc40237683f98ec37bf79bdb940576"
     },
     "tests/dashboard/lifecycle/check_guard_split.py": {
       "bytes": 7239,
@@ -1451,13 +1467,17 @@
       "bytes": 5858,
       "sha256": "66f68dd4724c085c88360f6a908817c336dd8ebe4363461ce0220f2be544d0c3"
     },
+    "tests/dashboard/lifecycle/check_manual_image_sources.py": {
+      "bytes": 11593,
+      "sha256": "1aa9855d921efabcf8b72484097c8326f673fbcf3b4d7f1e267d0fb60499ddc0"
+    },
     "tests/dashboard/lifecycle/check_media_launcher.py": {
       "bytes": 4065,
       "sha256": "bcde67cdf496644664a7d19755ab90df71a0b2d4e329b20604e3c76ebb89400d"
     },
     "tests/dashboard/lifecycle/check_play_preparation_failure.py": {
-      "bytes": 5686,
-      "sha256": "2df6a2b84f2da26553be824a85da2192225ad9ab6f21100d016e98830f5bb81d"
+      "bytes": 7277,
+      "sha256": "239292c1dd1ecd26d221454b85c5f230fd544f8d41a8e6e3522863b74d4ff7c5"
     },
     "tests/dashboard/lifecycle/check_preload_bundle.py": {
       "bytes": 5208,
@@ -1476,20 +1496,20 @@
       "sha256": "b5ae1d94723b3758af6c658088928215c651f8a5700488c2299336136f3e37df"
     },
     "tests/dashboard/lifecycle/check_prepare_source_policy.py": {
-      "bytes": 6388,
-      "sha256": "9b3baea173f2b4016c05310b8fd1e4a47b786025909a296d212b5a9b89cd40a9"
+      "bytes": 6554,
+      "sha256": "4ddd6ff58a3073e0b2f4775f74c5d1e782de917a55d8f4742dfa2b313ddc8c46"
     },
     "tests/dashboard/lifecycle/check_ready_control_idle.py": {
       "bytes": 8627,
       "sha256": "dd74a2ab121aae4cd7fb807e280b24ab8b13c6b83c2ef0a6f48d04435203e32f"
     },
     "tests/dashboard/lifecycle/check_registration_initial_absence.py": {
-      "bytes": 6068,
-      "sha256": "55be48cb26d4a4f7c6daa3decd62a6ebd0f6e41736a94bc82ac413116aafcd57"
+      "bytes": 6234,
+      "sha256": "72a1a5af1ec8e86a4279ec5d5668cfb274c8bd622ff57bb676b3d46fb82a73b8"
     },
     "tests/dashboard/lifecycle/check_registration_lifecycle.py": {
-      "bytes": 10093,
-      "sha256": "c3e226480a14d44a929840618ff92f07c24b648d8e281622d49a1b06686c1784"
+      "bytes": 10248,
+      "sha256": "fe755a07a4107d8833aba2fa5d57761cc8e30d87da25f8991d697f903ea194df"
     },
     "tests/dashboard/lifecycle/check_registration_observer.py": {
       "bytes": 4045,
@@ -1514,6 +1534,10 @@
     "tests/dashboard/lifecycle/check_self_contained_bundle.py": {
       "bytes": 3311,
       "sha256": "1a7a9267bb4915539a4e5b136df0d121ac028ae6d5dc46facd27aff71c093277"
+    },
+    "tests/dashboard/lifecycle/check_uninstall_identity_diagnostic.py": {
+      "bytes": 3827,
+      "sha256": "a3cbc722d7e9ce8c46f7515a5c7158731a352e0029775da7441fd6e24cd843b2"
     },
     "tests/dashboard/lifecycle/fixture_sdk.py": {
       "bytes": 2899,
@@ -1583,13 +1607,17 @@
       "bytes": 9004,
       "sha256": "c5316229495421b9d9aaeedb7c71b0fe281bd386dc203ff7419ad2c30496a7d0"
     },
+    "tests/dashboard/lifecycle/test_manual_image_sources.c": {
+      "bytes": 5881,
+      "sha256": "b3fcf84a85085d0ecf4720b4428bc61fd71c987672dd481d3d3622c565f84b04"
+    },
     "tests/dashboard/lifecycle/test_media_launcher.c": {
       "bytes": 10058,
       "sha256": "82df444cf2f844e7e381272ab1b35f64c1520da7cfb7eb7741110f81329319ec"
     },
     "tests/dashboard/lifecycle/test_play_preparation_failure.c": {
-      "bytes": 22683,
-      "sha256": "c562ce54d871fd55472752459fb0594de4121b8b6e692bd0069b0f00c81e42ac"
+      "bytes": 23663,
+      "sha256": "69949927587740653200f91733854bb9721dc65081b7097b0976a68c29370b22"
     },
     "tests/dashboard/lifecycle/test_preload_bundle.c": {
       "bytes": 15329,
@@ -1670,6 +1698,10 @@
     "tests/dashboard/lifecycle/test_removed_sources_io.h": {
       "bytes": 491,
       "sha256": "c0c1782ca2ae2c9f9f10c4d197a3e722134c7e6c26b4082a353f9a056871e5b7"
+    },
+    "tests/dashboard/lifecycle/test_uninstall_identity_diagnostic.c": {
+      "bytes": 7006,
+      "sha256": "97a790488c686f06f26233bd73900dfd6ca8284fbc982e310bf8fc1e0149e23b"
     },
     "tests/diagnostics/check_registration_wait.py": {
       "bytes": 1844,
@@ -1818,7 +1850,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Signed SMB performance, prepare-only existing-library compatibility, qualified optional PlayGo companions, published beta.2 reader upgrade and bounded registration confirmation; exact hardware evidence recorded separately",
+  "developmentQualification": "Signed SMB performance, prepare-only existing-library compatibility, qualified optional PlayGo companions, published beta.2 reader upgrade, bounded registration confirmation, aligned large compressed namespaces and strict known-image cleanup; exact hardware evidence recorded separately",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -1828,5 +1860,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "e8b4757d61be4cbead90f1588a3de62e29de85eb"
+  "runtimeSourceCommit": "8d0db1c9013e0e75bd5bea2641f61a3c07ededd6"
 }
