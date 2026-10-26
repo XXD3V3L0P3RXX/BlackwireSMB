@@ -24,7 +24,7 @@ The beta includes the bounded Send/setup logger. Download these files with your 
 /data/blackwire/library.log
 ```
 
-The dedicated log records preparation progress, setup steps 2–13, directory checks and the first failing operation/path/error. It appends across restarts and is capped at about 1 MiB. If an older log has filled the cap, save it first, stop Blackwire while idle and rename only that log to an archive filename before a new capture. An unavailable logger must not grant retry or setup authority.
+The dedicated log records preparation progress, setup steps 2–13, directory checks and the first failing operation/path/error. Beta.2 also records settings-file refusal categories, connection-check start/end and failures during SMB connection, catalog parsing or artwork. The optional summary includes `settingsFile` and `storageStatus` without exposing credentials. It appends across restarts and is capped at about 1 MiB. If an older log has filled the cap, save it first, stop Blackwire while idle and rename only that log to an archive filename before a new capture. An unavailable logger must not grant retry or setup authority.
 
 The optional collector uses Python on the PC and makes read-only GET requests:
 
@@ -48,6 +48,8 @@ Do not attach passwords, configuration files, raw `/api/state` dumps, game image
 The connection is committed only after the library check succeeds. Image discovery or artwork failures can therefore prevent a new configuration file from being written. Keep existing settings and the failing evidence; do not repeatedly delete files or force a save. Report the exact message, whether fields remain disabled, whether you used a PC or PS5 browser, the build ID and the collector's `setup` fields with the logs above. This distinguishes a file-read refusal from a failed connection or image scan.
 
 Game data is decompressed on the PS5. The PC serves SMB reads, so low PC CPU use does not by itself show that extraction failed. Measured traffic during metadata discovery or startup-file copying is not a raw link-speed test. This beta does not add a PC cache/service or claim a measured loading-speed improvement.
+
+A separate message saying **“The exact frontend or preparation idle authority could not be retained”** is a refusal before preparation is accepted. It does not identify a corrupt game or establish that a game is actually running. Close any running game normally and check the payload inventory and build ID. If it repeats once, retain the reviewed Blackwire logs and ShadowMountPlus lifecycle evidence (`/data/shadowmount/debug.log`), with firmware/payload versions and whether the browser was on PC or PS5. Do not erase logs or preparations to force the idle check to pass. This exact refusal is still under investigation.
 
 ## Scope and rollback
 

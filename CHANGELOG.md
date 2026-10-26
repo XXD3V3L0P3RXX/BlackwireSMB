@@ -2,7 +2,7 @@
 
 Changes are grouped by published preview. A build pass, initial menu and controllable gameplay are recorded separately in [testing](docs/TESTING.md).
 
-## v0.3.0-beta.2 — connection settings recovery
+## v0.3.0-beta.2 â€” connection settings recovery
 
 - Read and publish saved connection settings before startup library discovery. A slow scan no longer leaves a valid saved connection unreported and opens a blank, disabled setup form.
 - Recover the browser's pending connection check when the resident restarts. Keep the draft, release the obsolete operation watch and offer **Reload settings status**. Require an explicit action before saving again; never replay the old request automatically.

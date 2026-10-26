@@ -19,8 +19,8 @@
       "sha256": "7a02b133c7036a7474614a6f9a7fc373dab927a987e0ddc0654c9a15d8c01891"
     },
     "CHANGELOG.md": {
-      "bytes": 8661,
-      "sha256": "8f0c6d2d9f2ba7716f40079a3df4c92cc6bb365fc54a0f90b90ac069619379bb"
+      "bytes": 8663,
+      "sha256": "a5ab3939224bebb4408cff56c875e33a447c1c52127b8631ef2ff9a8fb195d15"
     },
     "CONTRIBUTING.md": {
       "bytes": 2975,
@@ -99,8 +99,8 @@
       "sha256": "6b3f6ce2c5f53d0cd910310e0c6e7529aba95777ad2af39c94e00ab915a388da"
     },
     "docs/BETA-TESTING.md": {
-      "bytes": 6691,
-      "sha256": "c703c10e1405d11ee53df69b56518cf0a75173fd3879c995e222f26c4bdbfbd6"
+      "bytes": 7560,
+      "sha256": "ec252a064649861610bceca97cc12ef5b2680551c7e3a07d9bded02d961e1ce8"
     },
     "docs/BUILD.md": {
       "bytes": 8305,
@@ -184,7 +184,7 @@
     },
     "metadata/export-inputs.json": {
       "bytes": 143867,
-      "sha256": "db3a8fb3b75105f394b474c6c92f151a99e3e06348e2989b9921815e646d3672"
+      "sha256": "bb43deca64fe91d4910c9fd453681dad64f2d1f0ee88b5f0cb4d9b47e6b7d8d0"
     },
     "metadata/license-inputs.json": {
       "bytes": 2208,
