@@ -1880,8 +1880,8 @@
       "sha256": "8dc48422568fb0ac34cf69ecb9b0ea68a01338c461c550668e469eaa4274c3e6"
     },
     "tests/diagnostics/check_send_logging.py": {
-      "bytes": 2940,
-      "sha256": "823c6b7cac33f48bd085fac45fb4b52ddbf71b7734d3ac6ca3a2537800ac2873"
+      "bytes": 3940,
+      "sha256": "09e32d154ce2e100345fb3ad6a0e292fa16ff6d0b08861011c34d245d5e564a3"
     },
     "tests/diagnostics/check_settings_check_failure.py": {
       "bytes": 3622,
@@ -2088,5 +2088,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "d5666da1a92e238153568fd201226d80584e5887"
+  "runtimeSourceCommit": "43db93bdad3f0fbc0c8794cf9c01da4227d4a1da"
 }
