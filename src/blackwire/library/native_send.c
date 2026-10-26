@@ -432,7 +432,7 @@ static int ns_inspect_locked(const char *base,const struct bw_provider_binding *
          * empty namespace precedence or mint policy3. A fresh typed source
          * operation and normal owned retirement must produce the projection. */
         for(uint32_t i=0;i<plan.manifest.count;i++){struct bw_manifest_record row;if(bw_manifest_get(&plan.manifest,i,&row)){result->state=BW_PREPARED_INVALID;break;}
-            if(bw_source_companion_path_namespace(row.path)!=0){result->startup_upgrade_required=1;break;}}
+            if(bw_source_legacy_companion_row_projection_required(&row)){result->startup_upgrade_required=1;break;}}
     }
 done:
     cp_io_guard=NULL;cp_io_opaque=NULL;

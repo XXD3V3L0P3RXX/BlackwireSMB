@@ -75,6 +75,27 @@ static void mutation_cases(struct fixture *f){
     free(receipt);free(dig);bw_companion_projection_clear(&p);
 }
 int main(void){
+    /* Classifier controls only the advisory reprepare hint. Exact old names
+     * still require the unchanged LOCAL digest/source/bundle checks. */
+    const struct {const char *path;int projection;} hints[]={
+        {"fakelib/libSceAmpr.sprx",0},{"fakelib/libSceAppContent.sprx",0},
+        {"fakelib/libSceGameUpdate.sprx",0},{"fakelib/libSceNpEntitlementAccess.sprx",0},
+        {"fakelib/libSceAmpr.sprx.orig",0},{"fakelib/libScePlayGo.sprx",0},
+        {"eboot.bin",0},{"assets/fakelib2/README",0},{"fakelib3/helper.sprx",0},
+        {"fakelib",1},{"fakelib2",1},{"fakelib2/libSceAmpr.sprx",1},
+        {"fakelib2/libScePlayGo.sprx",1},{"FAKELIB/libSceAmpr.sprx",1},
+        {"fakelib/LIBSCEAMPR.SPRX",1},{"fakelib/libSceAmpr.sprx.orig.extra",1},
+        {"fakelib/subdir/libSceAmpr.sprx",1},{"fakelib/README",1},
+        {"fakelib/helper.so",1},{"fakelib/options.ini",1},{"fakelib/helper.sprx",1},
+        {"fakelib/blackwire-reader.selection",1},{"fakelib/blackwire-reader.projection",1},
+        {NULL,1}};
+    for(unsigned i=0;i<sizeof hints/sizeof hints[0];i++){cases++;C(bw_source_legacy_companion_projection_required(hints[i].path)==hints[i].projection);}
+    const struct {const char *path;uint32_t flags;int projection;} old_rows[]={
+        {"fakelib/libSceAmpr.sprx",BW_MANIFEST_LOCAL,0},{"fakelib/libSceAmpr.sprx",BW_MANIFEST_STREAM,1},
+        {"fakelib/libSceAmpr.sprx.orig",BW_MANIFEST_LOCAL,0},{"fakelib/libSceAmpr.sprx.orig",BW_MANIFEST_STREAM,1},
+        {"fakelib/README",BW_MANIFEST_LOCAL,1},{"fakelib/README",BW_MANIFEST_STREAM,1},
+        {"fakelib2/libSceAmpr.sprx",BW_MANIFEST_LOCAL,1},{"assets/data.pak",BW_MANIFEST_STREAM,0}};
+    for(unsigned i=0;i<sizeof old_rows/sizeof old_rows[0];i++){struct bw_manifest_record row={.path=old_rows[i].path,.flags=old_rows[i].flags};cases++;C(bw_source_legacy_companion_row_projection_required(&row)==old_rows[i].projection);}
     struct fixture f;struct bw_companion_projection *p=NULL;const char *error=NULL;init_real(&f,NULL,0);cases++;C(bw_companion_projection_create(&p,&f.binding,&f.source,0,&error)==1&&!p&&!error);positive(&f,1,1,0,0,1);positive(&f,2,2,0,0,1);destroy(&f);
     const struct file f1[]={{"fakelib/libSceAmpr.sprx",19,1,3},{"fakelib/libScePlayGo.sprx",17,1,4},{"fakelib/README.txt",7,1,5},{"fakelib/options/config.ini",11,1,6},{"assets/data.pak",300,2,7}};
     init_real(&f,f1,5);positive(&f,1,1,3,0,1);positive(&f,3,2,0,0,1);mutation_cases(&f);

@@ -86,6 +86,17 @@ int bw_source_companion_path_namespace(const char *path){
     if(!ns)return 0;const char *canonical=ns==1?"fakelib":"fakelib2";
     return strlen(canonical)==n&&!memcmp(path,canonical,n)?(int)ns:-1;
 }
+int bw_source_legacy_companion_projection_required(const char *path){
+    int space=bw_source_companion_path_namespace(path);if(!space)return 0;
+    if(space!=1||strncmp(path,"fakelib/",8))return 1;
+    static const char *const legacy[]={"libSceAmpr.sprx","libSceAppContent.sprx","libSceGameUpdate.sprx",
+        "libSceNpEntitlementAccess.sprx","libSceAmpr.sprx.orig","libScePlayGo.sprx"};
+    return !member(path+8,legacy,sizeof legacy/sizeof legacy[0]);
+}
+int bw_source_legacy_companion_row_projection_required(const struct bw_manifest_record *row){
+    return !row||bw_source_legacy_companion_projection_required(row->path)||
+        (row->flags!=BW_MANIFEST_LOCAL&&bw_source_companion_path_namespace(row->path)!=0);
+}
 int bw_source_plan_node(struct bw_source_plan *p,const char *path,int directory){
     if(!p||p->error||p->sealed||!path||!p->game[0])return -1;
     if(p->policy==BW_SOURCE_PLAN_LEGACY)return 0;

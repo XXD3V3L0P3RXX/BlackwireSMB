@@ -35,6 +35,14 @@ int bw_source_plan_init_policy(struct bw_source_plan *,const char *game,enum bw_
 int bw_source_plan_node(struct bw_source_plan *,const char *,int directory);
 /* 0=unrelated, 1/2=canonical companion namespace, -1=case/token alias. */
 int bw_source_companion_path_namespace(const char *);
+/* Advisory legacy reprepare hint ONLY. Exact canonical legacy fakelib leaves
+ * keep their existing qualification path; this grants no byte/hash, source,
+ * module, launch or deletion authority. A source fakelib2 or other companion
+ * layout needs a new typed projection instead of reinterpretation in place. */
+int bw_source_legacy_companion_projection_required(const char *);
+/* Same advisory decision for a validated old manifest row. Even a canonical
+ * legacy basename requires reprepare if it was retained as STREAM. */
+int bw_source_legacy_companion_row_projection_required(const struct bw_manifest_record *);
 /* Return 0 for an admitted file, 1 for reserved/backup metadata excluded by the
  * existing planner, -1 for an error. Any error poisons this plan. */
 int bw_source_plan_add(struct bw_source_plan *,const char *path,uint64_t size,uint64_t mtime);

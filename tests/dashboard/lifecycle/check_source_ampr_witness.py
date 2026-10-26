@@ -40,7 +40,7 @@ def main():
     image = bytes((i * 19 + 1) % 251 for i in range(2048)); digest = hashlib.sha256(image).digest()
     image_source = out / 'image.c'
     image_source.write_text('#include "preload_bundle.h"\nstatic const unsigned char image[]={' + ','.join(map(str,image)) + '};\nconst struct bw_preload_image bw_preload_embedded_image={image,sizeof image,{' + ','.join(map(str,digest)) + '},"' + '0'*64 + '",10000};\n')
-    command = ['clang-18', '-std=c11', '-Wall', '-Wextra', '-Werror', '-Wno-misleading-indentation', '-Wno-unused-function',
+    command = ['clang-18', '-D_DEFAULT_SOURCE=1', '-std=c11', '-Wall', '-Wextra', '-Werror', '-Wno-misleading-indentation', '-Wno-unused-function',
                '-O1', '-g', '-fsanitize=address,undefined', '-fno-sanitize-recover=all', '-fno-omit-frame-pointer', '-I', str(LIB),
                str(HERE / 'test_source_ampr_witness.c'), str(image_source), *[str(p) for p in dependencies if p.suffix=='.c'], '-Wl,--wrap=close', '-Wl,--wrap=write', '-pthread', '-o', str(out / 'host-source-ampr-witness')]
     commands = []
