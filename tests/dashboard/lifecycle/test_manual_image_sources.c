@@ -21,8 +21,8 @@ int nrc_test_open(const char *p,int flags,...){mode_t mode=0;if(flags&O_CREAT){v
 int nrc_test_openat(int dir,const char *p,int flags,...){mode_t mode=0;if(flags&O_CREAT){va_list ap;va_start(ap,flags);mode=(mode_t)va_arg(ap,int);va_end(ap);}return remember(openat(dir,p,flags,mode));}
 int nrc_test_close(int fd){
     int fail=fd>=0&&fd<4096&&!injected&&((!strcmp(scenario,"image-close")&&!strcmp(fd_path[fd],image))||
-        (!strcmp(scenario,"status-close")&&!strcmp(fd_path[fd],status_path))||
-        (!strcmp(scenario,"status-parent-close")&&!strcmp(fd_path[fd],status_parent)));
+        ((!strcmp(scenario,"status-close")||!strcmp(scenario,"no-manual-status-close"))&&!strcmp(fd_path[fd],status_path))||
+        ((!strcmp(scenario,"status-parent-close")||!strcmp(scenario,"no-manual-status-parent-close"))&&!strcmp(fd_path[fd],status_parent)));
     int rc=close(fd);CHECK(!rc);closes++;if(fd>=0&&fd<4096)fd_path[fd][0]=0;
     if(fail){injected++;errno=EIO;return -1;}return rc;
 }
@@ -51,10 +51,11 @@ int bw_sm_observe(const struct bw_sm_connection *c,enum bw_sm_observation kind,s
     CHECK(c&&!c->current(c->opaque));
     if(kind==BW_SM_OBSERVE_GAMES){doc(out,"{\"status\":0,\"count\":0,\"games\":[]}");return 0;}
     CHECK(kind==BW_SM_OBSERVE_MANUAL_PATHS);manuals++;
-    if(manuals==2&&!strcmp(scenario,"status-between-snapshots")){
+    if(manuals==2&&strstr(scenario,"status-between-snapshots")){
         int fd=open(status_path,O_WRONLY|O_APPEND);CHECK(fd>=0);CHECK(write(fd,"\n",1)==1);CHECK(!close(fd));
     }
     if(manuals==2&&!strcmp(scenario,"image-between-snapshots"))append_byte(image);
+    if(!strncmp(scenario,"no-manual",9)){doc(out,"{\"status\":0,\"count\":0,\"paths\":[]}");return 0;}
     char text[PATH_MAX+128];CHECK(snprintf(text,sizeof text,"{\"status\":0,\"count\":1,\"paths\":[\"%s\"]}",image)>0);doc(out,text);return 0;
 }
 int bw_sm_uninstall(const struct bw_sm_connection *c,const char title[10],struct bw_sm_uninstall_reply *out){(void)c;(void)title;(void)out;CHECK(0);return -1;}

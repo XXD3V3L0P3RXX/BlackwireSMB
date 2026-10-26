@@ -51,7 +51,10 @@ int bw_nrc_remote_release_runtime(struct bw_nrc_remote *,const struct bw_nrc_sub
 const char *bw_nrc_remote_status_message(const struct bw_nrc_remote *);
 /* Parser/real-filesystem boundary, also used by host fixtures. Both documents
  * must be complete current SMP responses. An unknown manual source refuses;
- * cache/list absence never establishes that a registered title is absent. */
+ * cache/list absence never establishes that a registered title is absent.
+ * Every strict observation also requires stable complete persisted manual
+ * status, including when no foreign/manual path is listed. This excludes
+ * title-wide foreign associations, never grants registration ownership. */
 int bw_nrc_remote_documents(struct bw_nrc_remote *,const struct bw_nrc_subject *,
     const void *,size_t,const void *,size_t);
 int bw_nrc_remote_registration_documents(struct bw_nrc_remote *,const struct bw_nrc_subject *,

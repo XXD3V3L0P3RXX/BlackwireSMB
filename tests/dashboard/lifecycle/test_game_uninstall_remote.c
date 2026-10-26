@@ -166,7 +166,10 @@ static void retained_scope_cases(const char *base){
     CHECK(!mkdir(root,0755));CHECK(bw_nrl_settings_exclude_retained(&c,&s,text,(size_t)n,&w)<0);cases++;
     CHECK(!close(w.root)&&!close(w.parent));
 }
-int main(int argc,char **argv){
+#ifndef BW_UNINSTALL_REMOTE_MAIN
+#define BW_UNINSTALL_REMOTE_MAIN main
+#endif
+int BW_UNINSTALL_REMOTE_MAIN(int argc,char **argv){
     CHECK(argc==3);remote_case=argv[2];test_scenario=remote_case;scenario=remote_case;char fixture[2048],log[2048],name[2048];
     path(test_data,argv[1],"data");path(source_root,argv[1],"source");path(fixture,argv[1],"metadata");path(log,argv[1],"game.log");path(test_apps,argv[1],"apps");path(test_db,argv[1],"app.db");path(api_scan,argv[1],"unrelated-scan");CHECK(!mkdir(api_scan,0755));
     struct bw_share_config config={0};strcpy(config.server,"192.0.2.1");strcpy(config.share,"FixtureShare");struct bw_provider_binding identity;CHECK(!bw_provider_binding_init(&identity,&config,"Fixture","PPSA99999",BW_PROVIDER_FOLDER));

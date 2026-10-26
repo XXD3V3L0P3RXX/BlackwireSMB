@@ -24,6 +24,7 @@ def main():
  if args.lifecycle_only and not args.host_only:raise ValueError('--lifecycle-only requires --host-only')
  if not out.is_relative_to(ROOT/'build/native-dashboard/registration-lifecycle-integration-01'):raise ValueError('Use a new registration-lifecycle-integration-01 child')
  out.mkdir(parents=True,exist_ok=False);commands=[];deps=[]
+ status_fixture=out/'manual.status';status_fixture.write_bytes(b'installed\tCUSA00001\t/data/neutral-existing-cusa\tNeutral fixture\n');status_fixture.chmod(0o666)
  def run(label,argv,timeout=180):
   argv=list(map(str,argv));r=subprocess.run(argv,cwd=ROOT,capture_output=True,text=True,timeout=timeout,env={**os.environ,'ASAN_OPTIONS':'detect_leaks=1:abort_on_error=1','UBSAN_OPTIONS':'halt_on_error=1'})
   commands.append(dict(label=label,argv=argv,exitCode=r.returncode,stdout=r.stdout,stderr=r.stderr));(out/'commands.json').write_text(json.dumps(commands,indent=2)+'\n')
@@ -38,6 +39,7 @@ def main():
  before={p.resolve():pin(p) for p in possible};includes=['-I',LIB,'-I',STREAM,'-I',STREAM/'diagnostics','-I',ROOT/'vendor/sqlite','-I',ROOT/'vendor/libsmb2/include','-I',ROOT/'src/blackwire/tools/compressed_stream_candidate']
  flags=['-std=gnu11','-Wall','-Wextra','-Werror','-Wno-misleading-indentation','-Wno-unused-function','-Wno-unused-variable','-g']
  host=['clang-18',*flags,'-O1','-fsanitize=address,undefined','-fno-sanitize-recover=all','-fno-omit-frame-pointer','-ffunction-sections','-fdata-sections','-DBW_COPY_HOST_TEST=1',*includes]
+ host += ['-DBW_NRC_HOST_MANUAL_STATUS_PATH='+json.dumps(str(status_fixture))]
  objects=[]
  for index,src in enumerate(core):
   if src.name=='native_registration_lifecycle.c':continue

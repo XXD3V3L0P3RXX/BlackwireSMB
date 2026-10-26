@@ -30,6 +30,9 @@ def main():
     if not out.is_relative_to(ROOT / 'build') or out == ROOT / 'build':
         raise ValueError('Use a fresh output below this repository build directory')
     out.mkdir(parents=True, exist_ok=False)
+    status_fixture = out / 'manual.status'
+    status_fixture.write_bytes(b'installed\tCUSA00001\t/data/neutral-existing-cusa\tNeutral fixture\n')
+    status_fixture.chmod(0o666)
     from fixture_sdk import production_rows
     own = [HERE / n for n in ('test_registration_initial_absence.c', 'test_registration_cleanup.c',
                               'test_registration_cleanup_io.h', 'fixture_sdk.py')]
@@ -64,6 +67,7 @@ def main():
             '-Wno-unused-function', '-Wno-unused-variable', '-O1', '-g', '-fsanitize=address,undefined',
             '-fno-sanitize-recover=all', '-fno-omit-frame-pointer', '-ffunction-sections', '-fdata-sections',
             '-DBW_COPY_HOST_TEST=1', *[str(v) for d in includes for v in ('-I', d)]]
+    host += ['-DBW_NRC_HOST_MANUAL_STATUS_PATH=' + json.dumps(str(status_fixture))]
     objects = []
     for n, path in enumerate(core):
         obj = out / (str(n) + '-' + path.stem + '.o')

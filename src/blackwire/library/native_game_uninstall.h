@@ -53,6 +53,9 @@ struct bw_game_uninstall_result {
     enum bw_game_uninstall_phase phase;
     unsigned mutation_started,registration_confirmed,source_absent,
         prepared_record_absent,library_removed;
+    /* Distinct from mutation: an owned fd/DIR/helper could not be released.
+     * The resident must keep all mutating controls blocked; never retry. */
+    unsigned release_unknown;
     uint32_t files_removed,files_total;
     const char *reason;
 };

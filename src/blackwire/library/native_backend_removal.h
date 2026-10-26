@@ -43,8 +43,8 @@ static int default_uninstall(void *opaque,const struct bw_native_removal_selecti
         .launch_run=selected->operation,.prepared_record_sha256=selected->prepared.record_sha256};
     struct bw_preload_reader_pin pin={0};struct bw_preload_bundle_result diagnostic={0};
     int status=bw_preload_bundle_select_for_removal(&selection,&pin,&diagnostic);
-    if(status){out->phase=status==-2?BW_GAME_REMOVE_UNKNOWN:BW_GAME_REMOVE_ERROR;
-        out->reason=status==-2?"Reader library checks could not be released. Refresh status without submitting removal again.":
+    if(status||diagnostic.release_unknown){out->release_unknown=status==-2||diagnostic.release_unknown;out->phase=out->release_unknown?BW_GAME_REMOVE_UNKNOWN:BW_GAME_REMOVE_ERROR;
+        out->reason=out->release_unknown?"Reader library checks could not be released. Refresh status without submitting removal again.":
             "The exact owned reader library set is unresolved or differs. No registration or files were changed.";
         return -1;}
     struct bw_game_uninstall_request q={.environment=env,.identity=selected->identity,.prepared=selected->prepared,.ops={.opaque=&control,.current=removal_default_current,.observe=removal_default_observe},.reader_size=pin.size};
@@ -106,7 +106,7 @@ static const char *removal_status(unsigned state){return state==REMOVAL_RUNNING?
 static void removal_state_json(struct bw_json *json,const struct bw_native_backend *p){
     bw_json_text(json,"\"removal\":{\"operationId\":");bw_json_string(json,p->removing.selected.operation);bw_json_text(json,",\"source\":");bw_json_string(json,p->removing.selected.identity.binding.source);bw_json_text(json,",\"titleId\":");bw_json_string(json,p->removing.selected.identity.binding.title);
     bw_json_text(json,",\"state\":");bw_json_string(json,removal_status(p->removing.state));bw_json_format(json,",\"phase\":%u,\"files\":%u,\"filesTotal\":%u,\"message\":",(unsigned)p->removing.phase,p->removing.files,p->removing.total);bw_json_string(json,p->removing.message);
-    bw_json_format(json,",\"removed\":%s}",p->removing.state==REMOVAL_DONE&&!p->removing.restore?"true":"false");
+    bw_json_format(json,",\"removed\":%s,\"releaseUnknown\":%s}",p->removing.state==REMOVAL_DONE&&!p->removing.restore?"true":"false",p->removing.result.release_unknown?"true":"false");
 }
 static int removal_current(void *opaque){
     struct bw_native_backend *p=opaque;struct bw_setup_generation expected={0};struct bw_native_removal_selection selected;uint64_t generation=0,epoch=0;uint32_t revision=0;
@@ -128,17 +128,18 @@ static void removal_observe(void *opaque,const struct bw_game_uninstall_progress
 static void *removal_worker(void *opaque){
     struct bw_native_backend *p=opaque;struct bw_game_uninstall_result result={0};struct bw_native_removal_selection selected=p->removing.selected;unsigned restore=p->removing.restore;int admitted=!removal_current(p),status=-1;
     if(admitted)status=restore?p->ops.restore(p->opaque,&selected,removal_current,p,&result):p->ops.uninstall(p->opaque,&selected,removal_current,p,removal_observe,p,&result);
+    if(result.release_unknown)status=-1;
     if(!status&&(result.phase!=BW_GAME_REMOVE_DONE||result.registration_confirmed!=1||result.source_absent!=1||result.prepared_record_absent!=1||result.library_removed!=(restore?0u:1u)||result.files_removed>result.files_total||removal_current(p)))status=-1;
     struct bw_game_uninstall_capability cap={0};
     if(!status&&p->ops.removal_probe){struct bw_native_prepared absent={.state=BW_PREPARED_ABSENT};if(p->ops.removal_probe(p->opaque,&selected.identity,&absent,&cap)||cap.removed==(restore?1u:0u)||(!restore&&!cap.can_restore))status=-1;}
-    pthread_mutex_lock(&p->lock);p->removing.result=result;
+    pthread_mutex_lock(&p->lock);p->removing.result=result;if(result.release_unknown)p->control_release_unknown=1;
     if(!status){p->removing.state=REMOVAL_DONE;p->removing.phase=BW_GAME_REMOVE_DONE;p->removing.files=result.files_removed;p->removing.total=result.files_total;
         snprintf(p->removing.message,sizeof p->removing.message,"%s",restore?"Source shown again. Send files to prepare a new console copy.":"Removed from PS5. PC backup and saved data preserved.");
         if(p->library.prepared)memset(p->library.prepared+p->removing.item,0,sizeof *p->library.prepared);
         if(p->library.removal)p->library.removal[p->removing.item]=cap;
         revalidation_clear(p,selected.identity.binding.game);p->generation++;
-    }else{int unknown=admitted&&(result.mutation_started||result.phase==BW_GAME_REMOVE_UNKNOWN||p->removing.unknown);p->removing.unknown=unknown;p->removing.state=unknown?REMOVAL_UNKNOWN:REMOVAL_ERROR;p->removing.phase=unknown?BW_GAME_REMOVE_UNKNOWN:BW_GAME_REMOVE_ERROR;
-        snprintf(p->removing.message,sizeof p->removing.message,"%s",unknown?"Removal could not be confirmed. Refresh status without submitting it again.":result.reason?result.reason:"The selected removal authority changed before mutation.");}
+    }else{int unknown=admitted&&(result.mutation_started||result.release_unknown||result.phase==BW_GAME_REMOVE_UNKNOWN||p->removing.unknown);p->removing.unknown=unknown;p->removing.state=unknown?REMOVAL_UNKNOWN:REMOVAL_ERROR;p->removing.phase=unknown?BW_GAME_REMOVE_UNKNOWN:BW_GAME_REMOVE_ERROR;
+        snprintf(p->removing.message,sizeof p->removing.message,"%s",result.release_unknown?"Removal checks could not be released safely. Controls remain blocked; do not repeat this action.":unknown?"Removal could not be confirmed. Refresh status without submitting it again.":result.reason?result.reason:"The selected removal authority changed before mutation.");}
     p->active=0;pthread_mutex_unlock(&p->lock);return NULL;
 }
 static int removal_action(struct bw_native_backend *p,const char *owner,const void *body,size_t size,const char *token,unsigned restore,struct bw_native_response *out){

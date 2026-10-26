@@ -62,11 +62,22 @@ def main():
     malformed=bytearray(raw);struct.pack_into('<I',malformed,layout['inodeOffsets'][layout['ids']['asset.bin']]+0x64,0)
     add('unrelated-invalid-extent',malformed,refuse=True)
     for state in ['absent','empty','deleted','selected-owned','trimmed-coherent','console-modes','unrelated-cusa','unrelated-fake','unrelated-other31']:add('status-'+state,status=state)
-    for state in ['stale-selected','stale-selected-unlisted','stale-foreign','conflicting-cusa-image','empty-title','overlong-title','control-title','tab-title','overlong-path','overlong-name','duplicate','malformed','unknown','nul','oversize','symlink','directory']:add('status-'+state,status=state,refuse=True)
+    for state in ['stale-selected','stale-selected-unlisted','slash-unlisted','slashes-space-unlisted','stale-foreign','conflicting-cusa-image','empty-title','overlong-title','control-title','tab-title','overlong-path','overlong-name','duplicate','malformed','unknown','nul','oversize','symlink','directory']:add('status-'+state,status=state,refuse=True)
     for fault,release in [('image-eof',False),('image-drift',False),('status-drift',False),('image-during-status',False),('image-between-snapshots',False),('status-between-snapshots',False),('authority-lost',False),('image-close',True),('status-close',True),('status-parent-close',True)]:add(fault,fault=fault,refuse=True,release=release)
     add('image-eintr',fault='image-eintr')
     add('source-overlap',fault='source-overlap',refuse=True)
     add('image-symlink',refuse=True,setup='symlink');add('image-hardlink',refuse=True,setup='hardlink')
+    for state in ('coherent','absent','unrelated-cusa','unrelated-fake'):
+        add('foreign-folder-'+state,status=state,setup='folder')
+    for state in ('stale-selected','stale-foreign','stale-selected-unlisted'):
+        add('foreign-folder-'+state,status=state,setup='folder',refuse=True)
+    for state in ('coherent','absent','empty','unrelated-cusa','unrelated-fake'):
+        add('no-manual-'+state,status=state,fault='no-manual')
+    for state in ('stale-selected','stale-selected-unlisted','slash-unlisted','slashes-space-unlisted','malformed','unknown','overlong-title','symlink'):
+        add('no-manual-'+state,status=state,fault='no-manual',refuse=True)
+    for fault in ('no-manual-status-close','no-manual-status-parent-close'):
+        add(fault,fault=fault,refuse=True,release=True)
+    add('no-manual-status-between-snapshots',fault='no-manual-status-between-snapshots',refuse=True)
     reports=[]
     with tempfile.TemporaryDirectory(prefix='blackwire-manual-images-') as tmp:
         root=Path(tmp)
@@ -79,6 +90,8 @@ def main():
             elif state=='trimmed-coherent':row=f' InStAlLeD \t PPSA99001 \t {image} \t Neutral \r\n'
             elif state=='stale-selected':row=row.replace('PPSA99001','PPSA90000')
             elif state=='stale-selected-unlisted':row+='installed\tPPSA90000\t/data/neutral-unlisted-image.ffpfsc\tNeutral\n'
+            elif state=='slash-unlisted':row+='installed\tPPSA90000/\t/data/neutral-unlisted-image.ffpfsc\tNeutral\n'
+            elif state=='slashes-space-unlisted':row+='installed\t PPSA90000/// \t/data/neutral-unlisted-image.ffpfsc\tNeutral\r\n'
             elif state=='stale-foreign':row=row.replace('PPSA99001','PPSA99002')
             elif state=='conflicting-cusa-image':row=row.replace('PPSA99001','CUSA00001')
             elif state.startswith('unrelated-'):
@@ -101,11 +114,12 @@ def main():
             elif state=='directory':status.unlink();status.mkdir()
             if setup=='symlink':image.rename(area/'real-image');image.symlink_to(area/'real-image')
             elif setup=='hardlink':os.link(image,area/'second-link')
+            elif setup=='folder':image.unlink();image.mkdir();(image/'sce_sys').mkdir();(image/'sce_sys/param.json').write_bytes(param)
             baseline=data if not setup else None
             image_mode=image.lstat().st_mode;status_mode=status.lstat().st_mode if status.exists() or status.is_symlink() else None
             result=json.loads(run(name,[binary,image,status,fault,int(refuse),int(release)]));result['case']=name
             if image.lstat().st_mode!=image_mode or (status_mode is not None and status.lstat().st_mode!=status_mode):raise ValueError('Classification changed file permissions/type')
-            if fault not in {'image-drift','status-drift','image-during-status','image-between-snapshots','status-between-snapshots'}:
+            if fault not in {'image-drift','status-drift','image-during-status','image-between-snapshots','status-between-snapshots','no-manual-status-between-snapshots'}:
                 if baseline is not None and image.read_bytes()!=baseline:raise ValueError('Classification wrote source image')
                 if state not in {'absent','symlink','directory'} and status.read_bytes()!=row.encode():raise ValueError('Classification wrote status')
             reports.append(result)

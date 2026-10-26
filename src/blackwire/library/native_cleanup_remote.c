@@ -145,7 +145,7 @@ static int status_space(unsigned char c){return c==' '||c=='\r'||c=='\v'||c=='\f
 static char *status_trim(char *p){while(status_space((unsigned char)*p))p++;size_t n=strlen(p);while(n&&status_space((unsigned char)p[n-1]))p[--n]=0;return p;}
 /* SMP's persisted status IDs are opaque MAX_TITLE_ID=32 byte fields, not
  * Blackwire's selected PPSA grammar. Never emulate a truncated/ambiguous ID. */
-static int status_title(const char *p){size_t n=strlen(p);if(!n||n>=32)return -1;for(size_t i=0;i<n;i++)if((unsigned char)p[i]<32||(unsigned char)p[i]==127)return -1;return 0;}
+static int status_title(const char *p){size_t n=strlen(p);if(!n||n>=32||p[n-1]=='/')return -1;for(size_t i=0;i<n;i++)if((unsigned char)p[i]<32||(unsigned char)p[i]==127)return -1;return 0;}
 static int status_rows(unsigned char *bytes,size_t size,const struct bw_nrc_subject *subject,const char *image,const char title[10]){
     const char *seen[1024];unsigned count=0;size_t at=0;
     if(memchr(bytes,0,size))return -1;bytes[size]=0;
@@ -159,16 +159,21 @@ static int status_rows(unsigned char *bytes,size_t size,const struct bw_nrc_subj
            strlen(fields[2])>=1024||strlen(fields[3])>=256||count>=1024)return -1;
         for(unsigned i=0;i<count;i++)if(!strcmp(seen[i],fields[2]))return -1;seen[count++]=fields[2];
         if(installed&&(!strcmp(fields[1],subject->title)&&strcmp(fields[2],subject->source)))return -1;
-        if(installed&&!strcmp(fields[2],image)&&strcmp(fields[1],title))return -1;
+        if(image&&installed&&!strcmp(fields[2],image)&&strcmp(fields[1],title))return -1;
     }return 0;
 }
 /* Positive exclusion only: stable persisted status must not still associate
- * a foreign image with this title. Never rewrite status or use it as ownership. */
-static int manual_image_status(struct bw_nrc_remote *r,const struct bw_nrc_subject *subject,
+ * any foreign path with this title. Never rewrite status or use it as ownership. */
+static int manual_status_proof(struct bw_nrc_remote *r,const struct bw_nrc_subject *subject,
     const char *image,const char title[10],struct status_snapshot *snapshot){
     const char *path="/data/shadowmount/manual.status";
 #ifdef BW_COPY_HOST_TEST
     if(r->fixture_manual_status_path)path=r->fixture_manual_status_path;
+#ifdef BW_NRC_HOST_MANUAL_STATUS_PATH
+    else path=BW_NRC_HOST_MANUAL_STATUS_PATH;
+#else
+    else {r->substage="manual_status_host_fixture_missing";r->observation_error=0;return -1;}
+#endif
 #endif
     char parent[PATH_MAX],real[PATH_MAX];int root=-1,fd=-1,rc=-1,error=0,present=0;const char *stage="manual_status_path";
     struct stat roots[2],file[3];unsigned char *bytes=NULL,*again=NULL,hash[32]={0};size_t size=0;
@@ -298,8 +303,8 @@ static int manual_item(void *opaque,const void *raw,size_t size){
     if(!strcmp(path,c->subject->source))return ++c->owned_rows>1?-1:0;
     if(path_contains(path,c->subject->source)||path_contains(c->subject->source,path))return -1;
     if(manual_title(c->remote,path,title,&image,&identity)||!strcmp(title,c->subject->title))return -1;
+    if(manual_status_proof(c->remote,c->subject,path,title,c->status))return -1;
     if(image){
-        if(manual_image_status(c->remote,c->subject,path,title,c->status))return -1;
         /* Reopen only to compare the original admitted identity after the
          * status observation; this never adopts a replacement generation. */
         int fd=open(path,O_RDONLY|O_NOFOLLOW|O_NONBLOCK);if(fd<0){c->remote->substage="manual_image_status_reopen";c->remote->observation_error=errno;return -1;}
@@ -310,6 +315,10 @@ static int manual_item(void *opaque,const void *raw,size_t size){
             (uint64_t)identity.st_size,(uint64_t)identity.st_mtim.tv_sec,(uint64_t)identity.st_mtim.tv_nsec,
             (uint64_t)identity.st_ctim.tv_sec,(uint64_t)identity.st_ctim.tv_nsec};
         cp_sha_update(&c->images,path,strlen(path)+1);cp_sha_update(&c->images,title,10);cp_sha_update(&c->images,stamp,sizeof stamp);c->image_count++;
+    }else{
+        /* Folder metadata is observed again after persisted status. Its root
+         * title must still be the same foreign title; no stale row supplies it. */
+        char again[10];if(manual_title(c->remote,path,again,NULL,NULL)||strcmp(title,again))return -1;
     }return 0;
 }
 /* Lexical normalization is used ONLY to detect overlap/aliases. It never
@@ -435,6 +444,10 @@ static int documents(struct bw_nrc_remote *r,const struct bw_nrc_subject *s,
     c=(struct collection){.remote=r,.subject=s,.policy=policy,.status=status};fields.manual=1;
     cp_sha_init(&c.images);
     if(bw_document_fields(manual,manual_size,collection_field,&fields)||c.seen!=7u||c.count!=c.declared||current(r))return fail(r,"cleanup_manual_source_conflict_or_unknown");
+    /* Title-wide SMP Uninstall can reconcile an installed status association
+     * even when its path is absent from manual/list. This complete global
+     * proof is mandatory for EVERY strict observation, not just image rows. */
+    if(!preparing(policy)&&manual_status_proof(r,s,NULL,NULL,status))return fail(r,"cleanup_manual_status_conflict_or_unknown");
     if(!preparing(policy)&&(c.image_count||status->images_seen)){
         unsigned char hash[32];cp_sha_final(&c.images,hash);
         if(status->images_seen&&(status->images!=c.image_count||memcmp(status->image_hash,hash,32))){r->substage="manual_image_snapshot_changed";return fail(r,"cleanup_manual_source_conflict_or_unknown");}

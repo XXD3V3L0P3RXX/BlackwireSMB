@@ -27,6 +27,7 @@ def main():
     out=args.output.resolve()
     if not out.is_relative_to(ROOT/'build/native-dashboard'):raise ValueError('New native-dashboard output required')
     out.mkdir(parents=True,exist_ok=False); commands=[]; deps=[]
+    status_fixture=out/'manual.status';status_fixture.write_bytes(b'installed\tCUSA00001\t/data/neutral-existing-cusa\tNeutral fixture\n');status_fixture.chmod(0o666)
     names=['native_game_uninstall.c','native_removed_sources.c','native_game_uninstall_remote.c','native_registration_lifecycle.c','native_registration_cleanup.c','native_cleanup_remote.c','native_registration.c','registration_db.c','native_prepared_target.c','reader_selection.c','source_binding.c','source_identity.c','source_profile.c','source_plan.c','source_param.c','source_directory.c']
     sources=[HERE/'test_game_uninstall_remote.c']+[LIB/n for n in names]+[STREAM/'manifest.c',STREAM/'share_config.c']
     sources += [STREAM/n for n in ('container_source.c','pfs_source.c','pfsc_range.c','pfsc_inflate.c')]
@@ -44,6 +45,7 @@ def main():
         return r.stdout
     common=['-std=gnu11','-Wall','-Wextra','-Werror','-Wno-misleading-indentation','-Wno-unused-function','-Wno-unused-variable','-g','-ffunction-sections','-fdata-sections','-I',LIB,'-I',STREAM,'-I',ROOT/'vendor/libsmb2/include','-I',ROOT/'vendor/sqlite','-I',ROOT/'src/blackwire/tools/compressed_stream_candidate']
     host=['clang-18',*common,'-O1','-fsanitize=address,undefined','-fno-sanitize-recover=all','-fno-omit-frame-pointer','-DBW_COPY_HOST_TEST=','-DBW_NATIVE_SEND_HOST_TEST=1','-DBW_NATIVE_FS_HOST_TEST=1','-DBW_NATIVE_PRELOAD=1','-DBW_GTA_AUDIO_BOOTSTRAP=1','-DBW_LAUNCH_TIMING=1']
+    host += ['-DBW_NRC_HOST_MANUAL_STATUS_PATH='+json.dumps(str(status_fixture))]
     objects=[]
     for index,p in enumerate(sources):
         obj=out/f'host-{index}.o';dep=obj.with_suffix('.d');deps.append(dep);extra=[]

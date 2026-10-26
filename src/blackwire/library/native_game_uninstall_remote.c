@@ -33,13 +33,18 @@ struct gur {
     struct stat apps_id,app_id;
     struct gur_blob source_param,app_param,mount,receipt;
     unsigned binding_started,bound,app_known,registration_called,manual_called,uninstall_called,owner_known,runtime_release_done;
-    unsigned generation_observe_allowed,generation_release_unknown;
-    const char *reason;
+    unsigned generation_observe_allowed,generation_release_unknown,release_unknown;
+    const char *reason,*release_reason;
 };
+static int gur_release(struct gur *p,int fd){int rc=close(fd);if(rc){p->release_unknown=1;if(!p->release_reason)p->release_reason="normal_adapter_descriptor_close_unconfirmed";}return rc;}
+/* Remote collection resets its observation flag per call: capture it before
+ * another independent observation can begin. Never infer it from a message. */
+static int gur_remote_result(struct gur *p,int status){if(p->remote.observation_release_unknown){p->release_unknown=1;if(!p->release_reason)p->release_reason="normal_remote_observation_release_unconfirmed";}return status;}
 static double gur_now(void){struct timespec t;return clock_gettime(CLOCK_MONOTONIC,&t)?-1:(double)t.tv_sec+(double)t.tv_nsec/1e9;}
 static int gur_current(void *opaque){
     struct gur *p=opaque;const struct bw_game_uninstall_request *a=p->accepted,*r=&p->request;
     const struct bw_game_uninstall_files_request *f=p->files_accepted;
+    if(p->release_unknown)return -1;
     if(f&&(memcmp(&f->identity,&r->identity,sizeof r->identity)||memcmp(&f->prepared,&r->prepared,sizeof r->prepared)||
        strcmp(f->operation,r->operation)||strcmp(f->confirmed_title,r->confirmed_title)||
        strcmp(f->environment.data_root,p->paths[0])||strcmp(f->environment.apps_root,p->paths[1])||strcmp(f->environment.database,p->paths[2])||
@@ -52,10 +57,10 @@ static int gur_current(void *opaque){
 static int gur_node(const struct stat *a,const struct stat *b){return a->st_dev==b->st_dev&&a->st_ino==b->st_ino&&a->st_mode==b->st_mode&&a->st_uid==b->st_uid&&a->st_gid==b->st_gid;}
 static int gur_same(const struct stat *a,const struct stat *b){return gur_node(a,b)&&a->st_nlink==b->st_nlink&&a->st_size==b->st_size&&
     a->st_mtim.tv_sec==b->st_mtim.tv_sec&&a->st_mtim.tv_nsec==b->st_mtim.tv_nsec&&a->st_ctim.tv_sec==b->st_ctim.tv_sec&&a->st_ctim.tv_nsec==b->st_ctim.tv_nsec;}
-static int gur_dir(const char *path,struct stat *id){
+static int gur_dir(struct gur *p,const char *path,struct stat *id){
     char real[PATH_MAX];struct stat named;if(!realpath(path,real)||strcmp(path,real)||lstat(path,&named)||!S_ISDIR(named.st_mode))return -1;
     int fd=open(path,O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_NONBLOCK);if(fd<0)return -1;
-    if(fstat(fd,id)||!gur_node(id,&named)){close(fd);return -1;}return fd;
+    if(fstat(fd,id)||!gur_node(id,&named)){gur_release(p,fd);return -1;}return fd;
 }
 static int gur_dir_current(int fd,const char *path,const struct stat *id){
     struct stat held,named;char real[PATH_MAX];return fd<0||fstat(fd,&held)||lstat(path,&named)||!S_ISDIR(held.st_mode)||!gur_node(id,&held)||!gur_node(&held,&named)||!realpath(path,real)||strcmp(path,real)?-1:0;
@@ -69,7 +74,7 @@ static int gur_read(struct gur *p,const char *path,size_t maximum,struct gur_blo
     for(size_t at=0;at<out->size;){if(gur_current(p))goto done;ssize_t n=pread(fd,out->body+at,out->size-at,(off_t)at);if(n<0&&errno==EINTR)continue;if(n<=0||(size_t)n>out->size-at)goto done;at+=(size_t)n;}
     cp_sha_bytes(out->body,out->size,out->hash);
     if(fstat(fd,&held)||lstat(path,&named)||!gur_same(&out->id,&held)||!gur_same(&held,&named)||!realpath(path,real)||strcmp(path,real)||gur_current(p))goto done;rc=0;
-done:if(close(fd))rc=-1;if(rc){free(out->body);memset(out,0,sizeof *out);}return rc;
+done:if(gur_release(p,fd))rc=-1;if(rc){free(out->body);memset(out,0,sizeof *out);}return rc;
 }
 static int gur_join(char out[BW_NRC_PATH_BYTES],const char *a,const char *b){int n=snprintf(out,BW_NRC_PATH_BYTES,"%s/%s",a,b);return n<0||(size_t)n>=BW_NRC_PATH_BYTES?-1:0;}
 static int gur_blob_current(struct gur *p,const char *path,const struct gur_blob *expected){
@@ -111,7 +116,7 @@ static int gur_bind(struct gur *p,const struct bw_removed_source *s){
     if(p->binding_started++)return -1;
     const struct bw_source_binding *b=&p->request.identity.binding;char parent[BW_NRC_PATH_BYTES],path[BW_NRC_PATH_BYTES],title[10];
     if(b->game[74]||strlen(b->game)!=74||strcmp(b->title,p->request.confirmed_title)||gur_join(parent,p->paths[0],"games")||gur_join(p->root,parent,b->game))return -1;
-    p->source.parent=gur_dir(parent,&p->source.parent_identity);p->source.root=gur_dir(p->root,&p->source.root_identity);p->apps=gur_dir(p->paths[1],&p->apps_id);
+    p->source.parent=gur_dir(p,parent,&p->source.parent_identity);p->source.root=gur_dir(p,p->root,&p->source.root_identity);p->apps=gur_dir(p,p->paths[1],&p->apps_id);
     if(p->source.parent<0||p->source.root<0||p->apps<0||gur_join(path,p->root,"sce_sys/param.json")||gur_read(p,path,BW_SOURCE_PARAM_LIMIT,&p->source_param)||
        bw_source_param_identity(p->source_param.body,p->source_param.size,title,p->subject.content)||strcmp(title,b->title))return -1;
     strcpy(p->subject.source,p->root);strcpy(p->subject.title,b->title);strcpy(p->subject.game,b->game);strcpy(p->subject.run,p->request.operation);memcpy(p->subject.prepared_record_sha256,p->request.prepared.record_sha256,32);
@@ -131,11 +136,11 @@ static int gur_bind(struct gur *p,const struct bw_removed_source *s){
         for(unsigned i=0;i<4;i++)p->selection.manifest_count|=(uint32_t)head[16+i]<<(8*i);
         for(unsigned i=0;i<8;i++)p->selection.manifest_hash|=(uint64_t)head[32+i]<<(8*i);bad=0;
     }
-    if(map>=0&&close(map))bad=1;if(bad||gur_registration_owner_capture(p))return -1;
+    if(map>=0&&gur_release(p,map))bad=1;if(bad||gur_registration_owner_capture(p))return -1;
     enum bw_registration_state state=bw_native_registration_state(p->paths[0],p->paths[1],p->paths[2],&p->selection);
     if(p->files_accepted&&state!=BW_REG_ABSENT)return -1;
     if(state==BW_REG_MATCH){
-        if(gur_join(path,p->paths[1],b->title))return -1;p->app=gur_dir(path,&p->app_id);if(p->app<0)return -1;
+        if(gur_join(path,p->paths[1],b->title))return -1;p->app=gur_dir(p,path,&p->app_id);if(p->app<0)return -1;
         if(gur_join(parent,path,"sce_sys/param.json")||gur_read(p,parent,BW_SOURCE_PARAM_LIMIT,&p->app_param)||
            bw_registration_param_pair(p->source_param.body,p->source_param.size,p->app_param.body,p->app_param.size)<0||
            gur_join(parent,path,"mount.lnk")||gur_read(p,parent,BW_NRC_PATH_BYTES+2u,&p->mount))return -1;
@@ -162,11 +167,11 @@ static int gur_source_current(struct gur *p){
 }
 static int gur_confirmed_registered(void *,const struct bw_nrc_subject *);
 static int gur_safe(void *opaque,const struct bw_removed_source *s){
-    struct gur *p=opaque;return gur_bind(p,s)||bw_nrc_remote_confirmed_sources(&p->remote,&p->subject,gur_confirmed_registered,p)||gur_outside(p)||gur_source_current(p)?-1:0;
+    struct gur *p=opaque;return gur_bind(p,s)||gur_remote_result(p,bw_nrc_remote_confirmed_sources(&p->remote,&p->subject,gur_confirmed_registered,p))||gur_outside(p)||gur_source_current(p)?-1:0;
 }
 static int gur_excluded(void *opaque,const struct bw_removed_source *s){
     struct gur *p=opaque;if(!p->bound&&(!p->files_accepted||gur_bind(p,s)))return -1;
-    return gur_subject(p,s)||bw_nrc_remote_absent_sources(&p->remote,&p->subject,gur_absence,p)||
+    return gur_subject(p,s)||gur_remote_result(p,bw_nrc_remote_absent_sources(&p->remote,&p->subject,gur_absence,p))||
         gur_manual(p)!=0||gur_outside(p)||gur_absence(p,&p->subject)?-1:0;
 }
 static int gur_registration_current(struct gur *p){
@@ -190,13 +195,13 @@ static int gur_confirmed_registered(void *opaque,const struct bw_nrc_subject *s)
 static int gur_runtime_release(struct gur *p){
     if(!p->app_known)return gur_absent(p)||gur_absent(p)?-1:0;
     if(!p->runtime_release_done){
-        if(bw_nrc_remote_release_runtime(&p->remote,&p->subject,gur_confirmed_registered,p)){
+        if(gur_remote_result(p,bw_nrc_remote_release_runtime(&p->remote,&p->subject,gur_confirmed_registered,p))){
             p->reason=bw_nrc_remote_status_message(&p->remote);return -1;
         }p->runtime_release_done=1;
     }
     /* Remote collection can block after the prior local witness. Keep the
      * exact retained source/app/receipt check last before request authority. */
-    return gur_confirmed_registered(p,&p->subject)!=1||bw_nrc_remote_sources(&p->remote,&p->subject)||
+    return gur_confirmed_registered(p,&p->subject)!=1||gur_remote_result(p,bw_nrc_remote_sources(&p->remote,&p->subject))||
         gur_confirmed_registered(p,&p->subject)!=1?-1:0;
 }
 static int gur_registration(void *opaque,const struct bw_removed_source *s){
@@ -231,7 +236,7 @@ static int gur_registration(void *opaque,const struct bw_removed_source *s){
 static void gur_observe(void *opaque,const struct bw_game_uninstall_progress *value){struct gur *p=opaque;if(p->outer.observe)p->outer.observe(p->outer.opaque,value);}
 static int gur_owner_sources(void *opaque,const struct bw_nrc_subject *subject){
     struct gur *p=opaque;return !p->owner_known||!subject||memcmp(subject,&p->owner,sizeof *subject)||gur_current(p)||
-        bw_nrc_remote_absent_sources(&p->remote,subject,gur_absence,p)?-1:0;
+        gur_remote_result(p,bw_nrc_remote_absent_sources(&p->remote,subject,gur_absence,p))?-1:0;
 }
 static int gur_owner_manual(void *opaque,const struct bw_nrc_subject *subject){
     struct gur *p=opaque;return !p->owner_known||!subject||memcmp(subject,&p->owner,sizeof *subject)?-1:gur_manual(p);
@@ -253,9 +258,10 @@ static struct gur *gur_create(const struct bw_game_uninstall_request *q,const st
 }
 static int gur_finish(struct gur *p,int rc,struct bw_game_uninstall_result *out){
     if(rc&&p->reason)out->reason=p->reason;
-    if(p->generation_release_unknown){rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->mutation_started=1;out->reason="previous_generation_observation_release_unconfirmed";}
+    if(p->generation_release_unknown){p->release_unknown=1;rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason="previous_generation_observation_release_unconfirmed";}
     if(!rc&&out->phase==BW_GAME_REMOVE_DONE&&gur_owner_complete(p)){rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason="removed_copy_registration_owner_completion_unconfirmed";}
-    {int fds[]={p->app,p->apps,p->source.root,p->source.parent};for(unsigned i=0;i<4;i++)if(fds[i]>=0&&close(fds[i])){rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason="normal_adapter_descriptor_close_unconfirmed";}}
+    {int fds[]={p->app,p->apps,p->source.root,p->source.parent};for(unsigned i=0;i<4;i++)if(fds[i]>=0&&gur_release(p,fds[i])){rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason="normal_adapter_descriptor_close_unconfirmed";}}
+    if(p->remote.observation_release_unknown||p->release_unknown){out->release_unknown=1;rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason=p->release_reason?p->release_reason:"normal_remote_observation_release_unconfirmed";}
     free(p->source_param.body);free(p->app_param.body);free(p->mount.body);free(p->receipt.body);free(p);return rc;
 }
 int bw_native_game_uninstall_normal(const struct bw_game_uninstall_request *q,uint16_t port,struct bw_game_uninstall_result *out){
@@ -342,9 +348,9 @@ static void nrm_phase(struct nrm *m,const char magic[8],unsigned char bytes[NRM_
 static int nrm_phase_read(struct nrm *m,const char *suffix,const char magic[8]){char leaf[64];unsigned char phase[NRM_PHASE];snprintf(leaf,sizeof leaf,"%s.%s",m->prefix,suffix);nrm_phase(m,magic,phase);return nrm_read(m,leaf,phase,sizeof phase);}
 static int nrm_phase_write(struct nrm *m,const char *suffix,const char magic[8]){char leaf[64];unsigned char phase[NRM_PHASE];snprintf(leaf,sizeof leaf,"%s.%s",m->prefix,suffix);nrm_phase(m,magic,phase);return nrm_write(m,leaf,phase,sizeof phase);}
 static int nrm_journal(struct nrm *m){
-    m->data=gur_dir(m->roots[0],&m->data_id);if(m->data<0||m->data_id.st_uid!=geteuid()||(m->data_id.st_mode&0022))return -1;
+    m->data=gur_dir(m->bound,m->roots[0],&m->data_id);if(m->data<0||m->data_id.st_uid!=geteuid()||(m->data_id.st_mode&0022))return -1;
     int made=!v2_mkdirat(m->data,"registration-maintenance",0700);if(!made&&errno!=EEXIST)return -1;
-    if(gur_join(m->journal_path,m->roots[0],"registration-maintenance"))return -1;m->journal=gur_dir(m->journal_path,&m->journal_id);
+    if(gur_join(m->journal_path,m->roots[0],"registration-maintenance"))return -1;m->journal=gur_dir(m->bound,m->journal_path,&m->journal_id);
     if(m->journal<0||m->journal_id.st_uid!=geteuid()||(m->journal_id.st_mode&07777)!=0700)return -1;
     if(made){if(nrm_write(m,".blackwire-registration-maintenance",nrm_marker,sizeof nrm_marker-1)||fsync(m->data))return -1;}
     else if(nrm_read(m,".blackwire-registration-maintenance",nrm_marker,sizeof nrm_marker-1))return -1;

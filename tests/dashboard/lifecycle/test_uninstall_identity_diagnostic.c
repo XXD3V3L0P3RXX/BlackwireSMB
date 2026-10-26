@@ -13,7 +13,7 @@ static void begin(struct gu_plan *p,const char *base){
     n=snprintf(game,sizeof game,"%s/game",root);CHECK(n>0&&(size_t)n<sizeof game);CHECK(!mkdir(game,0700));
     n=snprintf(record,sizeof record,"%s/record",root);CHECK(n>0&&(size_t)n<sizeof record);CHECK(!mkdir(record,0700));
     memset(p,0,sizeof *p);gu_init(p);memset(&request,0,sizeof request);strcpy(request.operation,"11111111111111111111111111111111");authority=0;request.ops.current=current;p->r=&request;
-    p->root=gu_open_root(game,p->anchor+4,p->ids+4);p->state=gu_open_root(record,p->anchor+5,p->ids+5);CHECK(p->root>=0&&p->state>=0);
+    p->root=gu_open_root(p,game,p->anchor+4,p->ids+4);p->state=gu_open_root(p,record,p->anchor+5,p->ids+5);CHECK(p->root>=0&&p->state>=0);
     CHECK(!unlink(BW_SEND_LOG_PATH)||errno==ENOENT);cases++;
 }
 static void end(struct gu_plan *p){CHECK(!close(p->root));CHECK(!close(p->state));}
