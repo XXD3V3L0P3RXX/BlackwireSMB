@@ -538,8 +538,8 @@
       "sha256": "c3cde98b8f689e83723cd32801b6e677953f464e2cc35057cad2ccf7970f73bb"
     },
     "src/blackwire/library/native_send.c": {
-      "bytes": 41608,
-      "sha256": "9efcb1481d0c49970908bbda7b37214304209c2f25561a48b31020e2589a1925"
+      "bytes": 41617,
+      "sha256": "0847e152e6cf50a3b21c8a70b2949a701c9852e772936ec4e4e77ead3fc50dda"
     },
     "src/blackwire/library/native_send.h": {
       "bytes": 4106,
@@ -790,12 +790,12 @@
       "sha256": "8e150737ddf88b8956599d83f54597bf97451c33c1fb0c3ae35b760d037c73a0"
     },
     "src/blackwire/library/source_plan.c": {
-      "bytes": 11250,
-      "sha256": "95b1ec077d880739b7a1d046def03746ffc425ca0cfb4ad1ddbbf31026a153e6"
+      "bytes": 11973,
+      "sha256": "642f4dbeeb568072078870aebba556a685882eeac7b6b1930935d51538aff1be"
     },
     "src/blackwire/library/source_plan.h": {
-      "bytes": 2635,
-      "sha256": "d980d7dc3bc5332d61908ed87b4db629764d56df2a66976cb9b5c736bd2b7d78"
+      "bytes": 3253,
+      "sha256": "dbd76f9b3f43dce6e1c61eba80902671c9516f59bc2a6c0f1801573bbbfce01c"
     },
     "src/blackwire/library/source_prepare.c": {
       "bytes": 8321,
@@ -1596,8 +1596,8 @@
       "sha256": "87997f3935867fcb004f810e45f361043ae5e4a87ef422c5ec5da04ed3625847"
     },
     "tests/dashboard/lifecycle/check_registration_lifecycle.py": {
-      "bytes": 10541,
-      "sha256": "454ca1df78efde298e08c8d9fdca62c8a31e652bbde4c229b98474404f8d1a11"
+      "bytes": 10578,
+      "sha256": "8208f53044258b1cb31ff81a13ea8869ac12cd06e089328e66b12ee3b5c1202c"
     },
     "tests/dashboard/lifecycle/check_registration_observer.py": {
       "bytes": 4045,
@@ -1624,8 +1624,8 @@
       "sha256": "1a7a9267bb4915539a4e5b136df0d121ac028ae6d5dc46facd27aff71c093277"
     },
     "tests/dashboard/lifecycle/check_source_ampr_witness.py": {
-      "bytes": 5103,
-      "sha256": "88524ca8f7f25bce6f3e63760675bc3c15cf446c849f2a33f41f7d6659e6c776"
+      "bytes": 5126,
+      "sha256": "229709ac35cc08256afaf89d0249e8ac3737ddfd7dbf5cda40e3f1b2aaf5eb11"
     },
     "tests/dashboard/lifecycle/check_source_companions.py": {
       "bytes": 4547,
@@ -1856,8 +1856,8 @@
       "sha256": "8c339cf48ef95ebda74938da045534cefbdbb03f154b683db596ae65411f6906"
     },
     "tests/dashboard/lifecycle/test_source_companions.c": {
-      "bytes": 13977,
-      "sha256": "a314e8fd897afde97db2bad92b5b4870d9351cf79d91a232d712edd8c58d90ab"
+      "bytes": 15875,
+      "sha256": "ef82784dadc1a9fa8a9bc9c5609dfa762070112be1e393cd36b3490a7a9fb968"
     },
     "tests/dashboard/lifecycle/test_source_connect_wrapper.c": {
       "bytes": 10103,
@@ -2088,5 +2088,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "b8d13595b47998981741a440edb79363241970c2"
+  "runtimeSourceCommit": "9ffa91f556018d7fcacc1c7681a2b05d62fe1802"
 }
