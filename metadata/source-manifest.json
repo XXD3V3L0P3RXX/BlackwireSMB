@@ -286,8 +286,8 @@
       "sha256": "5b78f0592be110d2d3b451a245658f0de277b76a88ba5d745e026d7447703341"
     },
     "src/blackwire/library/main.c": {
-      "bytes": 40860,
-      "sha256": "d2cb757532fcb03e6cfe3b2bf1618c03d7a76110eb53c01de08de9cf3f6465b0"
+      "bytes": 41424,
+      "sha256": "431401ea5ada41ee2bac11700eb570118f84a1324f4e09738a6a5d74af5e8a7b"
     },
     "src/blackwire/library/media_public_trial.c": {
       "bytes": 11482,
@@ -1278,16 +1278,16 @@
   "nativeFrontendIncluded": false,
   "buildSource": {
     "tools/build.py": {
-      "bytes": 5194,
-      "sha256": "d550a1ea32d6e4a5f5889325d38a4d7a1e43048e9e207cb5feb85d38fbf6aa86"
+      "bytes": 5652,
+      "sha256": "7066503087a45a5fdb2493f8b873f1ee7f3b50f5817d41ffe712d2bf897b63a3"
     },
     "tools/build/app-recipe.json": {
       "bytes": 65850,
       "sha256": "18c6bab82ca3bfe1bbe28ed2998cbe8a4fc2c8462697974170afbea8d58e6d29"
     },
     "tools/build/app.py": {
-      "bytes": 10132,
-      "sha256": "ded1f643491c7da70771aa2cf3f0659526834e6460580d94d2b3c852d60da6e3"
+      "bytes": 12576,
+      "sha256": "250d9dc00923ac17e9fc55308293c71fdd8a1914b8f969095c5f177ed623c4f7"
     },
     "tools/build/common.py": {
       "bytes": 4240,
@@ -1306,8 +1306,8 @@
       "sha256": "4c9ee4a7eb3e46a2621fa27d389b6c06f8f3bbc8fe5ef8c9e561dafda472d96a"
     },
     "tools/build/reader.py": {
-      "bytes": 20092,
-      "sha256": "f7c431685541f44a95083d6418e80a8c3cd2b1b180d81ec7b9528fc829dbbb9c"
+      "bytes": 21006,
+      "sha256": "abdc7d276fb6b0b2ed003b8105fe4d7ff4b2e640539a58968b008aafd643ffff"
     },
     "tools/build/reader_patch.py": {
       "bytes": 12211,
@@ -1347,9 +1347,17 @@
     }
   },
   "testSource": {
+    "tests/build/check_standalone_startup_trace.py": {
+      "bytes": 5450,
+      "sha256": "f3ffbf844bd62f70a01e00b9e77add521e543fe09ce3276664aab51ac3c67a02"
+    },
     "tests/build/test_sdk_runtime.py": {
       "bytes": 12292,
       "sha256": "011a9240f8993ad2eb356832706d1d7c2821a6bcbc4457e192e546f816862696"
+    },
+    "tests/build/test_standalone_startup_trace.c": {
+      "bytes": 6911,
+      "sha256": "4a243524eb44c05beb87b09824b3393d0e7e683302dfd6317476677b4dc78683"
     },
     "tests/compressed/backend_catalog_diagnostic_test.c": {
       "bytes": 2589,
@@ -1534,6 +1542,10 @@
     "tests/dashboard/lifecycle/check_self_contained_bundle.py": {
       "bytes": 3311,
       "sha256": "1a7a9267bb4915539a4e5b136df0d121ac028ae6d5dc46facd27aff71c093277"
+    },
+    "tests/dashboard/lifecycle/check_startup_trace_build.py": {
+      "bytes": 3713,
+      "sha256": "0aa906131a13c65cd65da762a9375ce9118376f99b4a7820c1c0099391dbd20d"
     },
     "tests/dashboard/lifecycle/check_uninstall_finish_diagnostic.py": {
       "bytes": 4792,
@@ -1866,7 +1878,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Signed SMB performance, prepare-only existing-library compatibility, qualified optional PlayGo companions, published beta.2 reader upgrade, bounded registration confirmation, aligned large compressed namespaces and strict known-source status exclusion and sticky uninstall resource-release uncertainty, candidate helper close propagation, uncertain-removal settings locks and bounded normal-uninstall diagnostics; exact hardware evidence recorded separately",
+  "developmentQualification": "Local performance development with opt-in stdout-only startup instrumentation. Focused host and SDK compilation qualified; private PC collector tested on loopback. New full build and hardware verification remain outstanding; the previous full candidate startup crash cause is unconfirmed.",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -1876,5 +1888,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "8a1e53603ffdae9ab061821589e09cc1af6b45de"
+  "runtimeSourceCommit": "17ec8db605159551ae424f6e2b98ea8cf77c3e3b"
 }
