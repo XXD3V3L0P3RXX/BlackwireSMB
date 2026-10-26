@@ -2,7 +2,7 @@
 
 The ordinary flow is **Send files → Ready → PS5 Games icon**. Keep the Blackwire resident running and the PC share online throughout play. Use the [tested runtime](REQUIREMENTS.md), and check the [preview's results and limits](TESTING.md).
 
-`v0.2.0-preview.1` accepts extracted folders and the supported PFS/PFSC compressed layouts. Read the [format limits](COMPRESSED-DEVELOPMENT.md#formats); a `.ffpfsc` suffix alone is insufficient.
+The current test build is **v0.3.0-beta.2**. Both the direct download and the Payload Manager custom source offer that same runtime. It accepts extracted folders, the supported PFS/PFSC layouts and the documented contiguous exFAT images. Read the [PFS/PFSC limits](COMPRESSED-DEVELOPMENT.md#formats) and [exFAT scope](EXFAT-DEVELOPMENT.md#admitted-layout); a `.ffpfsc` suffix alone is insufficient.
 
 ## Windows shared folder
 
@@ -32,7 +32,7 @@ Each copy retains its own share, path and preparation identity. Equal titles in 
 ## Load the console resident
 
 1. Check the [tested firmware and runtime versions](../README.md#tested-environment) and whether your ELF has the [released-preview dependency or development repair](REQUIREMENTS.md#external-shadowmount-libraries), before preparing a game. Start the working jailbreak chain with Kstuff and compatible stock ShadowMountPlus active. Only the 13.00-family profile `0x13000040` is console-qualified; 10.01 and other firmware profiles are unverified.
-2. Load the standalone `Blackwire.elf` using your normal ELF loader. Repeat this after reboot.
+2. Load the current test beta using your normal ELF loader: `Blackwire-Beta.elf` for a direct download, or `Blackwire.elf` from Payload Manager. They are the same binary. Stop the old resident first and load only one. Confirm `http://<PS5-address>:5918/health` reports `blackwire-v0.3.0-beta.2`. Repeat loading after reboot.
 3. Open `http://<PS5-address>:5918/` in a LAN browser. The console page is `http://127.0.0.1:5918/`.
 4. Configure the share and let library discovery finish. Choose a game, select **Send files**, and wait for that named job to finish with Ready status.
 5. Open the game's ordinary icon in the PS5 **Games** area, or use web **Play**. Blackwire handles that game's startup handoff and tracks the session.

@@ -93,7 +93,7 @@ Dashboard is a separate product under development. This standalone preview uses 
 
 ## Install with PS5 Payload Manager
 
-The custom catalog currently installs the previous **v0.2.0-preview.1** preview. For the current **v0.3.0-beta.2** test build, use the download at the top of this page. To install the older preview through [PS5 Payload Manager](https://github.com/itsPLK/ps5-payload-manager):
+The custom source offers the same current **v0.3.0-beta.2 test beta** as the direct download above, in one **Blackwire** entry. Payload Manager keeps the installed filename `Blackwire.elf`; its bytes and build ID match the manually downloaded `Blackwire-Beta.elf`. Refresh the source catalog to see the current version. Add the source once in [PS5 Payload Manager](https://github.com/itsPLK/ps5-payload-manager):
 
 1. Open **Settings → Manage Sources → Add Source**.
 2. Paste this direct catalog URL and choose **Add**:
@@ -102,7 +102,7 @@ The custom catalog currently installs the previous **v0.2.0-preview.1** preview.
    https://raw.githubusercontent.com/XXD3V3L0P3RXX/BlackwireSMB/main/payloads.json
    ```
 
-3. Select **Blackwire** from the added source, install it, then load `Blackwire.elf` after starting the required jailbreak, Kstuff and ShadowMountPlus environment.
+3. Select **Blackwire**, confirm version **v0.3.0-beta.2**, install it, then load `Blackwire.elf` after starting the required jailbreak, Kstuff and ShadowMountPlus environment. Stop the previous resident before loading the update.
 4. Open `http://<PS5-address>:5918/` and follow the [quick start](#quick-start) to connect your SMB share and prepare games.
 
 The catalog points to the published preview ELF and supplies its SHA-256 checksum for Payload Manager to verify. This is an optional custom source, separate from Payload Manager's default catalog. It installs Blackwire; the [required dependencies](docs/REQUIREMENTS.md) must be supplied separately. The [release download](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.2.0-preview.1) remains available for manual loading.
