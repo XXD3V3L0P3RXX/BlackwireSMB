@@ -67,7 +67,10 @@ int smb2_fstat(struct smb2_context *s,struct smb2fh *h,struct smb2_stat_64 *out)
 }
 int smb2_close(struct smb2_context *s,struct smb2fh *h){C(s&&h==(struct smb2fh *)&image_closes);image_closes++;return mode==READ_EOF_CLOSE_DENIED?-EACCES:0;}
 uint32_t smb2_get_max_read_size(struct smb2_context *s){C(s&&mode==READ_EOF_CLOSE_DENIED);return 65536;}
-int smb2_pread(struct smb2_context *s,struct smb2fh *h,uint8_t *b,uint32_t n,uint64_t at){C(s&&h==(struct smb2fh *)&image_closes&&b&&n==48&&!at&&mode==READ_EOF_CLOSE_DENIED);return 0;}
+/* Either an exact header request or a bounded metadata window may reach EOF.
+ * The fixture's declared image is 4096 bytes; request size is not the error
+ * provenance contract this case verifies. */
+int smb2_pread(struct smb2_context *s,struct smb2fh *h,uint8_t *b,uint32_t n,uint64_t at){C(s&&h==(struct smb2fh *)&image_closes&&b&&n>=48&&n<=4096&&!at&&mode==READ_EOF_CLOSE_DENIED);return 0;}
 int bw_source_smb_file_info(struct bw_source_smb *s,const char *path,struct bw_source_info *out){(void)s;(void)path;(void)out;abort();}
 int bw_source_smb_small_file(struct bw_source_smb *s,const char *path,size_t max,void **bytes,size_t *size,struct bw_source_info *info){(void)s;(void)path;(void)max;(void)bytes;(void)size;(void)info;abort();}
 #endif

@@ -1936,8 +1936,8 @@
       "sha256": "2563c58a28be46a6f108aeaa49e41ff2bd963de7b33f9cfeb83db38b5d3af9fd"
     },
     "tests/diagnostics/test_settings_check_failure.c": {
-      "bytes": 14389,
-      "sha256": "31b9a374c9538fc7670a1177a1449e3d84476836c18fe5fc65540d5a2070f2a2"
+      "bytes": 14599,
+      "sha256": "6682384779acedcef9301f7873944a2daa5089f0ba1f3db0f99cb865e627e946"
     },
     "tests/diagnostics/test_settings_check_failure.js": {
       "bytes": 1226,
