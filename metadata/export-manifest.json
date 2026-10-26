@@ -87,8 +87,8 @@
       "sha256": "d5b36e1bb6857b803447f470b52cc6127ca061031f1b7210e52bc2f0f7f4ee50"
     },
     "README.md": {
-      "bytes": 15578,
-      "sha256": "db0c30511f6e56159f1002ee0e3c18e5f8a272d187455e79d6ac1e1a4f7be716"
+      "bytes": 16376,
+      "sha256": "5ccc467c09fed90f80cad98abf35f91ea8af80f8d40ec348d6f67a128da58328"
     },
     "SECURITY.md": {
       "bytes": 1186,
@@ -123,8 +123,8 @@
       "sha256": "66573a6ce59802bf48f9ae2f872b72fc62e1007de9085f5b0b30f0ee4f8cd7df"
     },
     "docs/PUBLISHING.md": {
-      "bytes": 2703,
-      "sha256": "40f1cc427871f478c2e9de688456bad0e7f70a45abfad1ee4e7b67b6e3fe3f03"
+      "bytes": 3395,
+      "sha256": "2b559c3249dd052ad62768fa1229f33472cbee9da93e7c57d78f5015cb9fe1c3"
     },
     "docs/REQUIREMENTS.md": {
       "bytes": 6275,
@@ -184,7 +184,7 @@
     },
     "metadata/export-inputs.json": {
       "bytes": 143867,
-      "sha256": "19d13c58081aa9eed063aaca5f8f5776f794bf323de00469a0a270a52fae1b2a"
+      "sha256": "8ef6c528f1520aecfd190cfbaf098951312263acd88f871b47be0b6aa109574f"
     },
     "metadata/license-inputs.json": {
       "bytes": 2208,

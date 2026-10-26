@@ -2,9 +2,17 @@
 
 Stream PS5 games from an ordinary PC SMB share, with a smaller startup copy on the console. Supports extracted folders and the tested PFS/PFSC compressed layouts, including supported `.ffpfsc` images.
 
-**v0.3.0-beta.2 is available for testing:** it fixes two reproduced connection-settings bugs and adds settings/connection failure diagnostics. It retains the MkPFS exFAT reader and the self-contained step-7 repair from beta.1. [Download the beta](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.2) · [Beta test instructions](docs/BETA-TESTING.md). Existing preview downloads and the normal Payload Manager catalog are preserved.
+## Current download — v0.3.0-beta.2
 
-[Download working and logging ELFs](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.2.0-preview.1-sendlog.1) · [Etawen mirror](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB) · [Changelog](CHANGELOG.md) · [Video](#video) · [Setup](docs/SETUP.md) · [Requirements](docs/REQUIREMENTS.md) · [Test results](docs/TESTING.md) · [Build from source](docs/BUILD.md)
+**[Download Blackwire-Beta.elf](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/download/v0.3.0-beta.2/Blackwire-Beta.elf)**
+
+Use this single ELF for the current test beta. It already includes setup and connection diagnostics; there is no separate current logging ELF to choose. The source ZIP, relinking archive and verification files on the release page are supporting developer/test files.
+
+This beta fixes saved settings appearing blank during startup and a settings form that could stay locked after replacing the resident. It retains the supported MkPFS exFAT reader and self-contained step-7 installer. Keep only one Blackwire resident running, and confirm `/health` reports **`blackwire-v0.3.0-beta.2`** after loading it. Other reported failures still need their own verification.
+
+[Release notes and checksums](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.2) · [Beta test instructions](docs/BETA-TESTING.md) · [Setup](docs/SETUP.md) · [Requirements](docs/REQUIREMENTS.md) · [Changelog](CHANGELOG.md) · [Test results](docs/TESTING.md) · [Build from source](docs/BUILD.md) · [Project mirror](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB)
+
+This is a test beta. Earlier versions remain under **Previous releases and rollback** below and are labeled as previous versions on their release pages.
 
 ## Tested environment
 
@@ -27,30 +35,33 @@ Byepervisor Reborn is the hypervisor-exploit stage of a jailbreak chain; the rep
 
 Earlier baseline tests used ShadowMountPlus `1.7-beta5fix1` and elfldr `v0.26`; their results remain attributed to that earlier environment. The latest test inventory also records PS5 Payload Manager `0.6.3`, BFpilot `v0.4.4` and shsrv `v0.20`. Those are loading, file-management and development helpers, not additional game-streaming requirements.
 
-The released preview has a setup bug: it requires a particular optional global pack at `/data/shadowmount/fakelib`, even though Blackwire already embeds its reader. A missing pack can cause setup step 7 to fail after startup files transfer. This does **not** mean PS5 system files are missing. The development installer writes and verifies its embedded reader directly, preserves recognized existing per-game companions, and does not read or modify that global directory. See [repair scope](docs/RUNTIME-BUNDLE-DEVELOPMENT.md), [requirements](docs/REQUIREMENTS.md) and [test results](docs/TESTING.md).
+The older v0.2.0 preview has a setup bug: it requires a particular optional global pack at `/data/shadowmount/fakelib`, even though Blackwire already embeds its reader. A missing pack can cause setup step 7 to fail after startup files transfer. This does **not** mean PS5 system files are missing. The current beta installer writes and verifies its embedded reader directly, preserves recognized existing per-game companions, and does not read or modify that global directory. See [repair scope](docs/RUNTIME-BUNDLE-DEVELOPMENT.md), [requirements](docs/REQUIREMENTS.md) and [test results](docs/TESTING.md).
 
-## Beta download
+## Install the current beta
 
-Use **Blackwire-Beta.elf** from [v0.3.0-beta.1](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.2) to test the reported missing-image and step-7 failures. Keep your original game images and share layout; there is no need to repack the whole library or create `/data/shadowmount/fakelib`. Stop the old resident before loading the beta. Follow the [one-attempt test and logging instructions](docs/BETA-TESTING.md), including the build ID check.
+Use **Blackwire-Beta.elf** from [v0.3.0-beta.2](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.2) to test the reported missing-image and step-7 failures. Keep your original game images and share layout; there is no need to repack the whole library or create `/data/shadowmount/fakelib`. Stop the old resident before loading the beta. Follow the [one-attempt test and logging instructions](docs/BETA-TESTING.md), including the build ID check.
 
 The [exFAT format scope](docs/EXFAT-DEVELOPMENT.md), [installer repair](docs/RUNTIME-BUNDLE-DEVELOPMENT.md) and [exact test records](docs/TESTING.md) describe what has been verified. Test results on our 13.00-family console do not establish universal firmware or title compatibility.
 
-## Previous preview downloads
+<details>
+<summary>Previous releases and rollback</summary>
 
-Choose one of these two ELF files. Load only one Blackwire resident at a time.
+### Older preview downloads
+
+These older files are retained for rollback and comparisons. For the current beta, use the single download above. Load only one Blackwire resident at a time.
 
 | Build | Download | Use |
 | --- | --- | --- |
-| Working release | [Blackwire.elf](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/download/v0.2.0-preview.1-sendlog.1/Blackwire.elf) | The unchanged v0.2.0-preview.1 release for normal use. |
-| Diagnostic logging | [Blackwire-SendLog.elf](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/download/v0.2.0-preview.1-sendlog.1/Blackwire-SendLog.elf) | The same reader with extra Send/setup logging for investigating failures. |
+| Previous preview | [Blackwire.elf](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/download/v0.2.0-preview.1-sendlog.1/Blackwire.elf) | The earlier v0.2.0-preview.1 runtime, retained for rollback. |
+| Previous logging build | [Blackwire-SendLog.elf](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/download/v0.2.0-preview.1-sendlog.1/Blackwire-SendLog.elf) | The same reader with extra Send/setup logging for investigating failures. |
 
 Both ELFs are together on the [download page](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.2.0-preview.1-sendlog.1). See [diagnostic instructions](docs/DIAGNOSTICS.md) for collecting logs and returning to the normal build. Sources, relinking materials and checksums are provided alongside the downloads or linked in the release notes.
 
 Blackwire runs as a single resident ELF on a compatible jailbroken PS5. Its web interface works in the PS5 browser and a LAN browser. The game runs on the PS5; bulk game files stay on the PC. An ordinary Windows shared folder is enough—there is no Blackwire PC service to install.
 
-## Optional Send-files diagnostic
+### Earlier Send-files diagnostic
 
-Investigating missing compressed games or setup step 7? The separate **v0.2.0-preview.1-sendlog.1** test build adds detailed logging. [Download and follow the diagnostic instructions](docs/DIAGNOSTICS.md). It retains the released reader and does not replace the normal preview or Payload Manager catalog.
+The older **v0.2.0-preview.1-sendlog.1** build is retained for comparisons with its original reader. [Historical diagnostic and rollback instructions](docs/DIAGNOSTICS.md) apply to those older files. The current beta already includes diagnostics.
 
 ## v0.2.0-preview.1
 
@@ -68,6 +79,8 @@ The update reduces unchanged-source launch verification work, indexes the existi
 
 **This is an early preview.** The extra Close browser button still stayed open in the console test; use Circle instead. That redundant button is scheduled for removal in the next build. Broader compatibility, interrupted-operation recovery and hardware Uninstall qualification remain open.
 
+</details>
+
 ## Video
 
 [Watch the Blackwire demonstration on YouTube](https://youtu.be/xIPHo9kespo).
@@ -80,7 +93,7 @@ Dashboard is a separate product under development. This standalone preview uses 
 
 ## Install with PS5 Payload Manager
 
-Blackwire is available through this project's custom source. Add it once in [PS5 Payload Manager](https://github.com/itsPLK/ps5-payload-manager):
+The custom catalog currently installs the previous **v0.2.0-preview.1** preview. For the current **v0.3.0-beta.2** test build, use the download at the top of this page. To install the older preview through [PS5 Payload Manager](https://github.com/itsPLK/ps5-payload-manager):
 
 1. Open **Settings → Manage Sources → Add Source**.
 2. Paste this direct catalog URL and choose **Add**:

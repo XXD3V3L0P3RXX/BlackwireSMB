@@ -30,3 +30,7 @@ A documentation-only commit can follow a release tag on the main branch. It does
 Authentication belongs in the host's normal credential flow or an ephemeral private publishing process. Never commit tokens, put passwords in remote URLs, or include private build logs in a release. If a request has an uncertain result, inspect the destination before repeating a mutation.
 
 If one host is unavailable or authentication fails, preserve the verified package and report the exact outstanding destination. Do not label a one-host update as fully synchronized.
+
+## Present one current download
+
+Feature one current version and one primary runtime ELF at the top of the README. State when that ELF already includes logging. Keep source/relinking/test files distinct from the ELF users load, and check both link labels and targets against the actual build ID. Label previous release pages clearly and retain their tags/downloads for rollback. Keep older README downloads in a collapsed history section. A test beta remains marked as a prerelease; do not claim stable qualification merely to change GitHub's Latest badge. If the Payload Manager catalog intentionally offers an older preview, state its exact version beside those installation instructions.
