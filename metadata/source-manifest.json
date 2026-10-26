@@ -1278,16 +1278,16 @@
   "nativeFrontendIncluded": false,
   "buildSource": {
     "tools/build.py": {
-      "bytes": 5652,
-      "sha256": "7066503087a45a5fdb2493f8b873f1ee7f3b50f5817d41ffe712d2bf897b63a3"
+      "bytes": 6064,
+      "sha256": "46a3baa581ebf295bc5393e7f952dc995e3e3d33550d15cc0fdfc8d71a46679f"
     },
     "tools/build/app-recipe.json": {
       "bytes": 65850,
       "sha256": "18c6bab82ca3bfe1bbe28ed2998cbe8a4fc2c8462697974170afbea8d58e6d29"
     },
     "tools/build/app.py": {
-      "bytes": 12576,
-      "sha256": "250d9dc00923ac17e9fc55308293c71fdd8a1914b8f969095c5f177ed623c4f7"
+      "bytes": 13789,
+      "sha256": "2e6bae15a804577c1d143f9dc4a54f242985f04f04dafb9864060897a6ce95c3"
     },
     "tools/build/common.py": {
       "bytes": 4240,
@@ -1544,8 +1544,8 @@
       "sha256": "1a7a9267bb4915539a4e5b136df0d121ac028ae6d5dc46facd27aff71c093277"
     },
     "tests/dashboard/lifecycle/check_startup_trace_build.py": {
-      "bytes": 3713,
-      "sha256": "0aa906131a13c65cd65da762a9375ce9118376f99b4a7820c1c0099391dbd20d"
+      "bytes": 6148,
+      "sha256": "5f777bcef97c55c2391929ecc036f7edd15f877add86c5175f638980e8608c49"
     },
     "tests/dashboard/lifecycle/check_uninstall_finish_diagnostic.py": {
       "bytes": 4792,
@@ -1888,5 +1888,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "17ec8db605159551ae424f6e2b98ea8cf77c3e3b"
+  "runtimeSourceCommit": "41c6f52f3f5e76683db2347ebd7c1a116b917f77"
 }
