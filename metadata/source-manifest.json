@@ -1464,8 +1464,8 @@
       "sha256": "6a792f7ca66a329cbfb8190d65807e3442764d576df5a58370993d079fda7dcc"
     },
     "tests/compressed/namespace_limit_test.c": {
-      "bytes": 5048,
-      "sha256": "012280d10f7fa46e944b2c41320b64f1bf286e00d592f50fdc1424d999581692"
+      "bytes": 5630,
+      "sha256": "f61edb084f74ee07470a496cd8922fb0305887637f82976040a838121cc4cfde"
     },
     "tests/compressed/namespace_test.c": {
       "bytes": 12756,
@@ -1492,8 +1492,8 @@
       "sha256": "251168f3e9e10e810592b9a3c18a94c60f483b2f64ac8cb9a46e33c5d3a626d8"
     },
     "tests/dashboard/lifecycle/check_fast_ready_play.py": {
-      "bytes": 12264,
-      "sha256": "c702fd15945bdb8992b318d2b542aceb78ca529f51fa6ebb9fe43a5cf871f5e5"
+      "bytes": 12415,
+      "sha256": "9278ef959714ee2f76d3bd5b0b324d1f4136dc62e0b673c8538f7eef7d4386d5"
     },
     "tests/dashboard/lifecycle/check_game_removal_backend.py": {
       "bytes": 6596,
@@ -1624,16 +1624,16 @@
       "sha256": "1a7a9267bb4915539a4e5b136df0d121ac028ae6d5dc46facd27aff71c093277"
     },
     "tests/dashboard/lifecycle/check_source_ampr_witness.py": {
-      "bytes": 4829,
-      "sha256": "65ab5cbd4ea95db59b4f7700586d5d49e606c5cfa6c34848d99f28489183c1f8"
+      "bytes": 5103,
+      "sha256": "88524ca8f7f25bce6f3e63760675bc3c15cf446c849f2a33f41f7d6659e6c776"
     },
     "tests/dashboard/lifecycle/check_source_companions.py": {
       "bytes": 4547,
       "sha256": "d36a023fffca9d085200392a603ef483c159382ff0323115fb7505331aa2b0ca"
     },
     "tests/dashboard/lifecycle/check_source_connect_wrapper.py": {
-      "bytes": 7721,
-      "sha256": "6d77ebf071f77567249ddbc730bbf9843b42e1c28666a60d4f45eb1e16d6d5e1"
+      "bytes": 7818,
+      "sha256": "42aafc232f20abc405ce71c403b6a0eaf7301ef5c72dd456baa0d4a557898265"
     },
     "tests/dashboard/lifecycle/check_startup_trace_build.py": {
       "bytes": 10019,
@@ -1664,8 +1664,8 @@
       "sha256": "3e6d9ec9895ac812147cad075b3491e3532059c425a9b0484d396dc9762b7a33"
     },
     "tests/dashboard/lifecycle/source_ampr_admission_model.h": {
-      "bytes": 3640,
-      "sha256": "d5694deae146982bcfae48bf4cb53eaf05102b260bd281c1d878daa122525551"
+      "bytes": 5031,
+      "sha256": "512042cf0f0c5b56dc92fd73a4d1415a8984fd2f71cbc15f958e548b20110178"
     },
     "tests/dashboard/lifecycle/test_bundle_control_split.inc": {
       "bytes": 7667,
@@ -1960,16 +1960,16 @@
       "sha256": "74ffbd505f31eecc89e2588110b085f4f71f2d2d691d3427677982eaa76fa2fd"
     },
     "tests/home/check_ready_observe.py": {
-      "bytes": 2601,
-      "sha256": "6fbbdba2192cb40958b5ff3ed2135029dcb031d547e940b8d04878667d8104ec"
+      "bytes": 2862,
+      "sha256": "7c83c72a6e295efad6a8734f8f157ea44065415a0721b7ce6a6462da1b4bf84a"
     },
     "tests/home/check_session.py": {
       "bytes": 1588,
       "sha256": "5c39891978bb7380c58005ba3f6e67924f7f01eb6688ee43bfaf97453a0e842b"
     },
     "tests/home/check_worker_release.py": {
-      "bytes": 3721,
-      "sha256": "01188bb2ca8e50907831702dcb46bc17c0611f44472d8fa8fe836faa044783a5"
+      "bytes": 4041,
+      "sha256": "594b9f163ea918bcff14a5f3e162775a55455143131c0de5408983790550436a"
     },
     "tests/home/home_test.c": {
       "bytes": 12481,
@@ -1988,16 +1988,16 @@
       "sha256": "a3f6bb94c65d25d7096861b549d306e6176dec58acdf04704177e31c8d80075a"
     },
     "tests/home/ready_observe_test.c": {
-      "bytes": 9056,
-      "sha256": "40b15ffc93c401d9ee5dd0523179b5ef38734a3b85ad048dd6eeeee6a4062b50"
+      "bytes": 9270,
+      "sha256": "46d3ebba3d727fa32e970e8ac209bdc7cc2c11b783df662fbee54c566bd4a6c7"
     },
     "tests/home/support.py": {
       "bytes": 787,
       "sha256": "f78f05c6630e9abb94fa65f0f92e0be787d35352513a942a1e84c0506abb02e1"
     },
     "tests/home/worker_release_test.c": {
-      "bytes": 4984,
-      "sha256": "c8629be8bf1a485c50722acb965ef67cd15b90861589db1dd4ba1435869e528a"
+      "bytes": 5530,
+      "sha256": "0afebe2b35263da9b7107379ae50f773bedf1b6dc8ba8ec4084037b2a530b88f"
     },
     "tests/reader/adapter_test.c": {
       "bytes": 1775,
@@ -2088,5 +2088,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "3f244dcbb82725e960c9301b968f56530e1c75a7"
+  "runtimeSourceCommit": "b8d13595b47998981741a440edb79363241970c2"
 }
