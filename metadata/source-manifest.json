@@ -298,12 +298,12 @@
       "sha256": "0f6c64dda1456217dd67226c84fcbaeac625c3d28db8244e9465399171e1a79f"
     },
     "src/blackwire/library/native_backend.c": {
-      "bytes": 158200,
-      "sha256": "b88b0385416ece524da1adbd7b314d11d1bab5787f0beb058e01fac6e61a6ff5"
+      "bytes": 160861,
+      "sha256": "f43d1320f1319b60320b9c4d9d79273b3b3a3e9a80c2669c91d10d9b7be19ce6"
     },
     "src/blackwire/library/native_backend.h": {
-      "bytes": 10044,
-      "sha256": "f0c1b465ee53dbb1e873764f6ebbab97c448c18a1c22318932b700b58b3aa4ac"
+      "bytes": 10188,
+      "sha256": "4d0d66fc71699da4871dd1934f8c81e21d2c2e221ff4cd6fb2004e3b25776fa8"
     },
     "src/blackwire/library/native_backend_home.h": {
       "bytes": 36848,
@@ -426,8 +426,8 @@
       "sha256": "0790e0b1d228b5b16f72c66ff3dc6c10fdf10b0f37601685fba6648b1467ed35"
     },
     "src/blackwire/library/native_launch_admission.c": {
-      "bytes": 31855,
-      "sha256": "2e4ab1ef4b84f239c4d62f334e27766dfbd877ed9140e22e4ed17de92eeef951"
+      "bytes": 31864,
+      "sha256": "381bfbf6830e12a0c1488460c4505beb3c753b08e35159e74dd62a8e0095afab"
     },
     "src/blackwire/library/native_launch_admission.h": {
       "bytes": 6953,
@@ -654,8 +654,8 @@
       "sha256": "b9703d278a46480c41f6fce79acf6beab089cca0ae5aefb409ef62e21e7befeb"
     },
     "src/blackwire/library/reader_preflight.c": {
-      "bytes": 28507,
-      "sha256": "a1f9f06e41b0507c289c47a48ca4e2c7e427bb655639495bca8cf34e5bba387f"
+      "bytes": 28516,
+      "sha256": "af819a2ee35ae48003d7b24e03bdea9be232f52bc64759403d13e410cbd34b1f"
     },
     "src/blackwire/library/reader_preflight.h": {
       "bytes": 3764,
@@ -742,12 +742,12 @@
       "sha256": "6dd351eb2c5c29bf8b6df143f5f093a8aef8bc55ae69b892863e767f106798af"
     },
     "src/blackwire/library/source_catalog.c": {
-      "bytes": 22952,
-      "sha256": "2e706ea4f666a3b54eb0afe9074ae385f8cd14f37f53b58a4291e7d4b2bcbaa7"
+      "bytes": 24913,
+      "sha256": "17ea841d60807ef8a8c54ddb61156a7feea174c42a169e4671fcd54b48d3187f"
     },
     "src/blackwire/library/source_catalog.h": {
-      "bytes": 4005,
-      "sha256": "12c477697f4b430cbb5bdee6713ded96c5211832293b87e7ddc4fe01c7c9a748"
+      "bytes": 4441,
+      "sha256": "6236bafa672534c45b1e6b66e9256716159add56527e25d504b91ae9005d340b"
     },
     "src/blackwire/library/source_companions.c": {
       "bytes": 21446,
@@ -966,12 +966,12 @@
       "sha256": "c24e361a01c63c38f73b16581f7c225750e561d2f6cb11d13b05de0c85551b3f"
     },
     "src/blackwire/streamreader/container_smb.c": {
-      "bytes": 7318,
-      "sha256": "7f1e5884cca8c13f1bc258ef3684db78f1330c8b21545f64bea2446306965b67"
+      "bytes": 9520,
+      "sha256": "5881b47d79d052da076a757f63389ec517276afdb52939fd2053a110a7422e23"
     },
     "src/blackwire/streamreader/container_smb.h": {
-      "bytes": 1493,
-      "sha256": "f8e5a9c09199cf41a51b0e10025de5acf87264d6c675f41811312749452434f3"
+      "bytes": 2961,
+      "sha256": "9a39df8f80c19cb163171a1fd25dd70f086215e1e4583efce3647d1b40d0db85"
     },
     "src/blackwire/streamreader/container_source.c": {
       "bytes": 8996,
@@ -1032,6 +1032,10 @@
     "src/blackwire/streamreader/manifest.h": {
       "bytes": 2631,
       "sha256": "9f3b3444efe09423bec8ac382a86af4bcc66c2fc2496d56b76b57b1ea2881420"
+    },
+    "src/blackwire/streamreader/metadata_read_window.h": {
+      "bytes": 3436,
+      "sha256": "96b1d6166b77c2a76701ebc4b077e5f8fe338f604ccb6c8f456f4d2a6aac07d6"
     },
     "src/blackwire/streamreader/native_profile.c": {
       "bytes": 17228,
@@ -1346,8 +1350,8 @@
       "sha256": "4c9ee4a7eb3e46a2621fa27d389b6c06f8f3bbc8fe5ef8c9e561dafda472d96a"
     },
     "tools/build/reader.py": {
-      "bytes": 23398,
-      "sha256": "cb8f5f1db00824d457c4d66b9d79bff4e929ffffc7424c1984b7504a5402e50f"
+      "bytes": 23578,
+      "sha256": "204ec1bdda9d146797436ae39c65761a59a57e3772a9112eaa379ea4f505e2c8"
     },
     "tools/build/reader_patch.py": {
       "bytes": 12211,
@@ -1427,6 +1431,10 @@
       "bytes": 5123,
       "sha256": "f77ce36f9d556779d2a73ba8e38488d1c3fa79e10c9ce61955bc4638928e954b"
     },
+    "tests/compressed/check_metadata_read_window.py": {
+      "bytes": 3013,
+      "sha256": "618659224d62d308a49fb51af0820b4952eac0224cce3e8ade3f3f2bb61b8119"
+    },
     "tests/compressed/check_namespace.py": {
       "bytes": 7192,
       "sha256": "7a3f9f34bdfaa83835f2abf7b19a921ddd7696c20126160a5a575cef037c607c"
@@ -1462,6 +1470,10 @@
     "tests/compressed/fixtures_exfat.py": {
       "bytes": 4788,
       "sha256": "6a792f7ca66a329cbfb8190d65807e3442764d576df5a58370993d079fda7dcc"
+    },
+    "tests/compressed/metadata_read_window_test.c": {
+      "bytes": 11218,
+      "sha256": "c0cb8896d874d9c7d4db9138e8c5f6108caea1f101ad1390e662336c5df44e7e"
     },
     "tests/compressed/namespace_limit_test.c": {
       "bytes": 5630,
@@ -1796,8 +1808,8 @@
       "sha256": "99cab30de6433c307954e74a5e98c1c0b59cf0291be315cd91011b52ea7cb4e5"
     },
     "tests/dashboard/lifecycle/test_projected_registration.c": {
-      "bytes": 9317,
-      "sha256": "6271678ad6ec2f4dab20c3aa55f4112dc255d2972abfb7559dff33c0d424868b"
+      "bytes": 9472,
+      "sha256": "7ea9237a13a4487d30f9490a081ceee063e5535fe2cf79e967f4ba0ef74ef315"
     },
     "tests/dashboard/lifecycle/test_projected_send.c": {
       "bytes": 12364,
@@ -1876,8 +1888,8 @@
       "sha256": "b2d0bd0921717a669e7d538f1e7cc1f18da4c78e7e265a52346ab61b284cefa8"
     },
     "tests/diagnostics/check_catalog_image_failure.py": {
-      "bytes": 9225,
-      "sha256": "6b3d173f64476ca16d529f6c8aa8c2c0b0ae933feafb5ea488c81af28a3acfa4"
+      "bytes": 10327,
+      "sha256": "adb7662c53932d8ca2a2d41847ec18bd0dc761e315b665a7239feb9be9358e9d"
     },
     "tests/diagnostics/check_registration_wait.py": {
       "bytes": 1844,
@@ -1888,8 +1900,8 @@
       "sha256": "09e32d154ce2e100345fb3ad6a0e292fa16ff6d0b08861011c34d245d5e564a3"
     },
     "tests/diagnostics/check_settings_check_failure.py": {
-      "bytes": 3622,
-      "sha256": "42945efec6be7df7a02725c5c0e686f31b069086151070a5b5fabeeeb395a575"
+      "bytes": 5902,
+      "sha256": "8773fd569b34943a10f415fb80a38c4da07ce45c71da4f29e5b302c634d0c471"
     },
     "tests/diagnostics/check_settings_startup.py": {
       "bytes": 2037,
@@ -1904,8 +1916,8 @@
       "sha256": "e1a0ff644d7e0f43e8fe8100a36ad444b6f5c3e8e33f630f8b3b002ecd4d576b"
     },
     "tests/diagnostics/test_catalog_image_failure.c": {
-      "bytes": 6128,
-      "sha256": "e1055265b8fadacf7840844a48adf93015e03cb8e41d8a5dba78163c847696b6"
+      "bytes": 6616,
+      "sha256": "2e6d0f4590cb384c7fbd741e775d6fbf8de94f9c3cc74c6975b0978ed9c68a63"
     },
     "tests/diagnostics/test_collect_diagnostics.py": {
       "bytes": 2671,
@@ -1924,8 +1936,8 @@
       "sha256": "2563c58a28be46a6f108aeaa49e41ff2bd963de7b33f9cfeb83db38b5d3af9fd"
     },
     "tests/diagnostics/test_settings_check_failure.c": {
-      "bytes": 8760,
-      "sha256": "d06cfc519e1f649a935d3d6ef121625fb91f53bc2fe7b9efc432871b311afdd2"
+      "bytes": 14389,
+      "sha256": "31b9a374c9538fc7670a1177a1449e3d84476836c18fe5fc65540d5a2070f2a2"
     },
     "tests/diagnostics/test_settings_check_failure.js": {
       "bytes": 1226,
@@ -2086,7 +2098,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Local standalone source-companion and settings repair. Focused actual producer, bundle, registration, removal, handoff and DATA host paths pass; full frozen host/SDK build, final review and exact-build console qualification remain pending. Native Dashboard paused; no publication or console deployment implied.",
+  "developmentQualification": "Local standalone source-companion, truthful image-access diagnostics and bounded metadata read window. Focused actual producer, bundle, registration, removal, handoff, DATA, cache/error host paths and a five-image signed PC SMB A/B pass. Targeted genuine Fable review found no concrete cache/provenance defect. Full frozen host/SDK and exact-build PS5 preparation, launch, cleanup and speed qualification remain pending. Native Dashboard paused; no publication or console deployment implied.",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -2096,5 +2108,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "0bb2926cc252eb5d38b284f3c5323fc259083ab8"
+  "runtimeSourceCommit": "55173c81b296b339b8722e3839be33c024509794"
 }
