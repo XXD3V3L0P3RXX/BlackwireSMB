@@ -24,6 +24,9 @@ int bw_native_launch_admission_close(struct bw_native_launch_admission **out){C(
 int bw_native_launch_admission_selection(struct bw_native_launch_admission *p,struct bw_reader_selection *s){(void)p;(void)s;abort();}
 int bw_native_launch_admission_map_sha256(struct bw_native_launch_admission *p,uint8_t bytes[32]){(void)p;(void)bytes;abort();}
 int bw_native_launch_admission_source_ampr(struct bw_native_launch_admission *p,const struct bw_preload_source_ampr **out){(void)p;(void)out;abort();}
+int bw_native_launch_admission_companions(struct bw_native_launch_admission *p,const struct bw_preload_companions **out){(void)p;(void)out;abort();}
+int bw_preload_bundle_verify_projection_checked(const struct bw_preload_bundle_request *q,const struct bw_preload_companions *w,struct bw_preload_bundle_result *out){(void)q;(void)w;(void)out;abort();}
+static int bw_native_projection_handoff_bytes(struct bw_native_launch_admission *p,const struct bw_reader_selection *s,void **bytes,size_t *size){(void)p;(void)s;(void)bytes;(void)size;abort();}
 int bw_preload_bundle_verify_source_checked(const struct bw_preload_bundle_request *q,const struct bw_preload_source_ampr *w,struct bw_preload_bundle_result *out){(void)q;(void)w;(void)out;abort();}
 int bw_home_session_publish(struct bw_home_session *s,const char *root,const struct bw_reader_selection *selected,const struct bw_share_config *c){(void)s;(void)root;(void)selected;(void)c;abort();}
 int bw_home_session_close(struct bw_home_session *s,const char run[33]){(void)s;(void)run;abort();}

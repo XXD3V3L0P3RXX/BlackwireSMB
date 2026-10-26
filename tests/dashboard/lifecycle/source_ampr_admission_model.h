@@ -5,6 +5,15 @@
 #ifndef BW_AMPR_MODEL_CHECK
 #define BW_AMPR_MODEL_CHECK CHECK
 #endif
+/* These retained orchestration fixtures are explicitly non-projected. The
+ * predicate may classify that negative scope only; every new positive witness
+ * or projected action below aborts. Actual policy3 has its own producer chain. */
+int bw_reader_selection_is_projection(const struct bw_reader_selection *s){BW_AMPR_MODEL_CHECK(s&&s->prepared_policy!=3);return 0;}
+int bw_native_launch_admission_companions(struct bw_native_launch_admission *p,const struct bw_preload_companions **out){(void)p;(void)out;abort();}
+int bw_native_launch_admission_companions_for_removal(struct bw_native_launch_admission *p,const struct bw_preload_companions **out){(void)p;(void)out;abort();}
+int bw_preload_bundle_upgrade_projection_controlled(const struct bw_preload_bundle_upgrade_request *q,const struct bw_preload_bundle_control *c,const struct bw_preload_companions *w,struct bw_preload_bundle_result *d){(void)q;(void)c;(void)w;(void)d;abort();}
+int bw_preload_bundle_verify_projection_checked(const struct bw_preload_bundle_request *q,const struct bw_preload_companions *w,struct bw_preload_bundle_result *d){(void)q;(void)w;(void)d;abort();}
+int bw_preload_bundle_select_projection_for_removal(const struct bw_preload_bundle_upgrade_request *q,const struct bw_preload_companions *w,struct bw_preload_reader_pin *pin,struct bw_preload_bundle_result *d){(void)q;(void)w;(void)pin;(void)d;abort();}
 static struct bw_native_launch_admission *ampr_model_owner;
 static unsigned ampr_model_source_checked;
 static char ampr_model_execution_token,ampr_model_removal_token;

@@ -28,8 +28,8 @@ def main():
   '-I',ROOT/'src/blackwire/tools/compressed_stream_candidate']
  sources=[HERE/'test_fast_ready_play.c']+[LIB/n for n in [
   'reader_preflight.c','native_register.c','register_job.c','native_registration.c','registration_db.c',
-  'native_prepared_target.c','reader_selection.c','source_binding.c','source_identity.c','source_profile.c','source_plan.c','source_param.c','source_directory.c']]+[STREAM/'manifest.c',STREAM/'share_config.c']
- owned=[LIB/n for n in ['native_launch_admission.c','native_launch_admission.h','preload_source_ampr_internal.h','preload_bundle.c','preload_bundle.h','native_send.c','native_register.c','native_register.h','reader_preflight.c','reader_preflight.h','reader_runtime.h','native_backend.c','native_backend_home.h','native_backend_removal.h']]+[ROOT/'src/blackwire/reader/native-reader.c',STREAM/'prepare_copy.c',Path(__file__),HERE/'test_fast_ready_play.c',HERE/'test_registration_backend.c',HERE/'test_idle_cache_callers.c',HERE/'source_ampr_admission_model.h',LIB/'startup_runtime_idle.c',LIB/'startup_runtime_idle.h',LIB/'idle_log_cache.h',LIB/'native_job.c',STREAM/'diagnostics/game_stop_identity.c',STREAM/'diagnostics/game_stop_identity.h']
+  'native_prepared_target.c','reader_selection.c','source_binding.c','source_identity.c','source_namespace.c','source_companions.c','reader_projection.c','source_profile.c','source_plan.c','source_param.c','source_directory.c']]+[STREAM/'manifest.c',STREAM/'share_config.c']
+ owned=[LIB/n for n in ['native_launch_admission.c','native_launch_admission.h','preload_source_ampr_internal.h','preload_bundle.c','preload_bundle.h','native_send.c','native_companion_state.c','native_register.c','native_register.h','reader_preflight.c','reader_preflight.h','reader_runtime.h','native_backend.c','native_backend_home.h','native_backend_removal.h']]+[ROOT/'src/blackwire/reader/native-reader.c',STREAM/'prepare_copy.c',Path(__file__),HERE/'test_fast_ready_play.c',HERE/'test_registration_backend.c',HERE/'test_idle_cache_callers.c',HERE/'source_ampr_admission_model.h',LIB/'startup_runtime_idle.c',LIB/'startup_runtime_idle.h',LIB/'idle_log_cache.h',LIB/'native_job.c',STREAM/'diagnostics/game_stop_identity.c',STREAM/'diagnostics/game_stop_identity.h']
  before={str(p.relative_to(ROOT)):pin(p) for p in dict.fromkeys(owned+sources)}
  objects=[]
  for p in sources:
@@ -47,7 +47,7 @@ def main():
  missing=sorted(n for n in needed-defined if n.startswith('bw_'))
  headers=[p for d in (LIB,STREAM,ROOT/'src/blackwire/tools/compressed_stream_candidate') for p in d.glob('*.h') if p.name not in {'native_json.h'}]
  declaration='\n'.join(p.read_text() for p in headers)
- stubs=['#include "reader_preflight.h"','#include "native_prepared_target.h"','#include "native_derived_context.h"','#include "native_batch_context.h"','#include <stdlib.h>']
+ stubs=['#include "reader_preflight.h"','#include "native_prepared_target.h"','#include "native_derived_context.h"','#include "native_batch_context.h"','#include "source_namespace.h"','#include <stdlib.h>']
  for name in missing:
   matches=re.findall(r'((?:int|void|const\s+struct\s+\w+\s*\*|struct\s+\w+\s*\*)\s*'+re.escape(name)+r'\s*\([^;{}]*\))\s*;',declaration)
   if not matches:raise ValueError('Missing explicit abort-stub declaration: '+name)
@@ -110,7 +110,7 @@ def main():
   a=row['argv']
   if '-c' not in a:continue
   p=Path(a[a.index('-c')+1])
-  if p.name not in {'native_backend.c','native_send.c','native_register.c','reader_preflight.c','reader_runtime.c','native-reader.c','native_owned_registration.c'}:continue
+  if p.name not in {'native_backend.c','native_send.c','native_companion_state.c','native_register.c','reader_preflight.c','reader_runtime.c','native-reader.c','native_owned_registration.c'}:continue
   a=a.copy();obj=sdk/(p.stem+'.o');dep=sdk/(p.stem+'.d');a[a.index('-o')+1]=str(obj)
   if '-MF' in a:a[a.index('-MF')+1]=str(dep)
   run('sdk-'+p.stem,a,LIB);sdk_objects.append(obj)

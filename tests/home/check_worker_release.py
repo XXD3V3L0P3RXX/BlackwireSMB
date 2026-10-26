@@ -36,13 +36,15 @@ static int home_source(struct home_worker *,const struct bw_share_config *,const
 static void play_failure_locked(struct bw_native_backend *,const char *);
 static void home_consumed_retire_locked(struct bw_native_backend *,const struct bw_stop_identity *);
 '''
-header=O/'worker-release-under-test.h';header.write_text(prefix+structure+'\n'+worker+'\n'+declarations+function(back,'static double now(')+'\n'+function(home,'static void *home_worker(')+'\n')
-inputs=[R/'worker_release_test.c',Path(__file__),S/'library/native_backend.c',S/'library/native_backend_home.h',S/'library/native_launch_admission.h']
+handoff_path=S/'library/native_projection_handoff.h'
+handoff_declaration=function(handoff_path.read_text(),'static inline int bw_native_projection_handoff_bytes(').split('{',1)[0].replace('static inline','static')+';\n'
+header=O/'worker-release-under-test.h';header.write_text(prefix+structure+'\n'+worker+'\n'+declarations+handoff_declaration+function(back,'static double now(')+'\n'+function(home,'static void *home_worker(')+'\n')
+inputs=[R/'worker_release_test.c',Path(__file__),S/'library/native_backend.c',S/'library/native_backend_home.h',S/'library/native_launch_admission.h',handoff_path,S/'library/reader_selection.c']
 pins=lambda:{str(p.relative_to(B)):{'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in inputs}
 before=pins()
 command=['clang-18','-std=gnu11','-D_DEFAULT_SOURCE=1','-O1','-g','-Wall','-Wextra','-Werror','-Wno-misleading-indentation','-Wno-unused-function','-ffunction-sections','-fdata-sections','-fsanitize=address,undefined','-fno-sanitize-recover=all','-fno-omit-frame-pointer']
 for d in [O,S/'library',S/'streamreader',S/'streamreader/diagnostics',B/'vendor/libsmb2/include']:command+=['-I',str(d)]
-command += [str(R/'worker_release_test.c'),str(S/'streamreader/share_config.c'),str(S/'streamreader/diagnostics/game_stop_identity.c'),'-Wl,--gc-sections','-pthread','-lm','-o',str(O/'test')]
+command += [str(R/'worker_release_test.c'),str(S/'library/reader_selection.c'),str(S/'streamreader/share_config.c'),str(S/'streamreader/diagnostics/game_stop_identity.c'),'-Wl,--gc-sections','-pthread','-lm','-o',str(O/'test')]
 records=[]
 for label,argv in [('compile',command),('run',[str(O/'test')])]:
  r=subprocess.run(argv,capture_output=True,text=True,timeout=180,env={**os.environ,'ASAN_OPTIONS':'detect_leaks=1:abort_on_error=1','UBSAN_OPTIONS':'halt_on_error=1'})

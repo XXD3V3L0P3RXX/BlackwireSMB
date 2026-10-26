@@ -40,6 +40,8 @@ int bw_native_launch_admission_selection(struct bw_native_launch_admission *p,st
 int bw_native_launch_admission_source_connect(struct bw_native_launch_admission *p,const struct bw_share_config *c,const struct bw_reader_selection *s,double deadline,const char **error){
     C(p&&c&&s&&!memcmp(s,&selected,sizeof *s)&&deadline>now());(void)error;connections++;if(fault==1)return -1;source_checked=1;return 0;}
 int bw_native_launch_admission_source_ampr(struct bw_native_launch_admission *p,const struct bw_preload_source_ampr **out){C(p&&out&&source_checked);*out=&witness;return 0;}
+/* This fixture intentionally has no positive policy3 source. */
+int bw_native_launch_admission_companions(struct bw_native_launch_admission *p,const struct bw_preload_companions **out){(void)p;(void)out;abort();}
 int bw_native_launch_admission_close(struct bw_native_launch_admission **p){C(p);if(*p){closes++;*p=NULL;}return 0;}
 enum bw_registration_state bw_native_registration_state(const char *base,const char *apps,const char *database,const struct bw_reader_selection *s){C(base&&apps&&database&&s&&!memcmp(s,&selected,sizeof *s));return BW_REG_MATCH;}
 int bw_sm_post(const struct bw_sm_connection *c,enum bw_sm_operation op,const char *path,struct bw_sm_reply *out){C(c&&c->current&&!c->current(c->opaque)&&op==BW_SM_MANUAL_LIST&&!strcmp(path,root)&&out);manuals++;memset(out,0,sizeof *out);out->present=1;out->count=8;return 0;}

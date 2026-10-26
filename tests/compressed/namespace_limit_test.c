@@ -38,8 +38,12 @@ int main(void){
  struct state state;
  cases++;init(&state);startup(&state);
  for(uint32_t i=2;i<BW_MANIFEST_MAX_FILES;i++){char path[64];snprintf(path,sizeof path,"assets/f%06u.pak",i);C(!invoke(&state,path,0));}
- C(files(&state)==BW_MANIFEST_MAX_FILES);seal(&state);size_t before=paths(&state);
- cases++;C(invoke(&state,"assets/one-extra.pak",0)==-1&&error(&state)==LIMIT_ERROR);C(files(&state)==BW_MANIFEST_MAX_FILES&&paths(&state)==before);clear(&state);
+ C(files(&state)==BW_MANIFEST_MAX_FILES);size_t before=paths(&state);
+ /* Exercise the numeric boundary while scanning is still open. Finishing a
+  * preparation plan is terminal; an invocation after seal is a state error,
+  * not another admission attempt at the namespace limit. The rejected extra
+  * callback does not alter the bounded rows already admitted to this model. */
+ cases++;C(invoke(&state,"assets/one-extra.pak",0)==-1&&error(&state)==LIMIT_ERROR);C(files(&state)==BW_MANIFEST_MAX_FILES&&paths(&state)==before);seal(&state);clear(&state);
 
  cases++;init(&state);startup(&state);unsigned index=0;
  while(paths(&state)<BW_MANIFEST_MAX_PATH_BYTES){
@@ -49,8 +53,14 @@ int main(void){
   memcpy(path+256,name,(size_t)n);memset(path+256+n,'x',leaf-(size_t)n);path[bytes-1]=0;
   C(!invoke(&state,path,0));
  }
- C(paths(&state)==BW_MANIFEST_MAX_PATH_BYTES&&files(&state)<BW_MANIFEST_MAX_FILES);seal(&state);uint32_t count=files(&state);
- cases++;C(invoke(&state,"extra.pak",0)==-1&&error(&state)==LIMIT_ERROR);C(paths(&state)==BW_MANIFEST_MAX_PATH_BYTES&&files(&state)==count);clear(&state);
+ C(paths(&state)==BW_MANIFEST_MAX_PATH_BYTES&&files(&state)<BW_MANIFEST_MAX_FILES);uint32_t count=files(&state);
+ cases++;C(invoke(&state,"extra.pak",0)==-1&&error(&state)==LIMIT_ERROR);C(paths(&state)==BW_MANIFEST_MAX_PATH_BYTES&&files(&state)==count);seal(&state);clear(&state);
+
+#ifdef BW_NAMESPACE_PREPARATION
+ cases++;init(&state);startup(&state);before=paths(&state);seal(&state);
+ C(invoke(&state,"assets/after-seal.pak",0)==-1&&error(&state)==BW_COMPRESSED_DATA_PLAN);
+ C(files(&state)==2&&paths(&state)==before);clear(&state);
+#endif
 
  cases++;init(&state);C(!invoke(&state,"ignored.bak",1));C(!files(&state)&&!paths(&state)&&!error(&state));clear(&state);
  cases++;init(&state);C(invoke(&state,"../ignored.bak",1)==-1&&error(&state)==BW_PFS_PATH);C(!files(&state)&&!paths(&state));clear(&state);

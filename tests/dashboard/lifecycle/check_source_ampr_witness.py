@@ -34,13 +34,15 @@ def main():
                 official[name] = pin(fixture); run_inputs.append(str(fixture))
     owned = [LIB / n for n in ('preload_bundle.c', 'preload_bundle.h', 'preload_source_ampr_internal.h', 'native_launch_admission.c', 'native_launch_admission.h')]
     owned += [Path(__file__), HERE / 'test_source_ampr_witness.c']
+    dependencies=[LIB/'source_companions.c',LIB/'source_companions.h',LIB/'preload_companions_internal.h',ROOT/'src/blackwire/streamreader/manifest.c',ROOT/'src/blackwire/streamreader/manifest.h']
+    owned += dependencies
     before = {str(p.relative_to(ROOT)): pin(p) for p in owned}
     image = bytes((i * 19 + 1) % 251 for i in range(2048)); digest = hashlib.sha256(image).digest()
     image_source = out / 'image.c'
     image_source.write_text('#include "preload_bundle.h"\nstatic const unsigned char image[]={' + ','.join(map(str,image)) + '};\nconst struct bw_preload_image bw_preload_embedded_image={image,sizeof image,{' + ','.join(map(str,digest)) + '},"' + '0'*64 + '",10000};\n')
     command = ['clang-18', '-std=c11', '-Wall', '-Wextra', '-Werror', '-Wno-misleading-indentation', '-Wno-unused-function',
                '-O1', '-g', '-fsanitize=address,undefined', '-fno-sanitize-recover=all', '-fno-omit-frame-pointer', '-I', str(LIB),
-               str(HERE / 'test_source_ampr_witness.c'), str(image_source), '-Wl,--wrap=close', '-Wl,--wrap=write', '-pthread', '-o', str(out / 'host-source-ampr-witness')]
+               str(HERE / 'test_source_ampr_witness.c'), str(image_source), *[str(p) for p in dependencies if p.suffix=='.c'], '-Wl,--wrap=close', '-Wl,--wrap=write', '-pthread', '-o', str(out / 'host-source-ampr-witness')]
     commands = []
     for name, argv in [('compile', command), ('run', [str(out / 'host-source-ampr-witness'), str(cases), *run_inputs])]:
         result = subprocess.run(argv, capture_output=True, text=True, timeout=180,

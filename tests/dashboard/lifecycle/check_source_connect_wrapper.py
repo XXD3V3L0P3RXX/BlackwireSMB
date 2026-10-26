@@ -29,7 +29,7 @@ def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True);a=p.parse_args();out=a.output.resolve()
  if not out.is_relative_to(ROOT/'build') or out.exists():raise ValueError('Use fresh output within build')
  out.mkdir(parents=True);commands=[];deps=[]
- source_names=['reader_preflight.c','native_register.c','register_job.c','native_registration.c','registration_db.c','native_prepared_target.c','reader_selection.c','source_binding.c','source_identity.c','source_profile.c','source_plan.c','source_param.c','source_directory.c']
+ source_names=['reader_preflight.c','native_register.c','register_job.c','native_registration.c','registration_db.c','native_prepared_target.c','reader_selection.c','source_binding.c','source_identity.c','source_namespace.c','source_companions.c','reader_projection.c','source_profile.c','source_plan.c','source_param.c','source_directory.c']
  sources=[HERE/'test_source_connect_wrapper.c']+[LIB/name for name in source_names]+[STREAM/'manifest.c',STREAM/'share_config.c']
  possible=set(sources+[Path(__file__),HERE/'test_fast_ready_play.c',HERE/'manifest_fixture.py'])
  possible |= {p for folder in (ROOT/'src/blackwire',ROOT/'vendor/libsmb2/include',ROOT/'vendor/sqlite') for p in folder.rglob('*') if p.is_file() and p.suffix in ('.h','.c')}
@@ -53,7 +53,7 @@ def main():
  names=sorted(n for n in needed-defined if n.startswith('bw_'))
  headers=[p for folder in (LIB,STREAM,ROOT/'src/blackwire/tools/compressed_stream_candidate') for p in folder.glob('*.h') if p.name!='native_json.h']
  declarations='\n'.join(p.read_text() for p in headers)
- stubs=['#include "reader_preflight.h"','#include "native_prepared_target.h"','#include "native_derived_context.h"','#include "native_batch_context.h"','#include <stdlib.h>']
+ stubs=['#include "reader_preflight.h"','#include "native_prepared_target.h"','#include "native_derived_context.h"','#include "native_batch_context.h"','#include "source_namespace.h"','#include <stdlib.h>']
  for name in names:
   found=re.findall(r'((?:int|void|const\s+struct\s+\w+\s*\*|struct\s+\w+\s*\*)\s*'+re.escape(name)+r'\s*\([^;{}]*\))\s*;',declarations)
   if not found:raise ValueError('Missing exact unused-branch declaration: '+name)
