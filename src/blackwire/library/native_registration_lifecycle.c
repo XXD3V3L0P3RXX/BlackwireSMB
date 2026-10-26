@@ -385,7 +385,9 @@ int bw_nrl_reconcile_prepared_generation(const struct bw_nrc_environment *env,co
     if(out)memset(out,0,sizeof *out);
     if(!env||!selected||!current||!out)return -1;
     struct bw_nrc_candidate *list=calloc(BW_NRC_CANDIDATE_LIMIT,sizeof *list);size_t count=0,at=0,matches=0;int result=-1;
-    if(!list||current(opaque)||bw_nrc_candidates(env,list,BW_NRC_CANDIDATE_LIMIT,&count))goto done;
+    if(!list||current(opaque))goto done;
+    int candidates=bw_nrc_candidates(env,list,BW_NRC_CANDIDATE_LIMIT,&count);
+    if(candidates){result=candidates==BW_NRC_RELEASE_UNCONFIRMED?BW_NRC_RELEASE_UNCONFIRMED:-1;goto done;}
     for(size_t i=0;i<count;i++)if(!strcmp(list[i].subject.title,selected->title)){at=i;matches++;}
     if(!matches){result=nrl_result(out,BW_NRC_UNOWNED,"no_previous_committed_generation",0);goto done;}
     if(matches!=1){nrl_result(out,BW_NRC_UNKNOWN,"multiple_previous_generations_require_observation",-1);goto done;}

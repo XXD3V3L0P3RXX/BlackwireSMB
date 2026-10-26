@@ -104,8 +104,11 @@ static int removal_cache(struct bw_native_backend *p,struct bw_native_library *l
 }
 static const char *removal_status(unsigned state){return state==REMOVAL_RUNNING?"running":state==REMOVAL_DONE?"done":state==REMOVAL_ERROR?"error":state==REMOVAL_UNKNOWN?"unknown":"idle";}
 static void removal_state_json(struct bw_json *json,const struct bw_native_backend *p){
+    char diagnostic[193];snprintf(diagnostic,sizeof diagnostic,"%.192s",p->removing.result.reason?p->removing.result.reason:"");
+    size_t diagnostic_size=strlen(diagnostic);while(diagnostic_size&&!bw_json_utf8(diagnostic))diagnostic[--diagnostic_size]=0;
     bw_json_text(json,"\"removal\":{\"operationId\":");bw_json_string(json,p->removing.selected.operation);bw_json_text(json,",\"source\":");bw_json_string(json,p->removing.selected.identity.binding.source);bw_json_text(json,",\"titleId\":");bw_json_string(json,p->removing.selected.identity.binding.title);
     bw_json_text(json,",\"state\":");bw_json_string(json,removal_status(p->removing.state));bw_json_format(json,",\"phase\":%u,\"files\":%u,\"filesTotal\":%u,\"message\":",(unsigned)p->removing.phase,p->removing.files,p->removing.total);bw_json_string(json,p->removing.message);
+    bw_json_text(json,",\"diagnosticReason\":");bw_json_string(json,diagnostic);
     bw_json_format(json,",\"removed\":%s,\"releaseUnknown\":%s}",p->removing.state==REMOVAL_DONE&&!p->removing.restore?"true":"false",p->removing.result.release_unknown?"true":"false");
 }
 static int removal_current(void *opaque){

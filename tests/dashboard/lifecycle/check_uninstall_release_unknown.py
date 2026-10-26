@@ -30,7 +30,8 @@ def main():
  # include the actual worker's headers for those exact unused declarations.
  replace("stubs=['#include \"reader_preflight.h\"'", "stubs=['#include \"native_backend.h\"','#include \"launch_timing.h\"','#include \"source_directory.h\"','#include \"container_source.h\"','#include \"startup_runtime_control.h\"','#include <smb2/smb2.h>','#include <smb2/libsmb2.h>', '#include \"reader_preflight.h\"'")
  start=text.index("    scenarios=['send-only'");end=text.index('    if args.scenario:',start)
- text=text[:start]+"    scenarios=['release-core-before-intent','release-final-core-close-before-intent','release-adapter-before-intent','release-remote-status-before-intent','release-ordinary-metadata','release-ordinary-same-title']\n"+text[end:]
+ text=text[:start]+"    scenarios=['release-core-before-intent','release-final-core-close-before-intent','release-adapter-before-intent','release-remote-status-before-intent','release-candidate-file-close-before-intent','release-candidate-dir-close-before-intent','release-candidate-context-close-before-intent','release-candidate-direct-context-close-before-intent','release-ordinary-metadata','release-ordinary-same-title','release-ordinary-candidate-metadata','release-removal-pending-no-release']\n"+text[end:]
+ replace("'-Wl,--wrap=readdir','-Wl,--wrap=pread','-Wl,--wrap=close'","'-Wl,--wrap=readdir','-Wl,--wrap=pread','-Wl,--wrap=close','-Wl,--wrap=closedir'")
  # The worker's full backend has unused default SMB addresses: let the
  # collector emit explicit abort stubs for those unreachable branches too.
  marker="    stub=out/'unsupported-branches.c';"
@@ -48,6 +49,6 @@ def main():
  (out/'runner.json').write_text(json.dumps({'argv':argv,'exitCode':r.returncode,'stdout':r.stdout,'stderr':r.stderr},indent=2)+'\n')
  if r.returncode:raise RuntimeError('Actual release chain failed; see runner.json')
  if pin(base)!=before or pin(Path(__file__))!=self_before:raise ValueError('Maintained recipe/checker changed during check')
- proof=json.loads((out/'actual-chain/proof.json').read_text());proof.update({'releaseUnknownActualWorkerChain':True,'preIntentFailuresNeverInventMutation':True,'ordinaryMetadataRefusalKeepsControlAuthority':True,'maintainedRecipe':before,'checker':self_before})
+ proof=json.loads((out/'actual-chain/proof.json').read_text());proof.update({'releaseUnknownActualWorkerChain':True,'preIntentFailuresNeverInventMutation':True,'ordinaryMetadataRefusalKeepsControlAuthority':True,'pendingMutationWithoutReleaseBlocksSettings':True,'maintainedRecipe':before,'checker':self_before})
  (out/'proof.json').write_text(json.dumps(proof,indent=2)+'\n');print(json.dumps({'passed':True,'cases':proof['cases'],'checks':proof['checks'],'proof':pin(out/'proof.json')}))
 if __name__=='__main__':main()

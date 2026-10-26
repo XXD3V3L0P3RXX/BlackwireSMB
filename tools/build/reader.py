@@ -171,6 +171,7 @@ def host_tests(root, out, source, runner):
     for key, script in (("manual_image_sources", "check_manual_image_sources.py"),
                         ("uninstall_identity", "check_uninstall_identity_diagnostic.py"),
                         ("uninstall_release", "check_uninstall_release_unknown.py"),
+                        ("uninstall_finish_diagnostic", "check_uninstall_finish_diagnostic.py"),
                         ("play_preparation_failure", "check_play_preparation_failure.py")):
         checked = out / key
         runner.run(["python3", root / "tests/dashboard/lifecycle" / script,

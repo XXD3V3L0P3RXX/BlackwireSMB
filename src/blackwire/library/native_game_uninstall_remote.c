@@ -12,6 +12,7 @@
 #include "native_registration.h"
 #include "registration_param_compat.h"
 #include "source_param.h"
+#include "send_diagnostic.h"
 #include "../streamreader/copy_fs.h"
 #include "../streamreader/copy_sha256.h"
 #include <time.h>
@@ -34,7 +35,9 @@ struct gur {
     struct gur_blob source_param,app_param,mount,receipt;
     unsigned binding_started,bound,app_known,registration_called,manual_called,uninstall_called,owner_known,runtime_release_done;
     unsigned generation_observe_allowed,generation_release_unknown,release_unknown;
-    const char *reason,*release_reason;
+    const char *reason,*release_reason,*callback_stage;
+    int manual_result,uninstall_result;
+    struct bw_sm_uninstall_reply uninstall_reply;
 };
 static int gur_release(struct gur *p,int fd){int rc=close(fd);if(rc){p->release_unknown=1;if(!p->release_reason)p->release_reason="normal_adapter_descriptor_close_unconfirmed";}return rc;}
 /* Remote collection resets its observation flag per call: capture it before
@@ -101,7 +104,8 @@ static int gur_registration_owner_capture(struct gur *p){
             p->reason=observed.stage?observed.stage:observed.reason?observed.reason:"previous_generation_observation_unconfirmed";return -1;}
     }
     struct bw_nrc_candidate *list=calloc(BW_NRC_CANDIDATE_LIMIT,sizeof *list);size_t n=0;int rc=-1;
-    if(!list)return -1;if(bw_nrc_candidates(&p->request.environment,list,BW_NRC_CANDIDATE_LIMIT,&n))goto done;
+    if(!list)return -1;int candidates=bw_nrc_candidates(&p->request.environment,list,BW_NRC_CANDIDATE_LIMIT,&n);
+    if(candidates){if(candidates==BW_NRC_RELEASE_UNCONFIRMED){p->release_unknown=1;p->release_reason="registration_candidates_release_unconfirmed";}goto done;}
     for(size_t i=0;i<n;i++)if(!strcmp(list[i].subject.title,p->subject.title)){
         const struct bw_nrc_subject *s=&list[i].subject;
         if(p->owner_known||list[i].pending||list[i].retiring||strcmp(s->game,p->subject.game)||strcmp(s->source,p->subject.source)||
@@ -205,33 +209,41 @@ static int gur_runtime_release(struct gur *p){
         gur_confirmed_registered(p,&p->subject)!=1?-1:0;
 }
 static int gur_registration(void *opaque,const struct bw_removed_source *s){
-    struct gur *p=opaque;if(p->registration_called++||gur_safe(p,s))return -1;
-    int manual=gur_manual(p);if(manual<0)return -1;
-    /* The core's durable .registration precedes this entire one-shot unit.
-     * No later invocation can enter it or advance a second phase. */
-    if(gur_runtime_release(p))return -1;
+    struct gur *p=opaque;p->callback_stage="entry";if(p->registration_called++)return -1;
+    p->callback_stage="initial_safe_recheck";if(gur_safe(p,s))return -1;
+    p->callback_stage="initial_manual_presence";int manual=gur_manual(p);if(manual<0)return -1;
+    /* Diagnostic stage assignments add no checks, queries, retries or time.
+     * The core's durable .registration still precedes this one-shot unit. */
+    p->callback_stage="initial_runtime_release";if(gur_runtime_release(p))return -1;
     if(manual){
-        if(gur_source_current(p)||(p->app_known&&gur_registration_current(p)))return -1;
-        struct bw_sm_reply reply={0};p->manual_called=1;
-        int rc=bw_sm_post(&p->remote.connection,BW_SM_MANUAL_REMOVE,p->root,&reply);
+        p->callback_stage="source_before_manual";if(gur_source_current(p))return -1;
+        p->callback_stage="registration_before_manual";if(p->app_known&&gur_registration_current(p))return -1;
+        struct bw_sm_reply reply={0};p->manual_called=1;p->callback_stage="manual_remove_call";
+        int rc=bw_sm_post(&p->remote.connection,BW_SM_MANUAL_REMOVE,p->root,&reply);p->manual_result=rc;
         p->reason=rc?"manual_remove_outcome_unknown_no_retry":"manual_remove_requested_readback_required";
     }
-    double start=gur_now(),deadline=start+10.0;if(start<0)return -1;
+    p->callback_stage="poll_start_clock";double start=gur_now(),deadline=start+10.0;if(start<0)return -1;
     for(unsigned pass=0;pass<100;pass++){
-        double at=gur_now();if(at<0||at>=deadline||gur_current(p))return -1;
-        int present=gur_manual(p);if(present<0)return -1;
+        p->callback_stage="poll_clock";double at=gur_now();if(at<0)return -1;
+        p->callback_stage="poll_deadline";if(at>=deadline)return -1;
+        p->callback_stage="poll_current";if(gur_current(p))return -1;
+        p->callback_stage="poll_manual_presence";int present=gur_manual(p);if(present<0)return -1;
         if(!present){
-            if(!gur_absent(p)&&!gur_absent(p))return gur_excluded(p,s);
+            p->callback_stage="poll_title_absence";
+            if(!gur_absent(p)&&!gur_absent(p)){p->callback_stage="absent_source_exclusion";return gur_excluded(p,s);}
             if(!p->uninstall_called){
-                if(gur_registration_current(p)||gur_safe(p,s)||gur_manual(p)!=0||gur_runtime_release(p))return -1;
-                struct bw_sm_uninstall_reply reply={0};p->uninstall_called=1;
-                int rc=bw_sm_uninstall(&p->remote.connection,p->subject.title,&reply);
+                p->callback_stage="registration_before_uninstall";if(gur_registration_current(p))return -1;
+                p->callback_stage="safe_before_uninstall";if(gur_safe(p,s))return -1;
+                p->callback_stage="manual_absent_before_uninstall";if(gur_manual(p)!=0)return -1;
+                p->callback_stage="runtime_before_uninstall";if(gur_runtime_release(p))return -1;
+                struct bw_sm_uninstall_reply reply={0};p->uninstall_called=1;p->callback_stage="uninstall_call";
+                int rc=bw_sm_uninstall(&p->remote.connection,p->subject.title,&reply);p->uninstall_result=rc;p->uninstall_reply=reply;
                 p->reason=rc?(reply.refused_before_platform?bw_nrc_remote_status_message(&(struct bw_nrc_remote){.reason=!strcmp(reply.error_reason,"title_unmount_busy")?"cleanup_uninstall_refused_title_unmount_busy_before_platform":"cleanup_uninstall_refused_before_platform"}):"normal_uninstall_outcome_unknown_no_retry"):"normal_uninstall_requested_absence_unverified";
             }
         }
-        struct timespec delay={0,100000000};if(nanosleep(&delay,NULL))return -1;
+        p->callback_stage="poll_sleep";struct timespec delay={0,100000000};if(nanosleep(&delay,NULL))return -1;
     }
-    return 1;
+    p->callback_stage="poll_limit";return 1;
 }
 static void gur_observe(void *opaque,const struct bw_game_uninstall_progress *value){struct gur *p=opaque;if(p->outer.observe)p->outer.observe(p->outer.opaque,value);}
 static int gur_owner_sources(void *opaque,const struct bw_nrc_subject *subject){
@@ -256,12 +268,36 @@ static struct gur *gur_create(const struct bw_game_uninstall_request *q,const st
     p->request.environment=(struct bw_nrc_environment){p->paths[0],p->paths[1],p->paths[2]};p->remote.connection=(struct bw_sm_connection){port,gur_current,p};
     return p;
 }
+/* Escape into a fixed encoded budget: no raw paths, response bodies or
+ * credentials. This record is evidence only and never supplies authority. */
+static void gur_diag_text(char *out,size_t capacity,const char *text){
+    size_t used=0;const unsigned char *p=(const unsigned char *)(text?text:"");
+    for(;*p;p++){unsigned c=*p;size_t n=c>=33&&c<=126&&c!='"'&&c!='\\'?1:4;
+        if(n>capacity-1-used)break;
+        if(n==1)out[used++]=(char)c;
+        else{static const char hex[]="0123456789abcdef";out[used++]='\\';out[used++]='x';out[used++]=hex[c>>4];out[used++]=hex[c&15];}}
+    out[used]=0;
+}
+static void gur_finish_diag(const struct gur *p,int rc,const char *core_reason,const struct bw_game_uninstall_result *out){
+    char core[193],adapter[193],remote[129],substage[129],path_class[65],error_reason[65];
+    gur_diag_text(core,sizeof core,core_reason);gur_diag_text(adapter,sizeof adapter,p->reason);
+    gur_diag_text(remote,sizeof remote,p->remote.reason);gur_diag_text(substage,sizeof substage,p->remote.substage);
+    gur_diag_text(path_class,sizeof path_class,p->remote.path_class);gur_diag_text(error_reason,sizeof error_reason,p->uninstall_reply.error_reason);
+    bw_send_log("normal-uninstall-finish","operation=%.32s rc=%d phase=%u mutation=%u files=%u/%u releaseUnknown=%u registrationCalled=%u manualCalled=%u uninstallCalled=%u runtimeReleased=%u manualResult=%d uninstallResult=%d uninstallComplete=%u uninstallHttp=%u uninstallApi=%u uninstallRefused=%u uninstallRequested=%u callbackStage=%s remoteErrno=%d remoteRow=%u remoteMissing=%u remoteReleaseUnknown=%u coreReason=\"%s\" adapterReason=\"%s\" remoteReason=\"%s\" substage=\"%s\" pathClass=\"%s\" apiReason=\"%s\"",
+        p->request.operation,rc,(unsigned)out->phase,out->mutation_started,out->files_removed,out->files_total,out->release_unknown,
+        p->registration_called,p->manual_called,p->uninstall_called,p->runtime_release_done,p->manual_result,p->uninstall_result,
+        p->uninstall_reply.response_complete,p->uninstall_reply.http_status,p->uninstall_reply.api_status,p->uninstall_reply.refused_before_platform,p->uninstall_reply.requested,
+        p->callback_stage?p->callback_stage:"not_entered",p->remote.observation_error,p->remote.row_index,p->remote.missing_fields,p->remote.observation_release_unknown,
+        core,adapter,remote,substage,path_class,error_reason);
+}
 static int gur_finish(struct gur *p,int rc,struct bw_game_uninstall_result *out){
+    const char *core_reason=out->reason;
     if(rc&&p->reason)out->reason=p->reason;
-    if(p->generation_release_unknown){p->release_unknown=1;rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason="previous_generation_observation_release_unconfirmed";}
+    if(p->generation_release_unknown){p->release_unknown=1;if(!p->release_reason)p->release_reason="previous_generation_observation_release_unconfirmed";rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason="previous_generation_observation_release_unconfirmed";}
     if(!rc&&out->phase==BW_GAME_REMOVE_DONE&&gur_owner_complete(p)){rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason="removed_copy_registration_owner_completion_unconfirmed";}
     {int fds[]={p->app,p->apps,p->source.root,p->source.parent};for(unsigned i=0;i<4;i++)if(fds[i]>=0&&gur_release(p,fds[i])){rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason="normal_adapter_descriptor_close_unconfirmed";}}
     if(p->remote.observation_release_unknown||p->release_unknown){out->release_unknown=1;rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason=p->release_reason?p->release_reason:"normal_remote_observation_release_unconfirmed";}
+    gur_finish_diag(p,rc,core_reason,out);
     free(p->source_param.body);free(p->app_param.body);free(p->mount.body);free(p->receipt.body);free(p);return rc;
 }
 int bw_native_game_uninstall_normal(const struct bw_game_uninstall_request *q,uint16_t port,struct bw_game_uninstall_result *out){

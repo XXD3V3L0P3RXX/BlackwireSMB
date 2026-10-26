@@ -85,7 +85,10 @@ struct bw_nrc_candidate {struct bw_nrc_subject subject;unsigned pending,retiring
  * partial/linked committed records or more than capacity fail the complete
  * listing (count=0). Uncommitted intents grant no candidate or authority.
  * Root schedules at most one candidate per idle tick with its own fair cursor;
- * this list is NOT cleanup admission. Missing whole ledger/reset => count0. */
+ * this list is NOT cleanup admission. Missing whole ledger/reset => count0.
+ * -1 is an ordinary incomplete/refused listing; BW_NRC_RELEASE_UNCONFIRMED
+ * means an owned file/DIR/anchor close was uncertain. Both clear count/output;
+ * the joined caller must latch the latter before allowing any new control. */
 int bw_nrc_candidates(const struct bw_nrc_environment *,struct bw_nrc_candidate *,
     size_t capacity,size_t *count);
 /* An older committed event may be completed by observation when a freshly

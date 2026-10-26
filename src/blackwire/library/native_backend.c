@@ -794,9 +794,15 @@ done:
 static int settings_idle(void *opaque){
     struct bw_native_backend *p=opaque;int (*guard)(void *,uint32_t)=NULL;void *owner=NULL;uint32_t operation=0;int eligible=0;
     if(pthread_mutex_lock(&p->lock))return -1;
-    guard=p->settings_idle;owner=p->settings_idle_owner;operation=p->setup_operation;eligible=p->active&&p->worker_kind==WORK_SETUP&&operation;
+    guard=p->settings_idle;owner=p->settings_idle_owner;operation=p->setup_operation;eligible=p->active&&p->worker_kind==WORK_SETUP&&operation&&!p->control_release_unknown&&!p->removing.unknown;
     pthread_mutex_unlock(&p->lock);
-    return guard?(eligible?guard(owner,operation):-1):p->ops.idle(p->opaque);
+    if(!eligible||(guard?guard(owner,operation):p->ops.idle(p->opaque)))return -1;
+    /* A service/idle callback can discover an uncertain release itself.
+     * Recheck the same operation under lock before granting a write checkpoint. */
+    if(pthread_mutex_lock(&p->lock))return -1;
+    int changed=p->control_release_unknown||p->removing.unknown||!p->active||p->worker_kind!=WORK_SETUP||p->setup_operation!=operation||
+        p->settings_idle!=guard||p->settings_idle_owner!=owner;
+    pthread_mutex_unlock(&p->lock);return changed?-1:0;
 }
 static void *scan(void *opaque){
     struct bw_native_backend *p=opaque;struct bw_share_config config={0},after={0};struct bw_native_library next={0},old={0};
@@ -807,7 +813,7 @@ static void *scan(void *opaque){
     int phase=BACKEND_NEEDS_SETUP,error=SETUP_NO_ERROR,setup=p->worker_kind==WORK_SETUP,success=0;
     bw_send_log(setup?"connection-check-begin":"library-scan-begin","operation=%u",p->setup_operation);
     if(setup){
-        if((!p->pending.unchanged||p->settings_idle)&&settings_idle(p)){error=SETUP_IDLE_ERROR;phase=BACKEND_FAILED;goto done;}
+        if(settings_idle(p)){error=SETUP_IDLE_ERROR;phase=BACKEND_FAILED;goto done;}
         config=p->pending.config;
     }else{
         int loaded=p->settings_enabled?p->ops.read_settings(p->opaque,&config,&before_generation):p->ops.load(p->opaque,&config);
@@ -818,7 +824,7 @@ static void *scan(void *opaque){
     phase=BACKEND_FAILED;
     if(p->ops.discover(p->opaque,&config,&next)||!valid_library(&next)){error=SETUP_CONNECTION_ERROR;goto done;}
     if(setup){
-        if(p->settings_idle&&settings_idle(p)){error=SETUP_IDLE_ERROR;goto done;}
+        if(settings_idle(p)){error=SETUP_IDLE_ERROR;goto done;}
         if(!p->pending.unchanged){
             pthread_mutex_lock(&p->lock);p->setup_phase=SETUP_SAVING;pthread_mutex_unlock(&p->lock);struct bw_setup_saved saved={0};
             int stored=p->ops.save_settings(p->opaque,&p->pending.config,&p->pending.expected,p->pending.nonce,settings_idle,p,&saved);
@@ -1096,7 +1102,7 @@ static int state(struct bw_native_backend *p,struct bw_native_response *out){
     bw_json_text(&json,"},");removal_state_json(&json,p);bw_json_text(&json,",\"setup\":{\"message\":");bw_json_string(&json,setup_message(p));
     bw_json_text(&json,",\"settingsFile\":\"share.conf\",\"storageStatus\":");
     bw_json_string(&json,!p->settings_known?"unobserved":p->settings_status==BW_SETUP_VALID?"valid":p->settings_status==BW_SETUP_MISSING?"missing":p->settings_status==BW_SETUP_INVALID?"invalid":"unavailable");
-    int editable=p->settings_enabled&&p->settings_known&&p->settings_status>=0&&!p->active&&!p->setup_blocked;
+    int editable=p->settings_enabled&&p->settings_known&&p->settings_status>=0&&!p->active&&!p->setup_blocked&&!p->control_release_unknown&&!p->removing.unknown;
     bw_json_format(&json,",\"editable\":%s,\"supported\":%s,\"busy\":%s,\"configured\":%s,\"hasSavedCredentials\":%s,\"revision\":%u,\"operation\":%u,\"phase\":",editable?"true":"false",p->settings_enabled?"true":"false",p->active&&p->worker_kind==WORK_SETUP?"true":"false",
         p->settings_enabled?p->settings_known&&p->settings_status==BW_SETUP_VALID?"true":"false":*p->server&&*p->share?"true":"false",p->settings_enabled&&p->settings_known&&p->settings_status==BW_SETUP_VALID?"true":"false",p->settings_revision,p->setup_operation);
     bw_json_string(&json,setup_phase_name(p->setup_phase));bw_json_text(&json,",\"token\":");bw_json_string(&json,p->setup_token);
@@ -1525,6 +1531,8 @@ static int setup(struct bw_native_backend *p,const void *body,size_t size,const 
     if(bw_native_setup_request_parse(body,size,&request))return text(out,400,reply);
     pthread_mutex_lock(&p->lock);
     if(p->active){status=409;reply="{\"error\":\"Wait for the current library or connection operation\"}";goto done;}
+    if(p->control_release_unknown){status=409;reply="{\"error\":\"A previous operation has an unconfirmed release. Connection settings are locked.\"}";goto done;}
+    if(p->removing.unknown){status=409;reply="{\"error\":\"Removal is unresolved. Connection settings are locked until its original outcome is confirmed.\"}";goto done;}
     settings_sync(p);
     if(p->setup_blocked){status=409;reply="{\"error\":\"Refresh the unconfirmed connection before another save\"}";goto done;}
     if(request.revision!=p->settings_revision){status=409;reply="{\"error\":\"Saved settings changed. Refresh before saving\"}";goto done;}

@@ -31,8 +31,8 @@ struct record {
     unsigned char source_param_hash[32],app_param_hash[32],mount_hash[32];
     struct stamp stamp[R_COUNT];
 };
-struct anchor {int fd;char path[BW_NRC_PATH_BYTES];struct stat st;};
-struct context {struct bw_nrc_environment env;char roots[3][BW_NRC_PATH_BYTES];struct anchor data,games,apps,ledger;};
+struct anchor {int fd;char path[BW_NRC_PATH_BYTES];struct stat st;unsigned release_unknown;};
+struct context {struct bw_nrc_environment env;char roots[3][BW_NRC_PATH_BYTES];struct anchor data,games,apps,ledger;unsigned release_unknown;};
 struct bw_nrc_ticket {uint64_t magic;unsigned finished;struct context c;struct bw_nrc_ops ops;struct record record;unsigned char intent_hash[32];};
 static pthread_mutex_t nrc_lock=PTHREAD_MUTEX_INITIALIZER;
 static const char ledger_marker[]="Blackwire registration ownership ledger v1\n";
@@ -63,10 +63,15 @@ static int anchor_open(struct anchor *a,const char *path,int private){
     if(!n||n>=BW_NRC_PATH_BYTES||path[0]!='/'||!realpath(path,real)||strcmp(path,real)||lstat(path,&named)||!S_ISDIR(named.st_mode))return -1;
     a->fd=open(path,O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_NONBLOCK);if(a->fd<0)return -1;
     memcpy(a->path,path,n+1);if(fstat(a->fd,&a->st)||!node(&named,&a->st)||
-       (private&&(a->st.st_uid!=geteuid()||(a->st.st_mode&07777)!=0700))||anchor_current(a)){close(a->fd);a->fd=-1;return -1;}return 0;
+       (private&&(a->st.st_uid!=geteuid()||(a->st.st_mode&07777)!=0700))||anchor_current(a)){if(close(a->fd))a->release_unknown=1;a->fd=-1;return -1;}return 0;
 }
 static void context_init(struct context *c){memset(c,0,sizeof *c);c->data.fd=c->games.fd=c->apps.fd=c->ledger.fd=-1;}
-static int context_close(struct context *c){int bad=0;struct anchor *a[]={&c->ledger,&c->apps,&c->games,&c->data};for(size_t i=0;i<4;i++)if(a[i]->fd>=0){if(close(a[i]->fd))bad=1;a[i]->fd=-1;}return bad?-1:0;}
+static int context_close(struct context *c){
+    struct anchor *a[]={&c->ledger,&c->apps,&c->games,&c->data};
+    for(size_t i=0;i<4;i++){if(a[i]->release_unknown)c->release_unknown=1;
+        if(a[i]->fd>=0){if(close(a[i]->fd))c->release_unknown=1;a[i]->fd=-1;}}
+    return c->release_unknown?-1:0;
+}
 static int context_base(struct context *c,const struct bw_nrc_environment *e){
     if(!e||!e->data_root||!e->apps_root||!e->database)return -1;const char *p[]={e->data_root,e->apps_root,e->database};
     for(unsigned i=0;i<3;i++){size_t n=strnlen(p[i],BW_NRC_PATH_BYTES);if(!n||n>=BW_NRC_PATH_BYTES)return -1;memcpy(c->roots[i],p[i],n+1);}
@@ -79,7 +84,7 @@ static int read_exact(struct context *c,const char *name,void *out,size_t size){
     struct stat first,held,named;int bad=fstat(fd,&first)||!S_ISREG(first.st_mode)||first.st_nlink!=1||(first.st_mode&07777)!=0600||first.st_uid!=geteuid()||first.st_size<0||(uint64_t)first.st_size!=size;
     size_t at=0;while(!bad&&at<size){ssize_t n=pread(fd,(unsigned char *)out+at,size-at,(off_t)at);if(n<0&&errno==EINTR)continue;if(n<=0||(size_t)n>size-at){bad=1;break;}at+=(size_t)n;}
     if(!bad&&(fstat(fd,&held)||cp_fstatat(c->ledger.fd,name,&named,AT_SYMLINK_NOFOLLOW)||!same(&first,&held)||!same(&held,&named)||anchors_current(c)))bad=1;
-    if(close(fd))bad=1;return bad?-1:0;
+    if(close(fd)){c->release_unknown=1;bad=1;}return bad?-1:0;
 }
 static int write_new(struct context *c,const char *name,const void *bytes,size_t size,const struct bw_nrc_ops *ops,const struct bw_nrc_subject *subject){
     if(anchors_current(c)||current(ops,subject))return -1;
@@ -314,7 +319,9 @@ int bw_nrc_candidates(const struct bw_nrc_environment *e,struct bw_nrc_candidate
     }
     if(errno||fstat(c.ledger.fd,&after)||!same(&before,&after)||anchors_current(&c))goto done;
     rc=0;qsort(out,used,sizeof *out,candidate_order);*count=used;
-done:if(dir&&closedir(dir))rc=-1;if(context_close(&c))rc=-1;free(wire);free(r);if(rc){memset(out,0,capacity*sizeof *out);*count=0;}pthread_mutex_unlock(&nrc_lock);return rc;
+done:if(dir&&closedir(dir))c.release_unknown=1;
+    if(context_close(&c))rc=BW_NRC_RELEASE_UNCONFIRMED;
+    free(wire);free(r);if(rc){memset(out,0,capacity*sizeof *out);*count=0;}pthread_mutex_unlock(&nrc_lock);return rc;
 }
 
 static int superseded_current(struct context *c,const struct record *old,struct record *fresh,
