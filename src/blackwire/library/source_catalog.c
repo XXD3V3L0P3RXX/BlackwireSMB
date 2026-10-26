@@ -10,6 +10,7 @@ int bw_source_catalog_binding(struct bw_provider_binding *out,const struct bw_sh
     bw_share_clear(&connection);return result?-1:0;
 }
 #include "source_param.h"
+#include "send_diagnostic.h"
 #include "../streamreader/copy_sha256.h"
 #include <stdarg.h>
 #include <stdio.h>
@@ -117,6 +118,14 @@ done:
      * from that path too, and discard this whole partially scanned library. */
     if(image->last_transport_error)bad=fail(scan->catalog,"catalog_image_transport_failed");
     if(result==BW_PFS_IO||result==BW_CONTAINER_STALE)bad=fail(scan->catalog,"catalog_image_generation_or_io_failed");
+    if(bad)bw_send_log("catalog-image-failure",
+        "path=%.1023s stage=%s containerResult=%d containerError=%s catalogReason=%.128s transportResult=%d "
+        "connectionPresent=%u containerKind=%d decoderResult=%d imageFailed=%d reads=%llu readBytes=%llu generationChecks=%llu namespaceFiles=%u deadline=%.6f",
+        candidate->source,bw_source_catalog_stage_name(item),result,bw_source_catalog_error_name(item),
+        scan->catalog->error?scan->catalog->error:"unavailable",image->last_transport_error,source->smb?1u:0u,
+        image->container.kind,image->container.decoder_error,image->failed,
+        (unsigned long long)image->read_calls,(unsigned long long)image->read_bytes,
+        (unsigned long long)image->generation_checks,item->namespace_files,source->deadline);
     if(result){memset(item->title_id,0,sizeof item->title_id);memset(item->title,0,sizeof item->title);item->logical_boot_size=0;}
     free(json);free(image);return bad;
 }
