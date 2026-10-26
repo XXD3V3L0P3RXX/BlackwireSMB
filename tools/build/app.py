@@ -15,33 +15,56 @@ STARTUP_TRACE_MARKERS = (b"BW core-isolation-01 pid=", b"main.enter", b"net.init
                          b"resident.create.before", b"refresh.before", b"accept.loop")
 
 
-def startup_trace_flags(enabled):
-    if type(enabled) is not bool:
-        raise ValueError("Startup trace selection must be an explicit boolean")
-    return list(STARTUP_TRACE_FLAGS) if enabled else []
+def startup_trace_flags(enabled, stdout_only=True):
+    if type(enabled) is not bool or type(stdout_only) is not bool:
+        raise ValueError("Startup trace selections must be explicit booleans")
+    return [STARTUP_TRACE_FLAGS[0], "-DBW_STARTUP_TRACE_STDOUT_ONLY=" + str(int(stdout_only))] if enabled else []
 
 
-def startup_trace_proof(enabled, main_argv, artifact, package):
-    flags = startup_trace_flags(enabled)
+def startup_trace_proof(enabled, main_argv, artifact, package, stdout_only=True):
+    flags = startup_trace_flags(enabled, stdout_only)
     actual_artifact = {"bytes": len(package), "sha256": hashlib.sha256(package).hexdigest()}
     if artifact != actual_artifact:
         raise ValueError("Startup trace artifact pin differs from the inspected package")
     actual = list(main_argv)
-    if enabled and any(actual.count(flag) != 1 for flag in flags):
-        raise ValueError("Actual main command does not enable the exact PC-only startup trace")
-    if not enabled and any(flag in actual for flag in STARTUP_TRACE_FLAGS):
+    trace_names = {flag[2:].split("=", 1)[0] for flag in STARTUP_TRACE_FLAGS}
+    trace_arguments = []
+    for index, argument in enumerate(actual):
+        if argument in ("-D", "-U") and index + 1 < len(actual):
+            macro = actual[index + 1]
+            candidate = argument + macro
+        elif argument.startswith(("-D", "-U")):
+            macro = argument[2:]
+            candidate = argument
+        else:
+            continue
+        if macro.split("=", 1)[0] in trace_names:
+            trace_arguments.append(candidate)
+    if enabled and (sorted(trace_arguments) != sorted(flags) or
+                    any(actual.count(flag) != 1 for flag in flags)):
+        raise ValueError("Actual main command does not enable the exact selected startup trace")
+    if not enabled and trace_arguments:
         raise ValueError("Unexpected startup trace flag in ordinary build")
     presence = {marker.decode("ascii"): marker in package for marker in STARTUP_TRACE_MARKERS}
     if enabled and not all(presence.values()):
         raise ValueError("Packaged ELF is missing required startup trace markers")
-    return {"enabled": enabled, "stdoutOnly": enabled, "expectedFlags": flags,
+    if not enabled and any(presence.values()):
+        raise ValueError("Ordinary packaged ELF contains private startup trace markers")
+    return {"enabled": enabled, "stdoutOnly": enabled and stdout_only, "expectedFlags": flags,
             "actualMainArgv": actual, "artifact": artifact,
             "requiredMarkers": [marker.decode("ascii") for marker in STARTUP_TRACE_MARKERS], "markerPresence": presence,
-            "consoleTraceFileWritesEnabled": False if enabled else None,
+            "privateStartupTraceAbsent": not enabled,
+            "consoleTraceFileWritesEnabled": not stdout_only if enabled else None,
             "bestEffort": True, "provesRuntimeExecution": False, "consoleActions": 0}
 
 
-def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, allow_source_changes=False, runtime=None, startup_trace_stdout=False):
+def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, allow_source_changes=False, runtime=None, startup_trace_stdout=False, startup_trace_file=False):
+    if type(startup_trace_stdout) is not bool or type(startup_trace_file) is not bool:
+        raise ValueError("Startup trace selections must be explicit booleans")
+    if startup_trace_stdout and startup_trace_file:
+        raise ValueError("Select only one startup trace mode")
+    startup_trace_enabled = startup_trace_stdout or startup_trace_file
+    selected_trace_flags = startup_trace_flags(startup_trace_enabled, not startup_trace_file)
     # A previous build's objects or an unpinned runtime are never a fallback.
     source_identity = sdk_runtime.source_lineage(root, out, runtime)
     digest = pin(image)["sha256"]
@@ -163,7 +186,7 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
         argv = [expand(value) for value in row["argv"]]
         if row["label"] == "compile-00":
             argv.insert(1, '-DBW_RESIDENT_BUILD_ID="blackwire-v0.3.0-beta.3"')
-            argv[1:1] = startup_trace_flags(startup_trace_stdout)
+            argv[1:1] = selected_trace_flags
             main_argv = list(argv)
         if row is link:
             argv = sdk_runtime.link_arguments(root, out, argv, runtime)
@@ -190,7 +213,7 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
     image_pin=pin(package)
     if main_argv is None:
         raise ValueError("Actual resident main compile command is missing")
-    save(out/"startup-trace.json", startup_trace_proof(startup_trace_stdout, main_argv, image_pin, packed))
+    save(out/"startup-trace.json", startup_trace_proof(startup_trace_enabled, main_argv, image_pin, packed, stdout_only=not startup_trace_file))
     save(out/"embedding.json",{"reader":pin(image),"sourceManifestSha256":source_identity,
         "generatedC":pin(embedded/"preload-image.c"),"folderOnly":False,"standaloneWeb":True,
         "sourceRuntime":{"receipt":runtime["receiptPin"],"link":runtime_link},"nativeFrontendIncluded":False,
