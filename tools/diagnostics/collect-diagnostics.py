@@ -35,6 +35,8 @@ def summarize(health, state):
         'schema': 'blackwire-diagnostic-summary/1',
         'capturedUtc': datetime.now(timezone.utc).isoformat(),
         'health': select(health, ('ok', 'buildId', 'readerSha256')),
+        'setup': select(state.get('setup'), ('supported', 'editable', 'busy', 'configured', 'hasSavedCredentials',
+                                            'revision', 'operation', 'phase', 'message', 'settingsFile', 'storageStatus')),
         'library': select(state.get('library'), ('phase', 'items', 'entries', 'unsearched', 'stale', 'requests', 'contentBytes')),
         'games': [select(game, ('name', 'titleId', 'status', 'containerFormat', 'formatValidated',
                               'startupReady', 'dashboardLaunchReady', 'preparationReason')) for game in games],

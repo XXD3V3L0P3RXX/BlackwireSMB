@@ -16,6 +16,11 @@ MODEL = re.search(r'<script id="blackwire-view-model">([\s\S]*?)</script>', PAGE
 
 @unittest.skipUnless(shutil.which("node"), "Node.js is needed to verify UI behavior")
 class SharedUiTests(unittest.TestCase):
+    def test_settings_restart_releases_the_old_client_watch_without_replay(self):
+        result = subprocess.run(["node", str(ROOT.parents[1] / "tests/diagnostics/test_settings_restart.js"),
+                                 str(ROOT / "desk/index.html")], text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_modal_dialogs_are_outside_the_inert_library_background(self):
         class Ancestry(HTMLParser):
             def __init__(self):

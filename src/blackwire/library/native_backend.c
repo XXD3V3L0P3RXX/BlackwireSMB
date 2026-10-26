@@ -5,6 +5,7 @@
 #define _XOPEN_SOURCE 700
 #endif
 #include "native_backend.h"
+#include "send_diagnostic.h"
 #ifdef BW_HOME_STARTUP
 #include "home_protocol.h"
 #include "home_session.h"
@@ -717,12 +718,15 @@ static const struct bw_native_cover *cached_cover(const struct bw_native_library
 }
 static int discover_one(void *opaque,struct bw_share_config *share,struct bw_native_library *out,size_t cover_limit){
     (void)opaque;struct bw_source_smb source={0};double start=now();if(start<0)return -1;source.deadline=start+180;
+    const char *stage="smb-connect";
     char share_name[128];memcpy(share_name,share->share,sizeof share_name);
     source.smb=smb2_init_context();if(!source.smb)return -1;
     smb2_set_timeout(source.smb,10);smb2_set_sign(source.smb,1);smb2_set_security_mode(source.smb,SMB2_NEGOTIATE_SIGNING_ENABLED|SMB2_NEGOTIATE_SIGNING_REQUIRED);smb2_set_user(source.smb,share->user);smb2_set_password(source.smb,share->password);
     int result=smb2_connect_share(source.smb,share->server,share->share,share->user);bw_share_clear(share);if(result<0)goto done;
+    stage="catalog";
     result=bw_source_catalog_scan(&source,&out->catalog);if(result)goto done;
     if(out->catalog.count){out->covers=calloc(out->catalog.count,sizeof *out->covers);if(!out->covers){result=-1;goto done;}out->cover_count=out->catalog.count;}
+    stage="artwork";
     for(size_t i=0;i<out->catalog.count;i++){
         struct bw_catalog_item *item=&out->catalog.items[i];memcpy(item->source_share,share_name,sizeof item->source_share);
         if(item->state==BW_CATALOG_CONTAINER_READY){
@@ -742,6 +746,7 @@ static int discover_one(void *opaque,struct bw_share_config *share,struct bw_nat
         }free(bytes);
     }
 done:
+    if(result)bw_send_log("connection-source-failure","stage=%s result=%d catalog_reason=%.128s source_reason=%.128s requests=%u entries=%u",stage,result,out->catalog.error?out->catalog.error:"",source.error?source.error:"",source.requests,source.entries);
     out->requests=source.requests;out->entries=source.entries;out->content_bytes=source.content_bytes;
     if(source.smb)smb2_destroy_context(source.smb);return result;
 }
@@ -800,6 +805,7 @@ static void *scan(void *opaque){
 #endif
     struct bw_setup_generation before_generation={0},after_generation={0};uint8_t before_digest[32],after_digest[32];
     int phase=BACKEND_NEEDS_SETUP,error=SETUP_NO_ERROR,setup=p->worker_kind==WORK_SETUP,success=0;
+    bw_send_log(setup?"connection-check-begin":"library-scan-begin","operation=%u",p->setup_operation);
     if(setup){
         if((!p->pending.unchanged||p->settings_idle)&&settings_idle(p)){error=SETUP_IDLE_ERROR;phase=BACKEND_FAILED;goto done;}
         config=p->pending.config;
@@ -844,6 +850,7 @@ static void *scan(void *opaque){
     if(removal_cache(p,&next,&after)){phase=BACKEND_FAILED;goto done;}
     phase=BACKEND_READY;success=1;
 done:
+    bw_send_log(setup?"connection-check-end":"library-scan-end","operation=%u success=%d error=%d phase=%d",p->setup_operation,success,error,phase);
     pthread_mutex_lock(&p->lock);p->phase=phase;
     if(success){
         old=p->library;p->library=next;memset(&next,0,sizeof next);p->generation++;
@@ -888,6 +895,15 @@ struct bw_native_backend *bw_native_backend_create(const struct bw_native_backen
 static int refresh_unlocked(struct bw_native_backend *p){
     if(!p||pthread_mutex_lock(&p->lock))return -1;if(p->active){pthread_mutex_unlock(&p->lock);return 1;}
     if(p->joinable){if(pthread_join(p->worker,NULL)){pthread_mutex_unlock(&p->lock);return -1;}p->joinable=0;}
+    /* Publish the checked local settings before a potentially slow SMB scan.
+     * The scan still re-reads and fences its own immutable generation. */
+    if(p->settings_enabled){
+        settings_sync(p);
+        if(p->settings_status!=BW_SETUP_VALID){
+            p->phase=p->settings_status<0?BACKEND_FAILED:BACKEND_NEEDS_SETUP;
+            p->stale=p->library.catalog.count>0;pthread_mutex_unlock(&p->lock);return 0;
+        }
+    }
     p->active=1;p->worker_kind=WORK_SCAN;p->phase=BACKEND_SCANNING;p->stale=p->library.catalog.count>0;
     int result=worker_start(&p->worker,scan,p);
     if(result){p->active=0;p->phase=BACKEND_FAILED;}else p->joinable=1;pthread_mutex_unlock(&p->lock);return result?-1:0;
@@ -1074,6 +1090,8 @@ static int state(struct bw_native_backend *p,struct bw_native_response *out){
     }else bw_json_format(&json,"\"late-native\",\"dataCountersObserved\":true,\"networkBytes\":%llu,\"cacheHitBytes\":%llu,\"stageHighWater\":%llu,\"cacheBytes\":67108864,\"stageBytes\":268435456",
         (unsigned long long)p->playing.network_bytes,(unsigned long long)p->playing.hit_bytes,(unsigned long long)p->playing.high_water);
     bw_json_text(&json,"},");removal_state_json(&json,p);bw_json_text(&json,",\"setup\":{\"message\":");bw_json_string(&json,setup_message(p));
+    bw_json_text(&json,",\"settingsFile\":\"share.conf\",\"storageStatus\":");
+    bw_json_string(&json,!p->settings_known?"unobserved":p->settings_status==BW_SETUP_VALID?"valid":p->settings_status==BW_SETUP_MISSING?"missing":p->settings_status==BW_SETUP_INVALID?"invalid":"unavailable");
     int editable=p->settings_enabled&&p->settings_known&&p->settings_status>=0&&!p->active&&!p->setup_blocked;
     bw_json_format(&json,",\"editable\":%s,\"supported\":%s,\"busy\":%s,\"configured\":%s,\"hasSavedCredentials\":%s,\"revision\":%u,\"operation\":%u,\"phase\":",editable?"true":"false",p->settings_enabled?"true":"false",p->active&&p->worker_kind==WORK_SETUP?"true":"false",
         p->settings_enabled?p->settings_known&&p->settings_status==BW_SETUP_VALID?"true":"false":*p->server&&*p->share?"true":"false",p->settings_enabled&&p->settings_known&&p->settings_status==BW_SETUP_VALID?"true":"false",p->settings_revision,p->setup_operation);

@@ -6,6 +6,7 @@
 #endif
 #include "native_setup.h"
 #include "launch_timing.h"
+#include "send_diagnostic.h"
 #include "native_json.h"
 #include "../streamreader/copy_fs.h"
 #include "../streamreader/copy_sha256.h"
@@ -24,23 +25,38 @@ static int root_open(const char *base,struct prepare_v2 *anchor){
     memset(anchor,0,sizeof *anchor);if(!base||v2_copy(anchor->root,sizeof anchor->root,base))return -1;
     int fd=open(base,O_RDONLY|O_DIRECTORY|O_NOFOLLOW);if(fd>=0&&!v2_root_current(anchor,fd)){close(fd);fd=-1;}return fd;
 }
+static int settings_read_failed(const char *stage,const char *reason,int error){
+    bw_send_log("settings-read-failure","file=share.conf stage=%s reason=%s errno=%d",stage,reason,error);
+    return BW_SETUP_UNSAFE;
+}
 static int read_at(int root,const struct prepare_v2 *anchor,struct bw_share_config *config,struct bw_setup_generation *generation,char bytes[4096]){
     bw_share_clear(config);memset(generation,0,sizeof *generation);struct stat directory,opened,named,after;int fd=-1,result=BW_SETUP_UNSAFE;
-    if(!v2_root_current(anchor,root)||fstat(root,&directory))goto done;
+    if(!v2_root_current(anchor,root)){result=settings_read_failed("root-identity","settings_root_identity_refused",0);goto done;}
+    if(fstat(root,&directory)){result=settings_read_failed("root-stat","settings_root_stat_failed",errno);goto done;}
     generation->root_device=directory.st_dev;generation->root_inode=directory.st_ino;
     fd=v2_openat(root,"share.conf",O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);
     if(fd<0){
-        if(errno==ENOENT&&cp_fstatat(root,"share.conf",&named,AT_SYMLINK_NOFOLLOW)<0&&errno==ENOENT&&v2_root_current(anchor,root))result=BW_SETUP_MISSING;
+        int open_error=errno;
+        if(open_error==ENOENT&&cp_fstatat(root,"share.conf",&named,AT_SYMLINK_NOFOLLOW)<0&&errno==ENOENT&&v2_root_current(anchor,root))result=BW_SETUP_MISSING;
+        else result=settings_read_failed("config-open","settings_file_open_or_absence_refused",open_error);
         goto done;
     }
-    if(fstat(fd,&opened)||!S_ISREG(opened.st_mode)||opened.st_nlink!=1||opened.st_size<0||opened.st_size>4096||
-        cp_fstatat(root,"share.conf",&named,AT_SYMLINK_NOFOLLOW)||!same(&opened,&named))goto done;
-    if(v2_read_all(fd,bytes,(size_t)opened.st_size))goto done;
-    char extra;if(read(fd,&extra,1)!=0||fstat(fd,&after)||!same(&opened,&after)||cp_fstatat(root,"share.conf",&after,AT_SYMLINK_NOFOLLOW)||!same(&opened,&after)||!v2_root_current(anchor,root))goto done;
+    if(fstat(fd,&opened)){result=settings_read_failed("config-stat","settings_file_stat_failed",errno);goto done;}
+    if(!S_ISREG(opened.st_mode)||opened.st_nlink!=1||opened.st_size<0||opened.st_size>4096){result=settings_read_failed("config-metadata","settings_file_type_links_or_size_refused",0);goto done;}
+    if(cp_fstatat(root,"share.conf",&named,AT_SYMLINK_NOFOLLOW)){result=settings_read_failed("config-name-stat","settings_file_named_stat_failed",errno);goto done;}
+    if(!same(&opened,&named)){result=settings_read_failed("config-identity","settings_file_named_identity_changed",0);goto done;}
+    if(v2_read_all(fd,bytes,(size_t)opened.st_size)){result=settings_read_failed("config-read","settings_file_read_failed_or_truncated",0);goto done;}
+    char extra;ssize_t tail=read(fd,&extra,1);
+    if(tail!=0){result=settings_read_failed("config-tail","settings_file_tail_changed_or_failed",tail<0?errno:0);goto done;}
+    if(fstat(fd,&after)){result=settings_read_failed("config-final-stat","settings_file_final_stat_failed",errno);goto done;}
+    if(!same(&opened,&after)){result=settings_read_failed("config-final-identity","settings_file_held_identity_changed",0);goto done;}
+    if(cp_fstatat(root,"share.conf",&after,AT_SYMLINK_NOFOLLOW)){result=settings_read_failed("config-final-name","settings_file_final_named_stat_failed",errno);goto done;}
+    if(!same(&opened,&after)||!v2_root_current(anchor,root)){result=settings_read_failed("config-final-identity","settings_file_or_root_changed",0);goto done;}
     generation->present=1;generation->file=opened;cp_sha_bytes(bytes,(size_t)opened.st_size,generation->sha256);
     result=bw_share_parse(config,bytes,(size_t)opened.st_size)||!bw_native_setup_config_valid(config)?BW_SETUP_INVALID:BW_SETUP_VALID;
+    if(result==BW_SETUP_INVALID)bw_send_log("settings-read-failure","file=share.conf stage=config-parse reason=invalid_connection_settings errno=0");
 done:
-    if(fd>=0&&close(fd))result=BW_SETUP_UNSAFE;
+    if(fd>=0&&close(fd))result=settings_read_failed("config-close","settings_file_close_unconfirmed",errno);
     if(result!=BW_SETUP_VALID)bw_share_clear(config);if(result<0)memset(generation,0,sizeof *generation);return result;
 }
 int bw_native_setup_read(const char *base,struct bw_share_config *config,struct bw_setup_generation *generation){

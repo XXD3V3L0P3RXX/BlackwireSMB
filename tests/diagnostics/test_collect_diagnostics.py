@@ -11,6 +11,15 @@ spec.loader.exec_module(collector)
 
 
 class DiagnosticSummary(unittest.TestCase):
+    def test_setup_status_is_included_without_its_authority_or_credentials(self):
+        result = collector.summarize({}, {'setup': {'supported': True, 'editable': False, 'busy': False,
+            'phase': 'idle', 'message': 'Connection settings are unavailable.', 'settingsFile': 'share.conf',
+            'storageStatus': 'unavailable', 'token': 'SENSITIVE-TEST-MARKER', 'password': 'SENSITIVE-TEST-MARKER'}})
+        self.assertEqual(result['setup']['storageStatus'], 'unavailable')
+        self.assertFalse(result['setup']['editable'])
+        self.assertEqual(result['setup']['settingsFile'], 'share.conf')
+        self.assertNotIn('SENSITIVE-TEST-MARKER', json.dumps(result))
+
     def test_credentials_and_unknown_fields_never_copied(self):
         secret = 'SENSITIVE-TEST-MARKER'
         health = {'ok': True, 'buildId': 'diagnostic-test', 'password': secret}

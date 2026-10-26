@@ -164,6 +164,12 @@ def host_tests(root, out, source, runner):
     checked = out / "send-logging"
     runner.run(["python3", root / "tests/diagnostics/check_send_logging.py", "--output", checked], "host-send-logging")
     results["send_logging"] = json.loads((checked / "proof.json").read_text())
+    for key, script in (("settings_startup", "diagnostics/check_settings_startup.py"),
+                        ("settings_storage", "diagnostics/check_settings_storage.py"),
+                        ("two_shares", "sources/check_two_shares.py")):
+        checked = out / key
+        runner.run(["python3", root / "tests" / script, "--output", checked], "host-" + key)
+        results[key] = json.loads((checked / "proof.json").read_text())
     if not all(value.get("passed") is True for value in results.values()):
         raise ValueError("A host reader test did not pass")
     save(out / "host-tests.json", results)

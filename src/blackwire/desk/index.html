@@ -1268,6 +1268,10 @@
       function renderSetup() {
         var value=state || {}, settings=value.settings || {}, setup=value.setup || {};
         var link=view.connection(value);
+        if(statusFresh && nativeSaveOperation && setup.token !== formToken) {
+          nativeSaveOperation=0;
+          notice={text:"Blackwire restarted during the connection check. Your draft was kept. Reload settings status before saving again; the request was not repeated.",kind:"bad"};
+        }
         var saveResult = view.setupResult(setup,nativeSaveOperation);
         var loadSaved=statusFresh && !settingsDirty && !initialSetup;
         if (statusFresh && saveResult !== "pending") {
