@@ -3,6 +3,7 @@
 #define BW_NATIVE_CLEANUP_REMOTE_H
 #include "native_registration_cleanup.h"
 #include "shadowmount_client.h"
+#include <stdint.h>
 struct bw_nrc_remote {
     struct bw_sm_connection connection;
     const char *reason; /* static nonsecret diagnostic */
@@ -11,6 +12,10 @@ struct bw_nrc_remote {
     unsigned row_index,missing_fields,unknown_game_rows,unknown_manual_paths;
     unsigned preparation_only,observation_release_unknown;
     int observation_error;
+    uint64_t local_observation_bytes; /* bounded read-only classification work */
+#ifdef BW_COPY_HOST_TEST
+    const char *fixture_manual_status_path; /* host-only real-filesystem seam */
+#endif
 };
 /* These are the sources/uninstall adapters for a trusted cleanup reservation.
  * The connection guard must exclude every frontend/game and conflicting worker.

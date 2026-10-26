@@ -7,8 +7,11 @@
 
 #define BW_COMPRESSED_DATA_CHUNK 65536u
 #define BW_COMPRESSED_DATA_READ_CHUNK (1024u * 1024u)
-#define BW_COMPRESSED_DATA_MAX_FILES 4096u
-#define BW_COMPRESSED_DATA_MAX_PATH_BYTES (1024u * 1024u)
+/* Shared with folder manifests; parser inode/entry ceilings additionally
+ * include directories and metadata, so not every maximum file count is
+ * representable in every supported container layout. */
+#define BW_COMPRESSED_DATA_MAX_FILES BW_MANIFEST_MAX_FILES
+#define BW_COMPRESSED_DATA_MAX_PATH_BYTES BW_MANIFEST_MAX_PATH_BYTES
 #define BW_COMPRESSED_DATA_MAX_LOCAL_BYTES (5ULL * 1024u * 1024u * 1024u)
 
 enum bw_compressed_data_result {
@@ -63,9 +66,11 @@ struct bw_compressed_data {
  * local_budget must be nonzero and <=5 GiB. Reject an over-budget plan
  * before reading startup file bodies. Each later copy is bounded by this plan.
  * A failed prepare releases all partial outputs; destroy before trying again.
- * Admits only the existing container parser's unsigned contiguous D32 PFS
- * layouts. exFAT, signed/encrypted/scattered/64-bit-inode inputs and compressed
- * individual inner files remain unsupported. No extension-based admission.
+ * Admits the existing container parser's unsigned contiguous D32 PFS and
+ * qualified contiguous exFAT layouts. Signed/encrypted/scattered/64-bit-inode
+ * inputs and compressed individual required files remain unsupported.
+ * Valid excluded backup paths do not become manifest records or file tokens.
+ * No extension-based admission.
  */
 int bw_compressed_data_prepare(struct bw_compressed_data *,struct bw_container_smb *,
                              const struct bw_source_binding *,uint64_t local_budget,

@@ -1058,6 +1058,10 @@ static int state(struct bw_native_backend *p,struct bw_native_response *out){
     size_t visible_count=p->settings_enabled&&p->settings_known&&
         (p->settings_status==BW_SETUP_MISSING||p->settings_status==BW_SETUP_INVALID)?0:p->library.catalog.count;
     if(bw_native_jobs_json(p->jobs,&jobs,&job_size)){pthread_mutex_unlock(&p->lock);return -1;}
+    unsigned container_candidates=0,containers_validated=0,containers_rejected=0;
+    for(size_t i=0;i<visible_count;i++)if(bw_source_catalog_kind(p->library.catalog.items+i)==BW_PROVIDER_CONTAINER){
+        container_candidates++;if(p->library.catalog.items[i].state==BW_CATALOG_CONTAINER_READY)containers_validated++;else containers_rejected++;
+    }
     bw_json_text(&json,"{\"backend\":\"native\",\"settings\":{\"gamesFolder\":\"\",\"ps5Address\":\"\",\"server\":");bw_json_string(&json,p->server);
     bw_json_text(&json,",\"share\":");bw_json_string(&json,p->share);bw_json_text(&json,",\"share2\":");bw_json_string(&json,p->share2);bw_json_text(&json,",\"user\":");bw_json_string(&json,p->user);
     bw_json_format(&json,",\"passwordSaved\":%s},\"pc\":{\"address\":",p->password_saved?"true":"false");bw_json_string(&json,p->server);
@@ -1097,9 +1101,9 @@ static int state(struct bw_native_backend *p,struct bw_native_response *out){
         p->settings_enabled?p->settings_known&&p->settings_status==BW_SETUP_VALID?"true":"false":*p->server&&*p->share?"true":"false",p->settings_enabled&&p->settings_known&&p->settings_status==BW_SETUP_VALID?"true":"false",p->settings_revision,p->setup_operation);
     bw_json_string(&json,setup_phase_name(p->setup_phase));bw_json_text(&json,",\"token\":");bw_json_string(&json,p->setup_token);
     bw_json_text(&json,",\"checks\":[]},\"library\":{\"phase\":");bw_json_string(&json,phase_name(p->phase));
-    bw_json_format(&json,",\"generation\":%llu,\"stale\":%s,\"items\":%zu,\"collections\":%u,\"entries\":%u,\"unsearched\":%u,\"coverBytes\":%zu,\"coverLimit\":%u,\"contentBytes\":%llu,\"requests\":%u},\"games\":[",
+    bw_json_format(&json,",\"generation\":%llu,\"stale\":%s,\"items\":%zu,\"collections\":%u,\"entries\":%u,\"unsearched\":%u,\"coverBytes\":%zu,\"coverLimit\":%u,\"contentBytes\":%llu,\"requests\":%u,\"containerCandidates\":%u,\"containersValidated\":%u,\"containersRejected\":%u},\"games\":[",
         (unsigned long long)p->generation,p->stale?"true":"false",visible_count,p->library.catalog.collections,p->library.catalog.entries,p->library.catalog.unsearched,
-        p->library.cover_bytes,BW_NATIVE_COVER_LIMIT,(unsigned long long)p->library.content_bytes,p->library.requests);
+        p->library.cover_bytes,BW_NATIVE_COVER_LIMIT,(unsigned long long)p->library.content_bytes,p->library.requests,container_candidates,containers_validated,containers_rejected);
     struct bw_share_config public_binding_connection={0};
     snprintf(public_binding_connection.server,sizeof public_binding_connection.server,"%s",p->server);
     snprintf(public_binding_connection.share,sizeof public_binding_connection.share,"%s",p->share);
@@ -1137,6 +1141,9 @@ static int state(struct bw_native_backend *p,struct bw_native_response *out){
         bw_json_text(&json,",\"sourceKind\":");bw_json_string(&json,bw_source_catalog_kind(item)==BW_PROVIDER_CONTAINER?"container":"folder");
         bw_json_format(&json,",\"sourcePolicy\":%u,\"formatValidated\":%s",bw_source_catalog_available(item)?BW_PROVIDER_POLICY_V1:0,item->state==BW_CATALOG_CONTAINER_READY?"true":"false");
         bw_json_text(&json,",\"containerFormat\":");bw_json_string(&json,bw_source_catalog_format(item));
+        bw_json_format(&json,",\"containerErrorCode\":%d,\"containerErrorName\":",item->container_error);bw_json_string(&json,bw_source_catalog_error_name(item));
+        bw_json_text(&json,",\"containerStage\":");bw_json_string(&json,bw_source_catalog_stage_name(item));
+        bw_json_format(&json,",\"namespaceFilesObserved\":%u,\"namespacePathBytesObserved\":%u",item->namespace_files,item->namespace_path_bytes);
         char image_generation[65]={0};if(item->state==BW_CATALOG_CONTAINER_READY)for(unsigned j=0;j<32;j++)snprintf(image_generation+2*j,3,"%02x",item->image_sha256[j]);
         bw_json_text(&json,",\"imageGenerationSha256\":");bw_json_string(&json,image_generation);
         

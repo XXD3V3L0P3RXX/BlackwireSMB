@@ -9,6 +9,7 @@
 static unsigned checks,cases,opened,closed,selected_calls,strict_calls,register_calls,reader_calls,owned_calls,errors,setting_calls;
 static int fail_open,fail_register,fail_reader,settings_changed,foreign_registration;
 static unsigned bundle_calls,begin_calls,commit_calls,retire_calls,destroy_calls,observer_calls,idle_calls;
+static unsigned bundle_checkpoint_calls,total_bundle_checkpoint_calls;
 static int fail_bundle,fail_begin,fail_commit,release_flags,cancelled_reader,pending_cleanup,unqualified_close,new_game,change_reservation,log_busy,startup_changed;
 static int settings_status=BW_SETUP_VALID,query_mutation;
 static unsigned removed_cleanup,removed_observers,removed_manual_queries,removed_sources_queries;
@@ -59,7 +60,7 @@ int bw_native_reader_run(const struct bw_native_reader_request *r){
 int bw_preload_bundle_upgrade_workspace(const char *data,const char *game){
     CHECK(data&&!strcmp(data,backend_data_root)&&game&&!strcmp(game,owner.playing.selection.prepared.game));return workspace_pending;
 }
-int bw_preload_bundle_upgrade_checked(const struct bw_preload_bundle_upgrade_request *upgrade,struct bw_preload_bundle_result *r){
+int bw_preload_bundle_upgrade_controlled(const struct bw_preload_bundle_upgrade_request *upgrade,const struct bw_preload_bundle_control *control,struct bw_preload_bundle_result *r){
     CHECK(upgrade&&upgrade->data_root&&!strcmp(upgrade->data_root,backend_data_root)&&upgrade->game&&
         !strcmp(upgrade->game,selection.game)&&!strcmp(upgrade->game,owner.playing.selection.prepared.game)&&
         upgrade->prepared_run&&!strcmp(upgrade->prepared_run,owner.playing.selection.prepared.run)&&
@@ -68,9 +69,16 @@ int bw_preload_bundle_upgrade_checked(const struct bw_preload_bundle_upgrade_req
     const struct bw_preload_bundle_request *q=&upgrade->bundle;
     char expected_root[1152];CHECK(snprintf(expected_root,sizeof expected_root,"%s/games/%s",backend_data_root,selection.game)>0&&
         q->root&&!strcmp(q->root,expected_root));
-CHECK(q&&r&&live&&!register_calls&&!begin_calls&&!q->current(q->opaque));bundle_calls++;if(fail_bundle){r->stage="bundle_fixture_exact_bytes_refused";r->reason="bundle_fixture_named_identity_differs";}return fail_bundle==2?-1:fail_bundle?-2:0;}
+    CHECK(q&&r&&live&&!register_calls&&!begin_calls&&q->current&&!q->current(q->opaque)&&control&&control->checkpoint&&control->opaque==q->opaque&&q->deadline>now());
+    bundle_calls++;bundle_checkpoint_calls++;total_bundle_checkpoint_calls++;
+    if(control->checkpoint(control->opaque)){r->stage="bundle_fixture_checkpoint_refused";r->reason="bundle_authority_changed";return -1;}
+    if(fail_bundle){r->stage="bundle_fixture_exact_bytes_refused";r->reason="bundle_fixture_named_identity_differs";return fail_bundle==2?-1:-2;}
+    CHECK(!q->current(q->opaque));bundle_checkpoint_calls++;total_bundle_checkpoint_calls++;
+    if(control->checkpoint(control->opaque)){r->stage="bundle_fixture_checkpoint_refused";r->reason="bundle_authority_changed";return -1;}
+    return 0;
+}
 int bw_nrl_begin(const struct bw_nrl_request *q,struct bw_nrl_owner **out,struct bw_nrc_result *r){
-    CHECK(q&&q->selection&&live&&bundle_calls==1&&!register_calls&&!q->current(q->opaque,BW_NRL_REGISTER));begin_calls++;
+    CHECK(q&&q->selection&&live&&bundle_calls==1&&bundle_checkpoint_calls==2&&!register_calls&&!q->current(q->opaque,BW_NRL_REGISTER));begin_calls++;
     if(fail_begin){*r=(struct bw_nrc_result){.state=BW_NRC_UNKNOWN,.reason="ownership_intent_current_sources"};if(late_startup_drift)startup_changed=1;if(late_settings_drift)settings_changed=1;return begin_release_unknown?BW_NRC_RELEASE_UNCONFIRMED:-1;}
     copied_request=*q;borrowed_request=&copied_request;retained_registration=*out=(struct bw_nrl_owner *)(uintptr_t)0x5678;return 0;
 }
@@ -116,7 +124,7 @@ static void reset(void){
     for(unsigned i=0;i<32;i++)snprintf(selection.prepared_record_hex+2*i,3,"%02x",owner.playing.selection.prepared.record_sha256[i]);
 
     opened=closed=selected_calls=strict_calls=register_calls=reader_calls=owned_calls=errors=setting_calls=0;
-    bundle_calls=begin_calls=commit_calls=retire_calls=destroy_calls=observer_calls=idle_calls=0;
+    bundle_calls=begin_calls=commit_calls=retire_calls=destroy_calls=observer_calls=idle_calls=bundle_checkpoint_calls=0;
     fail_bundle=fail_begin=fail_commit=cancelled_reader=pending_cleanup=unqualified_close=new_game=change_reservation=log_busy=startup_changed=0;release_flags=7;
     settings_status=BW_SETUP_VALID;query_mutation=0;
     removed_cleanup=removed_observers=removed_manual_queries=removed_sources_queries=0;removed_observe_unknown=removed_source_unknown=0;memset(&removed_record,0,sizeof removed_record);
@@ -186,7 +194,8 @@ int main(void){
     begin_case();fail_open=1;joined_worker();CHECK(!CONTROL_VERIFIED&&owner.revalidation_count==1&&!begin_calls&&!reader_calls);flags(0,1,0);end_case();
     begin_case();fail_begin=1;late_startup_drift=1;joined_worker();CHECK(!CONTROL_VERIFIED&&final_admission_checks==1&&owner.revalidation_count==1);flags(0,1,0);end_case();
     begin_case();fail_begin=1;late_settings_drift=1;joined_worker();CHECK(!CONTROL_VERIFIED&&owner.playing.changed&&!owner.revalidation_count);end_case();
-    begin_case();fail_begin=1;admission_close_failure=1;joined_worker();CHECK(!CONTROL_VERIFIED&&owner.revalidation_count==1);flags(0,1,0);end_case();
+    /* Unknown descriptor release keeps global CONTROL and blocks another Send. */
+    begin_case();fail_begin=1;admission_close_failure=1;joined_worker();CHECK(!CONTROL_VERIFIED&&owner.revalidation_count==1&&owner.control_release_unknown&&!strcmp(owner.playing.phase,"unknown"));flags(0,0,0);end_case();
     begin_case();reader_error_mode=1;joined_worker();CHECK(!CONTROL_VERIFIED&&reader_calls==1&&owner.revalidation_count==1&&!owner.playing.launch_seen);flags(0,1,0);end_case();
     begin_case();reader_error_mode=2;joined_worker();CHECK(!CONTROL_VERIFIED&&reader_calls==1&&!owner.revalidation_count&&owner.playing.launch_seen);flags(1,0,1);end_case();
     begin_case();owner.ops.play=generic_play;joined_worker();CHECK(!CONTROL_VERIFIED&&!opened&&owner.revalidation_count==1);flags(0,1,0);end_case();
@@ -197,6 +206,7 @@ int main(void){
     begin_case();fail_register=1;registration_close_failure=1;joined_worker();CHECK(!CONTROL_VERIFIED&&owner.revalidation_count==1&&!reader_calls&&owner.control_release_unknown&&!strcmp(owner.playing.phase,"unknown"));end_case();
     begin_case();fail_begin=1;begin_release_unknown=1;joined_worker();CHECK(!CONTROL_VERIFIED&&owner.control_release_unknown&&!strcmp(owner.playing.phase,"unknown")&&!register_calls&&!reader_calls&&owner.revalidation_count==1);end_case();
     begin_case();commit_release_unknown=1;joined_worker();CHECK(!CONTROL_VERIFIED&&owner.control_release_unknown&&!strcmp(owner.playing.phase,"unknown")&&destroy_calls==1&&!reader_calls&&owner.revalidation_count==1);end_case();
-    printf("{\"passed\":true,\"cases\":%u,\"checks\":%u,\"actualDefaultPlayAndJoinedWorker\":true,\"actualStateJson\":true,\"sourceAdmissionAndTransportModeled\":true,\"consoleActions\":0}\n",cases,checks);return 0;
+    CHECK(total_bundle_checkpoint_calls>0);
+    printf("{\"passed\":true,\"cases\":%u,\"checks\":%u,\"controlledBundleCheckpoints\":%u,\"actualDefaultPlayAndJoinedWorker\":true,\"actualStateJson\":true,\"sourceAdmissionAndTransportModeled\":true,\"consoleActions\":0}\n",cases,checks,total_bundle_checkpoint_calls);return 0;
 #endif
 }

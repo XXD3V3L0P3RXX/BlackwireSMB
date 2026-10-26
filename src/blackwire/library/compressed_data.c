@@ -45,9 +45,11 @@ struct scanning {struct bw_source_plan *plan;struct bw_compressed_data *owner;si
 static int add(void *opaque,const char *path,const struct bw_pfs_inode *node) {
     struct scanning *p=opaque;
     if (p->owner->current(p->owner->current_opaque)) {p->error=BW_COMPRESSED_DATA_CANCELLED;return -1;}
-    if (node->flags&1u) {p->error=BW_PFS_UNSUPPORTED;return -1;}
+    size_t length=strnlen(path,BW_MANIFEST_MAX_PATH+1u);
+    if (bw_manifest_validate_path(path,length)) {p->error=BW_PFS_PATH;return -1;}
     if (bw_source_excluded(path)) return 0;
-    size_t length=strlen(path)+1;
+    if (node->flags&1u) {p->error=BW_PFS_UNSUPPORTED;return -1;}
+    length++;
     if (p->count==BW_COMPRESSED_DATA_MAX_FILES ||
         length>BW_COMPRESSED_DATA_MAX_PATH_BYTES-p->path_bytes) {
         p->error=BW_COMPRESSED_DATA_LIMIT;return -1;

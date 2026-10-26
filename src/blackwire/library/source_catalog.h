@@ -7,6 +7,14 @@
 #define BW_CATALOG_MAX_COLLECTIONS 512u
 #define BW_CATALOG_MAX_DEPTH 3u
 enum bw_catalog_state {BW_CATALOG_FOLDER=0,BW_CATALOG_BLOCKED=1,BW_CATALOG_BAD_PARAM=2,BW_CATALOG_CONTAINER=3,BW_CATALOG_CONTAINER_READY=4};
+/* Observation only: these stages explain admission without changing policy.
+ * Counts are the admitted namespace prefix, not a complete rejected inventory. */
+enum bw_catalog_container_stage {
+    BW_CATALOG_IMAGE_NOT_CHECKED=0,BW_CATALOG_IMAGE_SIZE,BW_CATALOG_IMAGE_OPEN,
+    BW_CATALOG_IMAGE_LISTING,BW_CATALOG_IMAGE_NAMESPACE,BW_CATALOG_IMAGE_BOOT,
+    BW_CATALOG_IMAGE_PARAM,BW_CATALOG_IMAGE_PARAM_READ,BW_CATALOG_IMAGE_PARAM_METADATA,
+    BW_CATALOG_IMAGE_GENERATION,BW_CATALOG_IMAGE_VALIDATED
+};
 struct bw_catalog_item {
     char source[1024],name[241],title[1024],title_id[10];
     struct bw_source_info boot,param,icon;
@@ -17,6 +25,8 @@ struct bw_catalog_item {
     uint8_t image_sha256[32];
     uint64_t logical_boot_size,logical_icon_size;
     int container_kind,container_error;
+    enum bw_catalog_container_stage container_stage;
+    uint32_t namespace_files,namespace_path_bytes;
     enum bw_catalog_state state;
     unsigned cover;
     /* Empty in legacy single-share fixtures; discovery pins the actual
@@ -31,7 +41,8 @@ struct bw_source_catalog {
 };
 /* Read bounded logical title metadata without startup hashing/copying. PFSC
  * may decode bounded physical blocks containing neighboring logical bytes.
- * Container namespace policy remains 4096 admitted files / 1 MiB path bytes.
+ * Admitted file/path budgets match BW_MANIFEST_MAX_FILES/MAX_PATH_BYTES;
+ * parser inode/entry budgets separately include directories and metadata.
  * Root folders are
  * inspected before descending non-game collections. Never descend a game.
  * Container extensions are discovery hints only, not format/title validation.
@@ -52,4 +63,7 @@ enum bw_provider_kind bw_source_catalog_kind(const struct bw_catalog_item *);
 uint64_t bw_source_catalog_boot_bytes(const struct bw_catalog_item *);
 const char *bw_source_catalog_status(const struct bw_catalog_item *);
 const char *bw_source_catalog_format(const struct bw_catalog_item *);
+/* Fixed nonsecret diagnostic labels; no admission or ownership authority. */
+const char *bw_source_catalog_error_name(const struct bw_catalog_item *);
+const char *bw_source_catalog_stage_name(const struct bw_catalog_item *);
 #endif

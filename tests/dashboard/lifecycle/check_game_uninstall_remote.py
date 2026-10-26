@@ -29,8 +29,10 @@ def main():
     out.mkdir(parents=True,exist_ok=False); commands=[]; deps=[]
     names=['native_game_uninstall.c','native_removed_sources.c','native_game_uninstall_remote.c','native_registration_lifecycle.c','native_registration_cleanup.c','native_cleanup_remote.c','native_registration.c','registration_db.c','native_prepared_target.c','reader_selection.c','source_binding.c','source_identity.c','source_profile.c','source_plan.c','source_param.c','source_directory.c']
     sources=[HERE/'test_game_uninstall_remote.c']+[LIB/n for n in names]+[STREAM/'manifest.c',STREAM/'share_config.c']
+    sources += [STREAM/n for n in ('container_source.c','pfs_source.c','pfsc_range.c','pfsc_inflate.c')]
     owned=[Path(__file__).resolve(),HERE/'test_game_uninstall_remote.c',HERE/'test_game_uninstall_remote_io.h']+[LIB/n for n in ['native_game_uninstall_remote.c','native_game_uninstall_remote.h','native_registration_lifecycle.c','native_registration_lifecycle.h']]
     possible=set(owned+sources)|set(LIB.glob('*.h'))|set(STREAM.rglob('*.h'))|set((ROOT/'vendor/libsmb2/include').rglob('*.h'))|set((ROOT/'vendor/sqlite').glob('*.h'))|set((ROOT/'src/blackwire/tools/compressed_stream_candidate').rglob('*.h'))
+    possible.update((STREAM/'vendor/miniz').glob('*.c'))
     possible|={LIB/n for n in ['native_send.c','native_prepare_ops.c','native_startup_upgrade.c','native_launch_admission.c']}
     possible|={HERE/n for n in ['test_game_uninstall.c','test_game_uninstall_io.h','test_fast_ready_play.c','check_game_uninstall.py']}
     possible|={STREAM/'prepare_copy.c',ROOT/'vendor/sqlite/sqlite3.c'}

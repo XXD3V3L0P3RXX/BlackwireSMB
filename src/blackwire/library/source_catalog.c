@@ -57,10 +57,12 @@ struct logical_metadata {struct bw_source_smb *source;struct bw_pfs_inode boot,p
 static int logical(void *opaque,const char *path,const struct bw_pfs_inode *node){
     struct logical_metadata *p=opaque;
     if(live(p->source)){p->error=BW_CONTAINER_STALE;return -1;}
-    if(node->flags&1u){p->error=BW_PFS_UNSUPPORTED;return -1;}
+    size_t length=strnlen(path,BW_MANIFEST_MAX_PATH+1u);
+    if(bw_manifest_validate_path(path,length)){p->error=BW_PFS_PATH;return -1;}
     if(bw_source_excluded(path))return 0;
-    size_t n=strlen(path)+1;
-    if(p->files==4096u||n>1024u*1024u-p->path_bytes){p->error=BW_PFS_LIMIT;return -1;}
+    if(node->flags&1u){p->error=BW_PFS_UNSUPPORTED;return -1;}
+    size_t n=length+1;
+    if(p->files==BW_MANIFEST_MAX_FILES||n>BW_MANIFEST_MAX_PATH_BYTES-p->path_bytes){p->error=BW_PFS_LIMIT;return -1;}
     p->files++;p->path_bytes+=n;
     if(!strcmp(path,"eboot.bin"))p->boot=*node;
     if(!strcmp(path,"sce_sys/param.json"))p->param=*node;
@@ -71,27 +73,37 @@ static int inspect_image(struct scan *scan,const struct candidate *candidate,str
     struct bw_source_smb *source=scan->source;struct bw_container_smb *image=calloc(1,sizeof *image);uint8_t *json=NULL;int result=-1,bad=0;
     if(!image)return fail(scan->catalog,"catalog_image_allocation_failed");
     if(live(source)){bad=fail(scan->catalog,"catalog_image_scan_expired");goto done;}
+    item->container_stage=BW_CATALOG_IMAGE_SIZE;
     if(candidate->info.size<48||candidate->info.size>BW_PFS_MAX_VOLUME){result=BW_PFS_UNSUPPORTED;goto done;}
+    item->container_stage=BW_CATALOG_IMAGE_OPEN;
     result=bw_container_smb_open_owned(image,&source->smb,candidate->source);
     if(result==BW_PFS_IO||result==BW_CONTAINER_STALE){bad=fail(scan->catalog,"catalog_image_generation_or_io_failed");goto done;}
-    if(!listed_image(&candidate->info,&image->admitted)){bad=fail(scan->catalog,"catalog_image_listing_changed");goto done;}
+    if(!listed_image(&candidate->info,&image->admitted)){item->container_stage=BW_CATALOG_IMAGE_LISTING;bad=fail(scan->catalog,"catalog_image_listing_changed");goto done;}
     item->image=image->admitted;bw_source_catalog_image_hash(&item->image,item->image_sha256);
     item->container_kind=image->container.kind;
     if(result)goto done;
+    item->container_stage=BW_CATALOG_IMAGE_NAMESPACE;
     struct logical_metadata metadata={.source=source};result=bw_container_walk(&image->container,logical,&metadata,NULL);
+    item->namespace_files=metadata.files;item->namespace_path_bytes=(uint32_t)metadata.path_bytes;
     if(metadata.error)result=metadata.error;
     if(result)goto done;
-    if(!metadata.boot.id||!metadata.boot.logical_size||metadata.boot.logical_size>UINT64_C(2147483648)||
-       !metadata.param.id||!metadata.param.logical_size||metadata.param.logical_size>BW_SOURCE_PARAM_LIMIT){result=BW_PFS_FORMAT;goto done;}
+    item->container_stage=BW_CATALOG_IMAGE_BOOT;
+    if(!metadata.boot.id||!metadata.boot.logical_size||metadata.boot.logical_size>UINT64_C(2147483648)){result=BW_PFS_FORMAT;goto done;}
+    item->container_stage=BW_CATALOG_IMAGE_PARAM;
+    if(!metadata.param.id||!metadata.param.logical_size||metadata.param.logical_size>BW_SOURCE_PARAM_LIMIT){result=BW_PFS_FORMAT;goto done;}
     json=malloc((size_t)metadata.param.logical_size);if(!json){bad=fail(scan->catalog,"catalog_image_param_allocation_failed");goto done;}
+    item->container_stage=BW_CATALOG_IMAGE_PARAM_READ;
     result=bw_container_read(&image->container,"sce_sys/param.json",0,json,(size_t)metadata.param.logical_size);
     if(result)goto done;
+    item->container_stage=BW_CATALOG_IMAGE_PARAM_METADATA;
     if(bw_source_param_metadata(json,(size_t)metadata.param.logical_size,item->title_id,item->title,sizeof item->title)){
         result=BW_PFS_FORMAT;goto done;
     }
     if(live(source)){bad=fail(scan->catalog,"catalog_image_scan_expired");goto done;}
+    item->container_stage=BW_CATALOG_IMAGE_GENERATION;
     result=bw_container_validate(&image->container);if(result)goto done;
     item->logical_boot_size=metadata.boot.logical_size;item->state=BW_CATALOG_CONTAINER_READY;
+    item->container_stage=BW_CATALOG_IMAGE_VALIDATED;
     if(metadata.icon.id&&metadata.icon.logical_size&&metadata.icon.logical_size<=BW_SOURCE_SMALL_FILE_LIMIT){
         item->logical_icon_size=metadata.icon.logical_size;item->cover=1;
     }
@@ -221,6 +233,25 @@ static void append(struct json *p,const char *bytes,size_t n){
 }
 static void text(struct json *p,const char *s){append(p,s,strlen(s));}
 static void number(struct json *p,uint64_t value){char b[32];int n=snprintf(b,sizeof b,"%llu",(unsigned long long)value);if(n<0||(size_t)n>=sizeof b)p->bad=1;else append(p,b,(size_t)n);}
+static void signed_number(struct json *p,int value){char b[32];int n=snprintf(b,sizeof b,"%d",value);if(n<0||(size_t)n>=sizeof b)p->bad=1;else append(p,b,(size_t)n);}
+const char *bw_source_catalog_error_name(const struct bw_catalog_item *p){
+    if(bw_source_catalog_kind(p)!=BW_PROVIDER_CONTAINER)return "not_applicable";
+    switch(p->container_error){
+    case BW_PFS_OK:return "none";case BW_PFS_ARGUMENT:return "invalid_argument";
+    case BW_PFS_FORMAT:return "invalid_format";case BW_PFS_IO:return "io_failure";
+    case BW_PFS_UNSUPPORTED:return "unsupported_format";case BW_PFS_RANGE:return "out_of_range";
+    case BW_PFS_LIMIT:return "metadata_limit";case BW_PFS_MEMORY:return "memory_limit";
+    case BW_PFS_PATH:return "invalid_path";case BW_PFS_NOT_FOUND:return "not_found";
+    case BW_PFS_CALLBACK:return "callback_refused";case BW_CONTAINER_STALE:return "source_generation";
+    case BW_CONTAINER_CODEC:return "codec_failure";case BW_CONTAINER_CANCELED:return "operation_canceled";
+    default:return "unknown_error";
+    }
+}
+const char *bw_source_catalog_stage_name(const struct bw_catalog_item *p){
+    static const char *const stages[]={"not_checked","image_size","container_open","image_listing","namespace",
+        "boot_file","param_file","param_read","param_metadata","generation","validated"};
+    return p&&(unsigned)p->container_stage<sizeof stages/sizeof stages[0]?stages[p->container_stage]:"unknown";
+}
 static void string(struct json *p,const char *s){
     text(p,"\"");for(;*s;s++){unsigned char c=(unsigned char)*s;
         if(c=='"'||c=='\\'){char b[2]={'\\',(char)c};append(p,b,2);}
@@ -231,7 +262,7 @@ static void string(struct json *p,const char *s){
 int bw_source_catalog_json(const struct bw_source_catalog *p,char **bytes,size_t *size){
     if(bytes)*bytes=NULL;if(size)*size=0;
     if(!p||!bytes||!size||p->error||p->count>BW_CATALOG_MAX_ITEMS||p->count>p->capacity||(p->count&&!p->items))return -1;
-    struct json json={0};text(&json,"{\"items\":[");
+    struct json json={0};uint32_t candidates=0,validated=0,rejected=0;text(&json,"{\"items\":[");
     for(size_t i=0;i<p->count;i++){
         const struct bw_catalog_item *e=&p->items[i];if((unsigned)e->state>BW_CATALOG_CONTAINER_READY){json.bad=1;break;}
         if(i)text(&json,",");text(&json,"{\"source\":");string(&json,e->source);text(&json,",\"name\":");string(&json,e->source);text(&json,",\"folderName\":");string(&json,e->name);
@@ -239,10 +270,15 @@ int bw_source_catalog_json(const struct bw_source_catalog *p,char **bytes,size_t
         text(&json,",\"sourceKind\":");string(&json,bw_source_catalog_kind(e)==BW_PROVIDER_CONTAINER?"container":"folder");text(&json,",\"status\":");string(&json,bw_source_catalog_status(e));
         text(&json,",\"sourcePolicy\":");number(&json,bw_source_catalog_available(e)?BW_PROVIDER_POLICY_V1:0);
         text(&json,",\"formatValidated\":");text(&json,e->state==BW_CATALOG_CONTAINER_READY?"true":"false");text(&json,",\"containerFormat\":");string(&json,bw_source_catalog_format(e));
+        if(bw_source_catalog_kind(e)==BW_PROVIDER_CONTAINER){candidates++;if(e->state==BW_CATALOG_CONTAINER_READY)validated++;else rejected++;}
+        text(&json,",\"containerErrorCode\":");signed_number(&json,e->container_error);text(&json,",\"containerErrorName\":");string(&json,bw_source_catalog_error_name(e));
+        text(&json,",\"containerStage\":");string(&json,bw_source_catalog_stage_name(e));text(&json,",\"namespaceFilesObserved\":");number(&json,e->namespace_files);
+        text(&json,",\"namespacePathBytesObserved\":");number(&json,e->namespace_path_bytes);
         char generation[65]={0};if(e->state==BW_CATALOG_CONTAINER_READY)for(unsigned j=0;j<32;j++)snprintf(generation+2*j,3,"%02x",e->image_sha256[j]);
         text(&json,",\"imageGenerationSha256\":");string(&json,generation);
         text(&json,",\"bootBytes\":");number(&json,bw_source_catalog_boot_bytes(e));text(&json,",\"containerBytes\":");number(&json,e->container_bytes);text(&json,",\"cover\":");text(&json,e->cover?"true":"false");text(&json,"}");
     }
-    text(&json,"],\"collections\":");number(&json,p->collections);text(&json,",\"entries\":");number(&json,p->entries);text(&json,",\"skipped\":");number(&json,p->skipped);text(&json,",\"unsearched\":");number(&json,p->unsearched);text(&json,"}");
+    text(&json,"],\"containerCandidates\":");number(&json,candidates);text(&json,",\"containersValidated\":");number(&json,validated);
+    text(&json,",\"containersRejected\":");number(&json,rejected);text(&json,",\"collections\":");number(&json,p->collections);text(&json,",\"entries\":");number(&json,p->entries);text(&json,",\"skipped\":");number(&json,p->skipped);text(&json,",\"unsearched\":");number(&json,p->unsearched);text(&json,"}");
     if(json.bad){free(json.bytes);return -1;}*bytes=json.bytes;*size=json.size;return 0;
 }

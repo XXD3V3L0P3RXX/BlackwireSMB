@@ -8,6 +8,7 @@
 #include "preload_bundle.h"
 #include "native_json.h"
 #include "source_param.h"
+#include "send_diagnostic.h"
 #include "../streamreader/copy_fs.h"
 #include "../streamreader/copy_sha256.h"
 #include "../streamreader/preparation_receipt.h"
@@ -39,7 +40,8 @@ struct gu_plan {
     struct gu_node *nodes;size_t count,capacity,pool;
     unsigned char intent[GU_INTENT],inventory[32];
     char content[128],intent_leaf[128],registration_leaf[128],files_leaf[128],done_leaf[128];
-    unsigned files_total,root_removed,state_removed,continuation;
+    unsigned files_total,root_removed,state_removed,continuation,identity_diagnostic;
+    uint64_t current_calls;
     const char *checking;
 };
 static uint32_t gu_u32(const unsigned char *p){return (uint32_t)p[0]|(uint32_t)p[1]<<8|(uint32_t)p[2]<<16|(uint32_t)p[3]<<24;}
@@ -50,6 +52,45 @@ static int gu_nonce(const char *p){if(!p||strnlen(p,33)!=32)return 0;unsigned n=
 static int gu_nonzero(const unsigned char *p,size_t n){unsigned v=0;while(n--)v|=*p++;return v!=0;}
 static int gu_node_same(const struct stat *a,const struct stat *b){return a->st_dev==b->st_dev&&a->st_ino==b->st_ino&&a->st_mode==b->st_mode&&a->st_uid==b->st_uid&&a->st_gid==b->st_gid;}
 static int gu_same(const struct stat *a,const struct stat *b){return gu_node_same(a,b)&&a->st_nlink==b->st_nlink&&a->st_size==b->st_size&&a->st_blocks==b->st_blocks&&a->st_mtim.tv_sec==b->st_mtim.tv_sec&&a->st_mtim.tv_nsec==b->st_mtim.tv_nsec&&a->st_ctim.tv_sec==b->st_ctim.tv_sec&&a->st_ctim.tv_nsec==b->st_ctim.tv_nsec;}
+/* Diagnostic bits follow the existing exact identity predicate, not a new policy:
+ * dev ino mode uid gid nlink size blocks mtime-sec mtime-nsec ctime-sec ctime-nsec.
+ * Log only the first failed check; relative names are copied, bounded and escaped.
+ * This best-effort private log never supplies ownership or retry authority. */
+#define GU_STAT_NODE_MASK 31u
+#define GU_STAT_FULL_MASK 4095u
+static unsigned gu_stat_difference(const struct stat *a,const struct stat *b){
+    unsigned mask=0;
+    if(a->st_dev!=b->st_dev)mask|=1u;if(a->st_ino!=b->st_ino)mask|=2u;
+    if(a->st_mode!=b->st_mode)mask|=4u;if(a->st_uid!=b->st_uid)mask|=8u;
+    if(a->st_gid!=b->st_gid)mask|=16u;if(a->st_nlink!=b->st_nlink)mask|=32u;
+    if(a->st_size!=b->st_size)mask|=64u;if(a->st_blocks!=b->st_blocks)mask|=128u;
+    if(a->st_mtim.tv_sec!=b->st_mtim.tv_sec)mask|=256u;if(a->st_mtim.tv_nsec!=b->st_mtim.tv_nsec)mask|=512u;
+    if(a->st_ctim.tv_sec!=b->st_ctim.tv_sec)mask|=1024u;if(a->st_ctim.tv_nsec!=b->st_ctim.tv_nsec)mask|=2048u;return mask;
+}
+static void gu_identity_diag(struct gu_plan *p,const char *check,unsigned area,const char *path,int error,
+                             unsigned compared,const struct stat *expected,const struct stat *observed){
+    if(p->identity_diagnostic)return;p->identity_diagnostic=1;
+    char escaped[257];size_t used=0;unsigned truncated=0;
+    const unsigned char *name=(const unsigned char *)(path?path:"");
+    for(;*name;name++){
+        unsigned c=*name;size_t need=c>=33&&c<=126&&c!='\\'&&c!='"'?1:4;
+        if(need>sizeof escaped-1-used){truncated=1;break;}
+        if(need==1)escaped[used++]=(char)c;
+        else {static const char hex[]="0123456789abcdef";escaped[used++]='\\';escaped[used++]='x';escaped[used++]=hex[c>>4];escaped[used++]=hex[c&15];}
+    }escaped[used]=0;
+    struct stat zero={0};if(!expected)expected=&zero;if(!observed)observed=&zero;
+    unsigned changed=compared?gu_stat_difference(expected,observed)&compared:0;
+    bw_send_log("uninstall_identity","operation=%.32s currentCall=%"PRIu64" check=%s area=%u node=\"%s\" truncated=%u errno=%d compared=%u changed=%u stat=%u expected=[%llu,%llu,%llu,%llu,%llu,%llu,%lld,%lld,%lld,%ld,%lld,%ld] observed=[%llu,%llu,%llu,%llu,%llu,%llu,%lld,%lld,%lld,%ld,%lld,%ld]",
+        p->r?p->r->operation:"",p->current_calls,check,area,escaped,truncated,error,compared,changed,compared!=0,
+        (unsigned long long)expected->st_dev,(unsigned long long)expected->st_ino,(unsigned long long)expected->st_mode,
+        (unsigned long long)expected->st_uid,(unsigned long long)expected->st_gid,(unsigned long long)expected->st_nlink,
+        (long long)expected->st_size,(long long)expected->st_blocks,(long long)expected->st_mtim.tv_sec,expected->st_mtim.tv_nsec,
+        (long long)expected->st_ctim.tv_sec,expected->st_ctim.tv_nsec,
+        (unsigned long long)observed->st_dev,(unsigned long long)observed->st_ino,(unsigned long long)observed->st_mode,
+        (unsigned long long)observed->st_uid,(unsigned long long)observed->st_gid,(unsigned long long)observed->st_nlink,
+        (long long)observed->st_size,(long long)observed->st_blocks,(long long)observed->st_mtim.tv_sec,observed->st_mtim.tv_nsec,
+        (long long)observed->st_ctim.tv_sec,observed->st_ctim.tv_nsec);
+}
 static int gu_finish(struct gu_plan *p,enum bw_game_uninstall_phase phase,const char *why,int result){p->out->phase=phase;p->out->reason=why;return result;}
 static void gu_progress(struct gu_plan *p,enum bw_game_uninstall_phase phase,const char *message){p->out->phase=phase;if(p->r->ops.observe){struct bw_game_uninstall_progress v={phase,p->out->files_removed,p->files_total,message};p->r->ops.observe(p->r->ops.opaque,&v);}}
 static void gu_init(struct gu_plan *p){p->data=p->games=p->scope=p->apps=p->root=p->state=p->ledger=p->send_lock=-1;}
@@ -81,10 +122,19 @@ static int gu_open_child(struct gu_plan *p,int parent,unsigned anchor,const char
 static int gu_anchor(struct gu_plan *p){
     int fds[]={p->data,p->games,p->scope,p->apps,p->root,p->state,p->ledger};
     for(unsigned i=0;i<7;i++){if(fds[i]<0)continue;if((i==4&&p->root_removed)||(i==5&&p->state_removed))continue;struct stat st;
-        if(fstat(fds[i],&st)||!gu_node_same(p->ids+i,&st)||!v2_root_current(p->anchor+i,fds[i]))return -1;}
-    if(p->lock_pinned){struct stat st,named;if(fstat(p->send_lock,&st)||cp_fstatat(p->data,".blackwire-send.lock",&named,AT_SYMLINK_NOFOLLOW)||!gu_same(&p->lock_identity,&st)||!gu_same(&st,&named))return -1;}return 0;
+        if(fstat(fds[i],&st)){gu_identity_diag(p,"anchor_fstat",i,"",errno,0,NULL,NULL);return -1;}
+        if(!gu_node_same(p->ids+i,&st)){gu_identity_diag(p,"anchor_held_changed",i,"",0,GU_STAT_NODE_MASK,p->ids+i,&st);return -1;}
+        if(!v2_root_current(p->anchor+i,fds[i])){gu_identity_diag(p,"anchor_named_current",i,"",0,0,NULL,NULL);return -1;}}
+    if(p->lock_pinned){struct stat st,named;
+        if(fstat(p->send_lock,&st)){gu_identity_diag(p,"lock_fstat",0,".blackwire-send.lock",errno,0,NULL,NULL);return -1;}
+        if(cp_fstatat(p->data,".blackwire-send.lock",&named,AT_SYMLINK_NOFOLLOW)){gu_identity_diag(p,"lock_named_stat",0,".blackwire-send.lock",errno,0,NULL,NULL);return -1;}
+        if(!gu_same(&p->lock_identity,&st)){gu_identity_diag(p,"lock_held_changed",0,".blackwire-send.lock",0,GU_STAT_FULL_MASK,&p->lock_identity,&st);return -1;}
+        if(!gu_same(&st,&named)){gu_identity_diag(p,"lock_named_changed",0,".blackwire-send.lock",0,GU_STAT_FULL_MASK,&st,&named);return -1;}}return 0;
 }
-static int gu_current(struct gu_plan *p){return !p->r->ops.current||p->r->ops.current(p->r->ops.opaque)||gu_anchor(p)?-1:0;}
+static int gu_current(struct gu_plan *p){
+    p->current_calls++;if(!p->r->ops.current||p->r->ops.current(p->r->ops.opaque)){gu_identity_diag(p,"authority_current",0,"",0,0,NULL,NULL);return -1;}
+    return gu_anchor(p)?-1:0;
+}
 static int gu_read(int dir,const char *leaf,size_t maximum,void **out,size_t *size,struct stat *identity){
     *out=NULL;*size=0;int fd=v2_openat(dir,leaf,O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);if(fd<0)return errno==ENOENT?1:-1;
     struct stat st,after,named;int bad=fstat(fd,&st)||!S_ISREG(st.st_mode)||st.st_nlink!=1||st.st_uid!=geteuid()||st.st_size<0||(uint64_t)st.st_size>maximum;unsigned char *body=NULL;size_t at=0;
@@ -200,14 +250,29 @@ static void gu_stat_wire(unsigned char out[112],const struct stat *st){memset(ou
 static void gu_inventory(struct gu_plan *p){qsort(p->nodes,p->count,sizeof *p->nodes,gu_node_compare);struct cp_sha h;cp_sha_init(&h);unsigned char st[112];
     for(unsigned i=4;i<=5;i++){gu_stat_wire(st,p->ids+i);cp_sha_update(&h,st,sizeof st);}for(size_t i=0;i<p->count;i++){unsigned char state=(unsigned char)p->nodes[i].state;cp_sha_update(&h,&state,1);cp_sha_update(&h,p->nodes[i].path,strlen(p->nodes[i].path)+1);gu_stat_wire(st,&p->nodes[i].st);cp_sha_update(&h,st,sizeof st);}cp_sha_final(&h,p->inventory);}
 static int gu_named(struct gu_plan *p,const struct gu_node *node,int fine,int *parent_out,char leaf[256]){
-    unsigned a=node->state?5:4;int root=node->state?p->state:p->root;char relative[1024];int parent=v2_parent(p->anchor+a,root,node->path,0,leaf,relative);if(parent<0)return -1;
-    int bad=gu_current(p);if(!bad){struct stat st;bad=cp_fstatat(parent,leaf,&st,AT_SYMLINK_NOFOLLOW)||(fine?!gu_same(&node->st,&st):!gu_node_same(&node->st,&st));}
+    unsigned a=node->state?5:4;int root=node->state?p->state:p->root;char relative[1024];int parent=v2_parent(p->anchor+a,root,node->path,0,leaf,relative);
+    if(parent<0){gu_identity_diag(p,"node_parent_open",a,node->path,errno,0,NULL,NULL);return -1;}
+    int bad=gu_current(p);if(!bad){struct stat st;
+        if(cp_fstatat(parent,leaf,&st,AT_SYMLINK_NOFOLLOW)){gu_identity_diag(p,"node_named_stat",a,node->path,errno,0,NULL,NULL);bad=1;}
+        else if(fine?!gu_same(&node->st,&st):!gu_node_same(&node->st,&st)){
+            gu_identity_diag(p,"node_named_changed",a,node->path,0,fine?GU_STAT_FULL_MASK:GU_STAT_NODE_MASK,&node->st,&st);bad=1;}}
     if(!bad&&*relative){size_t low=0,high=p->count;struct gu_node key={.path=relative,.state=node->state};while(low<high){size_t m=(low+high)/2;if(gu_node_compare(p->nodes+m,&key)<0)low=m+1;else high=m;}
-        struct stat st;if(low==p->count||gu_node_compare(p->nodes+low,&key)||!S_ISDIR(p->nodes[low].st.st_mode)||fstat(parent,&st)||!gu_node_same(&p->nodes[low].st,&st))bad=1;}
+        struct stat st;
+        if(low==p->count||gu_node_compare(p->nodes+low,&key)||!S_ISDIR(p->nodes[low].st.st_mode)){
+            gu_identity_diag(p,"node_parent_inventory",a,node->path,0,0,NULL,NULL);bad=1;}
+        else if(fstat(parent,&st)){gu_identity_diag(p,"node_parent_fstat",a,node->path,errno,0,NULL,NULL);bad=1;}
+        else if(!gu_node_same(&p->nodes[low].st,&st)){
+            gu_identity_diag(p,"node_parent_changed",a,node->path,0,GU_STAT_NODE_MASK,&p->nodes[low].st,&st);bad=1;}}
     if(bad){if(close(parent))return -1;return -1;}*parent_out=parent;return 0;
 }
-static int gu_revalidate(struct gu_plan *p){if(gu_current(p))return -1;for(unsigned a=4;a<=5;a++){struct stat st;if(fstat(a==4?p->root:p->state,&st)||!gu_same(p->ids+a,&st))return -1;}
-    for(size_t i=0;i<p->count;i++){int parent=-1;char leaf[256];if(gu_named(p,p->nodes+i,1,&parent,leaf))return -1;if(close(parent))return -1;}return gu_current(p);}
+static int gu_revalidate(struct gu_plan *p){
+    if(gu_current(p))return -1;for(unsigned a=4;a<=5;a++){struct stat st;
+        if(fstat(a==4?p->root:p->state,&st)){gu_identity_diag(p,"root_fstat",a,"",errno,0,NULL,NULL);return -1;}
+        if(!gu_same(p->ids+a,&st)){gu_identity_diag(p,"root_changed",a,"",0,GU_STAT_FULL_MASK,p->ids+a,&st);return -1;}}
+    for(size_t i=0;i<p->count;i++){int parent=-1;char leaf[256];if(gu_named(p,p->nodes+i,1,&parent,leaf))return -1;
+        if(close(parent)){gu_identity_diag(p,"node_parent_close",p->nodes[i].state?5:4,p->nodes[i].path,errno,0,NULL,NULL);return -1;}}
+    return gu_current(p);
+}
 static int gu_marker(struct gu_plan *p,const char *name,const void *bytes,size_t size){if(gu_current(p))return -1;int fd=v2_openat(p->ledger,name,O_CREAT|O_EXCL|O_NOFOLLOW|O_RDWR|O_NONBLOCK,0600);if(fd<0)return -1;int bad=fchmod(fd,0600);size_t at=0;
     while(!bad&&at<size){if(gu_current(p)){bad=1;break;}ssize_t n=write(fd,(const unsigned char *)bytes+at,size-at);if(n<0&&errno==EINTR)continue;if(n<=0||(size_t)n>size-at){bad=1;break;}at+=(size_t)n;}
     if(!bad&&(fsync(fd)||gu_current(p)))bad=1;if(close(fd))bad=1;if(!bad&&(fsync(p->ledger)||gu_exact(p->ledger,name,bytes,size,0600)||gu_current(p)))bad=1;return bad?-1:0;}
