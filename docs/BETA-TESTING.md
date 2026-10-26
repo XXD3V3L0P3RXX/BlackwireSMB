@@ -2,7 +2,7 @@
 
 This standalone browser beta repairs startup settings reporting and recovery after a resident replacement. It also retains the repairs for the two original faults reported in issue #2: MkPFS images containing exFAT were rejected, and setup step 7 incorrectly required an optional global library pack. The beta reads supported exFAT layouts and installs its embedded streaming reader without opening or changing `/data/shadowmount/fakelib`. This is not a native Dashboard release.
 
-[GitHub download](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.2) · [Etawen mirror — beta synchronization pending](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB)
+[GitHub download](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.2) · [Project mirror](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB)
 
 ## Install and test once
 

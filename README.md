@@ -2,7 +2,7 @@
 
 Stream PS5 games from an ordinary PC SMB share, with a smaller startup copy on the console. Supports extracted folders and the tested PFS/PFSC compressed layouts, including supported `.ffpfsc` images.
 
-**v0.3.0-beta.2 is available for testing:** it fixes two reproduced connection-settings bugs and adds settings/connection failure diagnostics. It retains the MkPFS exFAT reader and the self-contained step-7 repair from beta.1. [Download the beta](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.2) · [Etawen mirror — beta pending](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB) · [Beta test instructions](docs/BETA-TESTING.md). Existing preview downloads and the normal Payload Manager catalog are preserved.
+**v0.3.0-beta.2 is available for testing:** it fixes two reproduced connection-settings bugs and adds settings/connection failure diagnostics. It retains the MkPFS exFAT reader and the self-contained step-7 repair from beta.1. [Download the beta](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.2) · [Beta test instructions](docs/BETA-TESTING.md). Existing preview downloads and the normal Payload Manager catalog are preserved.
 
 [Download working and logging ELFs](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.2.0-preview.1-sendlog.1) · [Etawen mirror](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB) · [Changelog](CHANGELOG.md) · [Video](#video) · [Setup](docs/SETUP.md) · [Requirements](docs/REQUIREMENTS.md) · [Test results](docs/TESTING.md) · [Build from source](docs/BUILD.md)
 
