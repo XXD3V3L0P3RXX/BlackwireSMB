@@ -18,6 +18,7 @@ def main():
     parser.add_argument('--name')
     parser.add_argument('--jobs',type=int,default=2)
     parser.add_argument('--allow-source-changes',action='store_true')
+    parser.add_argument('--startup-trace-stdout',action='store_true',help='Private diagnostic build: best-effort startup markers to the retained loader socket; no per-PID trace file')
     args=parser.parse_args()
     if not 1<=args.jobs<=16:raise ValueError('Use 1 through 16 build jobs')
     checked=verify_inputs(ROOT,args.allow_source_changes)
@@ -49,7 +50,7 @@ def main():
     run=Runner(ROOT,out,sdk)
     save(out/'intent.json',{'atUtc':datetime.now(timezone.utc).isoformat(),'source':before,'checked':checked,
         'standaloneWeb':True,'nativeFrontend':False,'folderOnly':False,'hostTestsRequested':args.host_tests,
-        'sdkBuildRequested':args.build,'consoleContacted':False,'deployed':False})
+        'sdkBuildRequested':args.build,'startupTraceStdoutOnlyRequested':args.startup_trace_stdout,'consoleContacted':False,'deployed':False})
     try:
         source,slices=reader.prepare(ROOT,out)
         host=reader.host_tests(ROOT,out,source,run) if args.host_tests else None
@@ -64,7 +65,8 @@ def main():
             result['sourceRuntime']=sdk_runtime.products(ROOT,out,runtime)
             result['dependencies']=dependency['products']
             result['reader']=pin(image)
-            result['application']=app.build(ROOT,out,sdk,dependency,image,run,args.jobs,args.host_tests,args.allow_source_changes,runtime)
+            result['application']=app.build(ROOT,out,sdk,dependency,image,run,args.jobs,args.host_tests,args.allow_source_changes,runtime,startup_trace_stdout=args.startup_trace_stdout)
+            result['startupTrace']=json.loads((out/'startup-trace.json').read_text())
             result['actualSdkInputs']=provenance.sdk_inputs(ROOT,out,sdk)
         if before!={part:tree(ROOT/part) for part in ('src','vendor','tools','metadata','tests')}:
             raise ValueError('Source changed during build; outputs retained but refused')

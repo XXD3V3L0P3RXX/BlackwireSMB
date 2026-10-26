@@ -160,6 +160,14 @@ def host_tests(root, out, source, runner):
         checked = out / key
         runner.run(["python3", root / "tests/compressed" / script, "--output", checked], "host-" + key)
         results[key] = json.loads((checked / "proof.json").read_text())
+    checked = out / "standalone-startup-trace"
+    runner.run(["python3", root / "tests/build/check_standalone_startup_trace.py",
+                "--host-only", "--output", checked], "host-standalone-startup-trace")
+    results["standalone_startup_trace"] = json.loads((checked / "proof.json").read_text())
+    checked = out / "startup-trace-build"
+    runner.run(["python3", root / "tests/dashboard/lifecycle/check_startup_trace_build.py",
+                "--host-only", "--output", checked], "host-startup-trace-build")
+    results["startup_trace_build"] = json.loads((checked / "proof.json").read_text())
     checked = out / "self-contained-bundle"
     runner.run(["python3", root / "tests/dashboard/lifecycle/check_self_contained_bundle.py",
                 "--host-only", "--output", checked], "host-self-contained-bundle")

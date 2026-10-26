@@ -1,5 +1,6 @@
 """Build the standalone web resident; no native application publication."""
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -8,7 +9,39 @@ import sdk_runtime
 from common import pin, save, source_flags
 
 
-def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, allow_source_changes=False, runtime=None):
+STARTUP_TRACE_FLAGS = ("-DBW_STARTUP_TRACE=1", "-DBW_STARTUP_TRACE_STDOUT_ONLY=1")
+STARTUP_TRACE_MARKERS = (b"BW core-isolation-01 pid=", b"main.enter", b"net.init.before",
+                         b"net.init.after", b"listen.before", b"backend.create.before",
+                         b"resident.create.before", b"refresh.before", b"accept.loop")
+
+
+def startup_trace_flags(enabled):
+    if type(enabled) is not bool:
+        raise ValueError("Startup trace selection must be an explicit boolean")
+    return list(STARTUP_TRACE_FLAGS) if enabled else []
+
+
+def startup_trace_proof(enabled, main_argv, artifact, package):
+    flags = startup_trace_flags(enabled)
+    actual_artifact = {"bytes": len(package), "sha256": hashlib.sha256(package).hexdigest()}
+    if artifact != actual_artifact:
+        raise ValueError("Startup trace artifact pin differs from the inspected package")
+    actual = list(main_argv)
+    if enabled and any(actual.count(flag) != 1 for flag in flags):
+        raise ValueError("Actual main command does not enable the exact PC-only startup trace")
+    if not enabled and any(flag in actual for flag in STARTUP_TRACE_FLAGS):
+        raise ValueError("Unexpected startup trace flag in ordinary build")
+    presence = {marker.decode("ascii"): marker in package for marker in STARTUP_TRACE_MARKERS}
+    if enabled and not all(presence.values()):
+        raise ValueError("Packaged ELF is missing required startup trace markers")
+    return {"enabled": enabled, "stdoutOnly": enabled, "expectedFlags": flags,
+            "actualMainArgv": actual, "artifact": artifact,
+            "requiredMarkers": [marker.decode("ascii") for marker in STARTUP_TRACE_MARKERS], "markerPresence": presence,
+            "consoleTraceFileWritesEnabled": False if enabled else None,
+            "bestEffort": True, "provesRuntimeExecution": False, "consoleActions": 0}
+
+
+def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, allow_source_changes=False, runtime=None, startup_trace_stdout=False):
     # A previous build's objects or an unpinned runtime are never a fallback.
     source_identity = sdk_runtime.source_lineage(root, out, runtime)
     digest = pin(image)["sha256"]
@@ -125,10 +158,13 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
         return value
     (out / "deps").mkdir()
     runtime_link = None
+    main_argv = None
     for row in commands:
         argv = [expand(value) for value in row["argv"]]
         if row["label"] == "compile-00":
             argv.insert(1, '-DBW_RESIDENT_BUILD_ID="blackwire-v0.3.0-beta.3"')
+            argv[1:1] = startup_trace_flags(startup_trace_stdout)
+            main_argv = list(argv)
         if row is link:
             argv = sdk_runtime.link_arguments(root, out, argv, runtime)
         if "-o" in argv:
@@ -152,6 +188,9 @@ def build(root, out, sdk, dependency, image, runner, jobs=2, host_tests=False, a
     if loads(original)!=loads(packed) or any(original[p[2]:p[2]+p[5]]!=packed[p[2]:p[2]+p[5]] for p in loads(original)):
         raise ValueError("Packaging changed allocated ELF content")
     image_pin=pin(package)
+    if main_argv is None:
+        raise ValueError("Actual resident main compile command is missing")
+    save(out/"startup-trace.json", startup_trace_proof(startup_trace_stdout, main_argv, image_pin, packed))
     save(out/"embedding.json",{"reader":pin(image),"sourceManifestSha256":source_identity,
         "generatedC":pin(embedded/"preload-image.c"),"folderOnly":False,"standaloneWeb":True,
         "sourceRuntime":{"receipt":runtime["receiptPin"],"link":runtime_link},"nativeFrontendIncluded":False,

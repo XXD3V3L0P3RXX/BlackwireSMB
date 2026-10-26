@@ -115,12 +115,21 @@ static void log_line(const char *msg) {
   fflush(logfp);
 }
 
-/* Startup-only diagnostic checkpoints. Never called from hot logging. */
+/* Startup-only, best-effort diagnostic checkpoints. A missing row does not
+ * prove that a call was not reached. Never called from hot logging. */
+#if defined(BW_STARTUP_TRACE_STDOUT_ONLY) && BW_STARTUP_TRACE_STDOUT_ONLY && !defined(BW_STARTUP_TRACE)
+#error "BW_STARTUP_TRACE_STDOUT_ONLY requires BW_STARTUP_TRACE"
+#endif
 #ifdef BW_STARTUP_TRACE
+#ifndef BW_STARTUP_TRACE_STDOUT_ONLY
+#define BW_STARTUP_TRACE_STDOUT_ONLY 0
+#endif
+#if !BW_STARTUP_TRACE_STDOUT_ONLY
 #ifndef BW_STARTUP_TRACE_DIRECTORY
 #define BW_STARTUP_TRACE_DIRECTORY "/data/blackwire"
 #endif
 static int startup_trace_fd = -1;
+#endif
 static unsigned startup_trace_rows;
 static void startup_mark(const char *phase) {
   const int saved = errno;
@@ -131,6 +140,7 @@ static void startup_mark(const char *phase) {
   if (n > 0 && (size_t)n < sizeof row) {
     /* FD1 may be an ELF-loader socket. No pipe fallback, flags or handlers. */
     (void)send(STDOUT_FILENO, row, (size_t)n, MSG_DONTWAIT | MSG_NOSIGNAL);
+    #if !BW_STARTUP_TRACE_STDOUT_ONLY
     struct stat st;
     if (startup_trace_fd >= 0 && !fstat(startup_trace_fd, &st) && S_ISREG(st.st_mode) &&
         st.st_nlink == 1 && st.st_size >= 0 && (uint64_t)st.st_size + (size_t)n <= 16384u) {
@@ -143,9 +153,14 @@ static void startup_mark(const char *phase) {
       }
       if (at == (size_t)n) (void)fsync(startup_trace_fd);
     }
+    #endif
   }
   errno = saved;
 }
+#if BW_STARTUP_TRACE_STDOUT_ONLY
+#define startup_trace_open() ((void)0)
+#define startup_trace_finish() ((void)0)
+#else
 static void startup_trace_open(void) {
   const int saved = errno;
   struct stat st;char path[160];
@@ -167,6 +182,7 @@ static void startup_trace_finish(void) {
   if (startup_trace_fd >= 0) { (void)close(startup_trace_fd); startup_trace_fd = -1; }
   errno = saved;
 }
+#endif
 #else
 #define startup_mark(phase) ((void)0)
 #define startup_trace_open() ((void)0)
