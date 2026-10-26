@@ -29,6 +29,9 @@ def main():
     for directory in (ROOT/'src/blackwire',ROOT/'vendor/libsmb2/include',ROOT/'vendor/sqlite',ROOT/'vendor/ampr/third_party/lz4/lib'):
         own.update(p.resolve() for p in directory.rglob('*') if p.is_file() and p.suffix in ('.c','.h','.S'))
     before={p:pin(p) for p in own};used={Path(__file__).resolve(),HERE/'fixture_sdk.py',HERE/'test_preload_bundle_upgrade.c',HERE/'test_preload_bundle.c',ROOT/'tools/build/app-recipe.json'}
+    dependencies=[LIB/'source_companions.c',STREAM/'manifest.c'];used.update(dependencies)
+    used.update(LIB/n for n in ('source_companions.h','preload_companions_internal.h','preload_source_ampr_internal.h','source_identity.h','source_binding.h'))
+    used.update(STREAM/n for n in ('manifest.h','share_config.h','startup_mode.h'))
     def run(label,argv):
         argv=list(map(str,argv));r=subprocess.run(argv,cwd=ROOT,capture_output=True,text=True,timeout=180,
             env={**os.environ,'ASAN_OPTIONS':'detect_leaks=1:abort_on_error=1','UBSAN_OPTIONS':'halt_on_error=1:print_stacktrace=1'})
@@ -75,7 +78,7 @@ def main():
     host=out/'host-upgrade'
     run('host-build',[args.cc,'-std=gnu11','-Wall','-Wextra','-Werror','-Wno-misleading-indentation','-Wno-unused-function',
         '-O1','-g','-fsanitize=address,undefined','-fno-sanitize-recover=all','-fno-omit-frame-pointer','-I',unit/'library','-I',LIB,
-        '-DBW_PRELOAD_GLOBAL_ROOT="'+str(globals_dir)+'"',HERE/'test_preload_bundle_upgrade.c',image,
+        '-DBW_PRELOAD_GLOBAL_ROOT="'+str(globals_dir)+'"',HERE/'test_preload_bundle_upgrade.c',image,*dependencies,
         '-pthread','-Wl,--wrap=close','-Wl,--wrap=closedir','-Wl,--wrap=write','-Wl,--wrap=fsync','-Wl,--wrap=renameat','-Wl,--wrap=clock_gettime','-o',host])
     # Linux temporary filesystem supplies real POSIX modes/nlink/fine times;
     # do not pretend a Windows-mounted source directory supplies that contract.
@@ -85,7 +88,7 @@ def main():
     baseline=out/'host-bundle-diagnostics'
     run('host-retained-bundle-build',[args.cc,'-std=gnu11','-Wall','-Wextra','-Werror','-Wno-misleading-indentation','-Wno-unused-function',
         '-O1','-g','-fsanitize=address,undefined','-fno-sanitize-recover=all','-fno-omit-frame-pointer','-I',unit/'library','-I',LIB,
-        '-DBW_PRELOAD_PLAYGO_FIXTURES=1','-DBW_PRELOAD_GLOBAL_ROOT="'+str(globals_dir)+'"',HERE/'test_preload_bundle.c',image,
+        '-DBW_PRELOAD_PLAYGO_FIXTURES=1','-DBW_PRELOAD_GLOBAL_ROOT="'+str(globals_dir)+'"',HERE/'test_preload_bundle.c',image,*dependencies,
         '-pthread','-Wl,--wrap=close','-Wl,--wrap=write','-Wl,--wrap=fsync','-o',baseline])
     with tempfile.TemporaryDirectory(prefix='blackwire-bundle-diagnostics-') as tmp:
         retained=json.loads(run('retained-bundle-close-diagnostics',[baseline,tmp]).splitlines()[-1])

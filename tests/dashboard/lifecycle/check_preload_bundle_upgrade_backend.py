@@ -39,7 +39,7 @@ def main():
         flags+=['-I',path]
     sources=[fixture,LIB/'startup_runtime_idle.c',STREAM/'diagnostics/game_stop_identity.c']
     sources += [LIB/n for n in ('native_job.c','source_catalog.c','source_binding.c','source_identity.c','native_request.c','source_profile.c')]
-    sources += [STREAM/'share_config.c',STREAM/'manifest.c',LIB/'preload_bundle.c']
+    sources += [STREAM/'share_config.c',STREAM/'manifest.c',LIB/'source_companions.c',LIB/'preload_bundle.c']
     objects=[]
     for index,path in enumerate(sources):
         obj=out/(str(index)+'-'+path.stem+'.o');dep=obj.with_suffix('.d');deps.append(dep)
@@ -48,7 +48,9 @@ def main():
         extra=['-D'+name+'=fixture_unused_'+name for name in (
             'bw_preload_bundle_upgrade_checked','bw_preload_bundle_upgrade_controlled',
             'bw_preload_bundle_upgrade_source_controlled','bw_preload_bundle_verify_source_checked',
-            'bw_preload_bundle_select_source_for_removal')] if path.name=='preload_bundle.c' else []
+            'bw_preload_bundle_select_source_for_removal','bw_preload_bundle_upgrade_projection_controlled',
+            'bw_preload_bundle_verify_projection_checked','bw_preload_bundle_select_projection_for_removal',
+            'bw_preload_bundle_select_legacy_source_for_removal')] if path.name=='preload_bundle.c' else []
         run('compile-'+path.stem,[args.cc,*flags,*extra,'-MD','-MF',dep,'-c',path,'-o',obj]);objects.append(obj)
     # Backend function-address comparisons retain unreachable production
     # preparation paths. Keep the injected test independent of SMB/reader

@@ -78,6 +78,12 @@ int bw_preload_handoff_publish_retained(const struct bw_preload_handoff_request 
  * The ordinary APIs refuse v8. A foreign/stale projection input always refuses. */
 int bw_preload_handoff_publish_projection_retained(const struct bw_preload_handoff_request *,
     const void *,size_t,struct bw_preload_handoff *);
+/* Positive logical release of this same-process retained reservation after a
+ * definite mutation-free publication refusal. No private input file was created
+ * and temporary directory FDs closed positively; all three created flags are
+ * clear, empty capability discharge succeeded and
+ * last_status is REFUSED, never UNCONFIRMED. This grants no launch authority. */
+int bw_preload_handoff_empty_released(const struct bw_preload_handoff *);
 /* Caller independently qualified a POSIX UID and exact current game/owner
  * policy; this function never derives it from title, Sony user ID or a guess.
  * current must cover that real policy, including the captured game identity.

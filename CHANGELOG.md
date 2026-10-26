@@ -8,6 +8,8 @@ Changes are grouped by published preview. A build pass, initial menu and control
 - Preserve and verify a game's original Ampr module against its prepared source receipt while installing Blackwire's embedded reader separately. Use a distinct local-only verification path for uninstalling owned preparations.
 - Preserve source `fakelib`/`fakelib2` precedence, including an empty preferred directory. Keep source companion files separate from Blackwire's reader and private launch inputs, with source-bound hashes checked throughout preparation, launch and removal.
 - Allow normal removal of a verified older partial preparation containing source-owned `fakelib2` files. Unrelated or changed files still refuse removal.
+- Keep an existing supported legacy `fakelib` preparation eligible for its normal verification checks. Only conflicting or unsupported companion layouts request a fresh preparation.
+- Release an unused launch reservation after a definite refusal before any private input file is created. Preserve existing files and avoid falsely blocking subsequent actions; partial writes and uncertain closes remain blocked.
 - Recognize the exact official PlayGo 0.4 log and no-log modules alongside the supported newer artifacts.
 - Keep ordinary Ready checks local so refreshing a prepared library does not add an SMB reconnect for every game.
 - Remove the top-right **Close browser** button. Preserve Circle and dialog Back controls.

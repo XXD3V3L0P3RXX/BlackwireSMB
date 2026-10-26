@@ -9,10 +9,13 @@ def pin(p):
 def main():
  a=argparse.ArgumentParser(description=__doc__);a.add_argument('--output',type=Path,required=True)
  a.add_argument('--baseline-c',type=Path);a.add_argument('--host-only',action='store_true');a.add_argument('--sdk',type=Path,default=Path('/opt/ps5-payload-sdk'))
- args=a.parse_args();here=Path(__file__).resolve().parent;root=here.parents[2];lib=root/'src/blackwire/library'
+ args=a.parse_args();here=Path(__file__).resolve().parent;root=here.parents[2];lib=root/'src/blackwire/library';stream=root/'src/blackwire/streamreader'
  out=args.output.resolve();assert out.is_relative_to(root/'build') and not out.exists();out.mkdir(parents=True)
  selected=(args.baseline_c or lib/'preload_bundle.c').resolve(strict=True)
  used=[selected,lib/'preload_bundle.h',here/'test_preload_self_contained.c',Path(__file__).resolve()]
+ dependencies=[lib/'source_companions.c',stream/'manifest.c']
+ used+=dependencies+[lib/n for n in ('source_companions.h','preload_companions_internal.h','preload_source_ampr_internal.h','source_identity.h','source_binding.h')]
+ used += [stream/n for n in ('manifest.h','share_config.h','copy_fs.h','copy_sha256.h','startup_mode.h')]
  before={str(p):pin(p) for p in used};commands=[]
  def run(label,argv):
   p=subprocess.run(list(map(str,argv)),capture_output=True,env=dict(os.environ,ASAN_OPTIONS='halt_on_error=1:detect_leaks=1',UBSAN_OPTIONS='halt_on_error=1'))
@@ -27,7 +30,7 @@ def main():
   define='-DBW_PRELOAD_GLOBAL_ROOT="'+str(fixture/'missing-global-library-set')+'"'
   exe=out/'self-contained-bundle'
   run('host-compile',['clang-18',*flags,define,'-fsanitize=address,undefined','-fno-sanitize-recover=all','-fno-omit-frame-pointer',
-   here/'test_preload_self_contained.c',selected,image_c,'-o',exe])
+   here/'test_preload_self_contained.c',selected,image_c,*dependencies,'-o',exe])
   result=json.loads(run('missing-global-test',[exe,fixture,'baseline' if args.baseline_c else 'current']))
   assert not (fixture/'missing-global-library-set').exists()
   if not args.host_only and not args.baseline_c:

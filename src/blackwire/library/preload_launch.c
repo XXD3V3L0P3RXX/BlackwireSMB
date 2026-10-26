@@ -136,6 +136,11 @@ static int pl_run(const struct bw_preload_launch_request *q,struct bw_preload_la
 cleanup:
     bw_share_clear(q->connection);
     if(s->handoff.initialized) {
+        if(!s->launch_called&&bw_preload_handoff_empty_released(&s->handoff)){
+            /* Definite refusal before any create/launch owns no filesystem
+             * cleanup and already discharged the empty consumer capability. */
+            s->release_result=BW_PRELOAD_HANDOFF_OK;s->finished=1;s->busy=0;return result;
+        }
         while(q->ops.exited(q->ops.opaque))pl_pause(&p);
         p.cleaning=1;p.assigning=0;started=pl_now(&p);p.deadline=started+5.0;
         s->release_attempted=1;

@@ -34,7 +34,8 @@ def main():
                 official[name] = pin(fixture); run_inputs.append(str(fixture))
     owned = [LIB / n for n in ('preload_bundle.c', 'preload_bundle.h', 'preload_source_ampr_internal.h', 'native_launch_admission.c', 'native_launch_admission.h')]
     owned += [Path(__file__), HERE / 'test_source_ampr_witness.c']
-    dependencies=[LIB/'source_companions.c',LIB/'source_companions.h',LIB/'preload_companions_internal.h',ROOT/'src/blackwire/streamreader/manifest.c',ROOT/'src/blackwire/streamreader/manifest.h']
+    dependencies=[LIB/'source_companions.c',LIB/'source_companions.h',LIB/'preload_companions_internal.h',LIB/'preload_source_ampr_internal.h',LIB/'source_identity.h',LIB/'source_binding.h']
+    dependencies += [ROOT/'src/blackwire/streamreader'/n for n in ('manifest.c','manifest.h','share_config.h','copy_fs.h','copy_sha256.h','startup_mode.h')]
     owned += dependencies
     before = {str(p.relative_to(ROOT)): pin(p) for p in owned}
     image = bytes((i * 19 + 1) % 251 for i in range(2048)); digest = hashlib.sha256(image).digest()

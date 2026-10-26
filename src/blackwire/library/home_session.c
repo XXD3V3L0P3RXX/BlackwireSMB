@@ -57,8 +57,7 @@ int bw_home_session_release(struct bw_home_session *s,double deadline){
      * and the handoff has already discharged its empty consumer reservation.
      * Preserve those preexisting files without converting a definite refusal
      * into a global unknown release. An ambiguous directory close remains -2. */
-    if(!s->private_inputs.share.created&&!s->private_inputs.selection.created&&!s->private_inputs.projection.created&&
-       s->private_inputs.descriptors_closed&&s->private_inputs.last_status==BW_PRELOAD_HANDOFF_REFUSED)return 0;
+    if(bw_preload_handoff_empty_released(&s->private_inputs))return 0;
     int result=bw_preload_handoff_release(&s->private_inputs,bw_home_session_exited,s,deadline);
     if(result){(void)bw_preload_handoff_close_descriptors(&s->private_inputs,bw_home_session_exited,s,deadline);return -1;}
     return 0;

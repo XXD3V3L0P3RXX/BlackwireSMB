@@ -19,12 +19,14 @@ static int ph_consumer_instance(const struct bw_preload_handoff *o) {
     return !o->retained_descriptors||
         (__atomic_load_n(&ph_live_consumer,__ATOMIC_ACQUIRE)==o&&o->producer_pid==getpid());
 }
-static void ph_forget_closed(struct bw_preload_handoff *o) {
+static int ph_forget_closed(struct bw_preload_handoff *o) {
     if(o->retained_descriptors&&!o->share.descriptor_held&&!o->selection.descriptor_held&&!o->projection.descriptor_held) {
         struct bw_preload_handoff *expected=o;
+        if(!__atomic_compare_exchange_n(&ph_live_consumer,&expected,NULL,0,__ATOMIC_ACQ_REL,__ATOMIC_ACQUIRE))return -1;
         o->descriptors_closed=1;
-        (void)__atomic_compare_exchange_n(&ph_live_consumer,&expected,NULL,0,__ATOMIC_ACQ_REL,__ATOMIC_ACQUIRE);
+        return 0;
     }
+    return -1;
 }
 struct ph_operation {
     struct bw_preload_handoff *owner;
@@ -194,10 +196,23 @@ done:
     if(p.root>=0&&close(p.root))result=BW_PRELOAD_HANDOFF_UNCONFIRMED;
     if(entered) {
         if(result&& (o->share.created||o->selection.created||o->projection.created))result=BW_PRELOAD_HANDOFF_UNCONFIRMED;
+        if(retained&&!o->share.created&&!o->selection.created&&!o->projection.created){
+            if(ph_forget_closed(o))result=BW_PRELOAD_HANDOFF_UNCONFIRMED;
+            /* Nothing was created and the exact empty consumer reservation
+             * was positively discharged. This is a logical empty release,
+             * not filesystem cleanup; -2 never acquires this state. */
+            else if(result==BW_PRELOAD_HANDOFF_REFUSED)o->released=1;
+        }
         o->published=result==BW_PRELOAD_HANDOFF_OK;o->last_status=result;o->busy=0;
-        if(retained&&!o->share.created&&!o->selection.created&&!o->projection.created)ph_forget_closed(o);
     }
     return result;
+}
+int bw_preload_handoff_empty_released(const struct bw_preload_handoff *o){
+    return o&&o->initialized==PH_INITIALIZED&&o->retained_descriptors&&o->producer_pid==getpid()&&
+        !o->busy&&!o->published&&o->released&&o->descriptors_closed&&o->last_status==BW_PRELOAD_HANDOFF_REFUSED&&
+        !o->share.created&&!o->selection.created&&!o->projection.created&&
+        !o->share.descriptor_held&&!o->selection.descriptor_held&&!o->projection.descriptor_held&&
+        !o->consumer_assignment_started&&!o->release_started&&!o->descriptor_close_started;
 }
 int bw_preload_handoff_publish(const struct bw_preload_handoff_request *r,struct bw_preload_handoff *o) {
     return ph_publish(r,o,0,NULL,0);
@@ -283,7 +298,7 @@ static int ph_discharge(struct ph_operation *p) {
     if(ph_guard(p))return -1;
     o->descriptor_close_started=1;
     int selection=ph_close_retained(p,&o->selection),projection=ph_close_retained(p,&o->projection),share=ph_close_retained(p,&o->share);
-    ph_forget_closed(o);return selection||projection||share?-1:0;
+    int forgotten=ph_forget_closed(o);return selection||projection||share||forgotten?-1:0;
 }
 static int ph_remove(struct ph_operation *p,const char *leaf,int fd,struct bw_preload_handoff_file *file) {
     if(!file->created)return ph_absent(p,leaf);

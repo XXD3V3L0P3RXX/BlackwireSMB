@@ -5,6 +5,14 @@
 #undef main
 #include "reader_projection.h"
 #include "preload_launch.h"
+#include "native-reader-private-release-under-test.h"
+static int close_directory_unknown;
+int __real_close(int);
+int __wrap_close(int fd){
+    struct stat st;int unknown=close_directory_unknown&&!fstat(fd,&st)&&S_ISDIR(st.st_mode);
+    int result=__real_close(fd);
+    if(unknown){close_directory_unknown=0;errno=EIO;return -1;}return result;
+}
 
 static void projected(struct fixture *f) {
     f->selection.prepared_policy=3;
@@ -74,11 +82,11 @@ static void projection_tests(const char *base) {
 }
 struct launch_fixture {
     struct fixture files;void **temporary;unsigned launches,discovered,assignments,events;
-    int bundle_result,launch_result,cancel_after_launch;
+    int bundle_result,launch_result,cancel_after_launch,cancel_when_share_created;
 };
 static double launch_now(void *raw){(void)raw;return stamp();}
 static int launch_pause(void *raw,unsigned delay){(void)raw;(void)delay;C(0);return -1;}
-static int launch_current(void *raw){struct launch_fixture *f=raw;return f->cancel_after_launch&&f->launches?-1:0;}
+static int launch_current(void *raw){struct launch_fixture *f=raw;return (f->cancel_after_launch&&f->launches)||(f->cancel_when_share_created&&!access(f->files.share,F_OK))?-1:0;}
 static int launch_bundle(void *raw,const char *root){struct launch_fixture *f=raw;C(!strcmp(root,f->files.root));return f->bundle_result;}
 static int launch_call(void *raw){struct launch_fixture *f=raw;C(!f->temporary||!*f->temporary);C(!*f->files.config.password&&!*f->files.config.user);C(++f->launches==1);return f->launch_result;}
 static int32_t launch_discover(void *raw){struct launch_fixture *f=raw;f->discovered++;return 500;}
@@ -105,7 +113,47 @@ static void launch_tests(const char *base){
         all_absent(&f.files,p);
     }
 }
+static void preserved_foreign(const char *path){char bytes[8]={0};int fd=open(path,O_RDONLY|O_NOFOLLOW);C(fd>=0&&read(fd,bytes,7)==7&&!memcmp(bytes,"foreign",7)&&!close(fd));}
+static void empty_publication_tests(const char *base){
+    for(unsigned project=0;project<2;project++)for(unsigned reserved=0;reserved<3;reserved++){
+        struct launch_fixture f={0};init(&f.files,base);if(project)projected(&f.files);
+        struct bw_share_config original=f.files.config;char projection[1400];projection_path(&f.files,projection);
+        const char *foreign=reserved==0?f.files.share:reserved==1?projection:f.files.selected;write_file(foreign,"foreign",7,0600);
+        struct bw_preload_launch owner={0};f.launch_result=1;
+        struct bw_preload_launch_request q={f.files.root,&f.files.selection,&f.files.config,
+            {&f,launch_now,launch_pause,launch_current,launch_bundle,launch_call,launch_discover,launch_uid,launch_live,launch_exited,launch_event}};
+        for(unsigned attempt=0;attempt<2;attempt++){
+            f.files.config=original;void *temporary=project?envelope(64):NULL;f.temporary=project?&temporary:NULL;
+            int result=project?bw_preload_launch_run_projection(&q,&owner,&temporary,64):bw_preload_launch_run(&q,&owner);
+            C(result==-1&&!temporary&&!f.launches&&!owner.blocked&&owner.finished&&!owner.release_attempted);
+            C(bw_preload_handoff_empty_released(&owner.handoff)&&owner.release_result==BW_PRELOAD_HANDOFF_OK);
+            C(native_reader_private_release_under_test(owner));preserved_foreign(foreign);
+            C(!owner.handoff.share.created&&!owner.handoff.selection.created&&!owner.handoff.projection.created);
+        }
+        /* Remove only this host test's pre-planted synthetic obstruction,
+         * then a fresh explicit attempt on the same owner must launch once. */
+        C(!unlink(foreign));f.files.config=original;void *temporary=project?envelope(64):NULL;f.temporary=project?&temporary:NULL;
+        int result=project?bw_preload_launch_run_projection(&q,&owner,&temporary,64):bw_preload_launch_run(&q,&owner);
+        C(!result&&!temporary&&f.launches==1&&owner.finished&&!owner.blocked&&owner.handoff.released&&owner.handoff.descriptors_closed);
+        C(!bw_preload_handoff_empty_released(&owner.handoff)&&native_reader_private_release_under_test(owner));all_absent(&f.files,projection);
+    }
+    /* A created/partial publication is never the mutation-free release case. */
+    struct launch_fixture f={0};init(&f.files,base);projected(&f.files);f.launch_result=1;f.cancel_when_share_created=1;
+    struct bw_preload_launch owner={0};void *temporary=envelope(64);f.temporary=&temporary;
+    struct bw_preload_launch_request q={f.files.root,&f.files.selection,&f.files.config,
+        {&f,launch_now,launch_pause,launch_current,launch_bundle,launch_call,launch_discover,launch_uid,launch_live,launch_exited,launch_event}};
+    C(bw_preload_launch_run_projection(&q,&owner,&temporary,64)<0&&!temporary&&!f.launches&&owner.blocked&&!owner.finished);
+    C(owner.handoff.share.created&&!owner.handoff.share.verified&&!bw_preload_handoff_empty_released(&owner.handoff));
+    C(!native_reader_private_release_under_test(owner)&&!access(f.files.share,F_OK));
+    /* Even with no created files, a directory-close uncertainty stays -2
+     * and must not be relabeled as a positively empty release. */
+    init(&f.files,base);projected(&f.files);f.cancel_when_share_created=0;f.launch_result=1;write_file(f.files.share,"foreign",7,0600);
+    memset(&owner,0,sizeof owner);temporary=envelope(64);close_directory_unknown=1;
+    C(bw_preload_launch_run_projection(&q,&owner,&temporary,64)<0&&!temporary&&!f.launches&&owner.blocked&&!owner.finished&&!close_directory_unknown);
+    C(!owner.handoff.share.created&&!owner.handoff.selection.created&&!owner.handoff.projection.created&&!owner.handoff.released);
+    C(!bw_preload_handoff_empty_released(&owner.handoff)&&!native_reader_private_release_under_test(owner));preserved_foreign(f.files.share);
+}
 int main(int argc,char **argv) {
-    C(argc==2);session_tests(argv[1]);projection_tests(argv[1]);launch_tests(argv[1]);
+    C(argc==2);session_tests(argv[1]);projection_tests(argv[1]);launch_tests(argv[1]);empty_publication_tests(argv[1]);
     printf("{\"passed\":true,\"cases\":%u,\"checks\":%u,\"actualHandoff\":true,\"actualHomeSession\":true,\"actualLaunchController\":true,\"sourceAuthorityProved\":false,\"nativeUidProved\":false}\n",cases,checks);return 0;
 }

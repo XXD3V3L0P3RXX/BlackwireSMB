@@ -47,7 +47,9 @@ def main():
         (libraries / name).chmod(0o777)
     library = ROOT / 'src/blackwire/library'
     paths = [library / n for n in ('preload_bundle.c', 'preload_bundle.h')]
-    paths += [ROOT / 'src/blackwire/streamreader' / n for n in ('copy_fs.h', 'copy_sha256.h')]
+    dependencies = [library / 'source_companions.c', ROOT / 'src/blackwire/streamreader/manifest.c']
+    paths += dependencies + [library / n for n in ('source_companions.h','preload_companions_internal.h','preload_source_ampr_internal.h','source_identity.h','source_binding.h')]
+    paths += [ROOT / 'src/blackwire/streamreader' / n for n in ('copy_fs.h', 'copy_sha256.h','manifest.h','share_config.h','startup_mode.h')]
     paths += [Path(__file__), HERE / 'test_preload_bundle.c']
     before = {str(p.relative_to(ROOT)): pin(p) for p in paths}
     # Deliberately synthetic embedded image: the test checks material admission,
@@ -72,13 +74,13 @@ def main():
             raise RuntimeError(label + ' failed; output retained')
         return result.stdout
 
-    flags = ['-std=c11', '-Wall', '-Wextra', '-Werror', '-Wno-misleading-indentation',
+    flags = ['-std=c11', '-D_DEFAULT_SOURCE=1', '-Wall', '-Wextra', '-Werror', '-Wno-misleading-indentation',
              '-Wno-unused-function', '-I', library]
     host = out / 'host-bundle-diagnostics'
     define = '-DBW_PRELOAD_GLOBAL_ROOT="' + str(libraries) + '"'
     run('host-build', ['clang-18', *flags, '-fsanitize=address,undefined',
         '-fno-sanitize-recover=all', '-fno-omit-frame-pointer', define,
-        HERE / 'test_preload_bundle.c', source,
+        HERE / 'test_preload_bundle.c', source, *dependencies,
         '-Wl,--wrap=close', '-Wl,--wrap=write', '-Wl,--wrap=fsync', '-o', host])
     tested = json.loads(run('actual-bundle-faults', [host, fixture / 'cases']))
     objects = []
