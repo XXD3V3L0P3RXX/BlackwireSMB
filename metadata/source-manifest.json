@@ -606,8 +606,8 @@
       "sha256": "8a00abc182be715d47d6786e098c23d49a555a41f534300477c6693dce5dd0a8"
     },
     "src/blackwire/library/preload_bundle.c": {
-      "bytes": 56039,
-      "sha256": "a701f2ab8a071c0eb4ab602cd9cdffc9ecd6c7d2b0294321aeb5b5ae2b1a1f19"
+      "bytes": 56744,
+      "sha256": "8648507a2fc5dc9973cfb7ed120429f23170744d26ce280f5de22e2cbb46c1c5"
     },
     "src/blackwire/library/preload_bundle.h": {
       "bytes": 7837,
@@ -1464,16 +1464,16 @@
       "sha256": "d5b7c190e69bf73d6bce41bb26d05381727016466ccc1faea8fc6d03186030a5"
     },
     "tests/dashboard/lifecycle/check_preload_bundle_upgrade.py": {
-      "bytes": 11206,
-      "sha256": "7d3ded0df2bd9de6a165cc3747bcf69e09250224b3763fbd181be6fd48fba529"
+      "bytes": 12009,
+      "sha256": "42053a33d04ac5c046d1096c499073426f30bb0d1b7e40de78a1f9f689b20549"
     },
     "tests/dashboard/lifecycle/check_preload_bundle_upgrade_backend.py": {
       "bytes": 7584,
       "sha256": "5863b883a78eeaa6f36820e566af46d4dcf2ce009104eeeff9c03796bbfa35bb"
     },
     "tests/dashboard/lifecycle/check_preload_reader_uninstall.py": {
-      "bytes": 16131,
-      "sha256": "3244261dfb3e84680209637f89f8d76269ab604becc1e6531652ca522e3b55b0"
+      "bytes": 16879,
+      "sha256": "b5ae1d94723b3758af6c658088928215c651f8a5700488c2299336136f3e37df"
     },
     "tests/dashboard/lifecycle/check_prepare_source_policy.py": {
       "bytes": 6388,
@@ -1596,8 +1596,8 @@
       "sha256": "0863914405322dd96840e93d2e0dfae46fe92348c15fa2be494f1c0c8e26b2b5"
     },
     "tests/dashboard/lifecycle/test_preload_bundle_upgrade.c": {
-      "bytes": 19140,
-      "sha256": "b99c167d998d910a08f2668e95c6faab9713f5fb644cc97764353197590240a8"
+      "bytes": 19574,
+      "sha256": "7cc25304a9fc0c4580fb058d9388d47e57d1a05e17ce57fbd98d8c969348dfcb"
     },
     "tests/dashboard/lifecycle/test_preload_bundle_upgrade_backend.c": {
       "bytes": 20935,
@@ -1818,7 +1818,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Signed SMB performance, prepare-only existing-library compatibility, qualified optional PlayGo companions and bounded registration confirmation; exact hardware evidence recorded separately",
+  "developmentQualification": "Signed SMB performance, prepare-only existing-library compatibility, qualified optional PlayGo companions, published beta.2 reader upgrade and bounded registration confirmation; exact hardware evidence recorded separately",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -1828,5 +1828,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "a0877f7b728cd17e8fe2a4a03507a7d45770a33d"
+  "runtimeSourceCommit": "e8b4757d61be4cbead90f1588a3de62e29de85eb"
 }
