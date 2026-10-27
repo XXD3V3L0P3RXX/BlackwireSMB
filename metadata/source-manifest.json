@@ -442,8 +442,8 @@
       "sha256": "a772a8d8e3c4f88fd25cf8ad26757e3c899b2e0f0f2749a67c3ba3955ff827a9"
     },
     "src/blackwire/library/native_prepare_ops.c": {
-      "bytes": 13791,
-      "sha256": "cccb2b6ae9a5f35b748322d0b04e41b3979317b2a689c25a23d6f67103dae7e8"
+      "bytes": 14461,
+      "sha256": "1d4362c16d6964c8de09bedfdef6a3ae356008bdffeae1b5aa91a59b0a35eeb9"
     },
     "src/blackwire/library/native_prepared_target.c": {
       "bytes": 9415,
@@ -1552,8 +1552,8 @@
       "sha256": "bcde67cdf496644664a7d19755ab90df71a0b2d4e329b20604e3c76ebb89400d"
     },
     "tests/dashboard/lifecycle/check_native_local_copy.py": {
-      "bytes": 8758,
-      "sha256": "f5daf1f2ffcf17ba92aec2100461a71b694d933cdc81c20132409628f646f7c3"
+      "bytes": 8893,
+      "sha256": "26e7e1838e59597d7d9975c5f95be6574a37bc7122111efa4a8c6bd05b6a8a99"
     },
     "tests/dashboard/lifecycle/check_play_preparation_failure.py": {
       "bytes": 7314,
@@ -1776,8 +1776,8 @@
       "sha256": "82df444cf2f844e7e381272ab1b35f64c1520da7cfb7eb7741110f81329319ec"
     },
     "tests/dashboard/lifecycle/test_native_local_copy.c": {
-      "bytes": 21817,
-      "sha256": "b238a23cca41579fe3e54b9bf6e605cb306e0730b3db71b85ee1af43a1ff573b"
+      "bytes": 25555,
+      "sha256": "dd1d43b18d1a533749f2eb9d931d5e76566a9c371ade1273b5682e454bf7903e"
     },
     "tests/dashboard/lifecycle/test_play_preparation_failure.c": {
       "bytes": 23727,
@@ -2138,7 +2138,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Local standalone source-companion, truthful error and strict removal repairs. Normal source e13c79e passed 52 host suites/60 host commands and 146 SDK commands with private instrumentation absent. Actual console fresh compressed AW2 Ready, visible Continue-screen startup, Close, Uninstall, Restore and another fresh Ready passed; the second fresh preparation completed in a 68.725-70.142 second UI observation interval, not a speed-improvement result. Retained Refresh then exposed the reproduced policy3 legacy-dispatch and inherited legacy-upgrade-flag defects. Their repaired normal wrapper passes 85 actual-producer cases and a targeted genuine Fable review; reload does not grant byte verification or launch authority. Source, reader, registration and downstream hardware gates remain. Copy fault coverage passes 99 actual-code cases; its existing 2-write/3-read local body work is measured, not yet improved. Final source-pinned host/SDK, corrected retained/fresh/repeated PS5 qualification, speed comparison and release logging checks remain pending. Native Dashboard paused; no publication or new console deployment implied.",
+  "developmentQualification": "Local standalone source-companion, truthful error and strict removal repairs. Normal source e13c79e passed 52 host suites/60 host commands and 146 SDK commands with private instrumentation absent. Actual console fresh compressed AW2 Ready, visible Continue-screen startup, Close, Uninstall, Restore and another fresh Ready passed; the second fresh preparation completed in a 68.725-70.142 second UI observation interval, not a speed-improvement result. Retained Refresh then exposed the reproduced policy3 legacy-dispatch and inherited legacy-upgrade-flag defects. Their repaired normal wrapper passes 85 actual-producer cases and a targeted genuine Fable review; reload does not grant byte verification or launch authority. Source, reader, registration and downstream hardware gates remain. Expanded copy coverage passes 126 actual-code cases and 204862 checks. Eighteen matched historical-source cases confirm fewer duplicate current/idle callbacks while preserving per-write retry qualification, DATA checks and staged 2-write/3-read local verification. Genuine Fable review found no confirmed scoped defect; this is not a PS5 speed result. Normal cleanup independently verified no old resident, canonical slot, game app, owned root or manual source before the next build; unrelated tools, slots, saves and PC originals are preserved. Final source-pinned host/SDK, corrected retained/fresh/repeated PS5 qualification, speed comparison and release logging checks remain pending. Native Dashboard paused; no publication or new console deployment implied.",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -2148,5 +2148,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "f947e0fb9e58d162e6fc363c85645874a7c4240c"
+  "runtimeSourceCommit": "f54370e3fcff2a7e576a44ad776b2a38381b89ac"
 }
