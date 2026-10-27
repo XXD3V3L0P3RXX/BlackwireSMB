@@ -1,9 +1,22 @@
 #include "native_prepared_target.h"
 #include "native_startup_hint.h"
+#include "source_companions.h"
 #include <string.h>
 static int component(const char *value,const char *title){
     if(strnlen(value,75)!=74||memcmp(value,title,9)||value[9]!='_')return -1;
     for(unsigned i=10;i<74;i++)if(!strchr("0123456789abcdef",value[i]))return -1;return 0;
+}
+/* Only qualify a projection after the ordinary inspector verified its actual
+ * receipt, parent seals, original tables and companion relation. This is a
+ * durable-state classification, never a new bytes-verified or Ready grant. */
+static int ordinary_projection(const struct bw_provider_binding *identity,const struct bw_native_prepared *out){
+    unsigned present=0;for(unsigned i=0;i<32;i++)present|=out->provenance_sha256[i];
+    return (identity->kind!=BW_PROVIDER_FOLDER&&identity->kind!=BW_PROVIDER_CONTAINER)||
+        out->state!=BW_PREPARED_VALID||out->prepared_policy!=3||
+        !memchr(identity->binding.game,0,sizeof identity->binding.game)||!memchr(out->game,0,sizeof out->game)||
+        !memchr(out->prepared_component,0,sizeof out->prepared_component)||strcmp(out->game,identity->binding.game)||
+        strcmp(out->prepared_component,identity->binding.game)||out->provenance_size<BW_COMPANION_HEADER_BYTES||
+        out->provenance_size>BW_COMPANION_RECEIPT_LIMIT||!present?-1:0;
 }
 int bw_native_prepared_from_derived(const struct bw_native_derived_prepared *in,struct bw_native_prepared *out){
     if(!out)return -1;memset(out,0,sizeof *out);out->state=BW_PREPARED_UNKNOWN;
@@ -51,7 +64,7 @@ int bw_native_prepared_inspect(const char *base,const struct bw_provider_binding
         result=bw_native_send_inspect(base,identity,out);
         if(!result&&out->state==BW_PREPARED_VALID){
             if(out->prepared_policy==3){
-                if(strcmp(out->prepared_component,identity->binding.game)||out->provenance_size<384||out->provenance_size>1024u*1024u){out->state=BW_PREPARED_UNKNOWN;return -1;}
+                if(ordinary_projection(identity,out)){out->state=BW_PREPARED_UNKNOWN;return -1;}
                 return result; /* sealed ordinary projection; no legacy hint */
             }
             if(out->prepared_policy){out->state=BW_PREPARED_UNKNOWN;return -1;}
@@ -104,8 +117,13 @@ int bw_native_prepared_inspect(const char *base,const struct bw_provider_binding
     }
     int result=bw_native_send_inspect(base,identity,out);
     if(!result&&out->state==BW_PREPARED_VALID&&(identity->kind==BW_PROVIDER_FOLDER||identity->kind==BW_PROVIDER_CONTAINER)){
+        if(out->prepared_policy==3){
+            if(ordinary_projection(identity,out)){out->state=BW_PREPARED_UNKNOWN;return -1;}
+            return result; /* Both source kinds use the same sealed projection. */
+        }
+        if(out->prepared_policy){out->state=BW_PREPARED_UNKNOWN;return -1;}
         unsigned upgrade=0;if(bw_native_legacy_startup_upgrade(base,identity,out,&upgrade)){out->state=BW_PREPARED_UNKNOWN;return -1;}
-        out->startup_upgrade_required=upgrade;
+        out->startup_upgrade_required|=upgrade;
     }
     return result;
 }

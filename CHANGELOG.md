@@ -4,6 +4,9 @@ Changes are grouped by published preview. A build pass, initial menu and control
 
 ## Unreleased — verification in progress
 
+- Preserve a validated compressed preparation when reloading or refreshing the library. Keep the sealed projection on its current inspection path instead of sending it through a legacy-only hint; reloading metadata still does not grant verified startup bytes or launch authority.
+- Preserve an independently detected upgrade requirement on an older compressed preparation when the legacy hint reports no additional change.
+- Show ordinary removal guidance in Details instead of the internal confirmation and metadata-status codes. Blocked removal reasons remain visible.
 - Keep the reason for a refused Uninstall visible in Details. Add a separate **Remove startup files only** action for a verified Blackwire preparation when an existing console registration prevents ordinary Uninstall. This action preserves that existing installation and does not mark the PC source Removed.
 - Refuse startup-only removal when an earlier relevant cleanup remains unfinished, including after a resident restart. Check mount links across the app directory so another title's leftover app cannot retain a link into the startup copy or its private preparation record. Completed older cleanup and unrelated valid app links remain eligible for their normal checks.
 - Distinguish registration database observations from missing or conflicting app metadata at setup step 8. Preserve the ownership refusal instead of treating an unknown registration as absent.

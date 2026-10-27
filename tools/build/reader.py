@@ -192,6 +192,8 @@ def host_tests(root, out, source, runner):
             ("source_companions", "dashboard/lifecycle/check_source_companions.py", ["--host-only"]),
             ("reader_projection", "reader/check_reader_projection.py", []),
             ("projected_send", "dashboard/lifecycle/check_projected_send.py", []),
+            ("native_local_copy", "dashboard/lifecycle/check_native_local_copy.py", []),
+            ("prepared_projection_reload", "dashboard/lifecycle/check_prepared_projection_reload.py", []),
             ("projected_data_chain", "dashboard/lifecycle/check_projected_data_chain.py", []),
             ("projected_bundle_data_chain", "dashboard/lifecycle/check_projected_bundle_data_chain.py", []),
             ("projected_bundle", "dashboard/lifecycle/check_projected_bundle.py", ["--host-only"]),

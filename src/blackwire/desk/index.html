@@ -799,6 +799,11 @@
             : ready(game) ? "Startup ready" : state.backend === "native" && game.prepared === true ? "Startup files prepared" : game.canPrepare === true ? "Ready to prepare" : "Unavailable"
         };
       }
+      function removalReasonText(reason) {
+        if(reason === "owned_prepared_folder_confirmation_required" || reason === "removed_source_can_be_shown_again")return "";
+        if(reason === "prepared_copy_metadata_unavailable")return "The console copy has not been verified for removal.";
+        return reason || "";
+      }
       function dashboardActions(game,state,pending) {
         var stream=state.stream || {}, selected=game.kind === 1 && stream.game === game.source, running=active(stream);
         var close=selected && running && stream.canClose === true, issue=game.kind === 1 ? failure(state,game) : null;
@@ -815,7 +820,7 @@
           canPlay:close ? !closingReason : showPlay && !busy && game.canPlay,
           playReason:close ? closingReason : busy || (game.canPlay ? "" : game.playReason || "This source is not available to launch."),playRoute:"/api/dashboard/action",
           canRemoveStartup:!busy && game.canRemoveStartup === true,canUninstall:!busy && game.canUninstall === true,canRestore:!busy && game.removed === true && game.canRestore === true,
-          uninstallReason:busy || game.uninstallReason || "",restoreReason:busy || game.restoreReason || "",
+          uninstallReason:busy || removalReasonText(game.uninstallReason),restoreReason:busy || removalReasonText(game.restoreReason),
           badge:game.removed ? "Removed · PC backup preserved" : ownSending ? ownPreparation.state === "unknown" ? "Checking preparation" : "Preparing files" : selected && running ? stream.phase === "running" ? stream.dataCountersObserved === false ? "Launched" : "Running" : "Starting"
             : issue ? "Last launch failed" : game.dashboardLaunchReady === false && startupFilesReady(game) ? "Dashboard setup needed" : ready(game) ? game.kind === 1 ? "Startup ready" : "Ready on PS5" : "Not ready"};
       }
