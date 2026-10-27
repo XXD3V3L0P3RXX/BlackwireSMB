@@ -286,8 +286,8 @@
       "sha256": "5b78f0592be110d2d3b451a245658f0de277b76a88ba5d745e026d7447703341"
     },
     "src/blackwire/library/main.c": {
-      "bytes": 41424,
-      "sha256": "431401ea5ada41ee2bac11700eb570118f84a1324f4e09738a6a5d74af5e8a7b"
+      "bytes": 41658,
+      "sha256": "425a9692aad446796f8d8862c4999f454882aafb17b324530c263c2924a4072e"
     },
     "src/blackwire/library/media_public_trial.c": {
       "bytes": 11482,
@@ -1396,16 +1396,16 @@
   },
   "testSource": {
     "tests/build/check_standalone_startup_trace.py": {
-      "bytes": 5450,
-      "sha256": "f3ffbf844bd62f70a01e00b9e77add521e543fe09ce3276664aab51ac3c67a02"
+      "bytes": 5743,
+      "sha256": "01f5838f2c5ce94afc350733854d6a999a6e96ce92523895db1d27e4c761e25b"
     },
     "tests/build/test_sdk_runtime.py": {
       "bytes": 12292,
       "sha256": "011a9240f8993ad2eb356832706d1d7c2821a6bcbc4457e192e546f816862696"
     },
     "tests/build/test_standalone_startup_trace.c": {
-      "bytes": 6911,
-      "sha256": "4a243524eb44c05beb87b09824b3393d0e7e683302dfd6317476677b4dc78683"
+      "bytes": 11024,
+      "sha256": "9f30742692619f2400d34bb76541d694417ac73be1f7e7b76d30840b0bbd8835"
     },
     "tests/compressed/backend_catalog_diagnostic_test.c": {
       "bytes": 2589,
@@ -2138,7 +2138,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Local standalone source-companion, truthful error and strict removal repairs. Normal source e13c79e passed 52 host suites/60 host commands and 146 SDK commands with private instrumentation absent. Actual console fresh compressed AW2 Ready, visible Continue-screen startup, Close, Uninstall, Restore and another fresh Ready passed; the second fresh preparation completed in a 68.725-70.142 second UI observation interval, not a speed-improvement result. Retained Refresh then exposed the reproduced policy3 legacy-dispatch and inherited legacy-upgrade-flag defects. Their repaired normal wrapper passes 85 actual-producer cases and a targeted genuine Fable review; reload does not grant byte verification or launch authority. Source, reader, registration and downstream hardware gates remain. Expanded copy coverage passes 126 actual-code cases and 204862 checks. Eighteen matched historical-source cases confirm fewer duplicate current/idle callbacks while preserving per-write retry qualification, DATA checks and staged 2-write/3-read local verification. Genuine Fable review found no confirmed scoped defect; this is not a PS5 speed result. Normal cleanup independently verified no old resident, canonical slot, game app, owned root or manual source before the next build; unrelated tools, slots, saves and PC originals are preserved. Final source-pinned host/SDK, corrected retained/fresh/repeated PS5 qualification, speed comparison and release logging checks remain pending. Native Dashboard paused; no publication or new console deployment implied.",
+  "developmentQualification": "Private startup-diagnostic preparation on the unchanged functional repair and guard source. Normal candidate edc6bb8/f54370e passed 54 host suites, 62 host commands and 146 SDK commands with private instrumentation absent; its one normal launch was followed by unavailable console access, no game Send, and an unconfirmed cause. Recovery verified its exact stored bytes. The prior known resident 5ebea4c started normally under a proven passive PC capture, served the normal unconfigured page, and stopped/cleaned up normally; that does not qualify the held candidate or establish a fix. The only subsequent runtime-source edit is inside the private startup-file trace block: incomplete rows disable file transport. Actual pre-repair helper reproduces that defect; repaired helper passes 17 sanitizer cases and 397 checks, with stdout and ordinary tracing-disabled code preserved. Genuine external Claude logging critique came from actual Opus4.8, not the requested Fable; findings were independently adjudicated. Earlier core repair Fable reviews remain source-scoped. New private diagnostic SDK/byte/marker qualification and a single captured normal-Payload-Manager startup test remain pending. No release, normal speed result, gameplay qualification or causal startup fix is implied; Native Dashboard paused.",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -2148,5 +2148,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "f54370e3fcff2a7e576a44ad776b2a38381b89ac"
+  "runtimeSourceCommit": "dcad81e9c2e9c2d73f551db5f8205842ff883cc5"
 }
