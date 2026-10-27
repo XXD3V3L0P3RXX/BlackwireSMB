@@ -36,7 +36,8 @@ def main():
     status.chmod(0o666)
     maintained = HERE / 'test_registration_lifecycle.c'
     entry = '\nint main(int argc,char **argv){'
-    text = maintained.read_text()
+    retained_bytes = maintained.read_bytes()
+    text = retained_bytes.decode('utf-8')
     if text.count(entry) != 1:
         raise ValueError('Retained lifecycle fixture entry changed')
     # Reuse the exact maintained helpers and actual lifecycle inclusion, with
@@ -62,6 +63,8 @@ def main():
                  ROOT / 'src/blackwire/tools/compressed_stream_candidate'):
         possible.update(base.rglob('*.h'))
     before = {p.resolve(): pin(p) for p in possible}
+    if before[maintained.resolve()] != {'bytes': len(retained_bytes), 'sha256': hashlib.sha256(retained_bytes).hexdigest()}:
+        raise ValueError('Retained fixture changed during prefix capture')
     commands, dependencies = [], []
 
     def run(label, argv):
@@ -98,7 +101,9 @@ def main():
         if source.name == 'native_registration.c':
             extra += ['-Dopen=registration_observation_open']
         if source.name == 'registration_db.c':
-            extra += ['-Dsqlite3_close=registration_observation_db_close']
+            extra += ['-Dsqlite3_close=registration_observation_db_close',
+                '-Dsqlite3_step=registration_observation_db_step',
+                '-Dsqlite3_finalize=registration_observation_db_finalize']
         run('host-' + source.stem, [*flags, *extra, '-MD', '-MF', dep, '-c', source, '-o', obj])
         objects.append(obj)
     sqlite_obj = out / 'sqlite.o'
@@ -144,7 +149,8 @@ def main():
         retainedLifecycleFixturePrefixExact=True, source={p.relative_to(ROOT).as_posix(): pin(p) for p in sorted(actual)},
         productionSdkObjects=sdk_objects, sdkUnits=len(sdk_objects), hostOnly=args.host_only,
         consoleActions=0, fullBuilds=0, nativeRuntimeExecuted=False, normalSmpTransportModeled=True,
-        injectedFaults=['native open EACCES', 'actual sqlite close then reported IOERR'])
+        injectedFaults=['native open EACCES', 'actual sqlite close then reported IOERR',
+            'actual sqlite progress interrupt scheduled at step', 'actual sqlite finalize then differing IOERR'])
     (out / 'proof.json').write_text(json.dumps(proof, indent=2) + '\n')
     print(json.dumps(dict(passed=True, filesystem=result, sdkUnits=len(sdk_objects), proof=pin(out / 'proof.json'))))
 

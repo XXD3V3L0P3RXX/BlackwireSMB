@@ -88,7 +88,7 @@ int bw_registration_db_observe(const char *path,const char *title,const char *co
     if(lstat(path,&before)){db_note(out,BW_REG_DB_PATH_UNAVAILABLE,0,errno);return -1;}
     if(!S_ISREG(before.st_mode)||before.st_nlink!=1||before.st_size<=0||before.st_size>128*1024*1024){db_note(out,BW_REG_DB_FILE_INVALID,0,0);return -1;}
     pthread_once(&ro_once,ro_initialize);if(!ro_ready){db_note(out,BW_REG_DB_VFS_UNAVAILABLE,0,0);return -1;}
-    sqlite3 *db=NULL;sqlite3_stmt *stmt=NULL;int result=-1,conflict=0,rc;unsigned steps=0;
+    sqlite3 *db=NULL;sqlite3_stmt *stmt=NULL;int result=-1,conflict=0,rc,step_error=SQLITE_OK;unsigned steps=0;
     rc=sqlite3_open_v2(path,&db,SQLITE_OPEN_READONLY|SQLITE_OPEN_NOMUTEX|SQLITE_OPEN_NOFOLLOW,"blackwire-readonly");
     if(rc!=SQLITE_OK){db_note(out,BW_REG_DB_OPEN_FAILED,rc,0);goto done;}
     rc=sqlite3_db_readonly(db,"main");if(rc!=1){db_note(out,BW_REG_DB_NOT_READONLY,rc,0);goto done;}
@@ -102,15 +102,17 @@ int bw_registration_db_observe(const char *path,const char *title,const char *co
     if(!sqlite3_stmt_readonly(stmt)){db_note(out,BW_REG_DB_NOT_READONLY,0,0);goto done;}
     rc=sqlite3_bind_text(stmt,1,title,9,SQLITE_STATIC);if(rc!=SQLITE_OK){db_note(out,BW_REG_DB_BIND_FAILED,rc,0);goto done;}
     rc=sqlite3_step(stmt);if(rc==SQLITE_DONE){result=0;goto done;}
-    if(rc!=SQLITE_ROW){db_note(out,BW_REG_DB_STEP_FAILED,rc,0);goto done;}
+    if(rc!=SQLITE_ROW){step_error=rc;db_note(out,BW_REG_DB_STEP_FAILED,rc,0);goto done;}
     rc=sqlite3_column_type(stmt,0);if(rc!=SQLITE_TEXT){db_note(out,BW_REG_DB_ROW_INVALID,rc,0);goto done;}
     int length=sqlite3_column_bytes(stmt,0);const unsigned char *bytes=sqlite3_column_text(stmt,0);
     if(!bytes){db_note(out,BW_REG_DB_ROW_INVALID,0,0);goto done;}
     if(length!=(int)strlen(content)||memcmp(bytes,content,(size_t)length)){conflict=1;db_note(out,BW_REG_DB_CONTENT_DIFFERS,SQLITE_ROW,0);goto done;}
-    rc=sqlite3_step(stmt);if(rc!=SQLITE_DONE){conflict=rc==SQLITE_ROW;db_note(out,conflict?BW_REG_DB_DUPLICATE_ROW:BW_REG_DB_STEP_FAILED,rc,0);goto done;}
+    rc=sqlite3_step(stmt);if(rc!=SQLITE_DONE){conflict=rc==SQLITE_ROW;if(!conflict)step_error=rc;db_note(out,conflict?BW_REG_DB_DUPLICATE_ROW:BW_REG_DB_STEP_FAILED,rc,0);goto done;}
     result=1;
 done:
-    if(stmt&&(rc=sqlite3_finalize(stmt))!=SQLITE_OK){db_note(out,BW_REG_DB_FINALIZE_FAILED,rc,0);out->release_or_identity_unknown=1;result=-1;}
+    /* Finalize consumes the statement even when it echoes the preceding step
+     * error. That known query error alone does not imply an uncertain release. */
+    if(stmt&&(rc=sqlite3_finalize(stmt))!=SQLITE_OK){db_note(out,BW_REG_DB_FINALIZE_FAILED,rc,0);if(rc!=step_error)out->release_or_identity_unknown=1;result=-1;}
     if(db&&(rc=sqlite3_close(db))!=SQLITE_OK){db_note(out,BW_REG_DB_CLOSE_FAILED,rc,0);out->release_or_identity_unknown=1;result=-1;}
     if(lstat(path,&after)){db_note(out,BW_REG_DB_PATH_UNAVAILABLE,0,errno);out->release_or_identity_unknown=1;result=-1;}
     else if(!S_ISREG(after.st_mode)||after.st_nlink!=1||before.st_dev!=after.st_dev||before.st_ino!=after.st_ino){db_note(out,BW_REG_DB_IDENTITY_CHANGED,0,0);out->release_or_identity_unknown=1;result=-1;}

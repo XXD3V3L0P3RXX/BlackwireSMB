@@ -5,7 +5,7 @@
 #include "registration_observation_fixture.h"
 
 static char denied_path[P];
-static unsigned db_close_fault;
+static unsigned db_close_fault,db_interrupt_fault,db_finalize_fault;
 int registration_observation_open(const char *p,int flags,...){
     mode_t mode=0;if(flags&O_CREAT){va_list v;va_start(v,flags);mode=(mode_t)va_arg(v,int);va_end(v);}
     if(*denied_path&&!strcmp(p,denied_path)){errno=EACCES;return -1;}
@@ -13,6 +13,14 @@ int registration_observation_open(const char *p,int flags,...){
 }
 int registration_observation_db_close(sqlite3 *db){
     int rc=sqlite3_close(db);if(rc==SQLITE_OK&&db_close_fault){db_close_fault--;return SQLITE_IOERR;}return rc;
+}
+static int interrupt_query(void *unused){(void)unused;return 1;}
+int registration_observation_db_step(sqlite3_stmt *statement){
+    if(db_interrupt_fault){db_interrupt_fault--;sqlite3_progress_handler(sqlite3_db_handle(statement),1,interrupt_query,NULL);}
+    return sqlite3_step(statement);
+}
+int registration_observation_db_finalize(sqlite3_stmt *statement){
+    int rc=sqlite3_finalize(statement);if(db_finalize_fault){db_finalize_fault--;return SQLITE_IOERR;}return rc;
 }
 static struct bw_native_registration_observation observe(struct fixture *f,enum bw_registration_state expected,
     enum bw_registration_reason reason,enum bw_registration_reason first){
@@ -71,6 +79,15 @@ static void observation_cases(void){
     init(&f,"db-conflict-with-unknown-close");registered(&f);sql(&f,"UPDATE tbl_contentinfo SET contentId='foreign' WHERE titleId='PPSA10001';");db_close_fault=2;
     o=observe(&f,BW_REG_UNKNOWN,BW_REG_DATABASE_UNKNOWN,BW_REG_DATABASE_UNKNOWN);
     CHECK(!db_close_fault&&o.database.state==BW_REG_DB_UNKNOWN&&o.database.reason==BW_REG_DB_CONTENT_DIFFERS&&o.database.release_or_identity_unknown);
+    init(&f,"actual-interrupted-query-is-not-release-unknown");registered(&f);db_interrupt_fault=2;
+    o=observe(&f,BW_REG_UNKNOWN,BW_REG_DATABASE_UNKNOWN,BW_REG_DATABASE_UNKNOWN);
+    CHECK(!db_interrupt_fault&&o.database.state==BW_REG_DB_UNKNOWN&&o.database.reason==BW_REG_DB_STEP_FAILED&&o.database.sqlite_result==SQLITE_INTERRUPT&&!o.database.release_or_identity_unknown);
+    init(&f,"different-finalize-error-retains-release-unknown");registered(&f);db_interrupt_fault=2;db_finalize_fault=2;
+    o=observe(&f,BW_REG_UNKNOWN,BW_REG_DATABASE_UNKNOWN,BW_REG_DATABASE_UNKNOWN);
+    CHECK(!db_interrupt_fault&&!db_finalize_fault&&o.database.state==BW_REG_DB_UNKNOWN&&o.database.reason==BW_REG_DB_STEP_FAILED&&o.database.sqlite_result==SQLITE_INTERRUPT&&o.database.release_or_identity_unknown);
+    init(&f,"standalone-finalize-failure-not-erased");registered(&f);db_finalize_fault=1;
+    o=observe(&f,BW_REG_PENDING,BW_REG_EXACT_PARTIAL,BW_REG_DATABASE_UNKNOWN);
+    CHECK(!db_finalize_fault&&o.first_raw_result==SQLITE_IOERR&&o.database.state==BW_REG_DB_MATCH&&o.database.release_or_identity_unknown);
     init(&f,"missing-db-path-is-not-absent");registered(&f);path(q,f.root,"saved-app.db");CHECK(!rename(f.db,q));
     CHECK(bw_native_registration_observe(f.data,f.apps,f.db,&f.selected,&o)==BW_REG_UNKNOWN&&o.database.reason==BW_REG_DB_PATH_UNAVAILABLE&&o.database.error_snapshot==ENOENT);same_legacy_state(&f,BW_REG_UNKNOWN);
     cases++;case_name="bounded-fixed-labels-and-invalid-input";
