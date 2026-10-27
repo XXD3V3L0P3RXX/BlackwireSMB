@@ -22,8 +22,8 @@ extern "C" {
 
 enum bd_source_kind { BD_PC_STREAM=1, BD_LOCAL_FOLDER=2, BD_INSTALLED_PACKAGE=3, BD_LOCAL_IMAGE=4 };
 enum bd_item_flags { BD_READY=1u, BD_CAN_PLAY=2u, BD_CAN_SEND=4u,
-    BD_CAN_UNINSTALL=8u,BD_REMOVED=16u,BD_CAN_RESTORE=32u };
-enum bd_action { BD_PLAY=1, BD_SEND=2, BD_UNINSTALL=3, BD_RESTORE=4 };
+    BD_CAN_UNINSTALL=8u,BD_REMOVED=16u,BD_CAN_RESTORE=32u,BD_CAN_REMOVE_STARTUP=64u };
+enum bd_action { BD_PLAY=1, BD_SEND=2, BD_UNINSTALL=3, BD_RESTORE=4, BD_REMOVE_STARTUP=5 };
 
 struct bd_item {
     char id[BD_ID_BYTES],title[BD_TITLE_BYTES],title_id[10];
@@ -58,7 +58,7 @@ struct bd_pc_input {
     uint64_t library_generation;
     uint32_t settings_revision;
     unsigned startup_ready,can_play,can_send;
-    unsigned can_uninstall,removed,can_restore;
+    unsigned can_uninstall,removed,can_restore,can_remove_startup;
     const char *uninstall_reason,*restore_reason;
     unsigned storage_known;
     uint64_t startup_bytes,pc_bytes,console_allocated_bytes;
@@ -97,6 +97,7 @@ int bd_item_can_play(const struct bd_item *);
 int bd_item_can_send(const struct bd_item *);
 int bd_item_can_uninstall(const struct bd_item *);
 int bd_item_can_restore(const struct bd_item *);
+int bd_item_can_remove_startup(const struct bd_item *);
 
 struct bd_frontend_identity {
     int32_t pid;

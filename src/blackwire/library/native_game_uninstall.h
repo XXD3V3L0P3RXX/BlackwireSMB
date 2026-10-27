@@ -63,6 +63,9 @@ struct bw_game_uninstall_result {
     unsigned release_unknown;
     uint32_t files_removed,files_total;
     const char *reason;
+    /* Distinct success: only the sealed preparation was removed. No platform
+     * registration absence or Removed-library tombstone is claimed. */
+    unsigned preparation_only;
 };
 /* Exact ordinary FOLDER/CONTAINER V1 policy0 and sealed companion policy3.
  * Projection removal is offline: the owned parent receipt must seal the
@@ -114,7 +117,29 @@ int bw_native_game_uninstall_continue_files(const struct bw_game_uninstall_files
 struct bw_game_uninstall_capability {
     unsigned can_uninstall,removed,can_restore;
     const char *reason;
+    unsigned can_remove_startup;
 };
+/* A separate purpose and callback type cannot submit a platform uninstall or
+ * change a manual source. Complete fresh sealed inventory and source exclusion
+ * are mandatory even when unrelated app metadata remains. No automatic retry
+ * or continuation is granted after a partially consumed operation. */
+struct bw_preparation_remove_request {
+    struct bw_nrc_environment environment;
+    struct bw_provider_binding identity;
+    struct bw_native_prepared prepared;
+    char operation[33],confirmed_title[10];
+    struct {
+        void *opaque;
+        int (*current)(void *);
+        int (*source_excluded)(void *,const struct bw_removed_source *);
+        void (*observe)(void *,const struct bw_game_uninstall_progress *);
+    } ops;
+    unsigned char reader_sha256[32];
+    uint64_t reader_size;
+    unsigned legacy_source_fakelib2;
+};
+int bw_native_preparation_remove(const struct bw_preparation_remove_request *,
+    struct bw_game_uninstall_result *);
 /* Presentation-only, bounded metadata probe. No manifest/tree/STREAM walk,
  * LOCAL body digest pass, layout creation, registration action or deletion.
  * The supplied prepared tuple is the backend's cached completion. A positive

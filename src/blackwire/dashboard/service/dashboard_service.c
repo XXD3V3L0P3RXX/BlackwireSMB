@@ -75,8 +75,8 @@ static int nonce_valid(const char *text) {
     if(!text||strnlen(text,33)!=32)return 0;unsigned nonzero=0;
     for(unsigned i=0;i<32;i++){if(!strchr("0123456789abcdef",text[i]))return 0;nonzero|=text[i]!='0';}return nonzero!=0;
 }
-static const char *action_name(enum bd_action action){return action==BD_PLAY?"play":action==BD_SEND?"send":action==BD_UNINSTALL?"uninstall":action==BD_RESTORE?"restore":"";}
-static int removal_action(enum bd_action action){return action==BD_UNINSTALL||action==BD_RESTORE;}
+static const char *action_name(enum bd_action action){return action==BD_PLAY?"play":action==BD_SEND?"send":action==BD_UNINSTALL?"uninstall":action==BD_RESTORE?"restore":action==BD_REMOVE_STARTUP?"remove-startup":"";}
+static int removal_action(enum bd_action action){return action==BD_UNINSTALL||action==BD_RESTORE||action==BD_REMOVE_STARTUP;}
 static int same_token(const char *a,const char *b) {
     if(!nonce_valid(a)||!nonce_valid(b))return 0;unsigned different=0;
     for(unsigned i=0;i<32;i++)different|=(unsigned char)a[i]^(unsigned char)b[i];return !different;
@@ -104,7 +104,7 @@ static void feedback_begin(struct bd_dashboard_service *s) {
     memcpy(f->nonce,s->intent.nonce,sizeof f->nonce);f->bound=1;
     f->progress_phase=FB_CHECKING;
     f->started_ms=f->last_ms=f->notice_ms=now;
-    snprintf(f->pending,sizeof f->pending,"Blackwire: %s %.96s.",s->intent.action==BD_UNINSTALL?"Removing":s->intent.action==BD_RESTORE?"Restoring":"Launching",s->intent.selected.title);
+    snprintf(f->pending,sizeof f->pending,"Blackwire: %s %.96s.",(s->intent.action==BD_UNINSTALL||s->intent.action==BD_REMOVE_STARTUP)?"Removing":s->intent.action==BD_RESTORE?"Restoring":"Launching",s->intent.selected.title);
 }
 static void feedback_update(struct bd_dashboard_service *s,enum feedback_phase phase) {
     struct launch_feedback *f=&s->feedback;
@@ -114,6 +114,7 @@ static void feedback_update(struct bd_dashboard_service *s,enum feedback_phase p
     if(phase==FB_STOPPED){f->ended=1;return;}
     if(phase==FB_STARTED||phase==FB_FAILED){
         const char *format=phase==FB_FAILED?"Blackwire: %.72s needs attention. Open Blackwire for details.":
+            s->intent.action==BD_REMOVE_STARTUP?"Blackwire: Removed startup files for %.96s. Existing console game metadata was preserved.":
             s->intent.action==BD_UNINSTALL?"Blackwire: Removed %.96s. Saved games are preserved.":
             s->intent.action==BD_RESTORE?"Blackwire: Restored %.96s to your library.":"Blackwire: %.96s has started.";
         if(phase==FB_FAILED&&s->intent.action==BD_PLAY)format="Blackwire: %.72s could not start. Open Blackwire for details.";
@@ -130,7 +131,7 @@ static void feedback_update(struct bd_dashboard_service *s,enum feedback_phase p
      * Terminal observations remain available after that bounded budget. */
     if((phase==f->progress_phase&&now-f->notice_ms<15000u)||f->elapsed_notices>=4u)return;
     snprintf(f->pending,sizeof f->pending,"Blackwire: %s %.96s (%llu s elapsed).",
-        s->intent.action==BD_UNINSTALL?"Removing":s->intent.action==BD_RESTORE?"Restoring":phase==FB_STARTING?"Starting":"Checking",s->intent.selected.title,
+        (s->intent.action==BD_UNINSTALL||s->intent.action==BD_REMOVE_STARTUP)?"Removing":s->intent.action==BD_RESTORE?"Restoring":phase==FB_STARTING?"Starting":"Checking",s->intent.selected.title,
         (unsigned long long)((now-f->started_ms)/1000u));
     f->notice_ms=now;f->progress_phase=phase;f->elapsed_notices++;
 }
@@ -438,10 +439,10 @@ static int dispatch(void *opaque,const struct bd_item *item,enum bd_action actio
     for(unsigned i=0;i<32;i++){binding[10+2*i]=digits[item->source_fingerprint[i]>>4];binding[11+2*i]=digits[item->source_fingerprint[i]&15];}binding[74]=0;
     bw_json_text(&j,",\"sourceBinding\":");bw_json_string(&j,binding);
     bw_json_format(&j,",\"libraryGeneration\":%llu,\"settingsRevision\":%u",(unsigned long long)item->library_generation,item->settings_revision);
-    if(action==BD_UNINSTALL){if(strcmp(s->confirmed_title,item->title_id)){free(j.bytes);return 0;}bw_json_text(&j,",\"confirmedTitleId\":");bw_json_string(&j,s->confirmed_title);}
+    if(action==BD_UNINSTALL||action==BD_REMOVE_STARTUP){if(strcmp(s->confirmed_title,item->title_id)){free(j.bytes);return 0;}bw_json_text(&j,",\"confirmedTitleId\":");bw_json_string(&j,s->confirmed_title);}
     bw_json_text(&j,"}");
     if(j.bad){free(j.bytes);return 0;}
-    const char *route=action==BD_SEND?"/api/send":action==BD_UNINSTALL?"/api/uninstall":action==BD_RESTORE?"/api/restore":"/api/start";
+    const char *route=action==BD_SEND?"/api/send":action==BD_UNINSTALL?"/api/uninstall":action==BD_RESTORE?"/api/restore":action==BD_REMOVE_STARTUP?"/api/remove-startup":"/api/start";
     int rc=s->config.ops.backend_reserved(s->config.ops.opaque,nonce,"POST",route,j.bytes,j.used,s->action_token,&raw);
     free(j.bytes);struct accepted accepted={0};
     int result=rc?-1:raw.status==202?
@@ -493,7 +494,7 @@ static int jobs_field(void *opaque,const char *key,size_t kn,const void *raw,siz
 }
 struct removal_status {
     char id[33],source[BD_SOURCE_BYTES],title[10],state[16],message[BD_REASON_BYTES];
-    unsigned seen,root_seen,phase,files,files_total,removed;
+    unsigned seen,root_seen,phase,files,files_total,removed,preparation_only;
 };
 static int removal_field(void *opaque,const char *key,size_t kn,const void *raw,size_t n){
     struct removal_status *p=opaque;unsigned bit=0;char *dest=NULL;size_t cap=0;uint64_t value=0;
@@ -502,9 +503,9 @@ static int removal_field(void *opaque,const char *key,size_t kn,const void *raw,
     else RSTR("state",8u,state) else RSTR("message",16u,message)
 #undef RSTR
     else if(kn==5&&!memcmp(key,"phase",5))bit=32u;else if(kn==5&&!memcmp(key,"files",5))bit=64u;
-    else if(kn==10&&!memcmp(key,"filesTotal",10))bit=128u;else if(kn==7&&!memcmp(key,"removed",7))bit=256u;else return 0;
+    else if(kn==10&&!memcmp(key,"filesTotal",10))bit=128u;else if(kn==7&&!memcmp(key,"removed",7))bit=256u;else if(kn==15&&!memcmp(key,"preparationOnly",15))bit=512u;else return 0;
     if(p->seen&bit)return -1;p->seen|=bit;if(dest)return bw_document_string(raw,n,dest,cap);
-    if(bit==256u)return boolean(raw,n,&p->removed);
+    if(bit==256u||bit==512u)return boolean(raw,n,bit==256u?&p->removed:&p->preparation_only);
     if(decimal(raw,n,bit==32u?BW_GAME_REMOVE_UNKNOWN:UINT32_MAX,&value))return -1;
     if(bit==32u)p->phase=(unsigned)value;else if(bit==64u)p->files=(unsigned)value;else p->files_total=(unsigned)value;return 0;
 }
@@ -515,9 +516,9 @@ static int removal_root(void *opaque,const char *key,size_t kn,const void *raw,s
 static void removal_message(struct bd_dashboard_service *s,const struct bw_game_uninstall_result *result,int status){
     s->removal_progress=*result;s->removal_observed=1;
     if(status>=0&&result->phase!=BW_GAME_REMOVE_UNKNOWN)s->intent.phase=BD_INTENT_ACCEPTED;
-    if(status==1&&result->phase==BW_GAME_REMOVE_DONE&&result->library_removed){
+    if(status==1&&result->phase==BW_GAME_REMOVE_DONE&&(result->library_removed||result->preparation_only)){
         if(!release(s)){s->active=0;message(s,"stopped",s->intent.action==BD_RESTORE?
-            "Restored to the library. Prepare startup files before playing.":"The selected console copy and its library entry were removed. Saved games are preserved.");feedback_update(s,FB_STARTED);}
+            "Restored to the library. Prepare startup files before playing.":s->intent.action==BD_REMOVE_STARTUP?"Startup files removed. Existing console game metadata was preserved.":"The selected console copy and its library entry were removed. Saved games are preserved.");feedback_update(s,FB_STARTED);}
     }else if(status==1&&result->phase==BW_GAME_REMOVE_ERROR&&!result->mutation_started){
         if(!release(s)){s->active=0;s->intent.phase=BD_INTENT_REFUSED;message(s,"refused",result->reason?result->reason:"The removal was refused before changing the console copy.");feedback_update(s,FB_FAILED);}
     }else {message(s,status<0||result->phase==BW_GAME_REMOVE_UNKNOWN?"unknown":"accepted",result->reason?result->reason:"Working on the selected console copy.");
@@ -558,7 +559,8 @@ static int tick_locked(struct bd_dashboard_service *s) {
         message(s,"unknown","The retained native operation status could not be read.");feedback_update(s,FB_UNKNOWN);return 0;}
     if(removal_action(s->intent.action)){
         struct removal_status observed={0};
-        if(bw_document_fields(raw.bytes,raw.size,removal_root,&observed)||observed.root_seen!=1||observed.seen!=511u||
+        if(bw_document_fields(raw.bytes,raw.size,removal_root,&observed)||observed.root_seen!=1||(observed.seen&511u)!=511u||
+           (s->intent.action==BD_REMOVE_STARTUP?!(observed.seen&512u)||!observed.preparation_only:observed.preparation_only)||
            (observed.files_total&&observed.files>observed.files_total)||strcmp(observed.id,s->intent.nonce)||(s->backend_id[0]&&strcmp(observed.id,s->backend_id))||
            strcmp(observed.source,s->intent.selected.source)||strcmp(observed.title,s->intent.selected.title_id)||
            (strcmp(observed.state,"running")&&strcmp(observed.state,"done")&&strcmp(observed.state,"error")&&strcmp(observed.state,"unknown"))){
@@ -568,9 +570,10 @@ static int tick_locked(struct bd_dashboard_service *s) {
              * A lost ACK can be resolved by this exact typed observation;
              * this adopts no unrelated same-title job and sends no request. */
             if(!s->backend_id[0])memcpy(s->backend_id,observed.id,sizeof s->backend_id);
-            if(s->intent.action==BD_UNINSTALL&&!strcmp(observed.state,"unknown"))s->removal_consumed_unknown=1;
+            if((s->intent.action==BD_UNINSTALL||s->intent.action==BD_REMOVE_STARTUP)&&!strcmp(observed.state,"unknown"))s->removal_consumed_unknown=1;
             struct bw_game_uninstall_result result={.phase=(enum bw_game_uninstall_phase)observed.phase,.files_removed=observed.files,.files_total=observed.files_total,.reason=observed.message,
-                .library_removed=!strcmp(observed.state,"done")&&observed.removed==(s->intent.action==BD_UNINSTALL)};
+                .library_removed=s->intent.action!=BD_REMOVE_STARTUP&&!strcmp(observed.state,"done")&&observed.removed==(s->intent.action==BD_UNINSTALL),
+                .preparation_only=s->intent.action==BD_REMOVE_STARTUP&&!strcmp(observed.state,"done")&&observed.preparation_only};
             int terminal=!strcmp(observed.state,"done")||!strcmp(observed.state,"error");
             int status=terminal?1:!strcmp(observed.state,"unknown")?-1:0;
             if(s->removal_consumed_unknown&&!strcmp(observed.state,"error")){
@@ -722,15 +725,15 @@ static int accepted_reply(struct bd_dashboard_service *s,struct bw_native_respon
 static int action(struct bd_dashboard_service *s,const void *raw,size_t size,const char *token,struct bw_native_response *out) {
     struct action_request r={0};
     if(!size||size>4096||bw_document_fields(raw,size,action_field,&r)||
-       (strcmp(r.action,"play")&&strcmp(r.action,"send")&&strcmp(r.action,"uninstall")&&strcmp(r.action,"restore"))||
-       r.seen!=(!strcmp(r.action,"uninstall")?31u:15u))return text(out,400,"Choose one exact current catalog action and confirm the selected title for Uninstall.");
+       (strcmp(r.action,"play")&&strcmp(r.action,"send")&&strcmp(r.action,"uninstall")&&strcmp(r.action,"restore")&&strcmp(r.action,"remove-startup"))||
+       r.seen!=((!strcmp(r.action,"uninstall")||!strcmp(r.action,"remove-startup"))?31u:15u))return text(out,400,"Choose one exact current catalog action and confirm the selected title for Uninstall.");
     if(s->active||s->reserved)return text(out,409,"The previous operation remains active or uncertain.");
     if(refresh(s))return text(out,503,"The catalog could not be refreshed.");
     const struct bd_item *found=bd_catalog_find(&s->catalog,r.id);
-    enum bd_action selected=!strcmp(r.action,"play")?BD_PLAY:!strcmp(r.action,"send")?BD_SEND:!strcmp(r.action,"uninstall")?BD_UNINSTALL:BD_RESTORE;
+    enum bd_action selected=!strcmp(r.action,"play")?BD_PLAY:!strcmp(r.action,"send")?BD_SEND:!strcmp(r.action,"uninstall")?BD_UNINSTALL:!strcmp(r.action,"remove-startup")?BD_REMOVE_STARTUP:BD_RESTORE;
     if(!found||found->kind!=(enum bd_source_kind)r.kind||r.generation!=s->catalog.generation||
-       (selected==BD_PLAY?!bd_item_can_play(found):selected==BD_SEND?!bd_item_can_send(found):selected==BD_UNINSTALL?!bd_item_can_uninstall(found):!bd_item_can_restore(found))||
-       (selected==BD_UNINSTALL&&strcmp(r.confirmed_title,found->title_id)))
+       (selected==BD_PLAY?!bd_item_can_play(found):selected==BD_SEND?!bd_item_can_send(found):selected==BD_UNINSTALL?!bd_item_can_uninstall(found):selected==BD_REMOVE_STARTUP?!bd_item_can_remove_startup(found):!bd_item_can_restore(found))||
+       ((selected==BD_UNINSTALL||selected==BD_REMOVE_STARTUP)&&strcmp(r.confirmed_title,found->title_id)))
         return text(out,409,"The selected source or catalog generation changed; refresh and choose it again.");
     struct bd_item item=*found;char nonce[33]={0};
     if((s->config.ops.nonce?s->config.ops.nonce(s->config.ops.opaque,nonce):bw_native_setup_nonce(nonce))||!nonce_valid(nonce)||

@@ -7,12 +7,12 @@
 static atomic_uint checked;
 static unsigned cases;
 #define CHECK(x) do{atomic_fetch_add(&checked,1);if(!(x)){fprintf(stderr,"removal backend case%u line%d: %s\n",cases,__LINE__,#x);exit(1);}}while(0)
-struct removal_fixture {struct bw_native_backend *p;struct bw_share_config config;struct bw_setup_generation settings;atomic_int entered,block,idle,changed,removed;atomic_uint probes,uninstalls,restores;unsigned mode;};
+struct removal_fixture {struct bw_native_backend *p;struct bw_share_config config;struct bw_setup_generation settings;atomic_int entered,block,idle,changed,removed;atomic_uint probes,uninstalls,restores,startups;unsigned mode,startup_only;};
 static void pause_worker(void){struct timespec t={0,1000000};nanosleep(&t,NULL);}
 static int test_settings(void *v,struct bw_share_config *c,struct bw_setup_generation *g){struct removal_fixture *f=v;*c=f->config;*g=f->settings;if(atomic_load(&f->changed))g->sha256[0]^=1;return BW_SETUP_VALID;}
 static int test_idle(void *v){struct removal_fixture *f=v;CHECK(!pthread_mutex_trylock(&f->p->lock));CHECK(!pthread_mutex_unlock(&f->p->lock));return atomic_load(&f->idle)?0:-1;}
 static int test_nonce(void *v,char out[33]){CHECK(v);strcpy(out,"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");return 0;}
-static int test_probe(void *v,const struct bw_provider_binding *identity,const struct bw_native_prepared *prepared,struct bw_game_uninstall_capability *out){struct removal_fixture *f=v;CHECK(identity&&prepared&&out&&!strcmp(identity->binding.title,"PPSA99999"));atomic_fetch_add(&f->probes,1);memset(out,0,sizeof *out);out->removed=atomic_load(&f->removed);out->can_restore=out->removed;out->can_uninstall=!out->removed&&prepared->state==BW_PREPARED_VALID;out->reason="exact test metadata";return 0;}
+static int test_probe(void *v,const struct bw_provider_binding *identity,const struct bw_native_prepared *prepared,struct bw_game_uninstall_capability *out){struct removal_fixture *f=v;CHECK(identity&&prepared&&out&&!strcmp(identity->binding.title,"PPSA99999"));atomic_fetch_add(&f->probes,1);memset(out,0,sizeof *out);out->removed=atomic_load(&f->removed);out->can_restore=out->removed;out->can_uninstall=!f->startup_only&&!out->removed&&prepared->state==BW_PREPARED_VALID;out->can_remove_startup=f->startup_only&&!out->removed&&prepared->state==BW_PREPARED_VALID;out->reason="exact test metadata";return 0;}
 static int test_uninstall(void *v,const struct bw_native_removal_selection *s,int (*guard)(void *),void *opaque,void (*observe)(void *,const struct bw_game_uninstall_progress *),void *observer,struct bw_game_uninstall_result *out){
     struct removal_fixture *f=v;CHECK(s&&guard&&out&&!strcmp(s->confirmed_title,"PPSA99999")&&!strcmp(s->identity.binding.source,"Fixture")&&!strcmp(s->operation,f->p->external_nonce));atomic_fetch_add(&f->uninstalls,1);CHECK(!guard(opaque));
     struct bw_game_uninstall_progress progress={BW_GAME_REMOVE_FILES,2,4,"Removing the selected PS5 startup copy"};observe(observer,&progress);atomic_store(&f->entered,1);while(atomic_load(&f->block))pause_worker();
@@ -23,11 +23,20 @@ static int test_uninstall(void *v,const struct bw_native_removal_selection *s,in
     atomic_store(&f->removed,1);*out=(struct bw_game_uninstall_result){.phase=BW_GAME_REMOVE_DONE,.mutation_started=1,.registration_confirmed=1,.source_absent=1,.prepared_record_absent=1,.library_removed=1,.files_removed=4,.files_total=4};
     if(f->mode==4)out->library_removed=2;return 0;
 }
+static int test_remove_startup(void *v,const struct bw_native_removal_selection *selected,int (*guard)(void *),void *opaque,void (*observe)(void *,const struct bw_game_uninstall_progress *),void *observer,struct bw_game_uninstall_result *out){
+    struct removal_fixture *f=v;CHECK(selected&&selected->startup_only==1&&!strcmp(selected->confirmed_title,"PPSA99999")&&!guard(opaque));atomic_fetch_add(&f->startups,1);
+    struct bw_game_uninstall_progress progress={BW_GAME_REMOVE_FILES,2,4,"Removing only owned startup files"};observe(observer,&progress);atomic_store(&f->entered,1);while(atomic_load(&f->block))pause_worker();
+    if(guard(opaque)||f->mode==1){*out=(struct bw_game_uninstall_result){.phase=BW_GAME_REMOVE_ERROR,.reason="Preparation cleanup refused before mutation."};return -1;}
+    if(f->mode==2){*out=(struct bw_game_uninstall_result){.phase=BW_GAME_REMOVE_UNKNOWN,.mutation_started=1,.reason="Consumed preparation cleanup is uncertain."};return -1;}
+    *out=(struct bw_game_uninstall_result){.phase=BW_GAME_REMOVE_DONE,.preparation_only=1,.mutation_started=1,.source_absent=1,.prepared_record_absent=1,.files_removed=4,.files_total=4};
+    if(f->mode==4)out->registration_confirmed=1;return 0;
+}
+static int test_prepare_unused(void *a,struct bw_share_config *b,const struct bw_native_prepare_selection *c,int (*d)(void *),void *e,bw_source_observer_fn f,void *g,struct bw_native_prepared *h){(void)a;(void)b;(void)c;(void)d;(void)e;(void)f;(void)g;(void)h;CHECK(0);return -1;}
 static int test_restore(void *v,const struct bw_native_removal_selection *s,int (*guard)(void *),void *opaque,struct bw_game_uninstall_result *out){struct removal_fixture *f=v;CHECK(s&&!s->confirmed_title[0]&&guard&&out&&!guard(opaque));atomic_fetch_add(&f->restores,1);atomic_store(&f->removed,0);*out=(struct bw_game_uninstall_result){.phase=BW_GAME_REMOVE_DONE,.mutation_started=1,.registration_confirmed=1,.source_absent=1,.prepared_record_absent=1};return 0;}
 static void fixture_init(struct removal_fixture *f){
     memset(f,0,sizeof *f);f->p=calloc(1,sizeof *f->p);CHECK(f->p);struct bw_native_backend *p=f->p;CHECK(!pthread_mutex_init(&p->lock,NULL)&&!pthread_mutex_init(&p->dispatch_lock,NULL));p->jobs=bw_native_jobs_create();CHECK(p->jobs);
     strcpy(f->config.server,"192.0.2.1");strcpy(f->config.share,"FixtureShare");strcpy(f->config.user,"fixture-account");strcpy(f->config.password,"fixture-secret");f->settings.present=1;f->settings.file.st_mode=S_IFREG|0600;f->settings.file.st_nlink=1;memset(f->settings.sha256,0x31,32);atomic_store(&f->idle,1);
-    p->opaque=f;p->ops=(struct bw_native_backend_ops){.read_settings=test_settings,.idle=test_idle,.nonce=test_nonce,.removal_probe=test_probe,.uninstall=test_uninstall,.restore=test_restore};p->settings_enabled=p->settings_known=1;p->settings_status=BW_SETUP_VALID;p->settings_generation=f->settings;p->settings_revision=2;p->generation=5;p->phase=BACKEND_READY;strcpy(p->setup_token,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");strcpy(p->server,f->config.server);strcpy(p->share,f->config.share);
+    p->opaque=f;p->ops=(struct bw_native_backend_ops){.read_settings=test_settings,.idle=test_idle,.nonce=test_nonce,.prepare=test_prepare_unused,.removal_probe=test_probe,.uninstall=test_uninstall,.restore=test_restore,.remove_startup=test_remove_startup};p->settings_enabled=p->settings_known=1;p->settings_status=BW_SETUP_VALID;p->settings_generation=f->settings;p->settings_revision=2;p->generation=5;p->phase=BACKEND_READY;strcpy(p->setup_token,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");strcpy(p->server,f->config.server);strcpy(p->share,f->config.share);
     p->library.catalog.count=p->library.catalog.capacity=1;p->library.catalog.items=calloc(1,sizeof *p->library.catalog.items);p->library.prepared=calloc(1,sizeof *p->library.prepared);CHECK(p->library.catalog.items&&p->library.prepared);
     struct bw_catalog_item *item=p->library.catalog.items;strcpy(item->source,"Fixture");strcpy(item->name,"Fixture");strcpy(item->title,"Preserved game");strcpy(item->title_id,"PPSA99999");item->boot.size=128;item->state=BW_CATALOG_FOLDER;
     struct bw_provider_binding identity;CHECK(!bw_provider_binding_init(&identity,&f->config,"Fixture","PPSA99999",BW_PROVIDER_FOLDER));struct bw_native_prepared *prepared=p->library.prepared;prepared->state=BW_PREPARED_VALID;strcpy(prepared->game,identity.binding.game);strcpy(prepared->run,"dddddddddddddddddddddddddddddddd");memset(prepared->record_sha256,0x41,32);prepared->local_count=1;
@@ -52,5 +61,16 @@ int main(void){
     fixture_init(&f);reserve(&f,op);atomic_store(&f.idle,0);out=action(&f,op,"/api/uninstall",body,token,409);bw_native_response_clear(&out);CHECK(!atomic_load(&f.uninstalls));fixture_close(&f);cases++;
     fixture_init(&f);reserve(&f,op);atomic_store(&f.changed,1);out=action(&f,op,"/api/uninstall",body,token,409);bw_native_response_clear(&out);CHECK(!atomic_load(&f.uninstalls));fixture_close(&f);cases++;
     fixture_init(&f);reserve(&f,op);atomic_store(&f.block,1);out=action(&f,op,"/api/uninstall",body,token,202);bw_native_response_clear(&out);while(!atomic_load(&f.entered))pause_worker();atomic_store(&f.changed,1);atomic_store(&f.block,0);wait_worker(&f);CHECK(!atomic_load(&f.removed)&&f.p->removing.state==REMOVAL_ERROR);fixture_close(&f);cases++;
+    for(unsigned mode=0;mode<=4;mode++)if(mode!=3){fixture_init(&f);f.startup_only=1;f.mode=mode;f.p->library.removal[0].can_uninstall=0;f.p->library.removal[0].can_remove_startup=1;
+        out=state_response(&f);CHECK(strstr(out.bytes,"\"canRemoveStartup\":true")&&strstr(out.bytes,"\"canUninstall\":false"));bw_native_response_clear(&out);
+        out=action(&f,NULL,"/api/remove-startup",body,token,403);bw_native_response_clear(&out);reserve(&f,op);
+        out=action(&f,op,"/api/uninstall",body,token,409);bw_native_response_clear(&out);CHECK(!atomic_load(&f.uninstalls));
+        out=action(&f,op,"/api/remove-startup",body,token,202);bw_native_response_clear(&out);wait_worker(&f);
+        out=state_response(&f);CHECK(strstr(out.bytes,mode==0?"\"state\":\"done\"":mode==1?"\"state\":\"error\"":"\"state\":\"unknown\""));
+        CHECK(strstr(out.bytes,"\"preparationOnly\":true")&&strstr(out.bytes,"\"removed\":false")&&atomic_load(&f.startups)==1&&!atomic_load(&f.uninstalls)&&!atomic_load(&f.restores));bw_native_response_clear(&out);
+        if(!mode){out=state_response(&f);CHECK(strstr(out.bytes,"\"canPrepare\":true")&&strstr(out.bytes,"\"onConsole\":false"));bw_native_response_clear(&out);}
+        if(!mode)CHECK(f.p->library.prepared[0].state==BW_PREPARED_ABSENT&&!f.p->library.removal[0].removed&&!f.p->library.removal[0].can_restore);
+        out=action(&f,op,"/api/remove-startup",body,token,409);bw_native_response_clear(&out);CHECK(atomic_load(&f.startups)==1);fixture_close(&f);cases++;
+    }
     printf("{\"passed\":true,\"cases\":%u,\"checks\":%u,\"actualReservedRoutesAndWorker\":true,\"readOnlyPollingNeverProbes\":true,\"deletionTransportModeled\":true,\"consoleActions\":0}\n",cases,atomic_load(&checked));return 0;
 }

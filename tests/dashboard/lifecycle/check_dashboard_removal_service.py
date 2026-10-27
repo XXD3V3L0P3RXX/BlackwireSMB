@@ -34,7 +34,7 @@ def main():
  flags=['-std=gnu11','-O1','-g','-Wall','-Wextra','-Werror','-Wno-misleading-indentation','-Wno-unused-function','-fsanitize=address,undefined','-fno-sanitize-recover=all','-fno-omit-frame-pointer','-ffunction-sections','-fdata-sections','-DBD_FRONTEND_IDENTITY_HOST_TEST=1']
  includes=['-I',LIB,'-I',SVC,'-I',STREAM,'-I',ROOT/'vendor/sqlite','-I',ROOT/'vendor/libsmb2/include']
  binary=OUT/'service';run('actual-service-build',['clang-18',*flags,*includes,*sources,tests[0],fingerprint,sqlite,'-Wl,--gc-sections','-pthread','-lm','-o',binary])
- cases=['pc-browser','pc-native','send-only','restore-browser','restore-native','local-browser','local-native','local-unknown','pc-unknown','wrong-status','confirmation','busy','refused','lost-reply','lost-reply-held','source-absent','status-unavailable','pc-reconcile-done','pc-reconcile-held','pc-reconcile-foreign','pc-reconcile-busy','pc-reconcile-throttle','pc-reconcile-error'];observations=[]
+ cases=['startup-browser','startup-native','startup-unknown','startup-confirmation','pc-browser','pc-native','send-only','restore-browser','restore-native','local-browser','local-native','local-unknown','pc-unknown','wrong-status','confirmation','busy','refused','lost-reply','lost-reply-held','source-absent','status-unavailable','pc-reconcile-done','pc-reconcile-held','pc-reconcile-foreign','pc-reconcile-busy','pc-reconcile-throttle','pc-reconcile-error'];observations=[]
  for case in cases:
   with tempfile.TemporaryDirectory(prefix='blackwire-removal-service-') as tmp:
    base=Path(tmp);source=base/'full-local';apps=base/'apps';app=apps/'PPSA99911'

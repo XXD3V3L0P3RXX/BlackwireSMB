@@ -42,6 +42,12 @@ struct bw_nrc_result {
     const char *stage;
     int raw_result,error_snapshot;
     const char *detail; /* Existing collector/control failure, no new query. */
+    /* Bounded read-only lifecycle evidence. These never authorize cleanup or
+     * registration; legacy state/result decisions remain unchanged. No pointer
+     * refers into this array, so ordinary by-value results remain safe. */
+    unsigned registration_observations;
+    struct bw_native_registration_observation registration_before,registration_after;
+    char registration_message[512];
 };
 struct bw_nrc_ticket;
 /* A failed operation could not confirm descriptor release. No descriptor is

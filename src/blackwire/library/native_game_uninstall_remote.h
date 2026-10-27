@@ -14,4 +14,9 @@ int bw_native_game_uninstall_normal(const struct bw_game_uninstall_request *,
  * repeated actual app+read-only DB absence around post-uninstall snapshots. */
 int bw_native_game_uninstall_files_normal(const struct bw_game_uninstall_files_request *,
     uint16_t port,struct bw_game_uninstall_result *);
+/* Strict complete source/manual/scan exclusion only. This adapter has no
+ * registration/manual-remove/platform-uninstall callback and never writes
+ * external app metadata, database state, settings or the PC source. */
+int bw_native_preparation_remove_normal(const struct bw_preparation_remove_request *,
+    uint16_t port,struct bw_game_uninstall_result *);
 #endif

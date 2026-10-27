@@ -4,6 +4,7 @@
 #include "native_registration.h"
 #include "media_public_trial.h"
 #include <sqlite3.h>
+#include <errno.h>
 #include <limits.h>
 #include <pthread.h>
 #include <stdint.h>
@@ -65,33 +66,61 @@ static int authorize(void *p,int op,const char *table,const char *column,const c
         (!strcmp(column,"titleId")||!strcmp(column,"contentId"))?SQLITE_OK:SQLITE_DENY;
 }
 static int progress(void *opaque){return ++*(unsigned *)opaque>2000;}
-int bw_registration_db_match(const char *path,const char *title,const char *content){
-    if(!path||!title||!content||strlen(title)!=9||!content[0]||strnlen(content,128)>=128)return -1;
+static void db_note(struct bw_registration_db_observation *o,enum bw_registration_db_reason reason,int code,int error){
+    if(o->reason==BW_REG_DB_NOT_OBSERVED){o->reason=reason;o->sqlite_result=code;o->error_snapshot=error;}
+}
+const char *bw_registration_db_state_name(enum bw_registration_db_state state){
+    switch(state){case BW_REG_DB_ABSENT:return "absent";case BW_REG_DB_MATCH:return "match";case BW_REG_DB_CONFLICT:return "conflict";default:return "unknown";}
+}
+const char *bw_registration_db_reason_name(enum bw_registration_db_reason reason){
+    static const char *const names[]={"not_observed","invalid_argument","path_unavailable","path_invalid","file_invalid","vfs_unavailable",
+        "open_failed","not_readonly","prepare_failed","bind_failed","step_failed","row_invalid","content_differs","duplicate_row",
+        "finalize_failed","close_failed","identity_changed","row_absent","row_match"};
+    return (unsigned)reason<sizeof names/sizeof names[0]?names[reason]:"unknown";
+}
+int bw_registration_db_observe(const char *path,const char *title,const char *content,struct bw_registration_db_observation *out){
+    struct bw_registration_db_observation observed={.state=BW_REG_DB_UNKNOWN};
+    if(!out)out=&observed;else *out=observed;
+    if(!path||!title||!content||strlen(title)!=9||!content[0]||strnlen(content,128)>=128){db_note(out,BW_REG_DB_INVALID_ARGUMENT,0,0);return -1;}
     char canonical[PATH_MAX];struct stat before,after;
-    if(!realpath(path,canonical)||strcmp(path,canonical)||lstat(path,&before)||!S_ISREG(before.st_mode)||before.st_nlink!=1||before.st_size<=0||before.st_size>128*1024*1024)return -1;
-    pthread_once(&ro_once,ro_initialize);if(!ro_ready)return -1;
-    sqlite3 *db=NULL;sqlite3_stmt *stmt=NULL;int result=-1;unsigned steps=0;
-    if(sqlite3_open_v2(path,&db,SQLITE_OPEN_READONLY|SQLITE_OPEN_NOMUTEX|SQLITE_OPEN_NOFOLLOW,"blackwire-readonly")!=SQLITE_OK)goto done;
-    if(sqlite3_db_readonly(db,"main")!=1)goto done;
+    if(!realpath(path,canonical)){db_note(out,BW_REG_DB_PATH_UNAVAILABLE,0,errno);return -1;}
+    if(strcmp(path,canonical)){db_note(out,BW_REG_DB_PATH_INVALID,0,0);return -1;}
+    if(lstat(path,&before)){db_note(out,BW_REG_DB_PATH_UNAVAILABLE,0,errno);return -1;}
+    if(!S_ISREG(before.st_mode)||before.st_nlink!=1||before.st_size<=0||before.st_size>128*1024*1024){db_note(out,BW_REG_DB_FILE_INVALID,0,0);return -1;}
+    pthread_once(&ro_once,ro_initialize);if(!ro_ready){db_note(out,BW_REG_DB_VFS_UNAVAILABLE,0,0);return -1;}
+    sqlite3 *db=NULL;sqlite3_stmt *stmt=NULL;int result=-1,conflict=0,rc;unsigned steps=0;
+    rc=sqlite3_open_v2(path,&db,SQLITE_OPEN_READONLY|SQLITE_OPEN_NOMUTEX|SQLITE_OPEN_NOFOLLOW,"blackwire-readonly");
+    if(rc!=SQLITE_OK){db_note(out,BW_REG_DB_OPEN_FAILED,rc,0);goto done;}
+    rc=sqlite3_db_readonly(db,"main");if(rc!=1){db_note(out,BW_REG_DB_NOT_READONLY,rc,0);goto done;}
     /* SQLite parses the complete stored schema before this constant SELECT.
      * The console's unrelated icon table has 88 columns and CREATE statements
      * exceed 1 KiB; narrower limits wrongly make a healthy app.db unreadable. */
     sqlite3_limit(db,SQLITE_LIMIT_LENGTH,1024*1024);sqlite3_limit(db,SQLITE_LIMIT_SQL_LENGTH,4096);sqlite3_limit(db,SQLITE_LIMIT_COLUMN,256);
     sqlite3_busy_timeout(db,1000);sqlite3_progress_handler(db,1000,progress,&steps);sqlite3_set_authorizer(db,authorize,NULL);
-    if(sqlite3_prepare_v2(db,"SELECT contentId FROM tbl_contentinfo WHERE titleId=?1 COLLATE BINARY;",-1,&stmt,NULL)!=SQLITE_OK||
-       !sqlite3_stmt_readonly(stmt)||sqlite3_bind_text(stmt,1,title,9,SQLITE_STATIC)!=SQLITE_OK)goto done;
-    int rc=sqlite3_step(stmt);if(rc==SQLITE_DONE){result=0;goto done;}
-    if(rc!=SQLITE_ROW||sqlite3_column_type(stmt,0)!=SQLITE_TEXT)goto done;
+    rc=sqlite3_prepare_v2(db,"SELECT contentId FROM tbl_contentinfo WHERE titleId=?1 COLLATE BINARY;",-1,&stmt,NULL);
+    if(rc!=SQLITE_OK){db_note(out,BW_REG_DB_PREPARE_FAILED,rc,0);goto done;}
+    if(!sqlite3_stmt_readonly(stmt)){db_note(out,BW_REG_DB_NOT_READONLY,0,0);goto done;}
+    rc=sqlite3_bind_text(stmt,1,title,9,SQLITE_STATIC);if(rc!=SQLITE_OK){db_note(out,BW_REG_DB_BIND_FAILED,rc,0);goto done;}
+    rc=sqlite3_step(stmt);if(rc==SQLITE_DONE){result=0;goto done;}
+    if(rc!=SQLITE_ROW){db_note(out,BW_REG_DB_STEP_FAILED,rc,0);goto done;}
+    rc=sqlite3_column_type(stmt,0);if(rc!=SQLITE_TEXT){db_note(out,BW_REG_DB_ROW_INVALID,rc,0);goto done;}
     int length=sqlite3_column_bytes(stmt,0);const unsigned char *bytes=sqlite3_column_text(stmt,0);
-    if(!bytes||length!=(int)strlen(content)||memcmp(bytes,content,(size_t)length)||sqlite3_step(stmt)!=SQLITE_DONE)goto done;
+    if(!bytes){db_note(out,BW_REG_DB_ROW_INVALID,0,0);goto done;}
+    if(length!=(int)strlen(content)||memcmp(bytes,content,(size_t)length)){conflict=1;db_note(out,BW_REG_DB_CONTENT_DIFFERS,SQLITE_ROW,0);goto done;}
+    rc=sqlite3_step(stmt);if(rc!=SQLITE_DONE){conflict=rc==SQLITE_ROW;db_note(out,conflict?BW_REG_DB_DUPLICATE_ROW:BW_REG_DB_STEP_FAILED,rc,0);goto done;}
     result=1;
 done:
-    if(stmt&&sqlite3_finalize(stmt)!=SQLITE_OK)result=-1;
-    if(db&&sqlite3_close(db)!=SQLITE_OK)result=-1;
-    if(lstat(path,&after)||!S_ISREG(after.st_mode)||after.st_nlink!=1||before.st_dev!=after.st_dev||before.st_ino!=after.st_ino||
-       !realpath(path,canonical)||strcmp(path,canonical))result=-1;
+    if(stmt&&(rc=sqlite3_finalize(stmt))!=SQLITE_OK){db_note(out,BW_REG_DB_FINALIZE_FAILED,rc,0);out->release_or_identity_unknown=1;result=-1;}
+    if(db&&(rc=sqlite3_close(db))!=SQLITE_OK){db_note(out,BW_REG_DB_CLOSE_FAILED,rc,0);out->release_or_identity_unknown=1;result=-1;}
+    if(lstat(path,&after)){db_note(out,BW_REG_DB_PATH_UNAVAILABLE,0,errno);out->release_or_identity_unknown=1;result=-1;}
+    else if(!S_ISREG(after.st_mode)||after.st_nlink!=1||before.st_dev!=after.st_dev||before.st_ino!=after.st_ino){db_note(out,BW_REG_DB_IDENTITY_CHANGED,0,0);out->release_or_identity_unknown=1;result=-1;}
+    else if(!realpath(path,canonical)){db_note(out,BW_REG_DB_PATH_UNAVAILABLE,0,errno);out->release_or_identity_unknown=1;result=-1;}
+    else if(strcmp(path,canonical)){db_note(out,BW_REG_DB_IDENTITY_CHANGED,0,0);out->release_or_identity_unknown=1;result=-1;}
+    out->state=result==1?BW_REG_DB_MATCH:result==0?BW_REG_DB_ABSENT:conflict&&!out->release_or_identity_unknown?BW_REG_DB_CONFLICT:BW_REG_DB_UNKNOWN;
+    if(out->reason==BW_REG_DB_NOT_OBSERVED)out->reason=result==1?BW_REG_DB_ROW_MATCH:BW_REG_DB_ROW_ABSENT;
     return result;
 }
+int bw_registration_db_match(const char *path,const char *title,const char *content){return bw_registration_db_observe(path,title,content,NULL);}
 
 int bw_registration_db_titles(const char *path,struct bw_registration_titles *out){
     if(!path||!out)return -1;memset(out,0,sizeof *out);

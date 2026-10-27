@@ -45,6 +45,7 @@ struct bw_native_removal_selection {
     struct bw_native_prepared prepared;
     struct bw_setup_generation connection;
     char operation[33],confirmed_title[10];
+    unsigned startup_only; /* Trusted reserved purpose, never client authority. */
 };
 enum {BW_BACKEND_SOURCE_CHANGED=-3};
 /* A worker owns the temporary configuration and result. The production loader
@@ -69,6 +70,7 @@ struct bw_native_backend_ops {
     int (*removal_probe)(void *,const struct bw_provider_binding *,const struct bw_native_prepared *,struct bw_game_uninstall_capability *);
     int (*uninstall)(void *,const struct bw_native_removal_selection *,int (*)(void *),void *,void (*)(void *,const struct bw_game_uninstall_progress *),void *,struct bw_game_uninstall_result *);
     int (*restore)(void *,const struct bw_native_removal_selection *,int (*)(void *),void *,struct bw_game_uninstall_result *);
+    int (*remove_startup)(void *,const struct bw_native_removal_selection *,int (*)(void *),void *,void (*)(void *,const struct bw_game_uninstall_progress *),void *,struct bw_game_uninstall_result *);
 };
 #ifdef BW_NATIVE_BACKEND_HOST_TEST
 void bw_native_backend_host_paths(const char *,const char *);

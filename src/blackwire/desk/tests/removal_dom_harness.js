@@ -47,6 +47,26 @@ async function check(){
   const lost=createPage(Array.from({length:4},nativeState),'5918','',[c,clone(c),clone(c)]);await settle();open(lost);
   lost.replies.push(new Error('Lost confirmation response'));button(lost,'Uninstall').click();lost.get('confirmRemoval').click();await settle();
   await lost.poll();open(lost);button(lost,'Uninstall').click();assert(lost.get('removalConfirm').hidden);assert.strictEqual(lost.postCount(),1,'Lost reply must not issue another request');
-  console.log('Removal DOM: named default-Cancel confirmation, focus/Back, changed-generation refusal, one exact confirmed POST, durable Removed presentation, Restore without Play/Send and lost-reply no-retry passed. No console actions.');
+  const orphan=clone(c);Object.assign(orphan.items[0],{canUninstall:false,canRemoveStartup:true,uninstallReason:'Existing console registration is unconfirmed. Only the owned startup files can be removed.'});
+  const cleaning=operation(clone(orphan));cleaning.operation.action='remove-startup';cleaning.operation.removal={observed:true,phase:2,files:2,filesTotal:4};
+  const cleared=clone(orphan);cleared.catalogGeneration++;Object.assign(cleared.items[0],{startupReady:false,canPlay:false,canSend:true,canRemoveStartup:false});
+  cleared.operation=clone(cleaning.operation);Object.assign(cleared.operation,{phase:'stopped',active:false,message:'Startup files removed. Existing console game metadata was preserved.'});
+  const cleanup=createPage(Array.from({length:5},nativeState),'5918','',[orphan,cleaning,cleared]);await settle();open(cleanup);
+  const only=button(cleanup,'Remove startup files only');assert(only&&!only.disabled&&!only.hidden);
+  assert(descendants(current(cleanup)).some(n=>n.tagName==='P'&&n.textContent===orphan.items[0].uninstallReason&&!n.hidden&&n.className!=='production-hidden'));
+  only.click();assert.strictEqual(cleanup.get('confirmRemoval').textContent,'Remove startup files');
+  assert(cleanup.get('removalDescription').textContent.includes('Existing console game metadata, registration, saved games and the PC source are preserved'));
+  cleanup.replies.push({status:202,body:{ok:true,accepted:true,id:'b'.repeat(32),phase:'accepted',message:'Startup cleanup accepted',action:'remove-startup',exitRequested:false}});
+  cleanup.get('confirmRemoval').click();await settle();assert.strictEqual(cleanup.postCount(),1);
+  const onlyRequest=JSON.parse(cleanup.calls.find(call=>call.url==='/api/dashboard/action').options.body);
+  assert.strictEqual(onlyRequest.action,'remove-startup');assert.strictEqual(onlyRequest.confirmedTitleId,'PPSA90001');
+  assert(cleanup.get('sessionHeading').textContent.includes('Removing startup files'));
+  await cleanup.poll();assert.strictEqual(cleanup.get('games').children.filter(n=>!n.hidden).length,1,'Startup-only cleanup must not hide the PC source');open(cleanup);
+  assert(!button(cleanup,'Send files').disabled&&!button(cleanup,'Send files').parentElement.hidden);
+  const blocked=clone(orphan);blocked.items[0].canRemoveStartup=false;
+  const refusal=createPage([nativeState()],'5918','',[blocked]);await settle();open(refusal);
+  assert(descendants(current(refusal)).some(n=>n.tagName==='P'&&n.textContent===orphan.items[0].uninstallReason&&!n.hidden&&n.className!=='production-hidden'),'Blocked removal reason must remain visible without a button');
+  assert(button(refusal,'Uninstall').hidden);assert.strictEqual(refusal.postCount(),0);
+  console.log('Removal DOM: named default-Cancel confirmation, focus/Back, changed-generation refusal, one exact confirmed POST, durable Removed presentation, Restore without Play/Send and lost-reply no-retry passed, plus separate startup-only confirmation, preserved visible PC source/Send, and always-visible refusal reason. No console actions.');
 }
 check().catch(error=>{console.error(error);process.exitCode=1;});

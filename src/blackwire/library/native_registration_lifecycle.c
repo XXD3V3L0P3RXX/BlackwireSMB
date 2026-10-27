@@ -409,12 +409,39 @@ int bw_nrl_reconcile_prepared_generation(const struct bw_nrc_environment *env,co
     if(result&&observation.remote.reason)out->detail=observation.remote.reason;
 done:free(list);if(result&&out&&!out->reason)nrl_result(out,BW_NRC_UNKNOWN,"previous_generation_observation_unconfirmed",result);return result;
 }
+static const char *nrl_observation_advice(const struct bw_native_registration_observation *o,unsigned changed){
+    if(changed)return "The PS5 title registration changed during its two checks. No add or scan was requested; check the existing title before retrying.";
+    switch(o->reason){
+    case BW_REG_MOUNT_MISSING:return "An existing PS5 title entry has no mount.lnk, so its owner is unverified. No add or scan was requested. Remove the old title normally if listed; otherwise keep it for a guarded repair.";
+    case BW_REG_MOUNT_DIFFERS:case BW_REG_DATABASE_CONFLICT:case BW_REG_DATABASE_ROW_WITHOUT_APP:
+        return "A different or residual PS5 title registration blocks setup. It was preserved. Remove the old title normally if listed before retrying; do not create a replacement mount link.";
+    case BW_REG_DATABASE_UNKNOWN:return "The PS5 app database could not be checked reliably. No add or scan was requested. Keep the prepared files and collect this error before attempting a repair.";
+    case BW_REG_SOURCE_PARAM_UNREADABLE:case BW_REG_SOURCE_PARAM_INVALID:
+        return "The prepared game's metadata could not be read or verified. Startup files were kept; check this prepared copy before retrying Finish setup.";
+    default:return "The existing PS5 title registration could not be verified. No add or scan was requested. Keep both copies and inspect this error before retrying.";
+    }
+}
+static void nrl_observation_failure(struct bw_nrc_result *r,const struct bw_native_registration_observation *before,
+                                  const struct bw_native_registration_observation *after,unsigned changed){
+    const char *advice=nrl_observation_advice(after,changed);
+    r->stage="registration-owner";r->detail=bw_native_registration_reason_name(after->reason);r->reason=advice;
+    r->raw_result=after->raw_result;r->error_snapshot=after->error_snapshot;
+    snprintf(r->registration_message,sizeof r->registration_message,
+        "%s Before=%s/%s/db:%s/%s(%d); after=%s/%s/db:%s/%s(%d). First=%s(raw=%d errno=%d).",
+        advice,bw_registration_state_name(before->state),bw_native_registration_reason_name(before->reason),
+        bw_registration_db_state_name(before->database.state),bw_registration_db_reason_name(before->database.reason),before->database.sqlite_result,
+        bw_registration_state_name(after->state),bw_native_registration_reason_name(after->reason),
+        bw_registration_db_state_name(after->database.state),bw_registration_db_reason_name(after->database.reason),after->database.sqlite_result,
+        bw_native_registration_reason_name(before->first_reason),before->first_raw_result,before->first_error_snapshot);
+}
 int bw_nrl_begin(const struct bw_nrl_request *q,struct bw_nrl_owner **out,struct bw_nrc_result *r){
     if(out)*out=NULL;
     if(!out||!r||!q||!q->selection||!q->current||!strcmp(q->selection->title,"PPSA99171")||!strcmp(q->selection->title,"PPSA99170")||(q->selection->source_kind!=BW_PROVIDER_FOLDER&&q->selection->source_kind!=BW_PROVIDER_CONTAINER)||
        q->selection->source_policy!=BW_PROVIDER_POLICY_V1||(q->selection->prepared_policy&&q->selection->prepared_policy!=3)||
        (q->selection->prepared_policy==3&&!q->startup))return -1;
     struct bw_nrl_owner *p=calloc(1,sizeof *p);struct bw_nrc_candidate *list=NULL;int rc=-1;if(!p)return -1;
+    struct bw_native_registration_observation observed_before={.state=BW_REG_UNKNOWN,.database={.state=BW_REG_DB_UNKNOWN}},observed_after=observed_before;
+    unsigned observations=0,observation_refused=0,observation_changed=0;
     p->request=*q;p->selection=*q->selection;p->request.selection=&p->selection;p->phase=BW_NRL_REGISTER;
     const char *paths[]={q->environment.data_root,q->environment.apps_root,q->environment.database};
     for(unsigned i=0;i<3;i++)if(!paths[i]||strnlen(paths[i],sizeof p->roots[i])>=sizeof p->roots[i])goto done;else strcpy(p->roots[i],paths[i]);
@@ -437,12 +464,13 @@ int bw_nrl_begin(const struct bw_nrl_request *q,struct bw_nrl_owner **out,struct
         }
         p->owned=1;memcpy(p->registration_run,list[i].subject.run,33);
     }
-    enum bw_registration_state before=bw_native_registration_state(p->roots[0],p->roots[1],p->roots[2],&p->selection);
+    enum bw_registration_state before=bw_native_registration_observe(p->roots[0],p->roots[1],p->roots[2],&p->selection,&observed_before);observations|=1;
     if(nrl_current(p))goto done;
-    enum bw_registration_state after=bw_native_registration_state(p->roots[0],p->roots[1],p->roots[2],&p->selection);
-    if(before!=after||nrl_current(p))goto done;
+    enum bw_registration_state after=bw_native_registration_observe(p->roots[0],p->roots[1],p->roots[2],&p->selection,&observed_after);observations|=2;
+    if(before!=after){observation_refused=observation_changed=1;goto done;}
+    if(nrl_current(p))goto done;
     if(before==BW_REG_MATCH||before==BW_REG_PENDING){
-        if(p->owned&&before!=BW_REG_MATCH)goto done;
+        if(p->owned&&before!=BW_REG_MATCH){observation_refused=1;goto done;}
         nrl_result(r,p->owned?BW_NRC_OWNED:BW_NRC_UNOWNED,p->owned?"Previously committed exact registration retained.":"Preexisting registration remains unowned.",0);
     }else if(before==BW_REG_ABSENT&&!p->owned){
         struct bw_nrc_ops ops=nrl_ops(p);p->initial_absence=1;
@@ -451,7 +479,7 @@ int bw_nrl_begin(const struct bw_nrl_request *q,struct bw_nrl_owner **out,struct
             bw_nrc_begin(&p->request.environment,&p->selection,&ops,&p->ticket,r);
         p->initial_absence=0;if(begun){if(begun==BW_NRC_RELEASE_UNCONFIRMED)p->release_unknown=1;goto explicit_failure;}
         memcpy(p->registration_run,p->selection.run,33);
-    }else goto done;
+    }else {observation_refused=1;goto done;}
     *out=p;p=NULL;rc=0;goto done;
 explicit_failure:rc=-2;
 done:
@@ -459,7 +487,10 @@ done:
     if(p){if(p->ticket&&bw_nrc_ticket_destroy(p->ticket))p->release_unknown=1;release_unknown=p->release_unknown;free(p);}
     int result=rc==-2?-1:rc<0?nrl_result(r,BW_NRC_UNKNOWN,"Registration ownership is uncertain; no new add or scan was requested.",-1):0;
     if(result&&release_unknown)result=BW_NRC_RELEASE_UNCONFIRMED;
-    if(result&&r)r->detail=detail;return result;
+    if(result&&r&&detail)r->detail=detail;
+    if(r){r->registration_observations=observations;r->registration_before=observed_before;r->registration_after=observed_after;
+        if(result&&observation_refused)nrl_observation_failure(r,&observed_before,&observed_after,observation_changed);}
+    return result;
 }
 int bw_nrl_registered(struct bw_nrl_owner *p,int status,const struct bw_register_result *registered,struct bw_nrc_result *r){
     if(!p||!r||p->finished)return -1;p->finished=1;p->failure=NULL;int rc=0;

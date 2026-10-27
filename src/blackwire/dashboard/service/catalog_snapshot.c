@@ -9,7 +9,7 @@ struct pc_row {
     char play_reason[BD_REASON_BYTES],send_reason[BD_REASON_BYTES];
     char uninstall_reason[BD_REASON_BYTES],restore_reason[BD_REASON_BYTES];
     unsigned ready,can_start,can_send,seen;
-    unsigned can_uninstall,removed,can_restore;
+    unsigned can_uninstall,removed,can_restore,can_remove_startup;
     unsigned size_known;
     uint64_t startup_bytes,pc_bytes,console_allocated_bytes;
     char storage_verified[16];
@@ -33,7 +33,7 @@ static int pc_field(void *opaque,const char *key,size_t kn,const void *raw,size_
 #define BOOL(k,b,m) if(kn==sizeof(k)-1&&!memcmp(key,k,kn)){bit=b;boolean=&p->m;}
     else BOOL("startupReady",64u,ready) else BOOL("canStart",128u,can_start) else BOOL("canPrepare",256u,can_send)
     else BOOL("sizeKnown",512u,size_known)
-    else BOOL("canUninstall",16384u,can_uninstall) else BOOL("removed",32768u,removed) else BOOL("canRestore",65536u,can_restore)
+    else BOOL("canRemoveStartup",524288u,can_remove_startup) else BOOL("canUninstall",16384u,can_uninstall) else BOOL("removed",32768u,removed) else BOOL("canRestore",65536u,can_restore)
     else if(kn==9&&!memcmp(key,"sendBytes",9))bit=1024u;
     else if(kn==9&&!memcmp(key,"stayBytes",9))bit=2048u;
     else if(kn==21&&!memcmp(key,"consoleAllocatedBytes",21))bit=4096u;
@@ -48,7 +48,7 @@ static int pc_item(void *opaque,const void *raw,size_t size){
     struct pc_row *row=&p->rows[p->count];memset(row,0,sizeof *row);
     if(bw_document_fields(raw,size,pc_field,row)||(row->seen&511u)!=511u||
        (row->size_known&&((row->seen&15360u)!=15360u||strcmp(row->storage_verified,"preparation")))||
-       (row->removed&&(row->ready||row->can_start||row->can_send||row->can_uninstall))||(row->can_restore&&!row->removed))return -1;
+       (row->removed&&(row->ready||row->can_start||row->can_send||row->can_uninstall||row->can_remove_startup))||(row->can_restore&&!row->removed))return -1;
     p->count++;return 0;
 }
 static int revision_field(void *opaque,const char *key,size_t kn,const void *raw,size_t size){
@@ -80,7 +80,7 @@ int bd_catalog_append_blackwire(struct bd_catalog *catalog,const void *raw,size_
         }
         struct bd_pc_input item={.title=row->title,.title_id=row->title_id,.source=row->source,.play_reason=row->play_reason,.send_reason=row->send_reason,
             .startup_ready=row->ready,.can_play=row->can_start,.can_send=row->can_send,.library_generation=p.generation,.settings_revision=p.revision,
-            .can_uninstall=row->can_uninstall,.removed=row->removed,.can_restore=row->can_restore,.uninstall_reason=row->uninstall_reason,.restore_reason=row->restore_reason,
+            .can_remove_startup=row->can_remove_startup,.can_uninstall=row->can_uninstall,.removed=row->removed,.can_restore=row->can_restore,.uninstall_reason=row->uninstall_reason,.restore_reason=row->restore_reason,
             .storage_known=row->size_known,.startup_bytes=row->startup_bytes,.pc_bytes=row->pc_bytes,.console_allocated_bytes=row->console_allocated_bytes};
         static const char digits[]="0123456789abcdef";
         for(unsigned j=0;j<32;j++){
@@ -99,10 +99,10 @@ int bd_catalog_json(const struct bd_catalog *catalog,unsigned pc_connected,unsig
     if(!catalog||!catalog->items||catalog->count>catalog->capacity||catalog->capacity>BD_CATALOG_MAX||!catalog->generation||
        pc_connected>1||local_connected>1||!operation||operation->active>1||operation->exit_requested>1||operation->frontend_pid<0||
        (operation->exit_requested&&(!operation->active||operation->frontend_pid<=1||!operation->phase||strcmp(operation->phase,"waiting-for-dashboard-exit")||
-        !operation->action||(strcmp(operation->action,"play")&&strcmp(operation->action,"uninstall")&&strcmp(operation->action,"restore"))))||
-       (operation->action&&*operation->action&&strcmp(operation->action,"play")&&strcmp(operation->action,"send")&&strcmp(operation->action,"uninstall")&&strcmp(operation->action,"restore"))||
+        !operation->action||(strcmp(operation->action,"play")&&strcmp(operation->action,"uninstall")&&strcmp(operation->action,"restore")&&strcmp(operation->action,"remove-startup"))))||
+       (operation->action&&*operation->action&&strcmp(operation->action,"play")&&strcmp(operation->action,"send")&&strcmp(operation->action,"uninstall")&&strcmp(operation->action,"restore")&&strcmp(operation->action,"remove-startup"))||
        operation->removal.observed>1||operation->removal.phase>7u||(operation->removal.files_total&&operation->removal.files>operation->removal.files_total)||
-       (operation->removal.observed&&(!operation->action||(strcmp(operation->action,"uninstall")&&strcmp(operation->action,"restore"))))||
+       (operation->removal.observed&&(!operation->action||(strcmp(operation->action,"uninstall")&&strcmp(operation->action,"restore")&&strcmp(operation->action,"remove-startup"))))||
        operation->preparation.observed>1||operation->preparation.ready>1||operation->preparation.phase>13u||
        operation->preparation.files>operation->preparation.files_total||operation->preparation.bytes>operation->preparation.bytes_total||
        operation->preparation.bytes_total>UINT64_C(9007199254740991)||
@@ -126,6 +126,7 @@ int bd_catalog_json(const struct bd_catalog *catalog,unsigned pc_connected,unsig
         bw_json_text(&json,",\"sendReason\":");bw_json_string(&json,item->send_reason);
         bw_json_format(&json,",\"canUninstall\":%s,\"removed\":%s,\"canRestore\":%s",
             bd_item_can_uninstall(item)?"true":"false",item->flags&BD_REMOVED?"true":"false",bd_item_can_restore(item)?"true":"false");
+        bw_json_format(&json,",\"canRemoveStartup\":%s",bd_item_can_remove_startup(item)?"true":"false");
         bw_json_text(&json,",\"uninstallReason\":");bw_json_string(&json,item->uninstall_reason);
         bw_json_text(&json,",\"restoreReason\":");bw_json_string(&json,item->restore_reason);
         bw_json_format(&json,",\"storageKnown\":%s",item->storage_known?"true":"false");

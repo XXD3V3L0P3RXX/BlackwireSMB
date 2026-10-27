@@ -330,13 +330,14 @@
             (item.kind !== 1 || !wholeNumber(item.startupBytes,9007199254740991) || !wholeNumber(item.pcBytes,9007199254740991)
               || !wholeNumber(item.consoleAllocatedBytes,9007199254740991) || item.storageVerifiedAt !== "preparation")))
             throw new Error("The measured game storage is invalid. Refresh Blackwire.");
-          ["canUninstall","removed","canRestore"].forEach(function (key) {
+          ["canUninstall","removed","canRestore","canRemoveStartup"].forEach(function (key) {
             if(typeof item[key] !== "undefined" && typeof item[key] !== "boolean")throw new Error("The game removal capability is invalid. Refresh Blackwire.");
           });
           ["uninstallReason","restoreReason"].forEach(function (key) {
             if(typeof item[key] !== "undefined" && !boundedText(item[key],256,true))throw new Error("The game removal reason is invalid. Refresh Blackwire.");
           });
           if(item.removed === true && (item.kind !== 1 || item.startupReady || item.canPlay || item.canSend || item.canUninstall)
+            || item.canRemoveStartup === true && (item.kind !== 1 || item.removed || item.canUninstall)
             || item.canRestore === true && item.removed !== true)throw new Error("The removed game state is invalid. Refresh Blackwire.");
           seen[item.id]=true;
         });
@@ -344,7 +345,7 @@
         if (!operation || phases.indexOf(operation.phase) === -1 || typeof operation.active !== "boolean" || !boundedText(operation.message,256,true)
           || (operation.phase === "idle" ? operation.id !== "" || operation.itemId !== "" || operation.active : !nonce(operation.id) || !catalogId(operation.itemId)))
           throw new Error("The dashboard operation status is invalid. Refresh Blackwire.");
-        if (typeof operation.action !== "undefined" && (["","play","send","uninstall","restore"].indexOf(operation.action) === -1
+        if (typeof operation.action !== "undefined" && (["","play","send","uninstall","restore","remove-startup"].indexOf(operation.action) === -1
           || !boundedText(operation.title,256,true) || !validPreparation(operation.preparation)
           || operation.action === "send" && operation.exitRequested === true))
           throw new Error("The file preparation status is invalid. Refresh Blackwire.");
@@ -352,7 +353,7 @@
           var removal=operation.removal;
           if(!removal || typeof removal.observed !== "boolean" || !wholeNumber(removal.phase,7) || !wholeNumber(removal.files,4294967295)
             || !wholeNumber(removal.filesTotal,4294967295) || removal.filesTotal > 0 && removal.files > removal.filesTotal
-            || removal.observed && ["uninstall","restore"].indexOf(operation.action) === -1)
+            || removal.observed && ["uninstall","restore","remove-startup"].indexOf(operation.action) === -1)
             throw new Error("The removal progress is invalid. Refresh Blackwire.");
         }
         return value;
@@ -362,7 +363,7 @@
         return state.dashboard.items.map(function (item) {
           var game={name:item.id,dashboardId:item.id,title:item.title,titleId:item.titleId,source:item.source,kind:item.kind,
             cover:item.cover,canPlay:item.canPlay,canPrepare:item.canSend,startupReady:item.startupReady,playReason:item.playReason,preparationReason:item.sendReason,
-            canUninstall:item.canUninstall === true,removed:item.removed === true,canRestore:item.canRestore === true,uninstallReason:item.uninstallReason || "",restoreReason:item.restoreReason || ""};
+            canRemoveStartup:item.canRemoveStartup === true,canUninstall:item.canUninstall === true,removed:item.removed === true,canRestore:item.canRestore === true,uninstallReason:item.uninstallReason || "",restoreReason:item.restoreReason || ""};
           if (item.kind === 1) {
             var binding=/^pc:PPSA[0-9]{5}:[0-9a-f]{64}$/.test(item.id) ? item.id.slice(3).replace(":","_") : "";
             var found=(state.games || []).filter(function (source) {return (source.source || source.name) === item.source && source.titleId === item.titleId && (!source.sourceBinding || !binding || source.sourceBinding === binding);});
@@ -472,21 +473,22 @@
       function dashboardBody(state,game,action,confirmedTitle) {
         var catalog=state && state.dashboard;
         var found=catalog && catalog.items.filter(function (item) {return item.id === game.dashboardId && item.kind === game.kind;});
-        if (!found || found.length !== 1 || dashboardBusy(state) || ["play","send","uninstall","restore"].indexOf(action) === -1
+        if (!found || found.length !== 1 || dashboardBusy(state) || ["play","send","uninstall","restore","remove-startup"].indexOf(action) === -1
           || (action === "play" ? found[0].removed || !found[0].canPlay || found[0].kind === 1 && !found[0].startupReady
             : action === "send" ? found[0].removed || found[0].kind !== 1 || found[0].startupReady || !found[0].canSend
             : action === "uninstall" ? found[0].canUninstall !== true || confirmedTitle !== found[0].titleId
+            : action === "remove-startup" ? found[0].canRemoveStartup !== true || confirmedTitle !== found[0].titleId
             : found[0].removed !== true || found[0].canRestore !== true))
           throw new Error("Refresh the library and choose an available action.");
         var body={id:found[0].id,kind:found[0].kind,action:action,catalogGeneration:catalog.catalogGeneration};
-        if(action === "uninstall")body.confirmedTitleId=confirmedTitle;
+        if(action === "uninstall" || action === "remove-startup")body.confirmedTitleId=confirmedTitle;
         return body;
       }
       function dashboardAccepted(status,value,action) {
         if (status !== 202 || !value || value.ok !== true || value.accepted !== true || !nonce(value.id)
           || ["waiting-for-dashboard-exit","accepted"].indexOf(value.phase) === -1 || !boundedText(value.message,256,true))
           throw new Error("The operation was not confirmed. Refresh status before trying again.");
-        if(typeof value.action !== "undefined" && (["play","send","uninstall","restore"].indexOf(value.action) === -1 || action && action !== value.action
+        if(typeof value.action !== "undefined" && (["play","send","uninstall","restore","remove-startup"].indexOf(value.action) === -1 || action && action !== value.action
           || typeof value.exitRequested !== "boolean" || value.action === "send" && (value.exitRequested || value.phase !== "accepted")
           || value.action !== "send" && value.exitRequested !== (value.phase === "waiting-for-dashboard-exit")))
           throw new Error("The operation acknowledgement differs from the selected action. Refresh status.");
@@ -729,7 +731,7 @@
         if(!owned && !issue && !state.dashboardWatch && operation && operation.phase === "stopped" && !operation.active)return {visible:false};
         if (!owned && operation && operation.phase !== "idle") {
           var selected=libraryGames(state).filter(function (game) {return game.dashboardId === operation.itemId;})[0];
-          var removing=operation.action === "uninstall",restoring=operation.action === "restore",removal=operation.removal,detail=operation.message;
+          var startupRemoval=operation.action === "remove-startup",removing=operation.action === "uninstall" || startupRemoval,restoring=operation.action === "restore",removal=operation.removal,detail=operation.message;
           if(removal && removal.observed && (removing || restoring)) {
             var phases=["Checking selected source","Removing registration","Removing console files","Removing preparation record","Updating library","Finished","Removal refused","Checking uncertain result"];
             detail=phases[removal.phase]+(removal.filesTotal ? " · "+removal.files+" / "+removal.filesTotal+" files" : removal.files ? " · "+removal.files+" files removed" : "")+(operation.message ? ". "+operation.message : "");
@@ -738,7 +740,7 @@
           if(launchFailed && detail === "registration_ownership_intent_unconfirmed")detail="Game registration could not be confirmed. No game was started.";
           detail=failureMessage(detail);
           return {visible:true,key:operation.id+":"+operation.phase,failed:launchFailed || operation.phase === "refused" || operation.phase === "unknown",source:operation.title || (selected ? selected.title : "Selected game"),
-            heading:operation.phase === "waiting-for-dashboard-exit" ? removing ? "Closing Blackwire to uninstall" : restoring ? "Closing Blackwire to restore" : "Closing dashboard for launch" : launchFailed ? "Launch failed" : operation.phase === "refused" ? removing ? "Uninstall failed" : restoring ? "Restore failed" : "Action refused" : operation.phase === "unknown" ? "Operation status unknown" : removing ? "Uninstalling "+(operation.title || selected && selected.title || "selected game") : restoring ? "Restoring library entry" : operation.phase === "running" ? "Game session open" : operation.phase === "stopped" ? "Game closed" : "Starting game",
+            heading:operation.phase === "waiting-for-dashboard-exit" ? removing ? startupRemoval ? "Closing Blackwire to remove startup files" : "Closing Blackwire to uninstall" : restoring ? "Closing Blackwire to restore" : "Closing dashboard for launch" : launchFailed ? "Launch failed" : operation.phase === "refused" ? removing ? startupRemoval ? "Startup removal failed" : "Uninstall failed" : restoring ? "Restore failed" : "Action refused" : operation.phase === "unknown" ? "Operation status unknown" : removing ? (startupRemoval ? "Removing startup files for " : "Uninstalling ")+(operation.title || selected && selected.title || "selected game") : restoring ? "Restoring library entry" : operation.phase === "running" ? "Game session open" : operation.phase === "stopped" ? "Game closed" : "Starting game",
             message:detail || "Checking the exact dashboard operation.",ownershipLabel:operation.phase === "waiting-for-dashboard-exit" ? "Waiting for the native dashboard to exit normally." : operation.active || state.dashboardWatch ? "The operation is retained. Further actions are paused." : "",
             primaryVisible:false,primaryEnabled:false,refreshVisible:true,refreshEnabled:!pending,dismissible:!operation.active && !state.dashboardWatch && operation.phase !== "unknown"};
         }
@@ -812,7 +814,7 @@
           playLabel:close ? stream.gamePid > 0 ? "Close game" : "Cancel launch" : game.kind === 1 && game.startupReady && game.dashboardLaunchReady === false ? "Finish setup and play" : "Play",close:close,
           canPlay:close ? !closingReason : showPlay && !busy && game.canPlay,
           playReason:close ? closingReason : busy || (game.canPlay ? "" : game.playReason || "This source is not available to launch."),playRoute:"/api/dashboard/action",
-          canUninstall:!busy && game.canUninstall === true,canRestore:!busy && game.removed === true && game.canRestore === true,
+          canRemoveStartup:!busy && game.canRemoveStartup === true,canUninstall:!busy && game.canUninstall === true,canRestore:!busy && game.removed === true && game.canRestore === true,
           uninstallReason:busy || game.uninstallReason || "",restoreReason:busy || game.restoreReason || "",
           badge:game.removed ? "Removed · PC backup preserved" : ownSending ? ownPreparation.state === "unknown" ? "Checking preparation" : "Preparing files" : selected && running ? stream.phase === "running" ? stream.dataCountersObserved === false ? "Launched" : "Running" : "Starting"
             : issue ? "Last launch failed" : game.dashboardLaunchReady === false && startupFilesReady(game) ? "Dashboard setup needed" : ready(game) ? game.kind === 1 ? "Startup ready" : "Ready on PS5" : "Not ready"};
@@ -935,7 +937,7 @@
         card.detailImage=node("img","",bindings);card.detailImage.alt="";
         card.playGroup=node("div","",bindings);card.play=node("button","",card.playGroup);card.play.type="button";card.playReason=node("p","",card.playGroup);
         card.prepareGroup=node("div","",bindings);card.prepare=node("button","",card.prepareGroup);card.prepare.type="button";card.prepareReason=node("p","",card.prepareGroup);
-        card.footer=node("div","row",card.details);card.removalGroup=node("div","",card.footer);card.remove=node("button","btn btn-ghost danger",card.removalGroup);card.remove.type="button";card.removeReason=node("p","production-hidden",card.removalGroup);
+        card.footer=node("div","row",card.details);card.removalGroup=node("div","",card.footer);card.remove=node("button","btn btn-ghost danger",card.removalGroup);card.remove.type="button";card.removeReason=node("p","",card.removalGroup);
         card.restoreGroup=node("div","",card.footer);card.restore=node("button","btn btn-ghost",card.restoreGroup);card.restore.type="button";text(card.restore,"Restore to library");card.restoreReason=node("p","production-hidden",card.restoreGroup);
         card.select.addEventListener("click", function () { selectGame(name,false,true); });
         card.select.addEventListener("focus", function () { selectGame(name,false,true); });
@@ -960,10 +962,12 @@
           requestAction("/api/send", body, "Preparing " + name);
         });
         card.remove.addEventListener("click",function () {
-          if(!view.actions(card.game,state,pending).canUninstall)return;
-          removalConfirmation={id:card.game.dashboardId,titleId:card.game.titleId,generation:state.dashboard.catalogGeneration,name:name};
+          var available=view.actions(card.game,state,pending);if(!available.canUninstall&&!available.canRemoveStartup)return;
+          removalConfirmation={id:card.game.dashboardId,titleId:card.game.titleId,generation:state.dashboard.catalogGeneration,name:name,action:available.canRemoveStartup?"remove-startup":"uninstall"};
+          text(document.getElementById("removalHeading"),available.canRemoveStartup?"Remove only these startup files?":"Uninstall this console copy?");
+          text(document.getElementById("confirmRemoval"),available.canRemoveStartup?"Remove startup files":"Uninstall");
           text(document.getElementById("removalTitle"),(card.game.title || name)+" · "+card.game.titleId);
-          text(document.getElementById("removalDescription"),card.game.kind === 1 ? "Removes this game's prepared console files and registration, and hides this PC source from your library. Your PC backup and saved games remain. Restore is available under Removed."
+          text(document.getElementById("removalDescription"),available.canRemoveStartup ? "Removes only this Blackwire-owned startup copy and its preparation record. Existing console game metadata, registration, saved games and the PC source are preserved. This does not repair or uninstall the existing console installation." : card.game.kind === 1 ? "Removes this game's prepared console files and registration, and hides this PC source from your library. Your PC backup and saved games remain. Restore is available under Removed."
             : "Removes this selected full console game and its registration. Saved games and other copies remain. Keep another backup if you want to install it again.");
           document.getElementById("removalConfirm").hidden=false;detailsBody.hidden=true;detailsBody.inert=true;
           document.getElementById("cancelRemoval").focus();
@@ -1114,7 +1118,7 @@
       document.getElementById("confirmRemoval").addEventListener("click",function () {
         var confirmed=removalConfirmation;if(!confirmed || !state || !state.dashboard || state.dashboard.catalogGeneration !== confirmed.generation)return;
         var card=cards[confirmed.name];if(!card || card.game.dashboardId !== confirmed.id || card.game.titleId !== confirmed.titleId)return;
-        cancelRemoval(false);setDetailsOpen(false,false);requestDashboard(card.game,"uninstall",confirmed.titleId);
+        cancelRemoval(false);setDetailsOpen(false,false);requestDashboard(card.game,confirmed.action,confirmed.titleId);
       });
       function setLayout(next,persist) {
         if(next !== "carousel" && next !== "grid")return;
@@ -1130,7 +1134,7 @@
       }
       function renderCards() {
         if (!state) return;
-        if(removalConfirmation && (!state.dashboard || state.dashboard.catalogGeneration !== removalConfirmation.generation || !state.dashboard.items.some(function (item) {return item.id === removalConfirmation.id && item.titleId === removalConfirmation.titleId && item.canUninstall === true;}))) {
+        if(removalConfirmation && (!state.dashboard || state.dashboard.catalogGeneration !== removalConfirmation.generation || !state.dashboard.items.some(function (item) {return item.id === removalConfirmation.id && item.titleId === removalConfirmation.titleId && (removalConfirmation.action === "remove-startup" ? item.canRemoveStartup === true : item.canUninstall === true);}))) {
           cancelRemoval(true);notice={text:"The library changed. Review the selected source before uninstalling.",kind:"bad"};
         }
         var present = Object.create(null);
@@ -1198,9 +1202,10 @@
           control(card.prepare,action.canPrepare);
           card.prepareGroup.hidden=action.showPrepare === false;
           text(card.prepareReason, action.prepareReason);
-          card.removalGroup.hidden=game.canUninstall !== true;
-          text(card.remove,"Uninstall from PS5");card.remove.setAttribute("aria-label","Uninstall " + (game.title || game.name));
-          control(card.remove,action.canUninstall === true);text(card.removeReason,action.uninstallReason || "");
+          card.removalGroup.hidden=!action.uninstallReason && game.canUninstall !== true && game.canRemoveStartup !== true;
+          card.remove.hidden=game.canUninstall !== true && game.canRemoveStartup !== true;
+          text(card.remove,game.canRemoveStartup ? "Remove startup files only" : "Uninstall from PS5");card.remove.setAttribute("aria-label",(game.canRemoveStartup ? "Remove only startup files for " : "Uninstall ") + (game.title || game.name));
+          control(card.remove,action.canUninstall === true || action.canRemoveStartup === true);text(card.removeReason,action.uninstallReason || "");
           card.restoreGroup.hidden=game.removed !== true;
           card.restore.setAttribute("aria-label","Restore " + (game.title || game.name) + " to library");
           control(card.restore,action.canRestore === true);text(card.restoreReason,action.restoreReason || "");
@@ -1535,7 +1540,7 @@
         try {body=view.dashboardBody(state,game,action,confirmedTitle);} catch (error) {notice={text:error.message,kind:"bad"};show(state);return;}
         var previousId=state.dashboard.operation.id;
         preparationIssue=null;dismissedSessionKey="";
-        pending={name:game.name,itemId:game.dashboardId,title:game.title,action:action,message:action === "send" ? "Sending startup files for " + game.title + "…" : action === "uninstall" ? "Uninstalling " + game.title + "…" : action === "restore" ? "Restoring " + game.title + " to the library…" : "Starting " + game.title + "…"};
+        pending={name:game.name,itemId:game.dashboardId,title:game.title,action:action,message:action === "send" ? "Sending startup files for " + game.title + "…" : action === "remove-startup" ? "Removing only startup files for " + game.title + "…" : action === "uninstall" ? "Uninstalling " + game.title + "…" : action === "restore" ? "Restoring " + game.title + " to the library…" : "Starting " + game.title + "…"};
         notice=null;dashboardFlow=null;show(state);
         return view.dashboardPost(body,(state.setup || {}).token,fetch).then(function (reply) {
           browserHandoff.accepted(body,reply);

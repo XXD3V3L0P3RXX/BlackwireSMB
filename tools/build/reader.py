@@ -197,6 +197,9 @@ def host_tests(root, out, source, runner):
             ("projected_bundle", "dashboard/lifecycle/check_projected_bundle.py", ["--host-only"]),
             ("projected_uninstall", "dashboard/lifecycle/check_projected_game_uninstall.py", ["--host-only"]),
             ("projected_uninstall_e2e", "dashboard/lifecycle/check_projected_game_uninstall_e2e.py", []),
+            ("projected_preparation_cleanup_e2e", "dashboard/lifecycle/check_projected_preparation_cleanup_e2e.py", []),
+            ("projected_preparation_cleanup_remote", "dashboard/lifecycle/check_projected_preparation_cleanup_remote.py", []),
+            ("registration_observation", "dashboard/lifecycle/check_registration_observation.py", ["--host-only"]),
             ("projected_registration", "dashboard/lifecycle/check_projected_game_uninstall_e2e.py", ["--registration"]),
             ("legacy_source_removal", "dashboard/lifecycle/check_legacy_source_removal.py", [])):
         checked = out / key

@@ -55,3 +55,11 @@ Reader counters are unavailable in some resident status paths. An unavailable co
 Explicit streamed-copy **Uninstall** removes only the exact admitted console preparation and owned registration, and marks that source Removed in the library. PC originals, saved data, unrelated full console games and preexisting registrations are separate ownership domains.
 
 **Restore** returns the source to library visibility; it does not recover deleted console files. Send files prepares a new copy when allowed. For partial or unknown outcomes, inspect the current status instead of repeating a delete. Manually removing a folder is not equivalent to a completed Blackwire Uninstall, and may leave registration or ownership work unresolved.
+
+### Existing console metadata and incomplete setup
+
+An empty ShadowMount library does not prove that a title is uninstalled. The console can retain its app metadata after the original game folder has been removed. A new Blackwire data folder does not remove that separate installation. Step 8 must distinguish it from an absent registration; creating a replacement `mount.lnk`, copying library files into place or deleting an ownership journal is not a repair.
+
+In the unreleased revision, Details keeps the removal refusal visible. When a Blackwire startup copy can be verified, **Remove startup files only** offers a separate confirmation. It removes that exact startup copy and its preparation record while preserving the existing console installation, its metadata, saved games and the PC source. It does not uninstall the existing title, repair its registration or move the PC source into Removed. Execution rechecks the prepared inventory, inactive reader and source exclusion; a displayed button alone is not removal authority.
+
+To replace an existing console installation, use its normal console uninstall before preparing a new copy. If the title is absent from the visible library but setup still reports existing or unreadable registration metadata, keep the exact error for diagnosis. Do not edit the console database or manufacture the missing files. The preparation-only action and revised registration errors still require console qualification before release.

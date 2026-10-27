@@ -328,7 +328,7 @@ static int home_prepare_provision(struct bw_native_backend *p,const struct bw_na
     bw_send_log("setup-step","game=%s step=8",prepared->game);
     struct bw_nrc_environment env=registration_environment;env.data_root=backend_data_root;struct bw_nrl_request acquire={.environment=env,.selection=&h.selection,.current=home_prepare_registration,.opaque=&h,.startup=h.startup};struct bw_nrc_result acquired={0};
     int began=bw_nrl_begin(&acquire,&owner,&acquired);if(began){unknown|=began==BW_NRC_RELEASE_UNCONFIRMED;
-        home_prepare_first_failure(&first,8,acquired.stage?acquired.stage:"registration-owner",acquired.detail?acquired.detail:acquired.reason?acquired.reason:"registration owner admission refused",began,acquired.error_snapshot);goto done;}
+        home_prepare_first_failure(&first,8,acquired.stage?acquired.stage:"registration-owner",*acquired.registration_message?acquired.registration_message:acquired.detail?acquired.detail:acquired.reason?acquired.reason:"registration owner admission refused",began,acquired.error_snapshot);goto done;}
     struct bw_native_register_request registration={.data_root=backend_data_root,.apps=env.apps_root,.database=env.database,.identity=&h.identity,.selected=&h.selection,.current=home_prepare_control,.guard=&h,.startup=h.startup};
     bw_send_log("setup-step","game=%s step=9",prepared->game);
     struct bw_register_result checked={0};int registered=bw_native_register(&registration,&checked);
@@ -354,7 +354,7 @@ done:;
     pthread_mutex_lock(&p->lock);if(unknown)p->control_release_unknown=1;
     if(p->sending.item<BW_CATALOG_MAX_ITEMS)p->home_ready[p->sending.item]=result?2:1;
     if(result){snprintf(p->home_setup_game,sizeof p->home_setup_game,"%s",prepared->game);
-        snprintf(p->home_setup_reason,sizeof p->home_setup_reason,"Startup files kept. Setup step %u (%.48s): %.128s (raw=%d errnoSnapshot=%d).",
+        snprintf(p->home_setup_reason,sizeof p->home_setup_reason,"Startup files kept. Setup step %u (%.48s): %.512s (raw=%d errnoSnapshot=%d).",
             first.step,first.where?first.where:"unknown",first.detail?first.detail:"setup did not finish",first.raw,first.error);}
     else if(!strcmp(p->home_setup_game,prepared->game)){memset(p->home_setup_game,0,sizeof p->home_setup_game);memset(p->home_setup_reason,0,sizeof p->home_setup_reason);}
     pthread_mutex_unlock(&p->lock);if(startup_invalid)*startup_invalid=h.startup_invalid;

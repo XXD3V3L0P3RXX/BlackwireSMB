@@ -61,7 +61,7 @@ struct bw_native_backend {
     struct {struct bw_home_claim claim;struct bw_stop_identity birth;uint64_t generation,epoch;uint32_t revision;unsigned active;void *retained;} home;
     struct bw_stop_identity home_consumed[256];size_t home_consumed_count;
     unsigned char home_ready[BW_CATALOG_MAX_ITEMS]; /*0 unknown,1 qualified,2 known setup failure*/
-    char home_setup_game[75],home_setup_reason[256];
+    char home_setup_game[75],home_setup_reason[768];
 #endif
     char server[128],share[128],share2[128],user[128];unsigned password_saved;struct bw_native_backend_ops ops;void *opaque;
     struct bw_native_library library;struct bw_native_jobs *jobs;
@@ -97,7 +97,7 @@ struct bw_native_backend {
     size_t registration_pending_count;
     int registration_ledger_unknown;
     struct {struct bw_native_removal_selection selected;size_t item;uint64_t generation,epoch;uint32_t revision;
-        unsigned restore,state,unknown;enum bw_game_uninstall_phase phase;uint32_t files,total;char message[256];
+        unsigned restore,startup_only,state,unknown;enum bw_game_uninstall_phase phase;uint32_t files,total;char message[256];
         struct bw_game_uninstall_result result;} removing;
 };
 static int registration_waiting(const struct bw_native_backend *p,const char *title){
@@ -111,6 +111,7 @@ enum {REMOVAL_IDLE,REMOVAL_RUNNING,REMOVAL_DONE,REMOVAL_ERROR,REMOVAL_UNKNOWN};
 static int default_removal_probe(void *,const struct bw_provider_binding *,const struct bw_native_prepared *,struct bw_game_uninstall_capability *);
 static int default_uninstall(void *,const struct bw_native_removal_selection *,int (*)(void *),void *,void (*)(void *,const struct bw_game_uninstall_progress *),void *,struct bw_game_uninstall_result *);
 static int default_restore(void *,const struct bw_native_removal_selection *,int (*)(void *),void *,struct bw_game_uninstall_result *);
+static int default_remove_startup(void *,const struct bw_native_removal_selection *,int (*)(void *),void *,void (*)(void *,const struct bw_game_uninstall_progress *),void *,struct bw_game_uninstall_result *);
 static void removal_state_json(struct bw_json *,const struct bw_native_backend *);
 static int removed_at(const struct bw_native_backend *p,size_t i){return p->library.removal&&i<p->library.catalog.count&&p->library.removal[i].removed;}
 static int removal_cache(struct bw_native_backend *,struct bw_native_library *,const struct bw_share_config *);
@@ -546,7 +547,8 @@ static int play(void *opaque,const struct bw_native_play_selection *selected,int
         int acquired_status=bw_nrl_begin(&acquire,&registration_owner,&acquired);
         if(acquired_status){
             if(acquired_status==BW_NRC_RELEASE_UNCONFIRMED){pthread_mutex_lock(&p->lock);p->control_release_unknown=1;pthread_mutex_unlock(&p->lock);}
-            char message[256];snprintf(message,sizeof message,"%s (detail=%s raw=%d errnoSnapshot=%d)",acquired.reason?acquired.reason:
+            char message[768];if(*acquired.registration_message)snprintf(message,sizeof message,"%s",acquired.registration_message);
+            else snprintf(message,sizeof message,"%s (detail=%s raw=%d errnoSnapshot=%d)",acquired.reason?acquired.reason:
                 "Registration ownership could not be retained; launch was stopped.",ctx.context.registration_failure?ctx.context.registration_failure:
                 acquired.detail?acquired.detail:"none",acquired.raw_result,acquired.error_snapshot);
             struct bw_reader_event event={.phase="error",.message=message};observe(observer,&event);goto done;
@@ -976,11 +978,11 @@ struct bw_native_backend *bw_native_backend_create(const struct bw_native_backen
     p->ops.prepare=ops?(ops->prepare?ops->prepare:ops->native_preparation?prepare:NULL):prepare;
     p->ops.inspect=ops?(ops->inspect?ops->inspect:ops->native_preparation?inspected:NULL):inspected;
     p->ops.play=ops?ops->play:NULL;p->ops.close=ops?ops->close:NULL;
-    p->ops.removal_probe=ops?ops->removal_probe:NULL;p->ops.uninstall=ops?ops->uninstall:NULL;p->ops.restore=ops?ops->restore:NULL;
+    p->ops.removal_probe=ops?ops->removal_probe:NULL;p->ops.uninstall=ops?ops->uninstall:NULL;p->ops.restore=ops?ops->restore:NULL;p->ops.remove_startup=ops?ops->remove_startup:NULL;
 #ifdef BW_NATIVE_PLAYBACK
     if(!ops){p->ops.play=play;p->ops.close=close_game;}
 #ifdef BW_NATIVE_PRELOAD
-    if(!ops){(void)registration_pending_refresh(p);p->ops.removal_probe=default_removal_probe;p->ops.uninstall=default_uninstall;p->ops.restore=default_restore;}
+    if(!ops){(void)registration_pending_refresh(p);p->ops.removal_probe=default_removal_probe;p->ops.uninstall=default_uninstall;p->ops.restore=default_restore;p->ops.remove_startup=default_remove_startup;}
 #endif
 #endif
     p->settings_status=BW_SETUP_UNSAFE;p->settings_enabled=p->ops.read_settings&&p->ops.save_settings;
@@ -1275,6 +1277,7 @@ static int state(struct bw_native_backend *p,struct bw_native_response *out){
         int removal_eligible=!build_reason&&!cleanup_waiting&&p->settings_status==BW_SETUP_VALID&&p->phase==BACKEND_READY&&!p->stale&&bw_source_catalog_available(item);
         bw_json_format(&json,",\"canUninstall\":%s,\"removed\":%s,\"canRestore\":%s,\"uninstallReason\":",removal_eligible&&cap&&cap->can_uninstall&&p->ops.uninstall?"true":"false",removed?"true":"false",removal_eligible&&cap&&cap->can_restore&&p->ops.restore?"true":"false");
         bw_json_string(&json,cap&&cap->reason?cap->reason:"Exact owned-copy removal is unavailable.");bw_json_text(&json,",\"restoreReason\":");bw_json_string(&json,cap&&cap->reason?cap->reason:"No durable removed source is available.");
+        bw_json_format(&json,",\"canRemoveStartup\":%s",removal_eligible&&cap&&cap->can_remove_startup&&p->ops.remove_startup?"true":"false");
         if(owned_prepared){
             bw_json_format(&json,",\"sendBytes\":%llu,\"stayBytes\":%llu,\"consoleAllocatedBytes\":%llu,\"storageVerifiedAt\":\"preparation\",\"preparationBytesVerified\":%s,\"testStatus\":",
                 (unsigned long long)prepared->local_bytes,(unsigned long long)prepared->remote_bytes,(unsigned long long)prepared->allocated_bytes,prepared->bytes_verified?"true":"false");
@@ -1694,6 +1697,7 @@ static int handle_core(struct bw_native_backend *p,const char *owner,const char 
     if(!strcmp(method,"POST")&&!strcmp(url,"/api/send"))return owner?send_owned(p,owner,body,size,token,out):send(p,body,size,token,out);
     if(!strcmp(method,"POST")&&!strcmp(url,"/api/uninstall"))return removal_action(p,owner,body,size,token,0,out);
     if(!strcmp(method,"POST")&&!strcmp(url,"/api/restore"))return removal_action(p,owner,body,size,token,1,out);
+    if(!strcmp(method,"POST")&&!strcmp(url,"/api/remove-startup"))return removal_action(p,owner,body,size,token,2,out);
     if(!strcmp(method,"POST")&&!strcmp(url,"/api/play"))return start_play(p,body,size,token,0,out);
     if(!strcmp(method,"POST")&&!strcmp(url,"/api/start"))return start_play(p,body,size,token,1,out);
     if(!strcmp(method,"POST")&&!strcmp(url,"/api/close"))return stop_play(p,body,size,token,out);
@@ -1907,7 +1911,7 @@ int bw_native_backend_handle_authenticated(struct bw_native_backend *p,const cha
 }
 int bw_native_backend_handle_reserved(struct bw_native_backend *p,const char owner[33],const char *method,const char *url,
     const void *body,size_t size,const char *token,struct bw_native_response *out){
-    if(!nonce_valid(owner)||!url||(strcmp(url,"/api/start")&&strcmp(url,"/api/send")&&strcmp(url,"/api/uninstall")&&strcmp(url,"/api/restore"))||!method||strcmp(method,"POST"))return -1;
+    if(!nonce_valid(owner)||!url||(strcmp(url,"/api/start")&&strcmp(url,"/api/send")&&strcmp(url,"/api/uninstall")&&strcmp(url,"/api/restore")&&strcmp(url,"/api/remove-startup"))||!method||strcmp(method,"POST"))return -1;
     return dispatch_request(p,owner,method,url,body,size,token,out);
 }
 int bw_native_backend_handle(struct bw_native_backend *p,const char *method,const char *url,const void *body,size_t size,struct bw_native_response *out){

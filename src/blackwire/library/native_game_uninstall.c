@@ -45,7 +45,7 @@ struct gu_plan {
     struct gu_node *nodes;size_t count,capacity,pool;
     unsigned char intent[GU_INTENT],inventory[32];
     char content[128],intent_leaf[128],registration_leaf[128],files_leaf[128],done_leaf[128];
-    unsigned files_total,root_removed,state_removed,continuation,identity_diagnostic,release_unknown;
+    unsigned files_total,root_removed,state_removed,continuation,identity_diagnostic,release_unknown,preparation_only;
     uint64_t current_calls;
     const char *checking;
 };
@@ -376,9 +376,12 @@ static void gu_phase(unsigned char out[GU_PHASE],const struct gu_plan *p,const c
 static int gu_phase_read(struct gu_plan *p,const char *name,const char *magic){unsigned char expected[GU_PHASE];void *got=NULL;size_t size=0;struct stat st;gu_phase(expected,p,magic);int loaded=gu_read(p,p->ledger,name,GU_PHASE,&got,&size,&st);
     if(!loaded&&(size!=GU_PHASE||(st.st_mode&07777)!=0600||memcmp(got,expected,GU_PHASE)))loaded=-1;free(got);return loaded;}
 static int gu_ledger(struct gu_plan *p,int create){
-    struct stat st;if(cp_fstatat(p->data,"game-removals",&st,AT_SYMLINK_NOFOLLOW)){if(!create||errno!=ENOENT||gu_current(p)||v2_mkdirat(p->data,"game-removals",0700))return -1;
-        p->ledger=gu_open_child(p,p->data,0,"game-removals",6);if(p->ledger<0||(p->ids[6].st_mode&07777)!=0700||gu_marker(p,".blackwire-game-removals",gu_scope,sizeof gu_scope-1)||fsync(p->data))return -1;
-    }else {p->ledger=gu_open_child(p,p->data,0,"game-removals",6);if(p->ledger<0||(p->ids[6].st_mode&07777)!=0700||gu_exact(p,p->ledger,".blackwire-game-removals",gu_scope,sizeof gu_scope-1,0600))return -1;}return 0;
+    const char *name=p->preparation_only?"preparation-removals":"game-removals";
+    const char *marker=p->preparation_only?".blackwire-preparation-removals":".blackwire-game-removals";
+    const char *scope=p->preparation_only?"Blackwire preparation removals v1\n":gu_scope;
+    struct stat st;if(cp_fstatat(p->data,name,&st,AT_SYMLINK_NOFOLLOW)){if(!create||errno!=ENOENT||gu_current(p)||v2_mkdirat(p->data,name,0700))return -1;
+        p->ledger=gu_open_child(p,p->data,0,name,6);if(p->ledger<0||(p->ids[6].st_mode&07777)!=0700||gu_marker(p,marker,scope,strlen(scope))||fsync(p->data))return -1;
+    }else {p->ledger=gu_open_child(p,p->data,0,name,6);if(p->ledger<0||(p->ids[6].st_mode&07777)!=0700||gu_exact(p,p->ledger,marker,scope,strlen(scope),0600))return -1;}return 0;
 }
 static int gu_journal_load(struct gu_plan *p){
     const struct bw_source_binding *b=&p->r->identity.binding;int n=snprintf(p->intent_leaf,sizeof p->intent_leaf,"%s.%s.intent",b->game,p->r->operation);if(n<0||(size_t)n>=sizeof p->intent_leaf)return -1;
@@ -387,7 +390,7 @@ static int gu_journal_load(struct gu_plan *p){
     if(!loaded){unsigned char hash[32],paths_hash[32];const unsigned char *v=body;
         struct cp_sha h;cp_sha_init(&h);const char *paths[]={p->r->environment.data_root,p->r->environment.apps_root,p->r->environment.database};for(unsigned i=0;i<3;i++)cp_sha_update(&h,paths[i],strlen(paths[i])+1);cp_sha_final(&h,paths_hash);
         if(size!=GU_INTENT)loaded=-1;
-        else {cp_sha_bytes(body,GU_INTENT-32,hash);if((st.st_mode&07777)!=0600||memcmp(v,"BWGUR001",8)||gu_u32(v+8)!=1||gu_u32(v+12)!=GU_INTENT||gu_u32(v+16)!=(uint32_t)p->r->identity.kind||gu_u32(v+20)!=BW_PROVIDER_POLICY_V1||memcmp(hash,v+GU_INTENT-32,32)||memcmp(v+24,b->sha256,32)||memcmp(v+56,p->r->prepared.record_sha256,32)||memcmp(v+88,p->r->operation,33)||memcmp(v+128,b->title,10)||memcmp(v+144,b->game,75)||!memchr(v+224,0,sizeof b->source)||strcmp((const char *)v+224,b->source)||!memchr(v+1568,0,128)||memcmp(v+1696,paths_hash,32))loaded=-1;
+        else {cp_sha_bytes(body,GU_INTENT-32,hash);if((st.st_mode&07777)!=0600||memcmp(v,p->preparation_only?"BWGPR001":"BWGUR001",8)||gu_u32(v+8)!=1||gu_u32(v+12)!=GU_INTENT||gu_u32(v+16)!=(uint32_t)p->r->identity.kind||gu_u32(v+20)!=BW_PROVIDER_POLICY_V1||memcmp(hash,v+GU_INTENT-32,32)||memcmp(v+24,b->sha256,32)||memcmp(v+56,p->r->prepared.record_sha256,32)||memcmp(v+88,p->r->operation,33)||memcmp(v+128,b->title,10)||memcmp(v+144,b->game,75)||!memchr(v+224,0,sizeof b->source)||strcmp((const char *)v+224,b->source)||!memchr(v+1568,0,128)||memcmp(v+1696,paths_hash,32))loaded=-1;
             else {memcpy(p->intent,body,GU_INTENT);memcpy(p->content,v+1568,128);}}}
     free(body);if(loaded<0)return -1;
     int cursor=v2_openat(p->ledger,".",O_RDONLY|O_DIRECTORY|O_NOFOLLOW,0);if(cursor<0)return -1;DIR *dir=fdopendir(cursor);if(!dir){gu_release(p,cursor);return -1;}int bad=0;unsigned count=0;struct dirent *entry;
@@ -399,15 +402,15 @@ static int gu_journal_load(struct gu_plan *p){
         if(name_size!=114||strcmp(name+107,".intent")){bad=1;break;}void *old=NULL;size_t old_size=0;struct stat os;
         if(gu_read(p,p->ledger,name,GU_INTENT,&old,&old_size,&os)||old_size!=GU_INTENT||(os.st_mode&07777)!=0600){free(old);bad=1;break;}
         unsigned char hash[32];cp_sha_bytes(old,GU_INTENT-32,hash);unsigned char *v=old;char done[128];memcpy(done,name,107);strcpy(done+107,".done");void *marked=NULL;size_t mn=0;struct stat ms;
-        unsigned char expected[GU_PHASE]={0};memcpy(expected,"BWGUD001",8);memcpy(expected+16,v+GU_INTENT-32,32);memcpy(expected+48,v+88,33);cp_sha_bytes(expected,96,expected+96);
-        if(memcmp(v,"BWGUR001",8)||memcmp(v+GU_INTENT-32,hash,32)||memcmp(v+24,b->sha256,32)||!memcmp(v+56,p->r->prepared.record_sha256,32)||gu_read(p,p->ledger,done,GU_PHASE,&marked,&mn,&ms)||mn!=GU_PHASE||(ms.st_mode&07777)!=0600||memcmp(marked,expected,GU_PHASE))bad=1;
+        unsigned char expected[GU_PHASE]={0};memcpy(expected,p->preparation_only?"BWGPD001":"BWGUD001",8);memcpy(expected+16,v+GU_INTENT-32,32);memcpy(expected+48,v+88,33);cp_sha_bytes(expected,96,expected+96);
+        if(memcmp(v,p->preparation_only?"BWGPR001":"BWGUR001",8)||memcmp(v+GU_INTENT-32,hash,32)||memcmp(v+24,b->sha256,32)||!memcmp(v+56,p->r->prepared.record_sha256,32)||gu_read(p,p->ledger,done,GU_PHASE,&marked,&mn,&ms)||mn!=GU_PHASE||(ms.st_mode&07777)!=0600||memcmp(marked,expected,GU_PHASE))bad=1;
         free(old);free(marked);if(bad)break;
     }
     if(gu_dir_release(p,dir))bad=1;
     if(loaded==1&&(gu_absent_at(p->ledger,p->registration_leaf)||gu_absent_at(p->ledger,p->files_leaf)||gu_absent_at(p->ledger,p->done_leaf)))bad=1;
     return bad?-1:loaded;
 }
-static void gu_intent_encode(struct gu_plan *p){unsigned char *v=p->intent;const struct bw_source_binding *b=&p->r->identity.binding;memset(v,0,GU_INTENT);memcpy(v,"BWGUR001",8);gu_put32(v+8,1);gu_put32(v+12,GU_INTENT);gu_put32(v+16,p->r->identity.kind);gu_put32(v+20,p->r->identity.policy);memcpy(v+24,b->sha256,32);memcpy(v+56,p->r->prepared.record_sha256,32);memcpy(v+88,p->r->operation,33);memcpy(v+128,b->title,10);memcpy(v+144,b->game,75);memcpy(v+224,b->source,strlen(b->source)+1);gu_stat_wire(v+1280,p->ids+4);gu_stat_wire(v+1408,p->ids+5);memcpy(v+1536,p->inventory,32);memcpy(v+1568,p->content,128);
+static void gu_intent_encode(struct gu_plan *p){unsigned char *v=p->intent;const struct bw_source_binding *b=&p->r->identity.binding;memset(v,0,GU_INTENT);memcpy(v,p->preparation_only?"BWGPR001":"BWGUR001",8);gu_put32(v+8,1);gu_put32(v+12,GU_INTENT);gu_put32(v+16,p->r->identity.kind);gu_put32(v+20,p->r->identity.policy);memcpy(v+24,b->sha256,32);memcpy(v+56,p->r->prepared.record_sha256,32);memcpy(v+88,p->r->operation,33);memcpy(v+128,b->title,10);memcpy(v+144,b->game,75);memcpy(v+224,b->source,strlen(b->source)+1);gu_stat_wire(v+1280,p->ids+4);gu_stat_wire(v+1408,p->ids+5);memcpy(v+1536,p->inventory,32);memcpy(v+1568,p->content,128);
     struct cp_sha h;cp_sha_init(&h);const char *paths[]={p->r->environment.data_root,p->r->environment.apps_root,p->r->environment.database};for(unsigned i=0;i<3;i++)cp_sha_update(&h,paths[i],strlen(paths[i])+1);cp_sha_final(&h,v+1696);cp_sha_bytes(v,GU_INTENT-32,v+GU_INTENT-32);
 }
 static int gu_load_plan(struct gu_plan *p){
@@ -473,6 +476,60 @@ static int gu_complete(struct gu_plan *p){
     unsigned char done[GU_PHASE];gu_phase(done,p,"BWGUD001");int existing=gu_phase_read(p,p->done_leaf,"BWGUD001");if(existing<0||(existing==1&&gu_marker(p,p->done_leaf,done,sizeof done)))return -1;
     gu_progress(p,BW_GAME_REMOVE_COMMITTING,"Updating the removed-games library");struct bw_removed_ops ops={p,gu_removed_current,gu_removed_absent};struct bw_removed_result removed;
     if(bw_removed_commit(p->r->environment.data_root,&p->removed,&ops,&removed)||removed.state!=BW_REMOVED_COMMITTED||gu_all_absent(p))return -1;p->out->library_removed=1;return 0;
+}
+static int gu_preparation_owner_clear(struct gu_plan *p){
+    struct bw_nrc_candidate *rows=calloc(BW_NRC_CANDIDATE_LIMIT,sizeof *rows);size_t count=0;if(!rows)return -1;
+    int status=bw_nrc_candidates(&p->r->environment,rows,BW_NRC_CANDIDATE_LIMIT,&count);
+    if(status==BW_NRC_RELEASE_UNCONFIRMED)p->release_unknown=1;
+    for(size_t i=0;!status&&i<count;i++)if(!strcmp(rows[i].subject.title,p->r->identity.binding.title))status=-1;
+    free(rows);return status||gu_current(p)?-1:0;
+}
+int bw_native_preparation_remove(const struct bw_preparation_remove_request *q,struct bw_game_uninstall_result *out){
+    if(out)memset(out,0,sizeof *out);
+    if(!q||!out||!q->ops.current||!q->ops.source_excluded)return -1;
+    /* No registration callback exists in this public purpose. The temporary
+     * view is private to exact inventory/deletion helpers and is never passed
+     * to the title-wide normal uninstall or Removed-library store. */
+    struct bw_game_uninstall_request r={.environment=q->environment,.identity=q->identity,.prepared=q->prepared,
+        .ops={.opaque=q->ops.opaque,.current=q->ops.current,.source_excluded=q->ops.source_excluded,.observe=q->ops.observe},
+        .reader_size=q->reader_size,.legacy_source_fakelib2=q->legacy_source_fakelib2};
+    memcpy(r.operation,q->operation,sizeof r.operation);memcpy(r.confirmed_title,q->confirmed_title,sizeof r.confirmed_title);memcpy(r.reader_sha256,q->reader_sha256,32);
+    if(gu_identity(&r)||!r.environment.data_root||!r.environment.apps_root||!r.environment.database)return -1;
+    if(pthread_mutex_trylock(&gu_lock))return gu_finish(&(struct gu_plan){.out=out},BW_GAME_REMOVE_ERROR,"another_removal_component_is_active",1);
+    struct gu_plan p={.r=&r,.out=out,.checking="preparation_only_trusted_roots",.preparation_only=1};gu_init(&p);int rc=-1;
+    p.removed.identity=r.identity;memcpy(p.removed.operation,r.operation,33);memcpy(p.removed.prepared_sha256,r.prepared.record_sha256,32);
+    gu_progress(&p,BW_GAME_REMOVE_CHECKING,"Checking only this owned startup copy");
+    p.data=gu_open_root(&p,r.environment.data_root,p.anchor,p.ids);if(p.data<0||gu_current(&p))goto done;
+    p.games=gu_open_child(&p,p.data,0,"games",1);p.scope=gu_open_child(&p,p.data,0,"native-prepared",2);
+    p.apps=gu_open_apps(&p,r.environment.apps_root,p.anchor+3,p.ids+3);
+    if(p.games<0||p.scope<0||p.apps<0||gu_exact(&p,p.scope,".blackwire-native-prepared",gu_prepared,sizeof gu_prepared-1,0644)||gu_current(&p))goto done;
+    p.send_lock=v2_openat(p.data,".blackwire-send.lock",O_RDONLY|O_NOFOLLOW|O_NONBLOCK,0);
+    if(p.send_lock<0||gu_exact(&p,p.data,".blackwire-send.lock",gu_send_lock,sizeof gu_send_lock-1,0600)||flock(p.send_lock,LOCK_EX|LOCK_NB)||fstat(p.send_lock,&p.lock_identity))goto done;p.lock_pinned=1;
+    p.checking="preparation_only_registration_owner_present_or_unknown";if(gu_preparation_owner_clear(&p))goto done;
+    if(gu_load_plan(&p))goto done;out->files_total=p.files_total;
+    p.checking="preparation_only_source_exclusion_unconfirmed";
+    if(r.ops.source_excluded(r.ops.opaque,&p.removed)||gu_current(&p)||gu_preparation_owner_clear(&p))goto done;
+    p.checking="preparation_only_journal_unconfirmed";
+    if(gu_ledger(&p,1))goto done;int prior=gu_journal_load(&p);
+    if(prior!=1){if(!prior)out->mutation_started=1;goto done;}
+    gu_intent_encode(&p);out->mutation_started=1;if(gu_marker(&p,p.intent_leaf,p.intent,GU_INTENT))goto done;
+    unsigned char phase[GU_PHASE];gu_phase(phase,&p,"BWGPF001");
+    if(gu_marker(&p,p.files_leaf,phase,sizeof phase)||gu_revalidate(&p)||gu_preparation_owner_clear(&p)||r.ops.source_excluded(r.ops.opaque,&p.removed))goto done;
+    p.checking="preparation_only_file_deletion_unconfirmed";gu_progress(&p,BW_GAME_REMOVE_FILES,"Removing only the owned startup files");
+    if(gu_delete_nodes(&p,0))goto done;out->source_absent=1;
+    p.checking="preparation_only_record_deletion_unconfirmed";gu_progress(&p,BW_GAME_REMOVE_RECORD,"Removing only this preparation record");
+    if(r.ops.source_excluded(r.ops.opaque,&p.removed)||gu_preparation_owner_clear(&p)||gu_delete_nodes(&p,1))goto done;out->prepared_record_absent=1;
+    int root=p.root,state=p.state;p.root=p.state=-1;if(gu_release(&p,root)|gu_release(&p,state))goto done;
+    p.checking="preparation_only_final_absence_unconfirmed";
+    if(gu_absent_at(p.games,r.identity.binding.game)||gu_absent_at(p.scope,r.identity.binding.game)||gu_current(&p)||
+       r.ops.source_excluded(r.ops.opaque,&p.removed)||gu_preparation_owner_clear(&p))goto done;
+    gu_phase(phase,&p,"BWGPD001");if(gu_marker(&p,p.done_leaf,phase,sizeof phase))goto done;
+    out->preparation_only=1;rc=gu_finish(&p,BW_GAME_REMOVE_DONE,"Owned startup files removed. Existing console game metadata was preserved.",0);
+done:
+    if(gu_close(&p)){p.checking="preparation_only_descriptor_close_unconfirmed";rc=-1;}
+    out->release_unknown=p.release_unknown;if(p.release_unknown)rc=-1;
+    if(rc<0){out->preparation_only=0;gu_finish(&p,out->mutation_started||out->release_unknown?BW_GAME_REMOVE_UNKNOWN:BW_GAME_REMOVE_ERROR,p.checking,-1);}
+    pthread_mutex_unlock(&gu_lock);return rc;
 }
 int bw_native_game_uninstall(const struct bw_game_uninstall_request *r,struct bw_game_uninstall_result *out){
     if(out)memset(out,0,sizeof *out);if(!r||!out||gu_identity(r)||!r->environment.data_root||!r->environment.apps_root||!r->environment.database||!r->ops.current||!r->ops.registration_absent||!r->ops.source_excluded)return -1;
@@ -583,9 +640,15 @@ visible:rc=0;goto done;
     for(unsigned i=0;i<32;i++){snprintf(selected.binding_hex+2*i,3,"%02x",identity->binding.sha256[i]);snprintf(selected.prepared_record_hex+2*i,3,"%02x",prepared->record_sha256[i]);}
     /* Only bounded receipt/header/stat metadata is used for presentation.
      * This advisory selection is never persisted or passed to Play/reader. */
-    enum bw_registration_state registration=bw_native_registration_state(environment->data_root,environment->apps_root,environment->database,&selected);
-    if(registration!=BW_REG_ABSENT&&registration!=BW_REG_MATCH){out->reason="registration_is_conflicting_or_unconfirmed";rc=0;goto done;}
+    struct bw_native_registration_observation observation={0};
+    enum bw_registration_state registration=bw_native_registration_observe(environment->data_root,environment->apps_root,environment->database,&selected,&observation);
+    if(registration!=BW_REG_ABSENT&&registration!=BW_REG_MATCH){
+        out->can_remove_startup=!observation.database.release_or_identity_unknown;
+        out->reason=out->can_remove_startup?"Console registration is conflicting or unconfirmed. Remove startup files only preserves that existing console installation.":
+            "Console registration could not be observed or released reliably. Refresh status before removing startup files.";
+        rc=0;goto done;
+    }
     if(registration==BW_REG_MATCH){int app=v2_openat(p.apps,identity->binding.title,O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_NONBLOCK,0);if(app<0)goto done;bad=gu_absent_at(app,"app.pkg");if(gu_release(&p,app))bad=1;if(bad){out->reason="installed_package_is_not_an_owned_prepared_folder";rc=0;goto done;}}
     if(gu_anchor(&p))goto done;out->can_uninstall=1;out->reason="owned_prepared_folder_confirmation_required";rc=0;
-done:if(gu_close(&p))rc=-1;if(rc<0){out->can_uninstall=out->can_restore=0;out->reason="prepared_or_removed_source_metadata_unknown";}return rc;
+done:if(gu_close(&p))rc=-1;if(rc<0){out->can_uninstall=out->can_restore=out->can_remove_startup=0;out->reason="prepared_or_removed_source_metadata_unknown";}return rc;
 }

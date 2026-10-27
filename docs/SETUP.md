@@ -47,6 +47,8 @@ Each copy retains its own share, path and preparation identity. Equal titles in 
 
 A completed Send includes the per-game reader and registration checks. If files are retained but setup is incomplete, the page can offer **Finish setup** or **Finish setup and play**. Follow the selected game's status; retained files do not automatically grant Ready. An unchanged, valid Ready game uses bounded startup checks rather than a complete new source-tree scan.
 
+An existing title can retain console app metadata even after its source folder disappears from ShadowMount. That state must be resolved through normal uninstall before a fresh registration; it is not fixed by adding replacement files. The unreleased revision keeps its refusal visible and can separately remove a verified Blackwire startup copy without touching the existing installation. See [incomplete setup and removal](PREPARATION.md#existing-console-metadata-and-incomplete-setup).
+
 The selected game card shows its preparation progress, current session and any error. Game-operation notices stay with that card rather than appearing as floating notifications across the page.
 
 ## Refresh and console controls

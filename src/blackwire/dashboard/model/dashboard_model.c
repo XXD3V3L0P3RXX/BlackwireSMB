@@ -64,7 +64,8 @@ int bd_catalog_add_pc(struct bd_catalog *c,const struct bd_pc_input *in){
     if(!in||!title_valid(in->title_id)||!text_valid(in->title,BD_TITLE_BYTES,0)||!path_valid(in->source,0)||
        !nonzero(in->source_fingerprint)||!in->library_generation||!in->settings_revision||
        in->startup_ready>1||in->can_play>1||in->can_send>1||in->storage_known>1||
-       in->can_uninstall>1||in->removed>1||in->can_restore>1||
+       in->can_uninstall>1||in->removed>1||in->can_restore>1||in->can_remove_startup>1||
+       (in->can_remove_startup&&(in->can_uninstall||in->removed))||
        in->startup_bytes>UINT64_C(9007199254740991)||in->pc_bytes>UINT64_C(9007199254740991)||in->console_allocated_bytes>UINT64_C(9007199254740991)||
        (in->play_reason&&!text_valid(in->play_reason,BD_REASON_BYTES,1))||
        (in->send_reason&&!text_valid(in->send_reason,BD_REASON_BYTES,1))||
@@ -86,6 +87,7 @@ int bd_catalog_add_pc(struct bd_catalog *c,const struct bd_pc_input *in){
         if(put(item.play_reason,sizeof item.play_reason,"Restore this game to your library before preparing it.")||
            put(item.send_reason,sizeof item.send_reason,"This game was removed from your console library."))return -1;
     }else if(in->can_uninstall)item.flags|=BD_CAN_UNINSTALL;
+    else if(in->can_remove_startup)item.flags|=BD_CAN_REMOVE_STARTUP;
     if(put(item.uninstall_reason,sizeof item.uninstall_reason,in->uninstall_reason?in->uninstall_reason:"")||
        put(item.restore_reason,sizeof item.restore_reason,in->restore_reason?in->restore_reason:""))return -1;
     return complete_item(c,&item);
@@ -130,15 +132,16 @@ int bd_item_can_send(const struct bd_item *item){
 }
 int bd_item_can_uninstall(const struct bd_item *item){return item&&!(item->flags&BD_REMOVED)&&(item->flags&BD_CAN_UNINSTALL);}
 int bd_item_can_restore(const struct bd_item *item){return item&&item->kind==BD_PC_STREAM&&(item->flags&BD_REMOVED)&&(item->flags&BD_CAN_RESTORE);}
+int bd_item_can_remove_startup(const struct bd_item *item){return item&&item->kind==BD_PC_STREAM&&!(item->flags&BD_REMOVED)&&(item->flags&BD_CAN_REMOVE_STARTUP);}
 static int action_permitted(const struct bd_item *item,enum bd_action action){
     return action==BD_PLAY?bd_item_can_play(item):action==BD_SEND?bd_item_can_send(item):
-        action==BD_UNINSTALL?bd_item_can_uninstall(item):action==BD_RESTORE?bd_item_can_restore(item):0;
+        action==BD_UNINSTALL?bd_item_can_uninstall(item):action==BD_RESTORE?bd_item_can_restore(item):action==BD_REMOVE_STARTUP?bd_item_can_remove_startup(item):0;
 }
 static int refuse(struct bd_intent *i,enum bd_intent_phase phase,const char *why){i->phase=phase;(void)put(i->message,sizeof i->message,why);return -1;}
 int bd_intent_begin(struct bd_intent *i,const struct bd_catalog *c,const struct bd_intent_request *r,
                     const struct bd_frontend_identity *f,const char *nonce,const struct bd_intent_ops *o){
     if(!i||i->phase!=BD_INTENT_EMPTY||!r||!catalog_valid(c)||r->catalog_generation!=c->generation||
-       !frontend_valid(f)||!nonce_valid(nonce)||!ops_valid(o)||(r->action!=BD_PLAY&&r->action!=BD_SEND&&r->action!=BD_UNINSTALL&&r->action!=BD_RESTORE))return -1;
+       !frontend_valid(f)||!nonce_valid(nonce)||!ops_valid(o)||(r->action!=BD_PLAY&&r->action!=BD_SEND&&r->action!=BD_UNINSTALL&&r->action!=BD_RESTORE&&r->action!=BD_REMOVE_STARTUP))return -1;
     const struct bd_item *item=bd_catalog_find(c,r->item_id);
     if(!item||item->kind!=r->kind||item->catalog_generation!=c->generation||
        !action_permitted(item,r->action))return -1;

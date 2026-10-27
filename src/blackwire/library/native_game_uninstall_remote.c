@@ -35,7 +35,7 @@ struct gur {
     struct stat apps_id,app_id;
     struct gur_blob source_param,app_param,mount,receipt;
     unsigned binding_started,bound,app_known,registration_called,manual_called,uninstall_called,owner_known,runtime_release_done;
-    unsigned generation_observe_allowed,generation_release_unknown,release_unknown;
+    unsigned generation_observe_allowed,generation_release_unknown,release_unknown,preparation_only;
     const char *reason,*release_reason,*callback_stage;
     int manual_result,uninstall_result;
     struct bw_sm_uninstall_reply uninstall_reply;
@@ -149,7 +149,9 @@ static int gur_bind(struct gur *p,const struct bw_removed_source *s){
         else{p->selection.prepared_policy=3;strcpy(p->selection.prepared_game,b->game);
             for(unsigned i=0;i<32;i++)snprintf(p->selection.provenance_hex+2*i,3,"%02x",prepared->provenance_sha256[i]);}
     }
-    if(map>=0&&gur_release(p,map))bad=1;if(bad||gur_registration_owner_capture(p))return -1;
+    if(map>=0&&gur_release(p,map))bad=1;if(bad)return -1;
+    if(p->preparation_only){p->bound=1;return gur_current(p);}
+    if(gur_registration_owner_capture(p))return -1;
     enum bw_registration_state state=bw_native_registration_state(p->paths[0],p->paths[1],p->paths[2],&p->selection);
     if(p->files_accepted&&state!=BW_REG_ABSENT)return -1;
     if(state==BW_REG_MATCH){
@@ -303,7 +305,7 @@ static int gur_finish(struct gur *p,int rc,struct bw_game_uninstall_result *out)
     const char *core_reason=out->reason;
     if(rc&&p->reason)out->reason=p->reason;
     if(p->generation_release_unknown){p->release_unknown=1;if(!p->release_reason)p->release_reason="previous_generation_observation_release_unconfirmed";rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason="previous_generation_observation_release_unconfirmed";}
-    if(!rc&&out->phase==BW_GAME_REMOVE_DONE&&gur_owner_complete(p)){rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason="removed_copy_registration_owner_completion_unconfirmed";}
+    if(!rc&&!p->preparation_only&&out->phase==BW_GAME_REMOVE_DONE&&gur_owner_complete(p)){rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason="removed_copy_registration_owner_completion_unconfirmed";}
     {int fds[]={p->app,p->apps,p->source.root,p->source.parent};for(unsigned i=0;i<4;i++)if(fds[i]>=0&&gur_release(p,fds[i])){rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason="normal_adapter_descriptor_close_unconfirmed";}}
     if(p->remote.observation_release_unknown||p->release_unknown){out->release_unknown=1;rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason=p->release_reason?p->release_reason:"normal_remote_observation_release_unconfirmed";}
     gur_finish_diag(p,rc,core_reason,out);
@@ -325,6 +327,48 @@ int bw_native_game_uninstall_files_normal(const struct bw_game_uninstall_files_r
         .prepared=p->request.prepared,.ops={.opaque=p,.current=gur_current,.source_excluded=gur_excluded,.observe=gur_observe},.reader_size=p->request.reader_size,.legacy_source_fakelib2=p->request.legacy_source_fakelib2};
     memcpy(next.operation,p->request.operation,33);memcpy(next.confirmed_title,p->request.confirmed_title,10);memcpy(next.reader_sha256,p->request.reader_sha256,32);
     int rc=bw_native_game_uninstall_continue_files(&next,out);return gur_finish(p,rc,out);
+}
+static int gur_preparation_app_excluded(struct gur *p){
+    /* A foreign/staged installation is preserved, but a live mount link must
+     * never point at this copy. Missing app/link is accepted only by named
+     * canonical held-parent checks; unreadable/linked paths remain unknown. */
+    char app[BW_NRC_PATH_BYTES],link[BW_NRC_PATH_BYTES],real[PATH_MAX];struct stat named;
+    if(gur_current(p)||gur_dir_current(p->apps,p->paths[1],&p->apps_id)||gur_join(app,p->paths[1],p->subject.title))return -1;
+    if(cp_fstatat(p->apps,p->subject.title,&named,AT_SYMLINK_NOFOLLOW))return errno==ENOENT&&!gur_current(p)?0:-1;
+    if(!S_ISDIR(named.st_mode)||!realpath(app,real)||strcmp(real,app)||gur_join(link,app,"mount.lnk"))return -1;
+    if(lstat(link,&named))return errno==ENOENT&&!gur_current(p)?0:-1;
+    struct gur_blob body={0};if(gur_read(p,link,BW_NRC_PATH_BYTES+2u,&body))return -1;
+    size_t n=body.size;if(n&&body.body[n-1]=='\n')n--;if(n&&body.body[n-1]=='\r')n--;
+    int bad=!n||n>=BW_NRC_PATH_BYTES||memchr(body.body,0,n)||body.body[0]!='/';char target[BW_NRC_PATH_BYTES];
+    if(!bad){memcpy(target,body.body,n);target[n]=0;size_t a=strlen(p->root);
+        if(bw_manifest_validate_path(target+1,n-1))bad=1;
+        bad=bad||(!strncmp(target,p->root,a)&&(!target[a]||target[a]=='/'))||(!strncmp(p->root,target,n)&&(!p->root[n]||p->root[n]=='/'));
+        /* Existing aliases must be resolvable and disjoint too. */
+        if(!bad&&realpath(target,real)){struct stat destination;size_t z=strlen(real);bad=strcmp(target,real)||stat(real,&destination)||!S_ISDIR(destination.st_mode)||(destination.st_dev==p->source.root_identity.st_dev&&destination.st_ino==p->source.root_identity.st_ino)||(!strncmp(real,p->root,a)&&(!real[a]||real[a]=='/'))||(!strncmp(p->root,real,z)&&(!p->root[z]||p->root[z]=='/'));}
+        else if(!bad&&errno!=ENOENT)bad=1;
+    }
+    free(body.body);return bad||gur_current(p)?-1:0;
+}
+static int gur_preparation_excluded(void *opaque,const struct bw_removed_source *s){
+    struct gur *p=opaque;
+    if((!p->bound&&gur_bind(p,s))||gur_subject(p,s)){p->reason="The exact owned startup copy changed or could not be checked. No console registration was changed.";return -1;}
+    if(gur_preparation_app_excluded(p)){p->reason="The existing console mount could not be proven separate from this startup copy. Existing game metadata was preserved.";return -1;}
+    if(gur_remote_result(p,bw_nrc_remote_sources(&p->remote,&p->subject))){p->reason="ShadowMount could not confirm this startup copy is inactive and separate from its complete game and manual library. Existing game metadata was preserved.";return -1;}
+    if(gur_manual(p)!=0){p->reason="This startup copy remains in ShadowMount's manual library or its membership could not be checked. No manual entry was changed.";return -1;}
+    if(gur_outside(p)){p->reason="ShadowMount scan settings could not be proven to exclude this startup copy. No settings were changed.";return -1;}
+    if(gur_preparation_app_excluded(p)){p->reason="The existing console mount changed during startup cleanup. Existing game metadata was preserved.";return -1;}
+    return 0;
+}
+int bw_native_preparation_remove_normal(const struct bw_preparation_remove_request *q,uint16_t port,struct bw_game_uninstall_result *out){
+    if(!q)return -1;
+    struct bw_game_uninstall_request common={.environment=q->environment,.identity=q->identity,.prepared=q->prepared,
+        .ops={.opaque=q->ops.opaque,.current=q->ops.current,.observe=q->ops.observe},.reader_size=q->reader_size,.legacy_source_fakelib2=q->legacy_source_fakelib2};
+    memcpy(common.operation,q->operation,33);memcpy(common.confirmed_title,q->confirmed_title,10);memcpy(common.reader_sha256,q->reader_sha256,32);
+    struct gur *p=gur_create(&common,NULL,port,out);if(!p)return -1;p->preparation_only=1;
+    struct bw_preparation_remove_request next={.environment=p->request.environment,.identity=p->request.identity,.prepared=p->request.prepared,
+        .ops={.opaque=p,.current=gur_current,.source_excluded=gur_preparation_excluded,.observe=gur_observe},.reader_size=p->request.reader_size,.legacy_source_fakelib2=p->request.legacy_source_fakelib2};
+    memcpy(next.operation,p->request.operation,33);memcpy(next.confirmed_title,p->request.confirmed_title,10);memcpy(next.reader_sha256,p->request.reader_sha256,32);
+    return gur_finish(p,bw_native_preparation_remove(&next,out),out);
 }
 
 /* Explicit registration-only maintenance. Its action journal is deliberately
