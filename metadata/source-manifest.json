@@ -18,12 +18,12 @@
       "sha256": "30f5420779bb3c1a1391b77cb9d83f73285b424f1a50a6a7b573d62989caadca"
     },
     "src/blackwire/dashboard/model/dashboard_model.c": {
-      "bytes": 13301,
-      "sha256": "5e9764185c3c41edb6644f18fa125499d200bca89d1f139576c54658d8fcc3b4"
+      "bytes": 13717,
+      "sha256": "609fb7a92a45805b7df6378757977492cdf091ff83242c9c02a7ce7e523aab96"
     },
     "src/blackwire/dashboard/model/dashboard_model.h": {
-      "bytes": 6005,
-      "sha256": "01e87273bd041345c741e001d5adef0039d49b0cb9ad448475bf93b2611604bd"
+      "bytes": 6127,
+      "sha256": "063d1b93e7a20cd13de8ed485123841fa2a03ac9126a8f570f666cff23bb0c4a"
     },
     "src/blackwire/dashboard/service/catalog_adapter.c": {
       "bytes": 11878,
@@ -34,16 +34,16 @@
       "sha256": "688355c96b85ad5a8ebbdd1d222a68d47e4989a261ba9edc512a78df172efbf6"
     },
     "src/blackwire/dashboard/service/catalog_snapshot.c": {
-      "bytes": 12330,
-      "sha256": "38578653820918872cefa4b9dd1a83e19b93967076d8cba7df83c00a011f3d5a"
+      "bytes": 12713,
+      "sha256": "a45ba32fde287ec79cd3f2c97de0a3524a4d3cd5d1c7fdb472b839712a331191"
     },
     "src/blackwire/dashboard/service/catalog_snapshot.h": {
       "bytes": 905,
       "sha256": "c92044e521f7338301e544c8ca4b3cbacf01f17c9efc6bf3e3990d6057919173"
     },
     "src/blackwire/dashboard/service/dashboard_service.c": {
-      "bytes": 65828,
-      "sha256": "24197c22d76ba4470ef17421b74361f6eee15781cb89ab9c88648d2c8bd22c3c"
+      "bytes": 67008,
+      "sha256": "011acaf5a22c0aec3b1664b23bef890b0ff12aa7dfbac05aa53f5a5cc9952e7c"
     },
     "src/blackwire/dashboard/service/dashboard_service.h": {
       "bytes": 6854,
@@ -118,8 +118,8 @@
       "sha256": "1cfb44add29f594b5058642357d7595381014f696bcacc3cca4c00b85f215b99"
     },
     "src/blackwire/desk/index.html": {
-      "bytes": 150923,
-      "sha256": "ac585d0ce30eeaa56124f06ee0d07a5319f4899f82d5aac6e3cc151c9cd99a27"
+      "bytes": 152718,
+      "sha256": "c9ab05faf31e6c58becb75e72b28632dc199a0bd7ac18e8cde62c386e2a88e59"
     },
     "src/blackwire/desk/tests/browser_handoff_harness.js": {
       "bytes": 12691,
@@ -146,8 +146,8 @@
       "sha256": "a180b4d0435d274b41c47d2e12b18a4985c9354a16d15ad9e6088ea3d3e2d462"
     },
     "src/blackwire/desk/tests/removal_dom_harness.js": {
-      "bytes": 5528,
-      "sha256": "e75bc2af75a736187e4cc3f1fc683983d4a9bdd2dc518cd998e6a0458b4ac034"
+      "bytes": 8296,
+      "sha256": "097f277ef2d46abd572ed2457ca8729fb203543ed9b9f83b4edb70dd1a97b25c"
     },
     "src/blackwire/desk/tests/setup_dom_harness.js": {
       "bytes": 20056,
@@ -158,8 +158,8 @@
       "sha256": "f528f296a7c4d7755784da5adfe38969cac8b298adcf96f922cd0dd313c0ff6e"
     },
     "src/blackwire/desk/tests/test_ui.py": {
-      "bytes": 67019,
-      "sha256": "a23e54877c994e6e5ee9e435fe76c5fa362a145954c7481d391ca10cae94403d"
+      "bytes": 67424,
+      "sha256": "61b1020ba155a7f449507f00589d225c579ff7f1657a75994124cafdf5990f52"
     },
     "src/blackwire/desk/tests/verify_combined_browser.js": {
       "bytes": 8483,
@@ -298,20 +298,20 @@
       "sha256": "0f6c64dda1456217dd67226c84fcbaeac625c3d28db8244e9465399171e1a79f"
     },
     "src/blackwire/library/native_backend.c": {
-      "bytes": 160861,
-      "sha256": "f43d1320f1319b60320b9c4d9d79273b3b3a3e9a80c2669c91d10d9b7be19ce6"
+      "bytes": 161601,
+      "sha256": "dcaa44a7f9ff35c1397555137788bf44e820431aa87f60f090cd6acdd64effd2"
     },
     "src/blackwire/library/native_backend.h": {
-      "bytes": 10188,
-      "sha256": "4d0d66fc71699da4871dd1934f8c81e21d2c2e221ff4cd6fb2004e3b25776fa8"
+      "bytes": 10474,
+      "sha256": "d52a0daf2da6e85a344345496d386724553ac023e64650375431d0aaee61b158"
     },
     "src/blackwire/library/native_backend_home.h": {
-      "bytes": 36848,
-      "sha256": "39d9b679019c30c1db5de66e35b4b698266d9ad38cdb7c536ef5a01ae6e4e2d4"
+      "bytes": 36909,
+      "sha256": "3222f498ca07b81a311cbeb11f546de4146e3d562cfc731708d01ad23ab89c23"
     },
     "src/blackwire/library/native_backend_removal.h": {
-      "bytes": 21220,
-      "sha256": "74649bd45107b759bed77120675a2a4627dff58585a96c746c7bae5606366e12"
+      "bytes": 23261,
+      "sha256": "aa879985e5b736f8c928393efa11744d29774b51e8f80f2503121bbd8239631b"
     },
     "src/blackwire/library/native_batch_context.c": {
       "bytes": 20303,
@@ -390,20 +390,20 @@
       "sha256": "031b53ac5a163204bd88af43023e2de3a45075b85dc0bd70671a049e9881d86e"
     },
     "src/blackwire/library/native_game_uninstall.c": {
-      "bytes": 66231,
-      "sha256": "d307a270401f552bad2083af421700a98d2de1d4f6fe1295dfa311da215a0e76"
+      "bytes": 72127,
+      "sha256": "bc5d8b344adc56a6a2ac460cd3d08e620737d7ca43231db574fe188698138344"
     },
     "src/blackwire/library/native_game_uninstall.h": {
-      "bytes": 6965,
-      "sha256": "b1f48436090b680bf2cd823fa64e8d0c33eef318604b15dc31668d371b6c2c41"
+      "bytes": 8141,
+      "sha256": "802922db12d2b5b583c1ee3617e33dbf3ee82372419a476369ec9efff72e701e"
     },
     "src/blackwire/library/native_game_uninstall_remote.c": {
-      "bytes": 42790,
-      "sha256": "1e0ebef8608bbf1c4e0a0b39ce868944935185de4e973c8b0f28cc027200e1ee"
+      "bytes": 47326,
+      "sha256": "15c0410dd7ca36a44dc7de95191bcfd25df8d08e12ad29f4e4ecc33774abe5d7"
     },
     "src/blackwire/library/native_game_uninstall_remote.h": {
-      "bytes": 1072,
-      "sha256": "b06e9e13e8f7d2a14b3ebb586846109ccf93f87a9c5c11dffe1a8deb126a9ba1"
+      "bytes": 1433,
+      "sha256": "08c63467248bf24d859452fdcb7f491ef4823b6a06b673e0e0a27f66688eb29d"
     },
     "src/blackwire/library/native_job.c": {
       "bytes": 13018,
@@ -478,24 +478,24 @@
       "sha256": "b105039bb415d56ee2347034c971e4f15affceb8d6ed0ce82cae92fcdbe5d1d0"
     },
     "src/blackwire/library/native_registration.c": {
-      "bytes": 6566,
-      "sha256": "d9a0a7f90615dac16ab235a032dc99d4892dbfc28d130663d615f0d145c53c8f"
+      "bytes": 11725,
+      "sha256": "87803d98624a9f3a847d9dd159ee96a5e231742cd6d40b54b36a8e5fe5da50a5"
     },
     "src/blackwire/library/native_registration.h": {
-      "bytes": 1140,
-      "sha256": "0146b705bad52e85ed718141cf01a4a3c3ed51a553c3af27e1d17e931b50081d"
+      "bytes": 3902,
+      "sha256": "21d444375f5eff16b024b69d6106eb6d38d58aaf1ad180ad90ff44acd1fb9090"
     },
     "src/blackwire/library/native_registration_cleanup.c": {
       "bytes": 59276,
       "sha256": "e574233ea945a36074c00f09c47892b62884aa2bb7989f0978f71a1b7d83d239"
     },
     "src/blackwire/library/native_registration_cleanup.h": {
-      "bytes": 8106,
-      "sha256": "4c8580c7a4dfeddd9970c2fb142373a7a44ce8b3f58f96f4fef5b47e356d49f0"
+      "bytes": 8502,
+      "sha256": "758d068ce04347c7dddb403721196e2d813da9a0c6080f3f97ade8076f65b915"
     },
     "src/blackwire/library/native_registration_lifecycle.c": {
-      "bytes": 36044,
-      "sha256": "66c689808bb7d4497510fa14e50da404aa2b0b8e50a07c7aadea6bd698b669d2"
+      "bytes": 39396,
+      "sha256": "39339d2a0acc7cddf1737744ad0cddc8aa42b7a8b2d562e2707d4e2c1cf46d45"
     },
     "src/blackwire/library/native_registration_lifecycle.h": {
       "bytes": 4819,
@@ -710,8 +710,8 @@
       "sha256": "e781a7f7740576a6102ab2c15dc70dc29e9191e6c4d403da934dbf578c3a1f7d"
     },
     "src/blackwire/library/registration_db.c": {
-      "bytes": 9247,
-      "sha256": "5495b641b18d22071718a3a777faa03e74b7396c79f14e79bf3e4c6102ba88de"
+      "bytes": 12357,
+      "sha256": "83d907bdd7566e5357bf092b9118d2e31fe9994e43f4afba10dec15e75027b89"
     },
     "src/blackwire/library/registration_param_compat.h": {
       "bytes": 758,
@@ -1208,8 +1208,8 @@
   },
   "ui": {
     "desk/index.html": {
-      "bytes": 150923,
-      "sha256": "ac585d0ce30eeaa56124f06ee0d07a5319f4899f82d5aac6e3cc151c9cd99a27"
+      "bytes": 152718,
+      "sha256": "c9ab05faf31e6c58becb75e72b28632dc199a0bd7ac18e8cde62c386e2a88e59"
     },
     "desk/tests/browser_handoff_harness.js": {
       "bytes": 12691,
@@ -1240,8 +1240,8 @@
       "sha256": "a180b4d0435d274b41c47d2e12b18a4985c9354a16d15ad9e6088ea3d3e2d462"
     },
     "desk/tests/removal_dom_harness.js": {
-      "bytes": 5528,
-      "sha256": "e75bc2af75a736187e4cc3f1fc683983d4a9bdd2dc518cd998e6a0458b4ac034"
+      "bytes": 8296,
+      "sha256": "097f277ef2d46abd572ed2457ca8729fb203543ed9b9f83b4edb70dd1a97b25c"
     },
     "desk/tests/setup_dom_harness.js": {
       "bytes": 20056,
@@ -1252,8 +1252,8 @@
       "sha256": "f528f296a7c4d7755784da5adfe38969cac8b298adcf96f922cd0dd313c0ff6e"
     },
     "desk/tests/test_ui.py": {
-      "bytes": 67019,
-      "sha256": "a23e54877c994e6e5ee9e435fe76c5fa362a145954c7481d391ca10cae94403d"
+      "bytes": 67424,
+      "sha256": "61b1020ba155a7f449507f00589d225c579ff7f1657a75994124cafdf5990f52"
     },
     "desk/tests/verify_combined_browser.js": {
       "bytes": 8483,
@@ -1350,8 +1350,8 @@
       "sha256": "4c9ee4a7eb3e46a2621fa27d389b6c06f8f3bbc8fe5ef8c9e561dafda472d96a"
     },
     "tools/build/reader.py": {
-      "bytes": 23578,
-      "sha256": "204ec1bdda9d146797436ae39c65761a59a57e3772a9112eaa379ea4f505e2c8"
+      "bytes": 23942,
+      "sha256": "833d53f94eda140223ab79fd5d316cec7cce970b28d4197868449118cb6db638"
     },
     "tools/build/reader_patch.py": {
       "bytes": 12211,
@@ -1500,8 +1500,8 @@
       "sha256": "50b3495201098cb617b2f7c9dcda84f3c2a367b95050553fdc51fa876114242f"
     },
     "tests/dashboard/lifecycle/check_dashboard_removal_service.py": {
-      "bytes": 6582,
-      "sha256": "251168f3e9e10e810592b9a3c18a94c60f483b2f64ac8cb9a46e33c5d3a626d8"
+      "bytes": 6600,
+      "sha256": "60114a267c92fddb95495685dfcfeeaff9a4c63f637a543ee677ce3242347410"
     },
     "tests/dashboard/lifecycle/check_fast_ready_play.py": {
       "bytes": 12415,
@@ -1595,6 +1595,14 @@
       "bytes": 9567,
       "sha256": "39bbd09aa04c5a4f6bbf27644c16f7d24a3158ac85ecb2213480b36326a0812d"
     },
+    "tests/dashboard/lifecycle/check_projected_preparation_cleanup_e2e.py": {
+      "bytes": 7009,
+      "sha256": "dd8651a508f11a0b372cb3e7688771328cac386bdc4fefc28010c07ffa3a816f"
+    },
+    "tests/dashboard/lifecycle/check_projected_preparation_cleanup_remote.py": {
+      "bytes": 7782,
+      "sha256": "6cf4cf71482e4083c3892f66bb6d6d25b7dcbc0e7bfc89cc06ed72e50557fe77"
+    },
     "tests/dashboard/lifecycle/check_projected_send.py": {
       "bytes": 5963,
       "sha256": "8797ff62710c5acf0c56057c227c2ba745cc3286672ce3538d4339438218cf45"
@@ -1610,6 +1618,10 @@
     "tests/dashboard/lifecycle/check_registration_lifecycle.py": {
       "bytes": 10578,
       "sha256": "8208f53044258b1cb31ff81a13ea8869ac12cd06e089328e66b12ee3b5c1202c"
+    },
+    "tests/dashboard/lifecycle/check_registration_observation.py": {
+      "bytes": 8259,
+      "sha256": "d280cf5460db01fe8778922f3e9c341c80f92e6adb516b2cf69b9c7de9e72255"
     },
     "tests/dashboard/lifecycle/check_registration_observer.py": {
       "bytes": 4045,
@@ -1684,8 +1696,8 @@
       "sha256": "6bfe37e40fe81153c42b0d307763be9189d2ae7789c727593c7c4ba530da62cf"
     },
     "tests/dashboard/lifecycle/test_dashboard_removal_service.c": {
-      "bytes": 12528,
-      "sha256": "e9047babc116316787e9818d5ed789964bb6136dde98331a8a8bfe36537f8012"
+      "bytes": 13104,
+      "sha256": "2094e4e6211706b0d264a33f228c0370f80daf2b4b325a05f8d6cf6b0a5bd808"
     },
     "tests/dashboard/lifecycle/test_fast_ready_backend.c": {
       "bytes": 5911,
@@ -1696,8 +1708,8 @@
       "sha256": "a281ff9063dc57b8ceb65ef0ca45ca7ff6c7cfdc9402a8b13689f99839f31480"
     },
     "tests/dashboard/lifecycle/test_game_removal_backend.c": {
-      "bytes": 12031,
-      "sha256": "ec3a39297817befcd228698c79d1a321d2b3ed66cacf43850a02af36781f62d6"
+      "bytes": 15189,
+      "sha256": "319adfcbf06afed281dcd4334970b09c12f3ddb5fb2e0333cf2acdfe23ceabce"
     },
     "tests/dashboard/lifecycle/test_game_uninstall.c": {
       "bytes": 17556,
@@ -1807,6 +1819,14 @@
       "bytes": 8046,
       "sha256": "99cab30de6433c307954e74a5e98c1c0b59cf0291be315cd91011b52ea7cb4e5"
     },
+    "tests/dashboard/lifecycle/test_projected_preparation_cleanup_e2e.c": {
+      "bytes": 14096,
+      "sha256": "259823b2fdfe1071b1a6234e3cddaaa0cb8935048f98e3ad88f7924bfe37262e"
+    },
+    "tests/dashboard/lifecycle/test_projected_preparation_cleanup_remote.c": {
+      "bytes": 17434,
+      "sha256": "068a4b9947ad1ad743fbe42637657dff54e6c47006f1799f3208a61892f4b991"
+    },
     "tests/dashboard/lifecycle/test_projected_registration.c": {
       "bytes": 9472,
       "sha256": "7ea9237a13a4487d30f9490a081ceee063e5535fe2cf79e967f4ba0ef74ef315"
@@ -1838,6 +1858,10 @@
     "tests/dashboard/lifecycle/test_registration_lifecycle.c": {
       "bytes": 22775,
       "sha256": "7f0fee1b0102e9db64cdafd2a6ded71a20d4115804c2c148eba9285f1825272e"
+    },
+    "tests/dashboard/lifecycle/test_registration_observation.c": {
+      "bytes": 10630,
+      "sha256": "57cf814cbef1c2129032613b7d2b153334dd06cc4324147822b8341444215f96"
     },
     "tests/dashboard/lifecycle/test_registration_observer.c": {
       "bytes": 5550,
@@ -2098,7 +2122,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Local standalone source-companion, truthful image-access diagnostics and bounded metadata read window. Focused actual producer, bundle, registration, removal, handoff, DATA, cache/error host paths and a five-image signed PC SMB A/B pass. Targeted genuine Fable review found no concrete cache/provenance defect. Full frozen host/SDK and exact-build PS5 preparation, launch, cleanup and speed qualification remain pending. Native Dashboard paused; no publication or console deployment implied.",
+  "developmentQualification": "Local standalone source-companion repair, truthful image-access and registration observations, bounded metadata read window and distinct owned-startup-only removal. Focused actual producer, registration, removal, normal-adapter, backend, service, UI, handoff, DATA and cache/error host paths pass; SMP transport and outer idle are modeled in removal host tests. A five-image signed PC SMB metadata A/B passes. The prior normal candidate connected both real shares and passed actual AW2 step7, then refused residual registration at step8; it was removed through normal platform/PM cleanup before this revision. Frozen integrated host/SDK, new targeted Fable review and exact-build fresh/retained/repeated PS5 preparation, launch, cleanup and speed qualification remain pending. Native Dashboard paused; no publication or console deployment implied.",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -2108,5 +2132,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "55173c81b296b339b8722e3839be33c024509794"
+  "runtimeSourceCommit": "efe3f6b62473b31469c61278f6860262c00161e1"
 }
