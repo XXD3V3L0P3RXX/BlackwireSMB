@@ -57,8 +57,21 @@ static int np_read(struct np_context *ctx,uint32_t id,const char *path,bw_source
 struct np_writer {struct cp_plan *plan;struct np_context *context;int root,parent,fd;const char *relative;uint64_t size;struct cp_sha hash;};
 static int np_write(void *opaque,const void *bytes,size_t size){
     struct np_writer *w=opaque;
-    if(cp_refresh(w->plan)||cp_games_stopped(BW_COPY_GAME_LOG)||!v2_directory_current(&w->plan->cfg,w->root,w->parent,w->relative)||
-        cp_write_all(w->fd,bytes,size))return -1;
+    /* Native Send binds selection_current to ns_current, which freshly checks
+     * settings, the full idle authority and held state/source identities.
+     * Qualify once before EACH actual write attempt, then recheck the named
+     * parent after those callbacks. Short writes and EINTR acquire no grant
+     * for their continuation; shared publication/control writes are unchanged. */
+    size_t at=0;
+    do{
+        if(cp_refresh(w->plan)||!v2_directory_current(&w->plan->cfg,w->root,w->parent,w->relative))return -1;
+        if(at==size)break; /* An empty consumer piece still checks its scope. */
+        size_t want=size-at<65536?size-at:65536;
+        ssize_t n=BW_COPY_WRITE(w->fd,(const uint8_t *)bytes+at,want);
+        if(n<0&&errno==EINTR)continue;
+        if(n<=0||(size_t)n>want)return -1;
+        at+=(size_t)n;
+    }while(at<size);
     cp_sha_update(&w->hash,bytes,size);w->size+=size;w->plan->copied_bytes+=size;
     bw_source_smb_progress(w->context->source,BW_SOURCE_COPYING,w->plan->verified_count,w->context->bundle->map.local_count,
         w->context->local_completed_bytes+w->size,w->context->bundle->map.local_bytes);return 0;

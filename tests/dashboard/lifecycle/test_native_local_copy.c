@@ -28,12 +28,13 @@ int smb2_close(struct smb2_context *s,struct smb2fh *h){(void)s;(void)h;C(0);ret
 enum {M_NONE,M_SOURCE,M_TEMP,M_FINAL,M_COUNT};
 struct io_metric {uint64_t read_bytes,pread_bytes,write_bytes,read_calls,pread_calls,write_calls,fsync_calls;};
 static struct {
-    unsigned stage,fired,cleanup_fired,created_fds,closed_fds,body_unlink_calls,foreign_relation;
-    const char *mode;struct smb2_context *context;
+    unsigned stage,fired,cleanup_fired,created_fds,closed_fds,body_unlink_calls,foreign_relation,consumer_active,current_revoked,idle_revoked;
+    const char *mode,*target;struct smb2_context *context;
     int body_fds[2];
-    char source[2200],temporary[2200],final[2200],game[2200],held[2400],foreign[2400],foreign_name[2400];
+    char source[2200],temporary[2200],final[2200],game[2200],parent[2200],held[2400],foreign[2400],foreign_name[2400];
     struct io_metric io[3][M_COUNT];
-    uint64_t data_current[3],control_current[3],image_reads[3],image_bytes[3],provider_copy_calls,provider_copy_bytes,provider_consumer_calls;
+    uint64_t data_current[3],control_current[3],idle_current[3],image_reads[3],image_bytes[3],provider_copy_calls,provider_copy_bytes,provider_consumer_calls;
+    uint64_t consumer_current_calls,consumer_idle_calls,consumer_write_attempts,rejected_current_checks,rejected_idle_checks,attempts_at_mutation;
 } measured={.body_fds={-1,-1}};
 ssize_t __real_read(int,void *,size_t);
 ssize_t __real_pread(int,void *,size_t,off_t);
@@ -66,14 +67,14 @@ static int boot_temporary(const char *name){
     if(strncmp(name,".blackwire-native-",18)||!np_active)return 0;
     const char *dash=strrchr(name,'-');char *end;unsigned long id=strtoul(dash?dash+1:"",&end,10);
     if(!dash||strcmp(end,".tmp")||id>UINT32_MAX)return 0;
-    struct bw_manifest_record row;return !bw_manifest_get(&np_active->plan->manifest,(uint32_t)id,&row)&&!strcmp(row.path,"eboot.bin");
+    struct bw_manifest_record row;return !bw_manifest_get(&np_active->plan->manifest,(uint32_t)id,&row)&&!strcmp(row.path,measured.target);
 }
 int __wrap_openat(int parent,const char *name,int flags,...){
     mode_t mode=0;if(flags&O_CREAT){va_list args;va_start(args,flags);mode=(mode_t)va_arg(args,int);va_end(args);}
     unsigned kind=M_NONE;char full[2400],directory[2200];
     if(measured.stage==2&&(flags&O_CREAT)&&!fd_path(parent,directory,sizeof directory)){
         C(snprintf(full,sizeof full,"%s/%s",directory,name)>0);
-        if(!strcmp(directory,measured.game)&&boot_temporary(name)){kind=M_TEMP;C(strlen(full)<sizeof measured.temporary);strcpy(measured.temporary,full);}
+        if(!strcmp(directory,measured.parent)&&boot_temporary(name)){kind=M_TEMP;C(strlen(full)<sizeof measured.temporary);strcpy(measured.temporary,full);}
         else if(!strcmp(full,measured.final))kind=M_FINAL;
         if(kind&&!measured.fired&&(((scenario("temp-collision")||scenario("temp-symlink"))&&kind==M_TEMP)||((scenario("final-collision")||scenario("final-symlink")||scenario("final-hardlink"))&&kind==M_FINAL))){
             measured.fired=1;
@@ -108,9 +109,17 @@ static void after_body_write(int fd){
 }
 ssize_t __wrap_write(int fd,const void *bytes,size_t size){
     unsigned kind=classify(fd);ssize_t n;
+    if(measured.stage==2&&(kind==M_TEMP||kind==M_FINAL)&&measured.consumer_active)measured.consumer_write_attempts++;
     if(measured.stage==2&&(kind==M_TEMP||kind==M_FINAL)&&!measured.fired){
         if(scenario("write-error")||scenario("cleanup-denied")||scenario("cleanup-uncertain")){measured.fired=1;errno=EIO;n=-1;goto counted;}
         if(scenario("write-zero")){measured.fired=1;n=0;goto counted;}
+        if(scenario("write-overlong")){measured.fired=1;n=(ssize_t)size+1;goto counted;}
+        if(scenario("write-eintr-current")||scenario("write-eintr-idle")){
+            measured.fired=1;measured.current_revoked=scenario("write-eintr-current");measured.idle_revoked=scenario("write-eintr-idle");errno=EINTR;n=-1;goto counted;
+        }
+        if(scenario("write-short-current")||scenario("write-short-idle")){
+            C(size>1);measured.fired=1;n=__real_write(fd,bytes,size/2);C(n==(ssize_t)(size/2));measured.current_revoked=scenario("write-short-current");measured.idle_revoked=scenario("write-short-idle");goto counted;
+        }
         if(scenario("write-eintr")){measured.fired=1;errno=EINTR;n=-1;goto counted;}
         if(scenario("write-short")&&size>1){measured.fired=1;size/=2;}
     }
@@ -155,29 +164,43 @@ int __wrap_unlinkat(int parent,const char *name,int flags){
 }
 struct counted_consumer {bw_source_consume_fn consume;void *opaque;};
 static int count_consumer(void *opaque,const void *bytes,size_t size){
-    struct counted_consumer *p=opaque;measured.provider_consumer_calls++;measured.provider_copy_bytes+=size;
-    if(!measured.fired&&scenario("consume-corrupt")){uint8_t copy[65536];C(size<=sizeof copy);memcpy(copy,bytes,size);copy[0]^=1;measured.fired=1;return p->consume(p->opaque,copy,size);}
-    return p->consume(p->opaque,bytes,size);
+    struct counted_consumer *p=opaque;measured.provider_consumer_calls++;measured.provider_copy_bytes+=size;const void *delivered=bytes;uint8_t copy[65536];
+    if(!measured.fired&&scenario("consume-corrupt")){C(size<=sizeof copy);memcpy(copy,bytes,size);copy[0]^=1;measured.fired=1;delivered=copy;}
+    C(!measured.consumer_active);measured.consumer_active=1;int rc=p->consume(p->opaque,delivered,size);measured.consumer_active=0;return rc;
 }
 int __wrap_bw_source_provider_read(struct bw_source_provider *provider,const char *path,bw_source_consume_fn consume,void *opaque){
-    if(measured.stage==2&&!strcmp(path,"eboot.bin")){
+    if(measured.stage==2&&!strcmp(path,measured.target)){
         C(consume==np_write&&opaque);const struct np_writer *writer=opaque;char actual[2400];C(!fd_path(writer->fd,actual,sizeof actual));
         C(!strcmp(actual,measured.temporary)||!strcmp(actual,measured.final));
         measured.provider_copy_calls++;struct counted_consumer counted={consume,opaque};return __real_bw_source_provider_read(provider,path,count_consumer,&counted);
     }return __real_bw_source_provider_read(provider,path,consume,opaque);
 }
 static int counted_data_current(void *opaque){if(measured.stage)measured.data_current[measured.stage]++;return current(opaque);}
-static int counted_control_current(void *opaque){if(measured.stage)measured.control_current[measured.stage]++;return current(opaque);}
+static void callback_parent_mutation(unsigned idle){
+    if(measured.fired||!measured.consumer_active)return;
+    int requested=idle?(scenario("callback-idle-root")||scenario("callback-idle-parent")):(scenario("callback-current-root")||scenario("callback-current-parent"));
+    if(!requested)return;measured.fired=1;measured.attempts_at_mutation=measured.consumer_write_attempts;
+    const char *path=(scenario("callback-idle-parent")||scenario("callback-current-parent"))?measured.parent:measured.game;
+    C(snprintf(measured.held,sizeof measured.held,"%s.held-original",path)>0&&!rename(path,measured.held)&&!mkdir(path,0755));char mark[2400];C(snprintf(mark,sizeof mark,"%s/foreign.marker",path)>0);foreign_file(mark);
+}
+static int counted_control_current(void *opaque){
+    if(measured.stage)measured.control_current[measured.stage]++;if(measured.consumer_active)measured.consumer_current_calls++;
+    callback_parent_mutation(0);if(measured.current_revoked){measured.rejected_current_checks++;return -1;}return current(opaque);
+}
+static int counted_idle_current(void *opaque){
+    if(measured.stage)measured.idle_current[measured.stage]++;if(measured.consumer_active)measured.consumer_idle_calls++;
+    callback_parent_mutation(1);if(measured.idle_revoked){measured.rejected_idle_checks++;return -1;}return current(opaque);
+}
 static int counted_image_read(void *opaque,uint64_t at,void *out,size_t size){int rc=image_read(opaque,at,out,size);measured.image_reads[measured.stage]++;if(!rc)measured.image_bytes[measured.stage]+=size;return rc;}
 static unsigned fd_count(void){DIR *d=opendir("/proc/self/fd");C(d);unsigned n=0;for(struct dirent *e;(e=readdir(d));)if(e->d_name[0]!='.')n++;C(!closedir(d));return n;}
 static void emit_io(const struct io_metric *p){printf("{\"readBytes\":%"PRIu64",\"preadBytes\":%"PRIu64",\"writeBytes\":%"PRIu64",\"readCalls\":%"PRIu64",\"preadCalls\":%"PRIu64",\"writeCalls\":%"PRIu64",\"fsyncCalls\":%"PRIu64"}",p->read_bytes,p->pread_bytes,p->write_bytes,p->read_calls,p->pread_calls,p->write_calls,p->fsync_calls);}
 static void assert_foreign(void){if(!*measured.foreign)return;static const char expected[]="UNCHANGED FOREIGN FILE";char actual[sizeof expected];int fd=__real_openat(AT_FDCWD,measured.foreign,O_RDONLY|O_NOFOLLOW,0);C(fd>=0&&__real_read(fd,actual,sizeof actual)==sizeof expected-1&&!memcmp(actual,expected,sizeof expected-1)&&!__real_close(fd));if(measured.foreign_relation==1){char target[2400];ssize_t n=readlink(measured.foreign_name,target,sizeof target);C(n==(ssize_t)strlen(measured.foreign)&&!memcmp(target,measured.foreign,(size_t)n));}if(measured.foreign_relation==2){struct stat a,b;C(!lstat(measured.foreign,&a)&&!lstat(measured.foreign_name,&b)&&a.st_ino==b.st_ino&&a.st_dev==b.st_dev&&a.st_nlink==2&&b.st_nlink==2);}}
 int main(int argc,char **argv){
-    C(argc==8);int folder=!strcmp(argv[1],"folder");uint64_t length=strtoull(argv[5],NULL,10);C(length>65536&&length<8u*1024u*1024u&&strlen(argv[6])==64);measured.mode=argv[7];
+    C(argc==8);int folder=!strcmp(argv[1],"folder");uint64_t length=strtoull(argv[5],NULL,10);C(length>65536&&length<8u*1024u*1024u&&strlen(argv[6])==64);measured.mode=argv[7];measured.target=(scenario("callback-current-parent")||scenario("callback-idle-parent"))?"startup/boot.sprx":"eboot.bin";
     struct smb2_context context={0};C(strlen(argv[2])<sizeof context.root);strcpy(context.root,argv[2]);for(unsigned i=0;i<64;i++)context.handles[i].fd=-1;measured.context=&context;
     struct bw_source_smb source={.smb=&context,.deadline=now()+600};struct bw_share_config config={0};strcpy(config.server,"192.0.2.1");strcpy(config.share,"FixtureShare");
     struct bw_provider_binding binding;C(!bw_provider_binding_init(&binding,&config,folder?"fixture":"fixture.ffpfsc","PPSA99001",folder?BW_PROVIDER_FOLDER:BW_PROVIDER_CONTAINER));
-    C(snprintf(measured.source,sizeof measured.source,"%s/fixture/eboot.bin",argv[2])>0);C(snprintf(measured.game,sizeof measured.game,"%s/games/%s",argv[4],binding.binding.game)>0);C(snprintf(measured.final,sizeof measured.final,"%s/eboot.bin",measured.game)>0);
+    C(snprintf(measured.source,sizeof measured.source,"%s/fixture/%s",argv[2],measured.target)>0);C(snprintf(measured.game,sizeof measured.game,"%s/games/%s",argv[4],binding.binding.game)>0);C(snprintf(measured.final,sizeof measured.final,"%s/%s",measured.game,measured.target)>0);strcpy(measured.parent,measured.final);char *last=strrchr(measured.parent,'/');C(last);*last=0;
     struct bw_container_smb *image=NULL;struct image_source input={.context=&context};
     if(!folder){load_image(&input,argv[3]);image=calloc(1,sizeof *image);C(image);strcpy(image->path,"fixture.ffpfsc");image->handle=(struct smb2fh *)image;image->admitted.smb2_ino=7;image->admitted.smb2_size=input.size;image->admitted.smb2_mtime=1700000000;struct bw_container_ops ops={counted_image_read,image_generation};C(!bw_container_open(&image->container,&ops,&input,input.size));}
     if(scenario("inspect-interrupted")){
@@ -188,9 +211,9 @@ int main(int argc,char **argv){
     unsigned descriptors=fd_count();struct bw_source_provider provider={0};measured.stage=1;
     C(!bw_source_provider_prepare_policy(&provider,&binding,&source,image,"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",32u*1024u*1024u,counted_data_current,&context,BW_SOURCE_PLAN_COMPANIONS_V1));
     C(provider.bundle.ready);struct bw_manifest map;C(!bw_manifest_open(&map,provider.bundle.map.bytes,provider.bundle.map.size));uint32_t boot_id=UINT32_MAX;
-    for(uint32_t i=0;i<map.count;i++){struct bw_manifest_record row;C(!bw_manifest_get(&map,i,&row));if(!strcmp(row.path,"eboot.bin")){boot_id=i;C(row.flags==BW_MANIFEST_LOCAL&&row.size==length);}}
+    for(uint32_t i=0;i<map.count;i++){struct bw_manifest_record row;C(!bw_manifest_get(&map,i,&row));if(!strcmp(row.path,measured.target)){boot_id=i;C(row.flags==BW_MANIFEST_LOCAL&&row.size==length);}}
     C(boot_id!=UINT32_MAX);char planned[65];for(unsigned i=0;i<32;i++)snprintf(planned+2*i,3,"%02x",provider.bundle.digests[56u+32u*boot_id+i]);C(!strcmp(planned,argv[6]));
-    struct bw_native_send_files send={.data_root=argv[4],.game_log=log,.provider=&provider,.current=counted_control_current,.opaque=&context};struct bw_native_prepared prepared={0};
+    struct bw_native_send_files send={.data_root=argv[4],.game_log=log,.provider=&provider,.current=counted_control_current,.opaque=&context,.idle=counted_idle_current};struct bw_native_prepared prepared={0};
     struct stat retained_before={0};if(scenario("retained-no-unmapped")){measured.stage=0;C(!bw_native_send_files(&send,&prepared)&&prepared.state==BW_PREPARED_VALID);C(!lstat(measured.final,&retained_before));}
     measured.stage=2;int rc=bw_native_send_files(&send,&prepared);measured.stage=0;
     int positive=scenario("none")||scenario("write-short")||scenario("write-eintr")||scenario("read-short")||scenario("read-eintr");
@@ -219,8 +242,12 @@ int main(int argc,char **argv){
             C(!*measured.temporary||(lstat(measured.temporary,&st)<0&&errno==ENOENT));C(lstat(measured.final,&st)<0&&errno==ENOENT);
         }
     }
+    if(measured.current_revoked||measured.idle_revoked){C(measured.consumer_write_attempts==1);C(measured.current_revoked?measured.rejected_current_checks>0:measured.rejected_idle_checks>0);}
+    if(!strncmp(measured.mode,"callback-",9))C(measured.fired&&measured.consumer_write_attempts==measured.attempts_at_mutation&&measured.consumer_write_attempts==0);
+    if(positive)C(measured.consumer_current_calls>=measured.consumer_write_attempts&&measured.consumer_idle_calls>=measured.consumer_write_attempts);
     if(scenario("retained-no-unmapped"))C(!writes&&!measured.provider_copy_calls);
     C(!measured.io[1][M_SOURCE].write_bytes&&!measured.io[2][M_SOURCE].write_bytes);bw_source_provider_destroy(&provider);C(!context.open&&fd_count()==descriptors);free(image);free(input.bytes);
     printf("{\"passed\":true,\"checks\":%u,\"format\":\"%s\",\"mode\":\"%s\",\"accepted\":%s,\"bodyBytes\":%"PRIu64",\"localWriteBytes\":%"PRIu64",\"localReadBytes\":%"PRIu64",\"temporary\":",checks,argv[1],measured.mode,positive?"true":"false",length,writes,reads);emit_io(temp);printf(",\"final\":");emit_io(final);
+    printf(",\"consumerFullCurrentCalls\":%"PRIu64",\"consumerIdleCalls\":%"PRIu64",\"consumerNativeWriteAttempts\":%"PRIu64",\"providerConsumerPieces\":%"PRIu64",\"sendFullCurrentCalls\":%"PRIu64",\"sendIdleCalls\":%"PRIu64",\"dataAuthorityPlanningCalls\":%"PRIu64",\"dataAuthoritySendCalls\":%"PRIu64",\"rejectedCurrentChecks\":%"PRIu64",\"rejectedIdleChecks\":%"PRIu64,measured.consumer_current_calls,measured.consumer_idle_calls,measured.consumer_write_attempts,measured.provider_consumer_calls,measured.control_current[2],measured.idle_current[2],measured.data_current[1],measured.data_current[2],measured.rejected_current_checks,measured.rejected_idle_checks);
     printf(",\"createdBodyFDs\":%u,\"closedBodyFDs\":%u,\"faultInjected\":%s,\"cleanupFaultInjected\":%s,\"actualNativeSendAndNpCopy\":true,\"independentlyPlannedDigestMatches\":true,\"noNewSuccessfulReceiptOnFault\":true,\"foreignAndSourcePreserved\":true,\"consoleActions\":0,\"networkActions\":0}\n",measured.created_fds,measured.closed_fds,measured.fired?"true":"false",measured.cleanup_fired?"true":"false");return 0;
 }

@@ -4,6 +4,7 @@ Changes are grouped by published preview. A build pass, initial menu and control
 
 ## Unreleased — verification in progress
 
+- Reduce duplicate preparation checks inside each native LOCAL write attempt. Every write and retry still refreshes the full current-operation authority and checks its held parent after callbacks; staged copying, source checks, hashes, readback and synchronization remain. Host callback counts are lower; a PS5 elapsed-time improvement is not yet established.
 - Preserve a validated compressed preparation when reloading or refreshing the library. Keep the sealed projection on its current inspection path instead of sending it through a legacy-only hint; reloading metadata still does not grant verified startup bytes or launch authority.
 - Preserve an independently detected upgrade requirement on an older compressed preparation when the legacy hint reports no additional change.
 - Show ordinary removal guidance in Details instead of the internal confirmation and metadata-status codes. Blocked removal reasons remain visible.
