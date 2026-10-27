@@ -1208,8 +1208,8 @@
   },
   "ui": {
     "desk/index.html": {
-      "bytes": 153074,
-      "sha256": "dacabfd845099612e1db376715ba1424895731f286defdfa6246ca3df3a69fe6"
+      "bytes": 153906,
+      "sha256": "91e4a0bfdcbe46e88326bee74571f0883e45525666b7e70010ce2a1935aa7fd0"
     },
     "desk/tests/browser_handoff_harness.js": {
       "bytes": 12691,
@@ -1228,8 +1228,8 @@
       "sha256": "e4a8b01878be6e05ea861e44d2cead34afe57c4c8528273444531045846e86a0"
     },
     "desk/tests/preparation_dom_harness.js": {
-      "bytes": 14179,
-      "sha256": "071cac2e072a6496e71a71f7e716e69662653c99df6fbc682163e2e923de54c7"
+      "bytes": 18734,
+      "sha256": "8e588a7120223070da20fb55de1f268c78c47017549bfac9a692e1296df42f58"
     },
     "desk/tests/preview_fixture.py": {
       "bytes": 16071,
@@ -2148,5 +2148,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "dcad81e9c2e9c2d73f551db5f8205842ff883cc5"
+  "runtimeSourceCommit": "7208d30ba9e571a8f1ed018e4bd57a4aca75514f"
 }
