@@ -98,8 +98,8 @@
       "sha256": "5db3af16c2dff5266937ecd666f9725ea0dee7e113d6c56b2cabd5764d35a6a6"
     },
     "src/blackwire/dashboard/service/settings_guard.h": {
-      "bytes": 2579,
-      "sha256": "4858c5c6eecd3df4cacfc82dabe4119ccfebc85d941c4f60095b41b2d87f49c4"
+      "bytes": 1764,
+      "sha256": "a2d5fbd876266e8aea620f64135696a5e48efaa944495349e8b2898221bdaa95"
     },
     "src/blackwire/dashboard/service/tests/check_bfp_optional.py": {
       "bytes": 12723,
@@ -322,8 +322,8 @@
       "sha256": "f71ca3221d1c0d5f977321d45ed24710e8e5a7de3a73c1c01ac09b3ff426ce61"
     },
     "src/blackwire/library/native_batch_fs.c": {
-      "bytes": 23810,
-      "sha256": "6ed86573e4463501e4e341b0d8d70155bda5ef5bb5aa0ead9691d9e96b8de082"
+      "bytes": 22597,
+      "sha256": "a20907b3f43750f7e735d238a35d937e3281385034fc202827779eb9fe60aea0"
     },
     "src/blackwire/library/native_batch_fs.h": {
       "bytes": 557,
@@ -378,8 +378,8 @@
       "sha256": "aeb641dd01f1a7552b91cb8f57f38c4338a1118f000cee76c3e5eec0bad19e45"
     },
     "src/blackwire/library/native_derived_send.c": {
-      "bytes": 36642,
-      "sha256": "14adada5917f4d1f7b81ef0c1ff886b3394cfa183974e25c9c7e283130eddb36"
+      "bytes": 35404,
+      "sha256": "71e4488b23ed4e574c1ff25fe690515aa075b486e59b63b2181e1e92ffaaffcd"
     },
     "src/blackwire/library/native_derived_send.h": {
       "bytes": 3525,
@@ -538,8 +538,8 @@
       "sha256": "c3cde98b8f689e83723cd32801b6e677953f464e2cc35057cad2ccf7970f73bb"
     },
     "src/blackwire/library/native_send.c": {
-      "bytes": 41617,
-      "sha256": "0847e152e6cf50a3b21c8a70b2949a701c9852e772936ec4e4e77ead3fc50dda"
+      "bytes": 40445,
+      "sha256": "1bed7b4f627fd638a051a5986ae9c6e7955c75e8e9f6d10715001e1c16070702"
     },
     "src/blackwire/library/native_send.h": {
       "bytes": 4106,
@@ -854,8 +854,8 @@
       "sha256": "c65535271cc1e8cb0905d493edbdc03d4bb461048c59303cdc5fbe3fd73b874b"
     },
     "src/blackwire/library/startup_runtime_idle.c": {
-      "bytes": 18121,
-      "sha256": "218d6e569e9d56cc71745155df55d60e8255e50581aa883b696a877c6a99371b"
+      "bytes": 17072,
+      "sha256": "96b787a41ea751af5630a1813a3473c706db817dfa55f14f68ba330bdec21408"
     },
     "src/blackwire/library/startup_runtime_idle.h": {
       "bytes": 1578,
@@ -982,8 +982,8 @@
       "sha256": "8c7980b7608cb12c064c537b30f7c2224ca58857c4229fe472bff62813b245a5"
     },
     "src/blackwire/streamreader/copy_fs.h": {
-      "bytes": 13832,
-      "sha256": "3243dc132382c554e415a7362954af85a00ab5222b83a673fd4cd9a305292236"
+      "bytes": 13200,
+      "sha256": "b3ac1105091e324b21c34a9acf90d206836bec067cca271e31ce6d2b6fe1a9a0"
     },
     "src/blackwire/streamreader/copy_sha256.h": {
       "bytes": 3054,
@@ -1022,8 +1022,8 @@
       "sha256": "463e27a8b06d7be5662cf0e375c98ee6a6a250c3e133e54cc92cc2f07911418f"
     },
     "src/blackwire/streamreader/lifecycle.h": {
-      "bytes": 2494,
-      "sha256": "022a2fbb58b25473783459243517bec504fc6fea962800473b6224932ad88fbd"
+      "bytes": 11574,
+      "sha256": "ef94696ad8ba0caa7fc5c73165ade7a6c148f1202c173c58d102ba56a0a2eca4"
     },
     "src/blackwire/streamreader/manifest.c": {
       "bytes": 9785,
@@ -1350,8 +1350,8 @@
       "sha256": "4c9ee4a7eb3e46a2621fa27d389b6c06f8f3bbc8fe5ef8c9e561dafda472d96a"
     },
     "tools/build/reader.py": {
-      "bytes": 24330,
-      "sha256": "1e54bfdbab639904b382617eed53b39d03b0b0a9bf7bc0a367125ad11473a4e7"
+      "bytes": 24421,
+      "sha256": "ddd74768fe018c497c660091c1f7172c05ec47f5a9334a47f031fecf1aa28ecb"
     },
     "tools/build/reader_patch.py": {
       "bytes": 12211,
@@ -1522,6 +1522,10 @@
     "tests/dashboard/lifecycle/check_guard_split.py": {
       "bytes": 7239,
       "sha256": "e7c74b2caf73c5733d5e6195b4cda7073de66124d7318aca003aabe521caa29f"
+    },
+    "tests/dashboard/lifecycle/check_handoff_idle_paths.py": {
+      "bytes": 9732,
+      "sha256": "c5f7a18541af8f0d7aaa1bbeb77e59c8870f462fe31a4037ea0b8b581233d2f3"
     },
     "tests/dashboard/lifecycle/check_idle_log_cache.py": {
       "bytes": 13155,
@@ -1739,6 +1743,10 @@
       "bytes": 451,
       "sha256": "5fb16bfe5b021e0dac540430b91d9ef194160a70d6844ec5bf05446065cf32ef"
     },
+    "tests/dashboard/lifecycle/test_handoff_idle_paths.c": {
+      "bytes": 10811,
+      "sha256": "a5336e842684b6ef64e7c35246a872de43b37ccb64a966e54e0b95c00bfcd838"
+    },
     "tests/dashboard/lifecycle/test_idle_cache_begin.c": {
       "bytes": 1731,
       "sha256": "e420a3540fe055b9d337ec363439cdf5724a95ba78ef7c0d6d7ac9a0870f410b"
@@ -1936,12 +1944,12 @@
       "sha256": "2cf98d2e777987c402a392cea1191f44f656e0f07bf65bcea6bb349a13b8cc6e"
     },
     "tests/dashboard/service/check_preparation_admission.py": {
-      "bytes": 10132,
-      "sha256": "5317acec94ec6830cffd7b8af32a3aec379cf632430df9b9d1e0ef3743b73b80"
+      "bytes": 13544,
+      "sha256": "130b1b65fa08786e3113bd165843c6ec09b732a1baa15277538be6299124f33b"
     },
     "tests/dashboard/service/test_preparation_admission.c": {
-      "bytes": 12327,
-      "sha256": "8a02fc8d30a740ef6d161976a25bc6784885962ad5f4a648d066aa865d34ecb1"
+      "bytes": 13945,
+      "sha256": "7910efbc26876b5c8718c047a4a588cb986b01d9f65c62cf9f85c6417dd6a2cf"
     },
     "tests/diagnostics/check_catalog_image_failure.py": {
       "bytes": 10327,
@@ -2048,8 +2056,8 @@
       "sha256": "594b9f163ea918bcff14a5f3e162775a55455143131c0de5408983790550436a"
     },
     "tests/home/home_test.c": {
-      "bytes": 12481,
-      "sha256": "0b0f170d5efc4672163a8e11fdd4c5e21a1ce14160ee3989a0083b5c297513f2"
+      "bytes": 12525,
+      "sha256": "b98f0eaa852178b46ba5ad7fbd9b435deb87bf5f6305cc5f0731b6548e5995e5"
     },
     "tests/home/main_peer_test.c": {
       "bytes": 4673,
@@ -2154,7 +2162,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Unreleased standalone preparation ownership and same-call idle repair. Actual host tests reproduce the old different-source ownership conflict and lost normal-browser refusal reason; the repair refuses before copying, preserves deletion guards and carries only exact static ownership messages. The lifecycle parser now refuses incomplete EOF rows and close failures; initial Send reports the first failed check without another observation. Focused ASan/UBSan tests cover ownership/removal admission, actual service/parser diagnostics and the joined service/reserved-backend route. Genuine source-only Claude/Fable review is separately recorded on the reviewed bytes. New complete host/normal SDK/package/console qualification is pending. Earlier c47 normal-build Alan Wake 2 setup/launch-to-Continue/cleanup and one 11\u201312% total-preparation comparison apply only to that earlier artifact. No universal compatibility, controllable gameplay, reporter-specific root cause or historical shutdown repair is claimed. Public publication and Native Dashboard work remain on hold.",
+  "developmentQualification": "Unreleased standalone shared lifecycle-history repair, retaining earlier source/reader/registration fixes. Pending and successful same-app handoffs remain busy; replacement PID stop and four stock title families are parsed consistently. Native Send/derived/batch retain two observations; startup and scoped frontend preserve native identity, process and file brackets. Focused actual service43-case and actual Send/legacy-guard/startup38-case sanitizer tests pass. Genuine source-only Claude/Fable core review and primary-source adjudication are separately recorded; the optional follow-up provider used Opus and is not reported as Fable approval. Selected-PID lifetime ownership API remains unchanged. New complete57-suite host run, normal SDK build, package checks and normal Payload Manager console qualification are pending. The previous8c38 normal build passed56 suites/146 SDK commands but is held because those tests missed the handoff defect. A finalizing log marker is only a logical endpoint, not completed ShadowMount cleanup or a live process census. No historical shutdown cause, reporter-specific root cause, universal compatibility or gameplay speed claim. Publication and Native Dashboard remain on hold.",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -2164,5 +2172,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "20b2343e21081e7fdfc01dadd38cbeeb8a1b3d80"
+  "runtimeSourceCommit": "3958882a645611488ff49423c7b55a0f2d1d7647"
 }

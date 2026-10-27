@@ -28,7 +28,11 @@ Two shares can be combined in one library, with each copy bound to its own serve
 
 The unreleased source reports a bounded code such as `preparation/idle-first/log-open` or `preparation/idle-second/unmatched-start`, with an error number only when the failing call supplies one. It records the first failure from that same check rather than taking another observation to explain it. An incomplete record or unsuccessful log close also refuses preparation; a later close failure does not replace an earlier failure reason.
 
+The latest check keeps a pending same-application process handoff busy and follows its replacement PID. An older PID's finalization cannot clear that replacement. It recognizes stock PPSA, CUSA, LAPY and FAKE lifecycle records; this activity check does not add streaming compatibility for new game formats or platforms.
+
 Lifecycle history is not a live process census. An unmatched start does not by itself prove that a game is currently running. Close any known session normally and preserve the exact code, build ID and payload versions if the refusal continues. Do not erase logs, ownership journals or startup files to force an idle check to pass. These diagnostics and parser repairs have focused host coverage; their full build and console qualification is [pending](TESTING.md#unreleased-ownership-and-idle-admission-follow-up).
+
+A matched finalizing record is only the log's logical end of that tracked process. Stock ShadowMount can still be completing cleanup or releasing its runtime afterward. Parsing that record neither certifies full cleanup nor transfers Blackwire's process identity or registration ownership to a replacement PID.
 
 ## Launch from the Games area
 
