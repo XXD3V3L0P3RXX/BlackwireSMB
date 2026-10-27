@@ -40,7 +40,7 @@ Each copy retains its own share, path and preparation identity. Equal titles in 
 ## Load the console resident
 
 1. Check the [tested firmware and runtime versions](../README.md#tested-environment) and whether your ELF has the [released-preview dependency or development repair](REQUIREMENTS.md#external-shadowmount-libraries), before preparing a game. Start the working jailbreak chain with Kstuff and compatible stock ShadowMountPlus active. Only the 13.00-family profile `0x13000040` is console-qualified; 10.01 and other firmware profiles are unverified.
-2. Load the current test beta using your normal ELF loader: `Blackwire-Beta.elf` for a direct download, or `Blackwire.elf` from Payload Manager. They are the same binary. Stop the old resident first and load only one. Confirm `http://<PS5-address>:5918/health` reports `blackwire-v0.3.0-beta.2`. Repeat loading after reboot.
+2. Stop the old resident first and load only one. Upload the chosen verified ELF through Payload Manager, using the canonical stored name **`Blackwire.elf`**, then launch that stored card. The published beta direct download is named `Blackwire-Beta.elf`; save it as `Blackwire.elf` before uploading. Confirm `http://<PS5-address>:5918/health` matches the selected build; the published beta reports `blackwire-v0.3.0-beta.2`. The unpublished development candidate is identified separately in [testing](TESTING.md#october-27-final-publication-candidate). Repeat the normal Payload Manager load after reboot.
 3. Open `http://<PS5-address>:5918/` in a LAN browser. The console page is `http://127.0.0.1:5918/`.
 4. Configure the share and let library discovery finish. Choose a game, select **Send files**, and wait for that named job to finish with Ready status.
 5. Open the game's ordinary icon in the PS5 **Games** area, or use web **Play**. Blackwire handles that game's startup handoff and tracks the session.
@@ -50,6 +50,18 @@ A completed Send includes the per-game reader and registration checks. If files 
 An existing title can retain console app metadata even after its source folder disappears from ShadowMount. That state must be resolved through normal uninstall before a fresh registration; it is not fixed by adding replacement files. The unreleased revision keeps its refusal visible and can separately remove a verified Blackwire startup copy without touching the existing installation. See [incomplete setup and removal](PREPARATION.md#existing-console-metadata-and-incomplete-setup).
 
 The selected game card shows its preparation progress, current session and any error. Game-operation notices stay with that card rather than appearing as floating notifications across the page.
+
+## Deliberate clean reinstall for a controlled test
+
+These steps reset Blackwire, rather than merely replacing a running resident. Keep original PC games and saved data.
+
+1. Close the running game normally and let pending operations finish. In Blackwire, use each selected streamed copy's **Details → Uninstall**, then wait for its terminal result. An empty ShadowMount list alone does not prove removal. If Uninstall refuses or its outcome is unknown, retain that result and diagnose it before deleting Blackwire's records.
+2. Verify that the selected owned preparation and its game registration are gone. Do not delete a different installation with the same title, a saved-game directory, or the console database. **Remove startup files only** deliberately preserves an existing installation and is not equivalent to full Uninstall.
+3. Stop the old resident through Payload Manager's **Active processes**. Remove the Blackwire stored payload entry through Payload Manager; preserve unrelated payloads. For the development candidate, use one canonical stored **`Blackwire.elf`**, not a growing set of differently named test ELFs.
+4. After owned game removal is confirmed and Blackwire is stopped, remove its own `/data/blackwire` test directory through the file manager if a complete settings/history reset is intended. Keep any requested diagnostics on the PC first. This clears the SMB setup and Blackwire history; it does not repair an unrelated platform registration or a refusal whose outcome is unresolved.
+5. Upload the chosen verified `Blackwire.elf` in Payload Manager and launch its stored card once. Reopen the browser, check the exact build/artifact identity, enter the existing SMB settings and use normal **Send files → Ready → Play**. Do not create replacement libraries, mount links or registration receipts by hand.
+
+When the resident is deliberately stopped, its port 5918 page is expected to be offline. Check Payload Manager or the file manager independently before treating that as a console failure. Private startup traces, launch timers and verbose Send logs are test-build options; the October 27 normal candidate excludes them.
 
 ## Refresh and console controls
 

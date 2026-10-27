@@ -2,6 +2,12 @@
 
 Stream PS5 games from an ordinary PC SMB share, with a smaller startup copy on the console. Supports extracted folders and the tested PFS/PFSC compressed layouts, including supported `.ffpfsc` images.
 
+## Development candidate — verification in progress
+
+The unpublished October 27 normal candidate passed clean Payload Manager installation, fresh compressed Alan Wake 2 setup, retained Refresh/Play, visible Game Saving/Continue, normal Close and Uninstall. An old/new/old preparation comparison observed 65–66 seconds versus 58 seconds total, with copy/verification down from 31–32 to 23 seconds. This is one title/source on the recorded 13.00-family console, not a gameplay-loading or universal speed claim.
+
+Its canonical stored filename is `Blackwire.elf`; private startup tracing, launch timing and verbose Send logging are excluded. It has not replaced the published download below. The earlier shutdown cause, an intermittent input stall in reused browser-automation tabs and gameplay on this exact candidate remain unverified. See [the exact candidate record](docs/TESTING.md#october-27-final-publication-candidate).
+
 ## Current download — v0.3.0-beta.2
 
 **[Download Blackwire-Beta.elf](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/download/v0.3.0-beta.2/Blackwire-Beta.elf)**
