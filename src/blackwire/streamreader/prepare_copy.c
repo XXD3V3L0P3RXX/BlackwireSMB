@@ -213,7 +213,23 @@ static int cp_publish(const struct prepare_v2 *cfg,int root,int parent,const cha
     cp_diagnostic.offset=at;cp_diagnostic.requested=want;
     do{errno=0;got=pread(fd,buffer,want,(off_t)at);}while(got<0&&errno==EINTR);
     if(got<=0||(size_t)got>want){cp_failure("publication.temporary-read",got,errno);goto done;}
-    errno=0;rc=cp_write_all(final,buffer,(size_t)got);if(rc){cp_failure("publication.final-write",rc,errno);goto done;}
+    /* Only verified TEMP -> exclusively created FINAL publication uses this
+     * existing full buffer. Source consumers and generic writes stay <=64 KiB.
+     * Every actual attempt, including short/EINTR continuations, reacquires
+     * current authority before rechecking the named parent and held inodes. */
+    size_t written=0;
+    while(written<(size_t)got){
+      if(cp_io_current()){cp_failure("publication.cancelled",-1,0);goto done;}
+      errno=0;if(!v2_directory_current(cfg,root,parent,parent_rel)||cp_regular(parent,temp,fd,size,&held)||!v2_identity(&before,&held)||
+        held.st_mtime!=before.st_mtime||held.st_ctime!=before.st_ctime||(held.st_mode&07777)!=mode){cp_failure("publication.copy-temporary",-1,errno);goto done;}
+      errno=0;if(cp_regular(parent,leaf,final,at+(uint64_t)written,&held)||!v2_identity(&created,&held)||(held.st_mode&07777)!=mode){cp_failure("publication.copy-final",-1,errno);goto done;}
+      double write_now=cp_now();if(write_now<0||write_now>=deadline){cp_failure("publication.deadline",0,0);goto done;}
+      size_t remaining=(size_t)got-written;cp_diagnostic.offset=at+(uint64_t)written;cp_diagnostic.requested=remaining;
+      errno=0;ssize_t n=BW_COPY_WRITE(final,buffer+written,remaining);
+      if(n<0&&errno==EINTR)continue;
+      if(n<=0||(size_t)n>remaining){cp_failure("publication.final-write",n,errno);goto done;}
+      written+=(size_t)n;
+    }
     cp_sha_update(&copied_sha,buffer,(size_t)got);at+=(uint64_t)got;
   }
   cp_sha_final(&copied_sha,hash);memcpy(cp_diagnostic.readback_sha,hash,32);cp_diagnostic.hash_flags|=4;cp_diagnostic.offset=at;

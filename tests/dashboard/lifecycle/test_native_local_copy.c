@@ -26,7 +26,7 @@ int smb2_close(struct smb2_context *s,struct smb2fh *h){(void)s;(void)h;C(0);ret
 #include <stdarg.h>
 
 enum {M_NONE,M_SOURCE,M_TEMP,M_FINAL,M_COUNT};
-struct io_metric {uint64_t read_bytes,pread_bytes,write_bytes,read_calls,pread_calls,write_calls,fsync_calls;};
+struct io_metric {uint64_t read_bytes,pread_bytes,write_bytes,read_calls,pread_calls,write_calls,fsync_calls,max_write_requested;};
 static struct {
     unsigned stage,fired,cleanup_fired,created_fds,closed_fds,body_unlink_calls,foreign_relation,consumer_active,current_revoked,idle_revoked;
     const char *mode,*target;struct smb2_context *context;
@@ -35,6 +35,8 @@ static struct {
     struct io_metric io[3][M_COUNT];
     uint64_t data_current[3],control_current[3],idle_current[3],image_reads[3],image_bytes[3],provider_copy_calls,provider_copy_bytes,provider_consumer_calls;
     uint64_t consumer_current_calls,consumer_idle_calls,consumer_write_attempts,rejected_current_checks,rejected_idle_checks,attempts_at_mutation;
+    unsigned publication_window,publication_read_done,publication_retry,publication_mutated,publication_current_revoked,publication_idle_revoked;
+    uint64_t publication_current_calls,publication_idle_calls,publication_write_attempts,publication_attempts_at_mutation,publication_post_mutation_attempts;
 } measured={.body_fds={-1,-1}};
 ssize_t __real_read(int,void *,size_t);
 ssize_t __real_pread(int,void *,size_t,off_t);
@@ -45,6 +47,8 @@ int __real_openat(int,const char *,int,...);
 int __real_unlinkat(int,const char *,int);
 int __real_bw_source_provider_read(struct bw_source_provider *,const char *,bw_source_consume_fn,void *);
 static int scenario(const char *mode){return !strcmp(measured.mode,mode);}
+static int publication_mode(void){return !strncmp(measured.mode,"publish-",8);}
+static int publication_scenario(const char *mode){return publication_mode()&&!strcmp(measured.mode+8,mode);}
 static int fd_path(int fd,char *path,size_t capacity){
     int saved=errno;char name[64];snprintf(name,sizeof name,"/proc/self/fd/%d",fd);
     ssize_t n=readlink(name,path,capacity-1);errno=saved;
@@ -108,7 +112,27 @@ static void after_body_write(int fd){
     }
 }
 ssize_t __wrap_write(int fd,const void *bytes,size_t size){
-    unsigned kind=classify(fd);ssize_t n;
+    unsigned kind=classify(fd);ssize_t n;size_t requested=size;
+    if(measured.stage==2&&kind==M_FINAL){
+        measured.publication_write_attempts++;
+        if(measured.publication_mutated){measured.publication_post_mutation_attempts++;fprintf(stderr,"publication-write-after-mutation mode=%s request=%zu\n",measured.mode,size);}
+        if(publication_mode()&&!measured.fired){
+            if(publication_scenario("write-error")){measured.fired=1;errno=EIO;n=-1;goto counted;}
+            if(publication_scenario("write-zero")){measured.fired=1;n=0;goto counted;}
+            if(publication_scenario("write-overlong")){measured.fired=1;n=(ssize_t)size+1;goto counted;}
+            if(publication_scenario("write-short-current")||publication_scenario("write-short-idle")||publication_scenario("write-eintr-current")||publication_scenario("write-eintr-idle")){
+                measured.fired=1;measured.publication_current_revoked=publication_scenario("write-short-current")||publication_scenario("write-eintr-current");measured.publication_idle_revoked=!measured.publication_current_revoked;
+                if(publication_scenario("write-eintr-current")||publication_scenario("write-eintr-idle")){errno=EINTR;n=-1;goto counted;}
+                C(size>1);n=__real_write(fd,bytes,size/2);C(n==(ssize_t)(size/2));goto counted;
+            }
+            if(!measured.publication_retry&&strstr(measured.mode,"-callback-")&&(strstr(measured.mode,"publish-short-")||strstr(measured.mode,"publish-eintr-"))){
+                measured.publication_retry=1;if(strstr(measured.mode,"publish-eintr-")){errno=EINTR;n=-1;goto counted;}
+                C(size>1);n=__real_write(fd,bytes,size/2);C(n==(ssize_t)(size/2));goto counted;
+            }
+            if(publication_scenario("write-eintr")){measured.fired=1;errno=EINTR;n=-1;goto counted;}
+            if(publication_scenario("write-short")&&size>1){measured.fired=1;size/=2;}
+        }
+    }
     if(measured.stage==2&&(kind==M_TEMP||kind==M_FINAL)&&measured.consumer_active)measured.consumer_write_attempts++;
     if(measured.stage==2&&(kind==M_TEMP||kind==M_FINAL)&&!measured.fired){
         if(scenario("write-error")||scenario("cleanup-denied")||scenario("cleanup-uncertain")){measured.fired=1;errno=EIO;n=-1;goto counted;}
@@ -124,47 +148,68 @@ ssize_t __wrap_write(int fd,const void *bytes,size_t size){
         if(scenario("write-short")&&size>1){measured.fired=1;size/=2;}
     }
     n=__real_write(fd,bytes,size);
+    if(n>0&&measured.stage==2&&kind==M_FINAL&&publication_scenario("abrupt-exit")){
+        printf("{\"interrupted\":true,\"publication\":true,\"temporary\":\"%s\",\"final\":\"%s\"}\n",measured.temporary,measured.final);fflush(stdout);_exit(77);
+    }
     if(n>0&&measured.stage==2&&(kind==M_TEMP||kind==M_FINAL))after_body_write(fd);
 counted:;
-    int saved=errno;if(kind&&measured.stage){struct io_metric *m=&measured.io[measured.stage][kind];m->write_calls++;if(n>0)m->write_bytes+=(uint64_t)n;}errno=saved;return n;
+    int saved=errno;if(kind&&measured.stage){struct io_metric *m=&measured.io[measured.stage][kind];m->write_calls++;if(requested>m->max_write_requested)m->max_write_requested=requested;if(n>0)m->write_bytes+=(uint64_t)n;}errno=saved;return n;
 }
 ssize_t __wrap_read(int fd,void *out,size_t size){unsigned kind=classify(fd);ssize_t n=__real_read(fd,out,size);int saved=errno;if(kind&&measured.stage){struct io_metric *m=&measured.io[measured.stage][kind];m->read_calls++;if(n>0)m->read_bytes+=(uint64_t)n;}errno=saved;return n;}
 ssize_t __wrap_pread(int fd,void *out,size_t size,off_t at){
     unsigned kind=classify(fd);ssize_t n;
+    if(measured.stage==2&&kind==M_FINAL&&publication_mode()&&!measured.fired){
+        if(publication_scenario("read-error")){measured.fired=1;errno=EIO;n=-1;goto counted;}
+        if(publication_scenario("read-eintr")){measured.fired=1;errno=EINTR;n=-1;goto counted;}
+        if(publication_scenario("read-short")&&size>1){measured.fired=1;size/=2;}
+    }
     if(measured.stage==2&&(kind==M_TEMP||kind==M_FINAL)&&!measured.fired){
         if(scenario("read-error")){measured.fired=1;errno=EIO;n=-1;goto counted;}
         if(scenario("read-eintr")){measured.fired=1;errno=EINTR;n=-1;goto counted;}
         if(scenario("read-short")&&size>1){measured.fired=1;size/=2;}
     }
     n=__real_pread(fd,out,size,at);
+    if(n>0&&measured.stage==2&&kind==M_TEMP&&measured.body_fds[1]>=0&&!measured.consumer_active)measured.publication_window=1;
+    if(n>0&&measured.stage==2&&kind==M_FINAL&&publication_scenario("read-corrupt")&&!measured.fired){measured.fired=1;((uint8_t *)out)[0]^=1;}
     if(n>0&&measured.stage==2&&(kind==M_TEMP||kind==M_FINAL)&&!measured.fired&&scenario("read-corrupt")){measured.fired=1;((uint8_t *)out)[0]^=1;}
 counted:;
     int saved=errno;if(kind&&measured.stage){struct io_metric *m=&measured.io[measured.stage][kind];m->pread_calls++;if(n>0)m->pread_bytes+=(uint64_t)n;}errno=saved;return n;
 }
 int __wrap_fsync(int fd){
     unsigned kind=classify(fd);int n;
+    if(measured.stage==2&&kind==M_FINAL){measured.publication_window=0;measured.publication_read_done=1;}
+    if(measured.stage==2&&publication_mode()&&!measured.fired&&
+       ((kind==M_FINAL&&publication_scenario("file-fsync"))||
+        (measured.publication_read_done&&kind==M_NONE&&publication_scenario("directory-fsync")))){
+        char path[2400];if(kind==M_FINAL||(!fd_path(fd,path,sizeof path)&&!strcmp(path,measured.parent))){measured.fired=1;errno=EIO;n=-1;goto counted;}
+    }
     if(measured.stage==2&&(kind==M_TEMP||kind==M_FINAL)&&!measured.fired&&scenario("file-fsync")){measured.fired=1;errno=EIO;n=-1;}
     else n=__real_fsync(fd);
+counted:;
     int saved=errno;if(kind&&measured.stage)measured.io[measured.stage][kind].fsync_calls++;errno=saved;return n;
 }
 int __wrap_close(int fd){
     unsigned kind=classify(fd);int body=fd>=0&&(fd==measured.body_fds[0]||fd==measured.body_fds[1]);
     int rc=__real_close(fd);int saved=errno;
     if(body){C(!rc);measured.closed_fds++;if(fd==measured.body_fds[0])measured.body_fds[0]=-1;if(fd==measured.body_fds[1])measured.body_fds[1]=-1;}
-    if(measured.stage==2&&body&&kind==M_FINAL&&!measured.fired&&scenario("final-close")){measured.fired=1;errno=EIO;return -1;}
+    if(measured.stage==2&&body&&kind==M_FINAL&&!measured.fired&&(scenario("final-close")||publication_scenario("close"))){measured.fired=1;errno=EIO;return -1;}
     errno=saved;return rc;
 }
 int __wrap_unlinkat(int parent,const char *name,int flags){
     char directory[2200],full[2400];int body=!fd_path(parent,directory,sizeof directory)&&snprintf(full,sizeof full,"%s/%s",directory,name)>0&&
         ((!strcmp(full,measured.temporary)&&*measured.temporary)||!strcmp(full,measured.final));
     if(measured.stage==2&&body)measured.body_unlink_calls++;
+    if(measured.stage==2&&body&&measured.publication_read_done&&!measured.cleanup_fired&&
+       !strcmp(full,measured.temporary)&&(publication_scenario("unlink-denied")||publication_scenario("unlink-uncertain"))){
+        measured.fired=measured.cleanup_fired=1;if(publication_scenario("unlink-uncertain"))C(!__real_unlinkat(parent,name,flags));errno=EACCES;return -1;
+    }
     if(measured.stage==2&&body&&!measured.cleanup_fired&&(scenario("cleanup-denied")||scenario("cleanup-uncertain"))){
         measured.cleanup_fired=1;if(scenario("cleanup-uncertain"))C(!__real_unlinkat(parent,name,flags));errno=EACCES;return -1;
     }return __real_unlinkat(parent,name,flags);
 }
 struct counted_consumer {bw_source_consume_fn consume;void *opaque;};
 static int count_consumer(void *opaque,const void *bytes,size_t size){
-    struct counted_consumer *p=opaque;measured.provider_consumer_calls++;measured.provider_copy_bytes+=size;const void *delivered=bytes;uint8_t copy[65536];
+    struct counted_consumer *p=opaque;C(size<=65536);measured.provider_consumer_calls++;measured.provider_copy_bytes+=size;const void *delivered=bytes;uint8_t copy[65536];
     if(!measured.fired&&scenario("consume-corrupt")){C(size<=sizeof copy);memcpy(copy,bytes,size);copy[0]^=1;measured.fired=1;delivered=copy;}
     C(!measured.consumer_active);measured.consumer_active=1;int rc=p->consume(p->opaque,delivered,size);measured.consumer_active=0;return rc;
 }
@@ -176,6 +221,35 @@ int __wrap_bw_source_provider_read(struct bw_source_provider *provider,const cha
     }return __real_bw_source_provider_read(provider,path,consume,opaque);
 }
 static int counted_data_current(void *opaque){if(measured.stage)measured.data_current[measured.stage]++;return current(opaque);}
+static int publication_active(void){return measured.stage==2&&measured.publication_window&&measured.body_fds[1]>=0;}
+static void publication_callback_mutation(unsigned idle){
+    if(!publication_active()||!publication_mode()||measured.fired)return;
+    int selected=idle?strstr(measured.mode,"-idle-")!=NULL:strstr(measured.mode,"-current-")!=NULL;
+    if(!selected)return;
+    if((strstr(measured.mode,"publish-short-")||strstr(measured.mode,"publish-eintr-"))&&!measured.publication_retry)return;
+    int parent_change=strstr(measured.mode,"-callback-")!=NULL;
+    int file_change=strstr(measured.mode,"-final-")!=NULL||strstr(measured.mode,"-temp-name")!=NULL;
+    if(!parent_change&&!file_change)return;
+    measured.fired=measured.publication_mutated=1;measured.publication_attempts_at_mutation=measured.publication_write_attempts;
+    fprintf(stderr,"publication-callback-mutated mode=%s afterAttempts=%"PRIu64"\n",measured.mode,measured.publication_attempts_at_mutation);
+    if(parent_change){
+        const char *path=strstr(measured.mode,"-parent")?measured.parent:measured.game;
+        C(snprintf(measured.held,sizeof measured.held,"%s.held-original",path)>0&&!rename(path,measured.held)&&!mkdir(path,0755));
+        char mark[2400];C(snprintf(mark,sizeof mark,"%s/foreign.marker",path)>0);foreign_file(mark);
+    }else if(strstr(measured.mode,"-final-name")||strstr(measured.mode,"-temp-name")){
+        const char *path=strstr(measured.mode,"-temp-name")?measured.temporary:measured.final;
+        C(snprintf(measured.held,sizeof measured.held,"%s.held-original",path)>0&&!rename(path,measured.held));foreign_file(path);
+    }else if(strstr(measured.mode,"-final-hardlink")){
+        C(snprintf(measured.held,sizeof measured.held,"%s.held-link",measured.final)>0&&!link(measured.final,measured.held));
+    }else if(strstr(measured.mode,"-final-mode")){
+        struct stat st;C(!fstat(measured.body_fds[1],&st)&&!fchmod(measured.body_fds[1],(st.st_mode&07777)==0644?0600:0644));
+    }else if(strstr(measured.mode,"-final-size")){C(!ftruncate(measured.body_fds[1],1));}
+    else if(strstr(measured.mode,"-final-fd")){
+        char path[2400];C(snprintf(path,sizeof path,"%s.foreign-target",measured.final)>0);foreign_file(path);
+        int foreign=__real_openat(AT_FDCWD,path,O_RDWR|O_NOFOLLOW,0);C(foreign>=0&&foreign!=measured.body_fds[1]);
+        C(dup2(foreign,measured.body_fds[1])==measured.body_fds[1]&&!__real_close(foreign));
+    }
+}
 static void callback_parent_mutation(unsigned idle){
     if(measured.fired||!measured.consumer_active)return;
     int requested=idle?(scenario("callback-idle-root")||scenario("callback-idle-parent")):(scenario("callback-current-root")||scenario("callback-current-parent"));
@@ -185,18 +259,22 @@ static void callback_parent_mutation(unsigned idle){
 }
 static int counted_control_current(void *opaque){
     if(measured.stage)measured.control_current[measured.stage]++;if(measured.consumer_active)measured.consumer_current_calls++;
+    if(publication_active())measured.publication_current_calls++;
+    publication_callback_mutation(0);if(measured.publication_current_revoked){measured.rejected_current_checks++;return -1;}
     callback_parent_mutation(0);if(measured.current_revoked){measured.rejected_current_checks++;return -1;}return current(opaque);
 }
 static int counted_idle_current(void *opaque){
     if(measured.stage)measured.idle_current[measured.stage]++;if(measured.consumer_active)measured.consumer_idle_calls++;
+    if(publication_active())measured.publication_idle_calls++;
+    publication_callback_mutation(1);if(measured.publication_idle_revoked){measured.rejected_idle_checks++;return -1;}
     callback_parent_mutation(1);if(measured.idle_revoked){measured.rejected_idle_checks++;return -1;}return current(opaque);
 }
 static int counted_image_read(void *opaque,uint64_t at,void *out,size_t size){int rc=image_read(opaque,at,out,size);measured.image_reads[measured.stage]++;if(!rc)measured.image_bytes[measured.stage]+=size;return rc;}
 static unsigned fd_count(void){DIR *d=opendir("/proc/self/fd");C(d);unsigned n=0;for(struct dirent *e;(e=readdir(d));)if(e->d_name[0]!='.')n++;C(!closedir(d));return n;}
-static void emit_io(const struct io_metric *p){printf("{\"readBytes\":%"PRIu64",\"preadBytes\":%"PRIu64",\"writeBytes\":%"PRIu64",\"readCalls\":%"PRIu64",\"preadCalls\":%"PRIu64",\"writeCalls\":%"PRIu64",\"fsyncCalls\":%"PRIu64"}",p->read_bytes,p->pread_bytes,p->write_bytes,p->read_calls,p->pread_calls,p->write_calls,p->fsync_calls);}
+static void emit_io(const struct io_metric *p){printf("{\"readBytes\":%"PRIu64",\"preadBytes\":%"PRIu64",\"writeBytes\":%"PRIu64",\"readCalls\":%"PRIu64",\"preadCalls\":%"PRIu64",\"writeCalls\":%"PRIu64",\"fsyncCalls\":%"PRIu64",\"maxWriteRequested\":%"PRIu64"}",p->read_bytes,p->pread_bytes,p->write_bytes,p->read_calls,p->pread_calls,p->write_calls,p->fsync_calls,p->max_write_requested);}
 static void assert_foreign(void){if(!*measured.foreign)return;static const char expected[]="UNCHANGED FOREIGN FILE";char actual[sizeof expected];int fd=__real_openat(AT_FDCWD,measured.foreign,O_RDONLY|O_NOFOLLOW,0);C(fd>=0&&__real_read(fd,actual,sizeof actual)==sizeof expected-1&&!memcmp(actual,expected,sizeof expected-1)&&!__real_close(fd));if(measured.foreign_relation==1){char target[2400];ssize_t n=readlink(measured.foreign_name,target,sizeof target);C(n==(ssize_t)strlen(measured.foreign)&&!memcmp(target,measured.foreign,(size_t)n));}if(measured.foreign_relation==2){struct stat a,b;C(!lstat(measured.foreign,&a)&&!lstat(measured.foreign_name,&b)&&a.st_ino==b.st_ino&&a.st_dev==b.st_dev&&a.st_nlink==2&&b.st_nlink==2);}}
 int main(int argc,char **argv){
-    C(argc==8);int folder=!strcmp(argv[1],"folder");uint64_t length=strtoull(argv[5],NULL,10);C(length>65536&&length<8u*1024u*1024u&&strlen(argv[6])==64);measured.mode=argv[7];measured.target=(scenario("callback-current-parent")||scenario("callback-idle-parent"))?"startup/boot.sprx":"eboot.bin";
+    C(argc==8);int folder=!strcmp(argv[1],"folder");uint64_t length=strtoull(argv[5],NULL,10);C(length>65536&&length<8u*1024u*1024u&&strlen(argv[6])==64);measured.mode=argv[7];measured.target=(scenario("callback-current-parent")||scenario("callback-idle-parent")||(publication_mode()&&strstr(measured.mode,"-parent")))?"startup/boot.sprx":"eboot.bin";
     struct smb2_context context={0};C(strlen(argv[2])<sizeof context.root);strcpy(context.root,argv[2]);for(unsigned i=0;i<64;i++)context.handles[i].fd=-1;measured.context=&context;
     struct bw_source_smb source={.smb=&context,.deadline=now()+600};struct bw_share_config config={0};strcpy(config.server,"192.0.2.1");strcpy(config.share,"FixtureShare");
     struct bw_provider_binding binding;C(!bw_provider_binding_init(&binding,&config,folder?"fixture":"fixture.ffpfsc","PPSA99001",folder?BW_PROVIDER_FOLDER:BW_PROVIDER_CONTAINER));
@@ -216,7 +294,7 @@ int main(int argc,char **argv){
     struct bw_native_send_files send={.data_root=argv[4],.game_log=log,.provider=&provider,.current=counted_control_current,.opaque=&context,.idle=counted_idle_current};struct bw_native_prepared prepared={0};
     struct stat retained_before={0};if(scenario("retained-no-unmapped")){measured.stage=0;C(!bw_native_send_files(&send,&prepared)&&prepared.state==BW_PREPARED_VALID);C(!lstat(measured.final,&retained_before));}
     measured.stage=2;int rc=bw_native_send_files(&send,&prepared);measured.stage=0;
-    int positive=scenario("none")||scenario("write-short")||scenario("write-eintr")||scenario("read-short")||scenario("read-eintr");
+    int positive=scenario("none")||scenario("write-short")||scenario("write-eintr")||scenario("read-short")||scenario("read-eintr")||publication_scenario("none")||publication_scenario("write-short")||publication_scenario("write-eintr")||publication_scenario("read-short")||publication_scenario("read-eintr");
     C(measured.created_fds==measured.closed_fds&&measured.body_fds[0]<0&&measured.body_fds[1]<0&&!np_active&&!cp_io_guard);
     if(positive){if(rc)fprintf(stderr,"unexpectedcopyfailure mode=%s rc=%d error=%s\n",measured.mode,rc,prepare_v2_error);C(!rc&&prepared.state==BW_PREPARED_VALID&&prepared.bytes_verified&&prepared.prepared_policy==3);}
     else if(scenario("retained-no-unmapped")){
@@ -243,11 +321,14 @@ int main(int argc,char **argv){
         }
     }
     if(measured.current_revoked||measured.idle_revoked){C(measured.consumer_write_attempts==1);C(measured.current_revoked?measured.rejected_current_checks>0:measured.rejected_idle_checks>0);}
+    if(measured.publication_current_revoked||measured.publication_idle_revoked){C(measured.publication_write_attempts==1);C(measured.publication_current_revoked?measured.rejected_current_checks>0:measured.rejected_idle_checks>0);}
+    if(measured.publication_mutated)C(measured.publication_write_attempts==measured.publication_attempts_at_mutation&&!measured.publication_post_mutation_attempts);
     if(!strncmp(measured.mode,"callback-",9))C(measured.fired&&measured.consumer_write_attempts==measured.attempts_at_mutation&&measured.consumer_write_attempts==0);
     if(positive)C(measured.consumer_current_calls>=measured.consumer_write_attempts&&measured.consumer_idle_calls>=measured.consumer_write_attempts);
     if(scenario("retained-no-unmapped"))C(!writes&&!measured.provider_copy_calls);
     C(!measured.io[1][M_SOURCE].write_bytes&&!measured.io[2][M_SOURCE].write_bytes);bw_source_provider_destroy(&provider);C(!context.open&&fd_count()==descriptors);free(image);free(input.bytes);
     printf("{\"passed\":true,\"checks\":%u,\"format\":\"%s\",\"mode\":\"%s\",\"accepted\":%s,\"bodyBytes\":%"PRIu64",\"localWriteBytes\":%"PRIu64",\"localReadBytes\":%"PRIu64",\"temporary\":",checks,argv[1],measured.mode,positive?"true":"false",length,writes,reads);emit_io(temp);printf(",\"final\":");emit_io(final);
     printf(",\"consumerFullCurrentCalls\":%"PRIu64",\"consumerIdleCalls\":%"PRIu64",\"consumerNativeWriteAttempts\":%"PRIu64",\"providerConsumerPieces\":%"PRIu64",\"sendFullCurrentCalls\":%"PRIu64",\"sendIdleCalls\":%"PRIu64",\"dataAuthorityPlanningCalls\":%"PRIu64",\"dataAuthoritySendCalls\":%"PRIu64",\"rejectedCurrentChecks\":%"PRIu64",\"rejectedIdleChecks\":%"PRIu64,measured.consumer_current_calls,measured.consumer_idle_calls,measured.consumer_write_attempts,measured.provider_consumer_calls,measured.control_current[2],measured.idle_current[2],measured.data_current[1],measured.data_current[2],measured.rejected_current_checks,measured.rejected_idle_checks);
+    printf(",\"publicationCurrentCalls\":%"PRIu64",\"publicationIdleCalls\":%"PRIu64",\"publicationWriteAttempts\":%"PRIu64",\"publicationAttemptsAtMutation\":%"PRIu64",\"publicationPostMutationAttempts\":%"PRIu64,measured.publication_current_calls,measured.publication_idle_calls,measured.publication_write_attempts,measured.publication_attempts_at_mutation,measured.publication_post_mutation_attempts);
     printf(",\"createdBodyFDs\":%u,\"closedBodyFDs\":%u,\"faultInjected\":%s,\"cleanupFaultInjected\":%s,\"actualNativeSendAndNpCopy\":true,\"independentlyPlannedDigestMatches\":true,\"noNewSuccessfulReceiptOnFault\":true,\"foreignAndSourcePreserved\":true,\"consoleActions\":0,\"networkActions\":0}\n",measured.created_fds,measured.closed_fds,measured.fired?"true":"false",measured.cleanup_fired?"true":"false");return 0;
 }
