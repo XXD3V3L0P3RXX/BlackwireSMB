@@ -38,6 +38,59 @@ class DiagnosticSummary(unittest.TestCase):
         self.assertNotIn('SENSITIVE-TEST-MARKER', json.dumps(result))
         self.assertNotIn('name', result['games'][0])
 
+    def test_catalog_admission_reasons_and_authoritative_counts_are_included(self):
+        counts = {'containerCandidates': 52, 'containersValidated': 27, 'containersRejected': 25}
+        valid = {'containerErrorCode': 0, 'containerErrorName': 'none', 'containerStage': 'validated',
+                 'namespaceFilesObserved': 12, 'namespacePathBytesObserved': 256}
+        rejected = {'containerErrorCode': -5, 'containerErrorName': 'limit', 'containerStage': 'namespace',
+                    'namespaceFilesObserved': 4097, 'namespacePathBytesObserved': 100000}
+        result = collector.summarize({}, {'library': counts, 'games': [valid, rejected]})
+        # Forward the reported totals, rather than inferring them from this
+        # bounded sample of visible items or conflating rejected and listed.
+        self.assertEqual({key: result['library'].get(key) for key in counts}, counts)
+        for actual, expected in zip(result['games'], (valid, rejected)):
+            self.assertEqual({key: actual.get(key) for key in expected}, expected)
+
+    def test_absent_or_unknown_admission_values_do_not_become_zero(self):
+        counts = ('containerCandidates', 'containersValidated', 'containersRejected')
+        fields = ('containerErrorCode', 'containerErrorName', 'containerStage',
+                  'namespaceFilesObserved', 'namespacePathBytesObserved')
+        absent_parent = collector.summarize({}, {'games': [{}]})
+        for key in counts:
+            self.assertNotIn(key, absent_parent['library'])
+        missing = collector.summarize({}, {'library': {}, 'games': [{}]})
+        unknown = collector.summarize({}, {'library': dict.fromkeys(counts),
+                                           'games': [dict.fromkeys(fields)]})
+        for result in (missing, unknown):
+            for key in counts:
+                self.assertIn(key, result['library'])
+                self.assertIsNone(result['library'][key])
+            for key in fields:
+                self.assertIn(key, result['games'][0])
+                self.assertIsNone(result['games'][0][key])
+        zeros = dict.fromkeys(counts, 0)
+        unobserved = {'containerErrorCode': 0, 'containerErrorName': 'unknown',
+                      'containerStage': 'not_checked', 'namespaceFilesObserved': 0,
+                      'namespacePathBytesObserved': 0}
+        result = collector.summarize({}, {'library': zeros, 'games': [unobserved]})
+        self.assertEqual({key: result['library'][key] for key in counts}, zeros)
+        self.assertEqual({key: result['games'][0][key] for key in fields}, unobserved)
+
+    def test_admission_fields_keep_bounds_and_exclude_nested_private_neighbors(self):
+        secret = 'SENSITIVE-TEST-MARKER'
+        result = collector.summarize({}, {
+            'settings': {'password': secret}, 'rawApiState': secret,
+            'library': {'containerCandidates': {'password': secret}, 'rawResponse': secret},
+            'games': [{'containerErrorCode': {'token': secret}, 'containerErrorName': 'x' * 4096,
+                       'containerStage': {'source': secret}, 'namespaceFilesObserved': [secret],
+                       'namespacePathBytesObserved': {'path': secret}, 'source': secret,
+                       'sourceBinding': secret, 'password': secret}]})
+        self.assertNotIn(secret, json.dumps(result))
+        self.assertNotIn('containerCandidates', result['library'])
+        self.assertEqual(result['games'][0]['containerErrorName'], 'x' * 1024)
+        for key in ('containerErrorCode', 'containerStage', 'namespaceFilesObserved', 'namespacePathBytesObserved'):
+            self.assertNotIn(key, result['games'][0])
+
     def test_bounds_and_invalid_response(self):
         self.assertEqual(len(collector.summarize({}, {'games': [{'name': 'a' * 4096}]})['games'][0]['name']), 1024)
         with self.assertRaises(ValueError):

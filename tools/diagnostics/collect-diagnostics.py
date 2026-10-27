@@ -37,8 +37,11 @@ def summarize(health, state):
         'health': select(health, ('ok', 'buildId', 'readerSha256')),
         'setup': select(state.get('setup'), ('supported', 'editable', 'busy', 'configured', 'hasSavedCredentials',
                                             'revision', 'operation', 'phase', 'message', 'settingsFile', 'storageStatus')),
-        'library': select(state.get('library'), ('phase', 'items', 'entries', 'unsearched', 'stale', 'requests', 'contentBytes')),
+        'library': select(state.get('library'), ('phase', 'items', 'entries', 'unsearched', 'stale', 'requests', 'contentBytes',
+                                                'containerCandidates', 'containersValidated', 'containersRejected')),
         'games': [select(game, ('name', 'titleId', 'status', 'containerFormat', 'formatValidated',
+                              'containerErrorCode', 'containerErrorName', 'containerStage',
+                              'namespaceFilesObserved', 'namespacePathBytesObserved',
                               'startupReady', 'dashboardLaunchReady', 'preparationReason')) for game in games],
         'notice': 'Review game names and diagnostic messages before sharing. Settings, credentials, tokens and source bindings are excluded.'
     }
