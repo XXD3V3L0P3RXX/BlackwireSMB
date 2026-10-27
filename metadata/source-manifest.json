@@ -42,12 +42,12 @@
       "sha256": "c92044e521f7338301e544c8ca4b3cbacf01f17c9efc6bf3e3990d6057919173"
     },
     "src/blackwire/dashboard/service/dashboard_service.c": {
-      "bytes": 67008,
-      "sha256": "011acaf5a22c0aec3b1664b23bef890b0ff12aa7dfbac05aa53f5a5cc9952e7c"
+      "bytes": 75269,
+      "sha256": "cd4c95243872fa1c7d42232c4d4c3a03ff439027bb86b703c3cb66471bb5a8c6"
     },
     "src/blackwire/dashboard/service/dashboard_service.h": {
-      "bytes": 6854,
-      "sha256": "42ac2b55e261635b3250975cfff64d8deb8c7b4edb6172cafa22a2085814bac8"
+      "bytes": 7188,
+      "sha256": "c82eb426a876c361dd47970e70b2476c30317f1f99684f640a057fc61fa080f6"
     },
     "src/blackwire/dashboard/service/frontend_identity.c": {
       "bytes": 21323,
@@ -90,8 +90,8 @@
       "sha256": "6d67e64b06efe0e3ead83a7d295774a2849fbd7089a9cc3b9f64fc68f913a4d3"
     },
     "src/blackwire/dashboard/service/resident.c": {
-      "bytes": 6042,
-      "sha256": "893757b2fd182321bb84154ded3b74027ba5b0c559e15eda895475c242ac773f"
+      "bytes": 6221,
+      "sha256": "0c074090327886dda406d8993b0ae7d30c5fc023ef0153ff820ca8058b435a89"
     },
     "src/blackwire/dashboard/service/resident.h": {
       "bytes": 473,
@@ -298,8 +298,8 @@
       "sha256": "0f6c64dda1456217dd67226c84fcbaeac625c3d28db8244e9465399171e1a79f"
     },
     "src/blackwire/library/native_backend.c": {
-      "bytes": 161601,
-      "sha256": "dcaa44a7f9ff35c1397555137788bf44e820431aa87f60f090cd6acdd64effd2"
+      "bytes": 163706,
+      "sha256": "3f84f2893aa2e2290c5179abbf78c32541f34f01b8e0539c53b9c386eebb4c3a"
     },
     "src/blackwire/library/native_backend.h": {
       "bytes": 10474,
@@ -390,8 +390,8 @@
       "sha256": "031b53ac5a163204bd88af43023e2de3a45075b85dc0bd70671a049e9881d86e"
     },
     "src/blackwire/library/native_game_uninstall.c": {
-      "bytes": 76983,
-      "sha256": "fe6867e3bdabfb3f108cbcf3df798307e7e6e85843d79ccac36992932c3f96cf"
+      "bytes": 78276,
+      "sha256": "425af6fb09c3992b185529e0aee0e0fe758d67b3c6619476ce06322c2735d12b"
     },
     "src/blackwire/library/native_game_uninstall.h": {
       "bytes": 8141,
@@ -558,12 +558,12 @@
       "sha256": "d1c8c613a1c01daeee276c4a98f2b9c33a10b4bdbcb3a4676f819e18c403825d"
     },
     "src/blackwire/library/native_setup.c": {
-      "bytes": 12195,
-      "sha256": "2599f0f9289bd3d570e764229398958e79fa9e8f330c0e26f99613d91e0278c6"
+      "bytes": 13439,
+      "sha256": "0c4f8958aac108b6c06f5b0b84f77984502add8d0fe9c7a0c345b43e35dde6da"
     },
     "src/blackwire/library/native_setup.h": {
-      "bytes": 1376,
-      "sha256": "a5f298b4b466f312549e3cee5eaf42baab3b9a3edfba94cd7f09fb89eb61ef60"
+      "bytes": 2092,
+      "sha256": "a139c79e4e8793860c133da3410f8f641ad82d896456f2eb1c212c8af357369c"
     },
     "src/blackwire/library/native_startup_hint.c": {
       "bytes": 3956,
@@ -982,8 +982,8 @@
       "sha256": "8c7980b7608cb12c064c537b30f7c2224ca58857c4229fe472bff62813b245a5"
     },
     "src/blackwire/streamreader/copy_fs.h": {
-      "bytes": 12266,
-      "sha256": "f8b84cfae85e8b1e3e3c479c8c80173b06a07777f78495eeaa51701c7f66d782"
+      "bytes": 13832,
+      "sha256": "3243dc132382c554e415a7362954af85a00ab5222b83a673fd4cd9a305292236"
     },
     "src/blackwire/streamreader/copy_sha256.h": {
       "bytes": 3054,
@@ -1350,8 +1350,8 @@
       "sha256": "4c9ee4a7eb3e46a2621fa27d389b6c06f8f3bbc8fe5ef8c9e561dafda472d96a"
     },
     "tools/build/reader.py": {
-      "bytes": 24138,
-      "sha256": "b5b8d37c64bd390cae509da45a99bbfdf99e52b3bfde916ef6c46dc81eac6d14"
+      "bytes": 24330,
+      "sha256": "1e54bfdbab639904b382617eed53b39d03b0b0a9bf7bc0a367125ad11473a4e7"
     },
     "tools/build/reader_patch.py": {
       "bytes": 12211,
@@ -1362,8 +1362,8 @@
       "sha256": "1a1b0312b36edcbe6e6fe0fdd08b49d4e3e53c14297358c66ba18e6dd985cf66"
     },
     "tools/diagnostics/collect-diagnostics.py": {
-      "bytes": 3278,
-      "sha256": "4215c247c1feb30916cbfb9e8ee8038f9854bf17d328e18c50beea21681abec1"
+      "bytes": 3572,
+      "sha256": "4947aec9e1982f26b241dedafc03214dc2a7704103d4874cb0de1d3b443191e6"
     },
     "tools/smb-transport-tests/README.md": {
       "bytes": 6892,
@@ -1555,6 +1555,10 @@
       "bytes": 13252,
       "sha256": "6afd6ab668ca99b0218c2ba3ab32c89cf67731c10144ab64f2f0b13fc967477f"
     },
+    "tests/dashboard/lifecycle/check_owner_refusal_service.py": {
+      "bytes": 7767,
+      "sha256": "97047d7c8599c9ff70bfb8aa1bed1156de6ee4f686869dbf5dd819ba877756db"
+    },
     "tests/dashboard/lifecycle/check_play_preparation_failure.py": {
       "bytes": 7314,
       "sha256": "8685efb3141534229e4babc4d9abe1e37b1241dec8b614c0a67248b19cbe0863"
@@ -1608,8 +1612,8 @@
       "sha256": "dd8651a508f11a0b372cb3e7688771328cac386bdc4fefc28010c07ffa3a816f"
     },
     "tests/dashboard/lifecycle/check_projected_preparation_cleanup_remote.py": {
-      "bytes": 9452,
-      "sha256": "e8bb8d95551c43f32223a9785a1fa35207f18bd65f81e04df876f7eca6c103bb"
+      "bytes": 12089,
+      "sha256": "ff2704ba1b891cd260d8e042d914713a35573c8b0e559695d64b483a39cfdc8f"
     },
     "tests/dashboard/lifecycle/check_projected_send.py": {
       "bytes": 5963,
@@ -1680,8 +1684,8 @@
       "sha256": "4a72b45ac40b8afc4c57d17d3059de58d1590af499fb301c0da65f4840b63a40"
     },
     "tests/dashboard/lifecycle/check_uninstall_release_unknown.py": {
-      "bytes": 5577,
-      "sha256": "df66ad735e70f37d9e3cb9ad6b0be3e9906ad487dfe63ab83ff1a05839943ead"
+      "bytes": 6392,
+      "sha256": "3505851a7203a524cae070f78d97ca9f1f09f5f832bc6c3b470f6eb0b0370ec8"
     },
     "tests/dashboard/lifecycle/fixture_sdk.py": {
       "bytes": 2899,
@@ -1779,6 +1783,10 @@
       "bytes": 33757,
       "sha256": "60c207e7dd04e548ef9ea2fcb383e60e89b29a2c4ac9f14fcce10b59f2c8f191"
     },
+    "tests/dashboard/lifecycle/test_owner_refusal_service.c": {
+      "bytes": 19763,
+      "sha256": "aad43399b925bb804a253d2b82d75d984f9daa908793c12dc40d0e0a20075008"
+    },
     "tests/dashboard/lifecycle/test_play_preparation_failure.c": {
       "bytes": 23727,
       "sha256": "b214f0b140cbd1dc8e687617d92be423e7929a13abfbc480def57d735659d5b2"
@@ -1840,8 +1848,8 @@
       "sha256": "b10cf38c2f336449cb913e531eb9f43181494dece90e826a63a88b4bcac6689a"
     },
     "tests/dashboard/lifecycle/test_projected_preparation_cleanup_remote.c": {
-      "bytes": 28846,
-      "sha256": "e356defba9bf575136e5234681be317967b50e5d7be4b6f66252b04b59de4fb7"
+      "bytes": 38559,
+      "sha256": "de98eab98365e1b3b193bf87ab2fb38507d8d8f2ae93d5533d8807ae1c979d30"
     },
     "tests/dashboard/lifecycle/test_projected_registration.c": {
       "bytes": 9472,
@@ -1920,12 +1928,20 @@
       "sha256": "61a687ffb046e477333aeaa3c0ae97cde5a380ee8322abca9085dfd4b7e07517"
     },
     "tests/dashboard/lifecycle/test_uninstall_release_unknown.c": {
-      "bytes": 5737,
-      "sha256": "a6199255f3c83093f0b69530f8d6368689ea514b80feb5bd25a95e1743a05a64"
+      "bytes": 6424,
+      "sha256": "ead5c7612b0d34b98e5ef9f2511182045db0b07c85d79b4c5d2dd790579f0d3f"
     },
     "tests/dashboard/lifecycle/test_uninstall_release_worker.c": {
-      "bytes": 11251,
-      "sha256": "b2d0bd0921717a669e7d538f1e7cc1f18da4c78e7e265a52346ab61b284cefa8"
+      "bytes": 27322,
+      "sha256": "2cf98d2e777987c402a392cea1191f44f656e0f07bf65bcea6bb349a13b8cc6e"
+    },
+    "tests/dashboard/service/check_preparation_admission.py": {
+      "bytes": 10132,
+      "sha256": "5317acec94ec6830cffd7b8af32a3aec379cf632430df9b9d1e0ef3743b73b80"
+    },
+    "tests/dashboard/service/test_preparation_admission.c": {
+      "bytes": 12327,
+      "sha256": "8a02fc8d30a740ef6d161976a25bc6784885962ad5f4a648d066aa865d34ecb1"
     },
     "tests/diagnostics/check_catalog_image_failure.py": {
       "bytes": 10327,
@@ -1960,8 +1976,8 @@
       "sha256": "2e6d0f4590cb384c7fbd741e775d6fbf8de94f9c3cc74c6975b0978ed9c68a63"
     },
     "tests/diagnostics/test_collect_diagnostics.py": {
-      "bytes": 2671,
-      "sha256": "e6d60b0f384713a3abc7ebd8623351f76c843ae1599cded449cc97aa83572282"
+      "bytes": 6318,
+      "sha256": "942a76d233f376fdfef32b847ebb96132e63e4f1d9ed5c3828e8a53a5c3bb524"
     },
     "tests/diagnostics/test_send_directory.c": {
       "bytes": 1944,
@@ -2138,7 +2154,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Private startup-diagnostic preparation on the unchanged functional repair and guard source. Normal candidate edc6bb8/f54370e passed 54 host suites, 62 host commands and 146 SDK commands with private instrumentation absent; its one normal launch was followed by unavailable console access, no game Send, and an unconfirmed cause. Recovery verified its exact stored bytes. The prior known resident 5ebea4c started normally under a proven passive PC capture, served the normal unconfigured page, and stopped/cleaned up normally; that does not qualify the held candidate or establish a fix. The only subsequent runtime-source edit is inside the private startup-file trace block: incomplete rows disable file transport. Actual pre-repair helper reproduces that defect; repaired helper passes 17 sanitizer cases and 397 checks, with stdout and ordinary tracing-disabled code preserved. Genuine external Claude logging critique came from actual Opus4.8, not the requested Fable; findings were independently adjudicated. Earlier core repair Fable reviews remain source-scoped. New private diagnostic SDK/byte/marker qualification and a single captured normal-Payload-Manager startup test remain pending. No release, normal speed result, gameplay qualification or causal startup fix is implied; Native Dashboard paused.",
+  "developmentQualification": "Unreleased standalone preparation ownership and same-call idle repair. Actual host tests reproduce the old different-source ownership conflict and lost normal-browser refusal reason; the repair refuses before copying, preserves deletion guards and carries only exact static ownership messages. The lifecycle parser now refuses incomplete EOF rows and close failures; initial Send reports the first failed check without another observation. Focused ASan/UBSan tests cover ownership/removal admission, actual service/parser diagnostics and the joined service/reserved-backend route. Genuine source-only Claude/Fable review is separately recorded on the reviewed bytes. New complete host/normal SDK/package/console qualification is pending. Earlier c47 normal-build Alan Wake 2 setup/launch-to-Continue/cleanup and one 11\u201312% total-preparation comparison apply only to that earlier artifact. No universal compatibility, controllable gameplay, reporter-specific root cause or historical shutdown repair is claimed. Public publication and Native Dashboard work remain on hold.",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -2148,5 +2164,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "fa620d45c615b869b9a1a319910c757e9b462a0b"
+  "runtimeSourceCommit": "20b2343e21081e7fdfc01dadd38cbeeb8a1b3d80"
 }

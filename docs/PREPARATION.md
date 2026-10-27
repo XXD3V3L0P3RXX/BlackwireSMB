@@ -16,9 +16,19 @@ An image appearing in the share's listing does not establish that Blackwire can 
 
 Setup step 8 checks registration ownership and retained history; step 9 requests and independently verifies registration. Existing same-title copies, incomplete app metadata, database observations or missing manual-source membership can stop those stages. Their failure alone does not establish a firmware cause. Keep the exact stage and reason; valid retained startup files may allow **Finish setup**, while unknown outcomes still require observation rather than repeated registration.
 
+The latest unreleased source checks an existing Blackwire owner before starting another Send job. Two source entries can share a title ID, but a copy already owning that title's registration must be uninstalled before switching to the other source. Select the owning entry in Blackwire and use its normal **Uninstall from PS5** action, then refresh and follow the alternative entry's current Send or Finish setup action. PC originals and saved games remain separate. This check does not repair every step-8 conflict or treat unknown registration as absent.
+
+An early **Registration cleanup is pending or needs attention** refusal does not repeat cleanup or send startup files. Inspect the existing copy's current status before trying another Send. If **registration ownership could not be verified**, keep existing copies and refresh status; do not delete ownership records to force another attempt.
+
 While a game is running, Send files remains blocked and the selected card names the session that must be closed. Close the named game normally before starting preparation. **Refresh library** rescans the configured shares after source changes; it does not automatically repeat a failed Send or resolve uncertain registration ownership.
 
 Two shares can be combined in one library, with each copy bound to its own server/share/path identity. The normal guarded reader upgrade recognizes exact known previous reader binaries and retains valid startup files. It does not accept unknown predecessor bytes or reconnect a moved source by title alone. A prepared compressed image uses its sealed generation and logical map for bounded launch validation; required local startup checks remain active.
+
+### Preparation refused before acceptance
+
+The unreleased source reports a bounded code such as `preparation/idle-first/log-open` or `preparation/idle-second/unmatched-start`, with an error number only when the failing call supplies one. It records the first failure from that same check rather than taking another observation to explain it. An incomplete record or unsuccessful log close also refuses preparation; a later close failure does not replace an earlier failure reason.
+
+Lifecycle history is not a live process census. An unmatched start does not by itself prove that a game is currently running. Close any known session normally and preserve the exact code, build ID and payload versions if the refusal continues. Do not erase logs, ownership journals or startup files to force an idle check to pass. These diagnostics and parser repairs have focused host coverage; their full build and console qualification is [pending](TESTING.md#unreleased-ownership-and-idle-admission-follow-up).
 
 ## Launch from the Games area
 
@@ -61,6 +71,10 @@ Explicit streamed-copy **Uninstall** removes only the exact admitted console pre
 An empty ShadowMount library does not prove that a title is uninstalled. The console can retain its app metadata after the original game folder has been removed. A new Blackwire data folder does not remove that separate installation. Step 8 must distinguish it from an absent registration; creating a replacement `mount.lnk`, copying library files into place or deleting an ownership journal is not a repair.
 
 In the unreleased revision, Details keeps the removal refusal visible. When a Blackwire startup copy can be verified, **Remove startup files only** offers a separate confirmation. It removes that exact startup copy and its preparation record while preserving the existing console installation, its metadata, saved games and the PC source. It does not uninstall the existing title, repair its registration or move the PC source into Removed. Execution rechecks the prepared inventory, inactive reader and source exclusion; a displayed button alone is not removal authority.
+
+The latest follow-up withholds that action when a Blackwire ownership record for the same title is present or cannot be verified. Its destructive guard remains unchanged. An existing owning copy must use its normal Uninstall path before an alternative source can be prepared; startup-only removal is not a way to bypass that ownership. Source Ampr/PlayGo modules and stock ShadowMountPlus settings must not be changed to force this check to pass.
+
+If Details says **Console registration could not be observed or released reliably**, refresh status before attempting startup-file removal. The action remains unavailable for that observation, and both copies are preserved. This distinct message does not grant removal authority or establish that the title is absent.
 
 The action also checks earlier cleanup records and app mount links. An unfinished relevant Uninstall cannot be bypassed by restarting Blackwire or choosing startup-only removal. A link from another title can still use the selected copy, so missing or empty ShadowMount cache entries are insufficient. If any required history or app mount observation is unreadable, changing or ambiguous, removal refuses without deleting the copy. Valid completed older cleanup and unrelated, separate app links do not automatically block a newly prepared copy. Do not delete journals or create replacement mount files to force this check to pass.
 
