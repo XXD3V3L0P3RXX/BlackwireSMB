@@ -26,6 +26,40 @@ ssize_t __wrap_send(int fd, const void *bytes, size_t size, int flags) {
     return __real_send(fd, bytes, size, flags);
 }
 
+#if defined(BW_STARTUP_TRACE) && (!defined(BW_STARTUP_TRACE_STDOUT_ONLY) || !BW_STARTUP_TRACE_STDOUT_ONLY)
+enum file_fault { FILE_SHORT=1, FILE_PARTIAL_ENOSPC, FILE_PARTIAL_ZERO,
+    FILE_PARTIAL_EINTR, FILE_EINTR, FILE_ZERO, FILE_OVERLONG, FILE_CLOSE_ERROR };
+static int file_fault, file_watched=-1;
+static unsigned file_writes, file_closes, file_syncs;
+/* Fault only the actual production helper's selected file descriptor. A
+ * partial write really reaches the file before the subsequent refusal. */
+static ssize_t trace_file_write(int fd, const void *bytes, size_t size) {
+    if (fd!=file_watched) return write(fd,bytes,size);
+    file_writes++;
+    if (file_writes==1 && (file_fault==FILE_SHORT || file_fault==FILE_PARTIAL_ENOSPC ||
+        file_fault==FILE_PARTIAL_ZERO || file_fault==FILE_PARTIAL_EINTR || file_fault==FILE_CLOSE_ERROR))
+        return write(fd,bytes,size>7?7:size);
+    if (file_fault==FILE_SHORT) return write(fd,bytes,size);
+    if (file_fault==FILE_ZERO || file_fault==FILE_PARTIAL_ZERO) return 0;
+    if (file_fault==FILE_EINTR || file_fault==FILE_PARTIAL_EINTR) { errno=EINTR;return -1; }
+    if (file_fault==FILE_OVERLONG) return (ssize_t)size+1;
+    errno=ENOSPC;return -1;
+}
+static int trace_file_close(int fd) {
+    if (fd!=file_watched) return close(fd);
+    file_closes++;int rc=close(fd);
+    if (file_fault==FILE_CLOSE_ERROR) { errno=EIO;return -1; }
+    return rc;
+}
+static int trace_file_fsync(int fd) {
+    if (fd==file_watched) file_syncs++;
+    return fsync(fd);
+}
+#define write trace_file_write
+#define close trace_file_close
+#define fsync trace_file_fsync
+#endif
+
 /* Any accidental trace filesystem call in stdout-only mode must fail the
  * link, even if a test directory would otherwise hide its attempted write. */
 #if defined(BW_STARTUP_TRACE_STDOUT_ONLY) && BW_STARTUP_TRACE_STDOUT_ONLY
@@ -100,6 +134,38 @@ int main(int argc, char **argv) {
         FILE *f=fopen(path,"rb");CHECK(f!=NULL);size_t n=fread(data,1,sizeof data-1,f);data[n]=0;CHECK(!fclose(f));
         CHECK(n>0 && strstr(data,"row=1 file.compatibility\n")!=NULL);
         struct stat st;CHECK(!stat(path,&st) && (st.st_mode&0777)==0600);
+#else
+        CHECK(0);
+#endif
+    } else if (!strncmp(argv[1],"file-",5)) {
+#if defined(BW_STARTUP_TRACE) && !BW_STARTUP_TRACE_STDOUT_ONLY
+        const char *names[]={"file-short","file-partial-enospc","file-partial-zero",
+            "file-partial-eintr","file-eintr","file-zero","file-overlong","file-close-error"};
+        for(unsigned i=0;i<sizeof names/sizeof names[0];i++)if(!strcmp(argv[1],names[i]))file_fault=(int)i+1;
+        CHECK(file_fault>=FILE_SHORT && file_fault<=FILE_CLOSE_ERROR);
+        int pair[2];CHECK(!socketpair(AF_UNIX,SOCK_STREAM,0,pair));int old=redirect_stdout(pair[0]);close(pair[0]);
+        errno=E2BIG;startup_trace_open();CHECK(errno==E2BIG && startup_trace_fd>=0);file_watched=startup_trace_fd;
+        mark("file.first",1);
+        int healthy=file_fault==FILE_SHORT;
+        unsigned first_writes=file_fault==FILE_PARTIAL_EINTR||file_fault==FILE_EINTR?4u:
+            file_fault==FILE_ZERO||file_fault==FILE_OVERLONG?1u:2u;
+        CHECK(file_writes==first_writes && file_closes==(healthy?0u:1u) && file_syncs==(healthy?1u:0u));
+        CHECK(healthy?startup_trace_fd==file_watched:startup_trace_fd==-1);
+        char path[1024];snprintf(path,sizeof path,"%s/startup-core-01-%ld.log",BW_STARTUP_TRACE_DIRECTORY,(long)getpid());
+        struct stat before,after;CHECK(!stat(path,&before));
+        off_t partial=file_fault==FILE_EINTR||file_fault==FILE_ZERO||file_fault==FILE_OVERLONG?0:7;
+        CHECK(healthy?before.st_size>7:before.st_size==partial);
+        mark("file.after",2);CHECK(!stat(path,&after));
+        CHECK(file_writes==first_writes+(healthy?1u:0u) && file_closes==(healthy?0u:1u));
+        CHECK(healthy?after.st_size>before.st_size:after.st_size==before.st_size);
+        CHECK(file_syncs==(healthy?2u:0u));
+        errno=ERANGE;startup_trace_finish();CHECK(errno==ERANGE && startup_trace_fd==-1 && file_closes==1);
+        errno=E2BIG;startup_trace_finish();CHECK(errno==E2BIG && file_closes==1);file_watched=-1;
+        restore_stdout(old);char output[512];size_t output_size=collect(pair[1],output,sizeof output);close(pair[1]);
+        CHECK(output_size>0 && strstr(output,"row=1 file.first\n") && strstr(output,"row=2 file.after\n"));
+        char data[512];FILE *f=fopen(path,"rb");CHECK(f!=NULL);size_t n=fread(data,1,sizeof data-1,f);data[n]=0;CHECK(!fclose(f));
+        if(healthy)CHECK(strstr(data,"row=1 file.first\n") && strstr(data,"row=2 file.after\n"));
+        else CHECK(n==(size_t)partial && (!n || !memcmp(data,"BW core",7)));
 #else
         CHECK(0);
 #endif

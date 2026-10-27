@@ -147,11 +147,17 @@ static void startup_mark(const char *phase) {
       size_t at = 0;
       for (unsigned attempt = 0; attempt < 4u && at < (size_t)n; attempt++) {
         ssize_t wrote = write(startup_trace_fd, row + at, (size_t)n - at);
-        if (wrote > 0) at += (size_t)wrote;
+        if (wrote > 0 && (size_t)wrote <= (size_t)n - at) at += (size_t)wrote;
         else if (wrote < 0 && errno == EINTR) continue;
         else break;
       }
       if (at == (size_t)n) (void)fsync(startup_trace_fd);
+      else {
+        /* Never append a later checkpoint to an incomplete private-file row. */
+        int fd = startup_trace_fd;
+        startup_trace_fd = -1;
+        (void)close(fd);
+      }
     }
     #endif
   }

@@ -31,7 +31,9 @@ def main():
     # Use an owned native Linux temporary directory: a Windows-mounted output
     # can report emulated 0777 modes for a correctly requested 0600 creation.
     with tempfile.TemporaryDirectory(prefix='bw-trace-') as directory:
-        run('compile-files',[*common,'-DBW_STARTUP_TRACE=1','-DBW_STARTUP_TRACE_STDOUT_ONLY=0','-DBW_STARTUP_TRACE_DIRECTORY='+json.dumps(directory),'-o',normal]);observations.append(json.loads(run('case-files',[normal,'files']).splitlines()[-1]))
+        run('compile-files',[*common,'-DBW_STARTUP_TRACE=1','-DBW_STARTUP_TRACE_STDOUT_ONLY=0','-DBW_STARTUP_TRACE_DIRECTORY='+json.dumps(directory),'-o',normal])
+        for name in ('files','file-short','file-partial-enospc','file-partial-zero','file-partial-eintr','file-eintr','file-zero','file-overlong','file-close-error'):
+            observations.append(json.loads(run('case-'+name,[normal,name]).splitlines()[-1]))
     sdk=[]
     if not a.host_only:
         sys.path.insert(0,str(ROOT/'tests/dashboard/lifecycle'));from fixture_sdk import production_rows
@@ -45,6 +47,6 @@ def main():
         if b'BW core-isolation-01' not in strings or b'backend.create.before' not in strings or b'startup-core-01' in strings:raise RuntimeError('Actual SDK stdout object marker/file-path contract differs')
     after={x.relative_to(ROOT).as_posix():pin(x) for x in inputs}
     if before!=after:raise RuntimeError('Source changed during focused qualification')
-    proof={'passed':True,'cases':len(observations),'checks':sum(x['checks'] for x in observations),'host':observations,'sdkObjects':sdk,'source':before,'actualTraceSection':pin(section),'sourceBeforeAfterMatch':True,'stdoutOnlyHasNoTraceFilesystemCallsOrPath':True,'invalidEnabledModeWithoutTraceRefused':True,'sanitizers':['ASan','UBSan'],'evidenceOnlyNoAbsenceAuthority':True,'payloadLoads':0,'consoleActions':0,'published':False}
+    proof={'passed':True,'cases':len(observations),'checks':sum(x['checks'] for x in observations),'host':observations,'sdkObjects':sdk,'source':before,'actualTraceSection':pin(section),'sourceBeforeAfterMatch':True,'stdoutOnlyHasNoTraceFilesystemCallsOrPath':True,'invalidEnabledModeWithoutTraceRefused':True,'fileTraceFaultCases':8,'fileTraceFailureLatchesOffAndClosesOnce':True,'completeShortFileWriteRemainsHealthy':True,'sanitizers':['ASan','UBSan'],'evidenceOnlyNoAbsenceAuthority':True,'payloadLoads':0,'consoleActions':0,'published':False}
     (out/'proof.json').write_text(json.dumps(proof,indent=2)+'\n');print(json.dumps({'passed':True,'cases':proof['cases'],'checks':proof['checks'],'sdkObjects':len(sdk),'proof':pin(out/'proof.json')}))
 if __name__=='__main__':main()
