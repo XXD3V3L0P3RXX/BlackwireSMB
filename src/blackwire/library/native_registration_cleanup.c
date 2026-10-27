@@ -577,6 +577,79 @@ static int removed_absence(struct context *c,struct anchor *prepared,const struc
        removed_prepared_scope(prepared)||record_anchors(c,r)||removed_record_current(c,r,removed))return -1;
     return 0;
 }
+static int removed_owner_markers(struct context *c,const struct record *r,const unsigned char *wire,
+    int *absent,unsigned *transient){
+    static const char *const suffix[]={"absent","pending","retire","uninstall"};
+    static const char *const magic[]={"BWROCA01","BWROCP01","BWROCR01","BWROCU01"};
+    unsigned char expected[NRC_MARKER];char name[96];*transient=0;*absent=1;
+    for(unsigned i=0;i<4;i++){
+        marker(expected,magic[i],wire+NRC_HASH_AT,&r->subject);
+        if(leaf(name,r->subject.title,r->subject.run,suffix[i]))return -1;
+        int status=marker_read(c,name,expected);if(status<0)return -1;
+        if(!i)*absent=status;else if(!status)*transient=1;
+    }
+    return 0;
+}
+int bw_nrc_removed_owner(const struct bw_nrc_environment *e,const struct bw_removed_source *removed,
+    const struct bw_nrc_removed_observer *ops,struct bw_nrc_subject *out){
+    if(out)memset(out,0,sizeof *out);
+    if(!out||!removed||!e||!e->data_root||!title_valid(removed->identity.binding.title)||!run_valid(removed->operation)||
+       !ops||!ops->current||pthread_mutex_lock(&nrc_lock))return -1;
+    struct context c;context_init(&c);DIR *dir=NULL;struct record *r=calloc(1,sizeof *r);
+    unsigned char *wire=malloc(NRC_WIRE),owner_hash[32]={0};struct bw_nrc_subject found={0};
+    struct bw_removed_source actual={0};struct bw_removed_result visibility={0};
+    struct stat before,after;char path[BW_NRC_PATH_BYTES],selected_name[96]={0};
+    size_t entries=0,matches=0;unsigned outstanding=0;int rc=-1;
+    if(!r||!wire||ops->current(ops->opaque)||
+       bw_removed_lookup(e->data_root,&removed->identity,&actual,&visibility)||
+       visibility.state!=BW_REMOVED_COMMITTED||!removed_equal(&actual,removed))goto done;
+    if(join(path,e->data_root,BW_NRC_LEDGER_LEAF))goto done;
+    if(lstat(path,&before)){if(errno==ENOENT)rc=1;goto done;}
+    if(context_base(&c,e)||ledger_open(&c,0,NULL,NULL)||fstat(c.ledger.fd,&before)||ops->current(ops->opaque))goto done;
+    dir=opendir(c.ledger.path);if(!dir)goto done;
+    struct dirent *entry;errno=0;
+    while((entry=readdir(dir))){
+        if(++entries>4096u)goto done;
+        if(!strcmp(entry->d_name,".")||!strcmp(entry->d_name,"..")||!strcmp(entry->d_name,".blackwire-registration-owners")){errno=0;continue;}
+        char title[10],run[33],name[96];const char *suffix;
+        if(parse_name(entry->d_name,title,run,&suffix))goto done;
+        if(!strcmp(suffix,"intent")){errno=0;continue;}
+        /* Validate every committed owner's paired markers, including orphaned
+         * marker names; an unrelated malformed record is not safe absence. */
+        if(leaf(name,title,run,"owner")||read_exact(&c,name,wire,NRC_WIRE)||decode(r,&c,wire,title,run))goto done;
+        int absent=1;unsigned transient=0;
+        if(removed_owner_markers(&c,r,wire,&absent,&transient))goto done;
+        if(strcmp(suffix,"owner")){errno=0;continue;}
+        if(strcmp(r->subject.title,removed->identity.binding.title)){errno=0;continue;}
+        if(absent){outstanding=1;errno=0;continue;}
+        struct bw_reader_selection selected;unsigned char binding[32];
+        if(bw_reader_selection_parse(&selected,r->selection,r->selection_size)||hex(selected.binding_hex,64,binding))goto done;
+        int same_generation=(uint32_t)removed->identity.kind==selected.source_kind&&removed->identity.policy==selected.source_policy&&
+            !strcmp(selected.source,removed->identity.binding.source)&&!strcmp(r->subject.game,removed->identity.binding.game)&&
+            !memcmp(binding,removed->identity.binding.sha256,32)&&!memcmp(r->subject.prepared_record_sha256,removed->prepared_sha256,32);
+        /* A valid ABSENT closes a NONmatching historical generation, even if
+         * that old lifecycle retains its consumed automatic intent markers.
+         * Exact-target automatic markers and unresolved same-title owners
+         * never become completion authority for this normal Uninstall. */
+        if(!same_generation){errno=0;continue;}if(transient)goto done;
+        if(ops->current(ops->opaque)||record_anchors(&c,r)||removed_record_current(&c,r,removed)||
+           ops->current(ops->opaque)||++matches!=1)goto done;
+        found=r->subject;memcpy(owner_hash,wire+NRC_HASH_AT,32);memcpy(selected_name,name,strlen(name)+1);errno=0;
+    }
+    if(errno||fstat(c.ledger.fd,&after)||!same(&before,&after)||anchors_current(&c)||ops->current(ops->opaque))goto done;
+    if(!matches){rc=1;goto done;}if(outstanding)goto done;
+    if(ops->current(ops->opaque)||read_exact(&c,selected_name,wire,NRC_WIRE)||decode(r,&c,wire,found.title,found.run)||
+       memcmp(owner_hash,wire+NRC_HASH_AT,32)||record_anchors(&c,r)||removed_record_current(&c,r,removed)||ops->current(ops->opaque))goto done;
+    int absent=1;unsigned transient=0;
+    if(removed_owner_markers(&c,r,wire,&absent,&transient)||absent||transient||
+       fstat(c.ledger.fd,&after)||!same(&before,&after)||anchors_current(&c)||ops->current(ops->opaque))goto done;
+    rc=0;
+done:
+    if(dir&&closedir(dir))c.release_unknown=1;
+    if(context_close(&c))rc=BW_NRC_RELEASE_UNCONFIRMED;
+    free(r);free(wire);if(!rc)*out=found;
+    pthread_mutex_unlock(&nrc_lock);return rc;
+}
 int bw_nrc_observe_removed(const struct bw_nrc_environment *e,const char title[10],const char run[33],
     const struct bw_removed_source *removed,const struct bw_nrc_removed_observer *ops,struct bw_nrc_result *out){
     if(out)memset(out,0,sizeof *out);

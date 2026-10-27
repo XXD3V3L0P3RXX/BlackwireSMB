@@ -24,9 +24,10 @@ def pin(path):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--host-only',action='store_true',help='Run focused host proof without SDK compilation')
     args=parser.parse_args();out=args.output.resolve()
-    if not out.is_relative_to(ROOT/'build/native-dashboard') or out==ROOT/'build/native-dashboard':
-        raise ValueError('Use a new scoped build/native-dashboard child')
+    if not out.is_relative_to(ROOT/'build') or out==ROOT/'build':
+        raise ValueError('Use a new scoped repository build child')
     out.mkdir(parents=True,exist_ok=False)
     own=[LIB/'native_registration_cleanup.c',LIB/'native_registration_cleanup.h',
          Path(__file__).resolve(),HERE/'test_registration_cleanup.c',
@@ -70,8 +71,11 @@ def main():
     with tempfile.TemporaryDirectory(prefix='blackwire-registration-cleanup-') as temporary:
         tested=json.loads(run('actual-fs-sqlite-faults',[binary,Path(temporary)/'fixtures']))
     if not tested.get('passed') or tested['moduleOpens']!=tested['moduleCloses']:raise RuntimeError('Host proof incomplete')
-    native=out/'native_registration_cleanup.sdk.o';dep=native.with_suffix('.d');deps.append(dep)
-    run('sdk-cleanup',[SDK/'bin/prospero-clang',*flags,*includes,'-fstack-usage','-MD','-MF',dep,'-c',LIB/'native_registration_cleanup.c','-o',native])
+    if tested.get('exactRemovedOwnerQueryCases')!=16 or tested.get('exactRemovedOwnerQueryCalls')!=21 or tested.get('exactRemovedOwnerQueryWrites')!=0 or not tested.get('exactQueryTreeIdentityAndBytesUnchanged') or tested.get('exactRemovedOwnerQueryMaxCurrent',999)>8 or tested.get('historicalCompletedOwnerControls')!=1:raise RuntimeError('Exact Removed-owner query proof incomplete')
+    native=None
+    if not args.host_only:
+        native=out/'native_registration_cleanup.sdk.o';dep=native.with_suffix('.d');deps.append(dep)
+        run('sdk-cleanup',[SDK/'bin/prospero-clang',*flags,*includes,'-fstack-usage','-MD','-MF',dep,'-c',LIB/'native_registration_cleanup.c','-o',native])
     actual=set(own+core+[ROOT/'vendor/sqlite/sqlite3.c'])
     for dep in deps:
         for name in shlex.split(dep.read_text().replace('\\\n',' ').split(':',1)[1]):
@@ -83,9 +87,9 @@ def main():
     for path in local:
         dst=out/'sources'/path.relative_to(ROOT);dst.parent.mkdir(parents=True,exist_ok=True);dst.write_bytes(path.read_bytes())
     external={str(p):pin(p) for p in sorted(actual-local) if p.is_file()}
-    external[str((SDK/'bin/prospero-clang').resolve())]=pin((SDK/'bin/prospero-clang').resolve())
+    if native:external[str((SDK/'bin/prospero-clang').resolve())]=pin((SDK/'bin/prospero-clang').resolve())
     proof=dict(atUtc=datetime.now(timezone.utc).isoformat(),passed=True,sourceBeforeAfterMatched=True,source=source,
-        actualExternalCompilerInputs=external,host=tested,hostBinary=pin(binary),sdkObject=pin(native),
+        actualExternalCompilerInputs=external,host=tested,hostBinary=pin(binary),sdkObject=pin(native) if native else None,
         commands=commands,consoleActions=0,nativeRuntimeExecuted=False,nativeELFLinked=False,
         retainedMissingSourcePolicyUnchanged=True,sharedBackendReaderFilesEdited=False,normalUninstallTransportModeled=True,
         realRegistrationAndReadonlyDbHelpersLinked=True,pendingPersistsBeforeAtMostOneCallback=True,
@@ -101,6 +105,6 @@ def main():
             'Present-source retirement additionally requires exact joined-reader release and every effective scan root to exclude the source.',
             'This new observer has no normal mutation callbacks and writes only the original owner absent marker.', 'Backend integration and source/manual collector callbacks are separately qualified.'])
     (out/'proof.json').write_text(json.dumps(proof,indent=2)+'\n')
-    print(json.dumps(dict(passed=True,host=tested,proof=pin(out/'proof.json'),sdkObject=pin(native))))
+    print(json.dumps(dict(passed=True,host=tested,proof=pin(out/'proof.json'),sdkObject=pin(native) if native else None)))
 
 if __name__=='__main__':main()

@@ -1818,14 +1818,47 @@ static int registration_removed_manual(void *opaque,const struct bw_nrc_subject 
        bw_sm_post(&o->remote.connection,BW_SM_MANUAL_LIST,subject->source,&b)||a.present!=b.present||a.count!=b.count||registration_removed_current(o))return -1;
     return a.present?1:0;
 }
+/* Only the exact retained consumed normal Uninstall may inspect completed
+ * owners. This never adds historical ABSENT events to the generic queue. */
+static int registration_removed_unknown_locked(const struct bw_native_backend *p,const char nonce[33]){
+    return !p->active&&!p->control_release_unknown&&p->removing.state==REMOVAL_UNKNOWN&&
+        !p->removing.restore&&!p->removing.startup_only&&!p->removing.selected.startup_only&&
+        p->removing.result.mutation_started&&!p->removing.result.release_unknown&&!p->removing.result.preparation_only&&
+        nonce_valid(p->removing.selected.operation)&&!strcmp(p->removing.selected.operation,nonce)&&
+        !strcmp(p->external_nonce,nonce);
+}
+static int registration_removed_matches(const struct bw_native_removal_selection *selected,const struct bw_removed_source *removed){
+    const struct bw_provider_binding *a=&selected->identity,*b=&removed->identity;
+    return a->kind==b->kind&&a->policy==b->policy&&!strcmp(a->binding.source,b->binding.source)&&
+        !strcmp(a->binding.game,b->binding.game)&&!strcmp(a->binding.title,b->binding.title)&&
+        !memcmp(a->binding.sha256,b->binding.sha256,32)&&!strcmp(selected->operation,removed->operation)&&
+        !memcmp(selected->prepared.record_sha256,removed->prepared_sha256,32);
+}
 static int registration_observe_removed(struct bw_native_backend *p,struct registration_observation_guard *guard,
     const struct bw_nrc_environment *env,struct bw_native_cleanup_observation *out){
     struct bw_nrc_candidate *owners=calloc(BW_NRC_CANDIDATE_LIMIT,sizeof *owners);struct bw_removed_source *removed=calloc(BW_REMOVED_LIMIT,sizeof *removed);
-    size_t count=0,removed_count=0;int result=-1;
-    if(!owners||!removed||bw_nrc_candidates(env,owners,BW_NRC_CANDIDATE_LIMIT,&count)||
-       bw_removed_list(backend_data_root,removed,BW_REMOVED_LIMIT,&removed_count))goto done;
+    size_t count=0,removed_count=0,completed_index=0;int result=-1,completed=0;
+    if(!owners||!removed||bw_removed_list(backend_data_root,removed,BW_REMOVED_LIMIT,&removed_count))goto done;
+    struct bw_native_removal_selection selected={0};
+    pthread_mutex_lock(&p->lock);int retained=registration_removed_unknown_locked(p,guard->nonce);
+    if(retained)selected=p->removing.selected;pthread_mutex_unlock(&p->lock);
+    if(retained){
+        size_t matches=0;
+        for(size_t j=0;j<removed_count;j++)if(registration_removed_matches(&selected,removed+j)){completed_index=j;matches++;}
+        if(matches!=1){out->pending=1;out->reason="exact_retained_removed_generation_unavailable";goto done;}
+        struct registration_removed_observation context={.guard=guard};
+        context.remote.connection=(struct bw_sm_connection){0,registration_observation_current,guard};
+        struct bw_nrc_removed_observer ops={&context,registration_removed_current,registration_removed_sources,registration_removed_manual};
+        int observed=bw_nrc_removed_owner(env,removed+completed_index,&ops,&owners[0].subject);
+        if(observed<0){
+            if(observed==BW_NRC_RELEASE_UNCONFIRMED){pthread_mutex_lock(&p->lock);p->control_release_unknown=1;pthread_mutex_unlock(&p->lock);}
+            out->pending=1;out->reason=observed==BW_NRC_RELEASE_UNCONFIRMED?"completed_owner_lookup_release_unconfirmed":"completed_owner_lookup_unknown";goto done;
+        }
+        if(!observed){completed=1;count=1;}
+    }
+    if(!completed&&bw_nrc_candidates(env,owners,BW_NRC_CANDIDATE_LIMIT,&count))goto done;
     for(size_t i=0;i<count;i++)if(!owners[i].pending&&!owners[i].retiring)for(size_t j=0;j<removed_count;j++)
-        if(!strcmp(owners[i].subject.title,removed[j].identity.binding.title)&&!strcmp(owners[i].subject.game,removed[j].identity.binding.game)){
+        if((!retained||j==completed_index)&&!strcmp(owners[i].subject.title,removed[j].identity.binding.title)&&!strcmp(owners[i].subject.game,removed[j].identity.binding.game)){
             memcpy(out->title,owners[i].subject.title,10);memcpy(out->run,owners[i].subject.run,33);out->pending=1;
             struct registration_removed_observation context={.guard=guard};
             context.remote.connection=(struct bw_sm_connection){0,registration_observation_current,guard};
@@ -1834,17 +1867,25 @@ static int registration_observe_removed(struct bw_native_backend *p,struct regis
             out->absent=!result&&observed.state==BW_NRC_ABSENT;out->pending=!out->absent;out->reason=observed.reason;
             if(out->absent&&!registration_observation_control(guard,BW_NRL_RETIRE)){
                 struct bw_native_prepared absent={.state=BW_PREPARED_ABSENT};struct bw_game_uninstall_capability cap={0};
-                if(default_removal_probe(p,&removed[j].identity,&absent,&cap)||!cap.removed||!cap.can_restore){result=-1;out->absent=0;out->pending=1;goto done;}
+                if(default_removal_probe(p,&removed[j].identity,&absent,&cap)||!cap.removed||!cap.can_restore||registration_observation_control(guard,BW_NRL_RETIRE)){result=-1;out->absent=0;out->pending=1;goto done;}
                 pthread_mutex_lock(&p->lock);
+                /* Publish neither cached capability nor DONE after the
+                 * pre-lock observer/probe guard has become stale. */
+                if(p->active||p->control_release_unknown||strcmp(p->external_nonce,guard->nonce)||
+                   p->generation!=guard->generation||p->settings_revision!=guard->revision||
+                   p->settings_status!=BW_SETUP_VALID||!bw_native_setup_generation_equal(&p->settings_generation,&guard->settings)||
+                   (retained&&(!registration_removed_unknown_locked(p,guard->nonce)||
+                    !registration_removed_matches(&p->removing.selected,removed+j)))){
+                    pthread_mutex_unlock(&p->lock);result=-1;out->absent=0;out->pending=1;
+                    out->reason="removed_completion_guard_changed_before_publish";goto done;
+                }
                 for(size_t k=0;k<p->library.catalog.count;k++)if(!strcmp(p->library.catalog.items[k].source,removed[j].identity.binding.source)&&
                     !strcmp(p->library.catalog.items[k].title_id,removed[j].identity.binding.title)){
                     if(p->library.removal)p->library.removal[k]=cap;if(p->library.prepared)memset(p->library.prepared+k,0,sizeof *p->library.prepared);
                 }
-                if(p->removing.state==REMOVAL_UNKNOWN&&!p->removing.restore&&!strcmp(p->removing.selected.operation,removed[j].operation)&&
-                   !strcmp(p->removing.selected.identity.binding.game,removed[j].identity.binding.game)&&
-                   !strcmp(p->removing.selected.identity.binding.source,removed[j].identity.binding.source)&&
-                   !memcmp(p->removing.selected.prepared.record_sha256,removed[j].prepared_sha256,32)){
+                if(registration_removed_unknown_locked(p,guard->nonce)&&registration_removed_matches(&p->removing.selected,removed+j)){
                     p->removing.state=REMOVAL_DONE;p->removing.phase=BW_GAME_REMOVE_DONE;p->removing.unknown=0;
+                    p->removing.result.phase=BW_GAME_REMOVE_DONE;p->removing.result.reason=NULL;
                     snprintf(p->removing.message,sizeof p->removing.message,"Removed from PS5. PC backup and saved data preserved.");
                 }
                 p->generation++;
@@ -1869,7 +1910,9 @@ static int registration_observe(struct bw_native_backend *p,const char nonce[33]
     struct registration_observation_guard guard={.owner=p,.generation=p->generation,.revision=p->settings_revision,.settings=p->settings_generation,.deadline=now()+20.0};
     memcpy(guard.nonce,nonce,33);pthread_mutex_unlock(&p->lock);int result=-1;
     if(!allowed||registration_observation_control(&guard,BW_NRL_RETIRE)||registration_pending_refresh(p))goto done;
-    pthread_mutex_lock(&p->lock);size_t i=0;for(;i<p->registration_pending_count;i++)if(p->registration_pending[i].retiring)break;
+    pthread_mutex_lock(&p->lock);int retained_removed=registration_removed_unknown_locked(p,guard.nonce);
+    size_t i=0;if(!retained_removed){for(;i<p->registration_pending_count;i++)if(p->registration_pending[i].retiring)break;}
+    else i=p->registration_pending_count;
     if(i<p->registration_pending_count){memcpy(out->title,p->registration_pending[i].title,10);memcpy(out->run,p->registration_pending[i].run,33);out->pending=1;}
     pthread_mutex_unlock(&p->lock);
     struct bw_nrc_environment env=registration_environment;env.data_root=backend_data_root;struct bw_nrc_retirement_result observed={0};

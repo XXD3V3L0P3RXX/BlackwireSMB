@@ -191,6 +191,8 @@ def host_tests(root, out, source, runner):
             ("preparation_admission", "dashboard/service/check_preparation_admission.py", []),
             ("owner_refusal_service", "dashboard/lifecycle/check_owner_refusal_service.py", []),
             ("handoff_idle_paths", "dashboard/lifecycle/check_handoff_idle_paths.py", []),
+            ("registration_removed", "dashboard/lifecycle/check_registration_removed.py", ["--host-only"]),
+            ("dashboard_removal_service", "dashboard/lifecycle/check_dashboard_removal_service.py", ["--host-only"]),
             ("source_namespace", "compressed/check_namespace.py", []),
             ("source_companions", "dashboard/lifecycle/check_source_companions.py", ["--host-only"]),
             ("reader_projection", "reader/check_reader_projection.py", []),

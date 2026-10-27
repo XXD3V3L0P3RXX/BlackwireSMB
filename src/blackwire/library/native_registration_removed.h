@@ -33,6 +33,22 @@ struct bw_nrc_removed_observer {
  * Failed/partial markers remain evidence. Restore must remain unavailable
  * until this observer returns ABSENT for every outstanding same-title owner.
  * No backend/service lock may be held; callbacks must not reenter this module. */
+/* Read-only lookup for one exact committed Removed generation whose ORIGINAL
+ * owner already has a valid checksum-bound .absent marker. Unlike the general
+ * pending-candidate list, completed owners are visible only to this narrow
+ * query. No marker, layout, absence authority or platform request is created.
+ * Only ops->current is called; the caller must still run observe_removed and
+ * its full sources/manual/absence/probe checks. Original owner_run is returned,
+ * never inferred from a preparation run. A complete bounded ledger scan and
+ * stable held anchors are required. Duplicate matches, same-title outstanding
+ * owners, exact-target transient markers, malformed/linked records and
+ * uncertain reads refuse. Only a valid ABSENT on a nonmatching historical
+ * generation permits its old consumed transient markers. Uncommitted intents
+ * grant no match. 0=one owner,1=no completed match,
+ * -1=unknown,-2=owned descriptor/DIR/anchor release unconfirmed. Output is
+ * cleared on every nonzero result; no backend/service lock may be held. */
+int bw_nrc_removed_owner(const struct bw_nrc_environment *,const struct bw_removed_source *,
+    const struct bw_nrc_removed_observer *,struct bw_nrc_subject *);
 int bw_nrc_observe_removed(const struct bw_nrc_environment *,const char title[10],
     const char owner_run[33],const struct bw_removed_source *,
     const struct bw_nrc_removed_observer *,struct bw_nrc_result *);

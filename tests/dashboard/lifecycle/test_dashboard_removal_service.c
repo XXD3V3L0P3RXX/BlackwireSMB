@@ -5,7 +5,7 @@
 #include "native_removal_request.h"
 #include <sys/stat.h>
 
-struct removal_fixture {struct fixture base;unsigned startup_only,removed,restore,done,unknown,error,bad_id,bad_counts,pc_cap,local_cap,local_polls;unsigned observe_calls,observe_complete,observe_foreign,observe_error;int local_terminal;};
+struct removal_fixture {struct fixture base;unsigned startup_only,removed,restore,done,unknown,error,bad_id,bad_source,bad_title,bad_counts,pc_cap,local_cap,local_polls;unsigned observe_calls,observe_complete,observe_foreign,observe_error,observe_wrong_source,observe_wrong_title;int local_terminal;};
 static int removal_read(void *opaque,const char *method,const char *url,const void *body,size_t size,const char *auth,struct bw_native_response *out){
     struct removal_fixture *r=opaque;struct fixture *f=&r->base;
     if(strcmp(url,"/api/state"))return native_read(f,method,url,body,size,auth,out);
@@ -15,10 +15,10 @@ static int removal_read(void *opaque,const char *method,const char *url,const vo
         "\"stream\":{\"phase\":\"stopped\",\"runId\":\"\",\"gamePid\":0,\"message\":\"No game running\"},\"jobs\":[],"
         "\"games\":[{\"title\":\"PC title\",\"titleId\":\"PPSA99912\",\"source\":\"PC Demo\",\"sourceBinding\":\"PPSA99912_%064d\",\"playReason\":\"\",\"preparationReason\":\"\","
         "\"startupReady\":%s,\"canStart\":%s,\"canPrepare\":%s,\"canUninstall\":%s,\"canRemoveStartup\":%s,\"removed\":%s,\"canRestore\":%s}],"
-        "\"removal\":{\"operationId\":\"%s\",\"source\":\"PC Demo\",\"titleId\":\"PPSA99912\",\"state\":\"%s\",\"phase\":%u,\"files\":%u,\"filesTotal\":3,\"message\":\"Exact operation observation\",\"preparationOnly\":%s,\"removed\":%s}}",
+        "\"removal\":{\"operationId\":\"%s\",\"source\":\"%s\",\"titleId\":\"%s\",\"state\":\"%s\",\"phase\":%u,\"files\":%u,\"filesTotal\":3,\"message\":\"Exact operation observation\",\"preparationOnly\":%s,\"removed\":%s}}",
         token,1,r->removed||f->pc_unready?"false":"true",r->removed||f->pc_unready?"false":"true",!r->removed&&f->pc_unready?"true":"false",
         r->pc_cap&&!r->startup_only&&!r->removed?"true":"false",r->pc_cap&&r->startup_only&&!r->done?"true":"false",r->removed?"true":"false",r->removed?"true":"false",
-        r->bad_id?job:f->owner,r->unknown?"unknown":r->error?"error":r->done?"done":"running",r->unknown?7u:r->error?6u:r->done?5u:2u,r->bad_counts?4u:r->done?3u:1u,r->startup_only?"true":"false",r->done&&!r->restore&&!r->startup_only?"true":"false");
+        r->bad_id?job:f->owner,r->bad_source?"Other source":"PC Demo",r->bad_title?"PPSA90000":"PPSA99912",r->unknown?"unknown":r->error?"error":r->done?"done":"running",r->unknown?7u:r->error?6u:r->done?5u:2u,r->bad_counts?4u:r->done?3u:1u,r->startup_only?"true":"false",r->done&&!r->restore&&!r->startup_only?"true":"false");
     CHECK(n>0&&(size_t)n<sizeof raw);return json_reply(out,200,raw);
 }
 static int removal_backend(void *opaque,const char id[33],const char *method,const char *url,const void *body,size_t size,const char *auth,struct bw_native_response *out){
@@ -49,6 +49,8 @@ static int removal_observe(void *opaque,const char id[33],struct bw_native_clean
     if(r->observe_complete){r->unknown=0;r->done=1;r->removed=1;}
     if(r->observe_error){r->unknown=0;r->error=1;}
     if(r->observe_foreign)r->bad_id=1;
+    if(r->observe_wrong_source)r->bad_source=1;
+    if(r->observe_wrong_title)r->bad_title=1;
     /* Even a positive arbitrary observation is never terminal authority. */
     memcpy(out->title,"PPSA90000",10);memcpy(out->run,job,33);out->absent=1;return 0;
 }
@@ -90,15 +92,21 @@ int main(int argc,char **argv){
         if(!strcmp(mode,"refused")){CHECK(!f->reserved&&!catalog(s).active);}
         else if(strstr(mode,"reconcile")){
             r.unknown=1;CHECK(catalog(s).active&&removal_observed(s));
-            r.observe_complete=strstr(mode,"done")!=NULL||strstr(mode,"foreign")!=NULL;r.observe_foreign=strstr(mode,"foreign")!=NULL;
+            r.observe_wrong_source=!strcmp(mode,"pc-reconcile-wrong-source");r.observe_wrong_title=!strcmp(mode,"pc-reconcile-wrong-title");
+            r.observe_complete=strstr(mode,"done")!=NULL||strstr(mode,"foreign")!=NULL||r.observe_wrong_source||r.observe_wrong_title;r.observe_foreign=strstr(mode,"foreign")!=NULL;
             r.observe_error=strstr(mode,"error")!=NULL;
+            unsigned release_failure=!strcmp(mode,"pc-reconcile-done-release-failure");if(release_failure)f->release_fail=1;
             unsigned busy=strstr(mode,"busy")!=NULL;if(busy)f->idle=0;
             CHECK(!bd_service_tick(s));CHECK(r.observe_calls==!busy&&f->dispatches==1);
-            if(r.observe_complete&&!r.observe_foreign){CHECK(!f->reserved&&!catalog(s).active);}
+            if(release_failure){
+                CHECK(f->reserved&&catalog(s).active&&!strcmp(catalog(s).phase,"unknown")&&f->releases&&f->dispatches==1&&r.observe_calls==1);
+                removal_action_post(s,&c,0,verb,title,409);CHECK(f->reserved&&f->dispatches==1&&bd_service_destroy(s)==1);
+                f->release_fail=0;CHECK(!bd_service_tick(s)&&!f->reserved&&!catalog(s).active&&f->dispatches==1&&r.observe_calls==1);
+            }else if(r.observe_complete&&!r.observe_foreign&&!r.observe_wrong_source&&!r.observe_wrong_title){CHECK(!f->reserved&&!catalog(s).active);}
             else{
                 CHECK(f->reserved&&catalog(s).active);
                 if(strstr(mode,"throttle")){CHECK(!bd_service_tick(s)&&r.observe_calls==1);f->now+=4999;CHECK(!bd_service_tick(s)&&r.observe_calls==1);f->now++;CHECK(!bd_service_tick(s)&&r.observe_calls==2);}
-                f->idle=1;r.bad_id=0;r.unknown=0;r.error=0;r.done=1;r.removed=1;
+                f->idle=1;r.bad_id=r.bad_source=r.bad_title=0;r.unknown=0;r.error=0;r.done=1;r.removed=1;
                 CHECK(!bd_service_tick(s)&&!f->reserved&&!catalog(s).active&&f->dispatches==1);
             }
         }
