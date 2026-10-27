@@ -118,8 +118,8 @@
       "sha256": "1cfb44add29f594b5058642357d7595381014f696bcacc3cca4c00b85f215b99"
     },
     "src/blackwire/desk/index.html": {
-      "bytes": 152718,
-      "sha256": "c9ab05faf31e6c58becb75e72b28632dc199a0bd7ac18e8cde62c386e2a88e59"
+      "bytes": 153074,
+      "sha256": "dacabfd845099612e1db376715ba1424895731f286defdfa6246ca3df3a69fe6"
     },
     "src/blackwire/desk/tests/browser_handoff_harness.js": {
       "bytes": 12691,
@@ -446,8 +446,8 @@
       "sha256": "cccb2b6ae9a5f35b748322d0b04e41b3979317b2a689c25a23d6f67103dae7e8"
     },
     "src/blackwire/library/native_prepared_target.c": {
-      "bytes": 8162,
-      "sha256": "fa33755cb03119111ebb9c4b2df091ec2c001374fb2a2b3f4c9ce534997c5364"
+      "bytes": 9415,
+      "sha256": "854ad6d467deee78086e180579d31e9a61b00ff0efd5f63c0b9e93e63d531319"
     },
     "src/blackwire/library/native_prepared_target.h": {
       "bytes": 722,
@@ -1208,8 +1208,8 @@
   },
   "ui": {
     "desk/index.html": {
-      "bytes": 152718,
-      "sha256": "c9ab05faf31e6c58becb75e72b28632dc199a0bd7ac18e8cde62c386e2a88e59"
+      "bytes": 153074,
+      "sha256": "dacabfd845099612e1db376715ba1424895731f286defdfa6246ca3df3a69fe6"
     },
     "desk/tests/browser_handoff_harness.js": {
       "bytes": 12691,
@@ -1350,8 +1350,8 @@
       "sha256": "4c9ee4a7eb3e46a2621fa27d389b6c06f8f3bbc8fe5ef8c9e561dafda472d96a"
     },
     "tools/build/reader.py": {
-      "bytes": 23942,
-      "sha256": "833d53f94eda140223ab79fd5d316cec7cce970b28d4197868449118cb6db638"
+      "bytes": 24138,
+      "sha256": "b5b8d37c64bd390cae509da45a99bbfdf99e52b3bfde916ef6c46dc81eac6d14"
     },
     "tools/build/reader_patch.py": {
       "bytes": 12211,
@@ -1551,6 +1551,10 @@
       "bytes": 4065,
       "sha256": "bcde67cdf496644664a7d19755ab90df71a0b2d4e329b20604e3c76ebb89400d"
     },
+    "tests/dashboard/lifecycle/check_native_local_copy.py": {
+      "bytes": 8758,
+      "sha256": "f5daf1f2ffcf17ba92aec2100461a71b694d933cdc81c20132409628f646f7c3"
+    },
     "tests/dashboard/lifecycle/check_play_preparation_failure.py": {
       "bytes": 7314,
       "sha256": "8685efb3141534229e4babc4d9abe1e37b1241dec8b614c0a67248b19cbe0863"
@@ -1574,6 +1578,10 @@
     "tests/dashboard/lifecycle/check_prepare_source_policy.py": {
       "bytes": 6856,
       "sha256": "635521b16769e9aac76ba3d70521e4876cc1324b6c019f5d88defd7daf7b275b"
+    },
+    "tests/dashboard/lifecycle/check_prepared_projection_reload.py": {
+      "bytes": 6668,
+      "sha256": "e0869187b2d54651ed81316a4fc130ecb8722e5de60f794cd59b8ce8a3d6752f"
     },
     "tests/dashboard/lifecycle/check_projected_bundle.py": {
       "bytes": 4060,
@@ -1767,6 +1775,10 @@
       "bytes": 10058,
       "sha256": "82df444cf2f844e7e381272ab1b35f64c1520da7cfb7eb7741110f81329319ec"
     },
+    "tests/dashboard/lifecycle/test_native_local_copy.c": {
+      "bytes": 21817,
+      "sha256": "b238a23cca41579fe3e54b9bf6e605cb306e0730b3db71b85ee1af43a1ff573b"
+    },
     "tests/dashboard/lifecycle/test_play_preparation_failure.c": {
       "bytes": 23727,
       "sha256": "b214f0b140cbd1dc8e687617d92be423e7929a13abfbc480def57d735659d5b2"
@@ -1802,6 +1814,10 @@
     "tests/dashboard/lifecycle/test_prepare_source_policy.c": {
       "bytes": 10537,
       "sha256": "aa1c2d88a82965b3bc9d7ed96e272c19d3d5c38e905a2e50a1a4cb47a62e252a"
+    },
+    "tests/dashboard/lifecycle/test_prepared_projection_reload.c": {
+      "bytes": 8345,
+      "sha256": "de441fffcf1ceb61ee3da5547a41f4cd5ba12e48cef7d4181398973cae6f93b1"
     },
     "tests/dashboard/lifecycle/test_projected_bundle.c": {
       "bytes": 9662,
@@ -2122,7 +2138,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Local standalone source-companion repair, truthful image-access and registration observations, bounded metadata read window and distinct owned-startup-only removal. Focused actual producer, registration, removal, normal-adapter, backend, service, UI, handoff, DATA and cache/error host paths pass; SMP transport and outer idle are modeled in removal host tests. Cross-purpose pending history and same/different-title app mount regressions pass 331 normal-adapter cases; targeted genuine Fable review findings were reproduced and repaired within the reviewed scope, with arbitrary descendant mount aliases and real-console inventories unqualified. A five-image signed PC SMB metadata A/B passes. The prior normal candidate connected both real shares and passed actual AW2 step7, then refused residual registration at step8; it was removed through normal platform/PM cleanup before this revision. Frozen integrated host/SDK and exact-build fresh/retained/repeated PS5 preparation, launch, cleanup and speed qualification remain pending. Native Dashboard paused; no publication or console deployment implied.",
+  "developmentQualification": "Local standalone source-companion, truthful error and strict removal repairs. Normal source e13c79e passed 52 host suites/60 host commands and 146 SDK commands with private instrumentation absent. Actual console fresh compressed AW2 Ready, visible Continue-screen startup, Close, Uninstall, Restore and another fresh Ready passed; the second fresh preparation completed in a 68.725-70.142 second UI observation interval, not a speed-improvement result. Retained Refresh then exposed the reproduced policy3 legacy-dispatch and inherited legacy-upgrade-flag defects. Their repaired normal wrapper passes 85 actual-producer cases and a targeted genuine Fable review; reload does not grant byte verification or launch authority. Source, reader, registration and downstream hardware gates remain. Copy fault coverage passes 99 actual-code cases; its existing 2-write/3-read local body work is measured, not yet improved. Final source-pinned host/SDK, corrected retained/fresh/repeated PS5 qualification, speed comparison and release logging checks remain pending. Native Dashboard paused; no publication or new console deployment implied.",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -2132,5 +2148,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "a74575fc1a246c4382daf39a2ed2358df56f61fc"
+  "runtimeSourceCommit": "f947e0fb9e58d162e6fc363c85645874a7c4240c"
 }
