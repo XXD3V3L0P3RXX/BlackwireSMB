@@ -29,8 +29,8 @@ struct gur {
     struct bw_nrc_subject subject;
     struct bw_nrc_subject owner;
     struct bw_reader_selection selection;
-    struct bw_nrl_retained_source source;
-    char paths[3][BW_NRC_PATH_BYTES],root[BW_NRC_PATH_BYTES];
+    struct bw_nrl_retained_source source,preparation;
+    char paths[3][BW_NRC_PATH_BYTES],root[BW_NRC_PATH_BYTES],preparation_root[BW_NRC_PATH_BYTES];
     int apps,app;
     struct stat apps_id,app_id;
     struct gur_blob source_param,app_param,mount,receipt;
@@ -150,7 +150,13 @@ static int gur_bind(struct gur *p,const struct bw_removed_source *s){
             for(unsigned i=0;i<32;i++)snprintf(p->selection.provenance_hex+2*i,3,"%02x",prepared->provenance_sha256[i]);}
     }
     if(map>=0&&gur_release(p,map))bad=1;if(bad)return -1;
-    if(p->preparation_only){p->bound=1;return gur_current(p);}
+    if(p->preparation_only){
+        if(gur_join(parent,p->paths[0],"native-prepared")||gur_join(p->preparation_root,parent,b->game))return -1;
+        p->preparation.parent=gur_dir(p,parent,&p->preparation.parent_identity);
+        p->preparation.root=gur_dir(p,p->preparation_root,&p->preparation.root_identity);
+        if(p->preparation.parent<0||p->preparation.root<0)return -1;
+        p->bound=1;return gur_current(p);
+    }
     if(gur_registration_owner_capture(p))return -1;
     enum bw_registration_state state=bw_native_registration_state(p->paths[0],p->paths[1],p->paths[2],&p->selection);
     if(p->files_accepted&&state!=BW_REG_ABSENT)return -1;
@@ -166,7 +172,11 @@ static int gur_bind(struct gur *p,const struct bw_removed_source *s){
 static int gur_outside(struct gur *p){
     struct bw_sm_reply version={0};struct bw_sm_document docs[2]={{0}};int rc=-1;
     if(gur_current(p)||bw_sm_post(&p->remote.connection,BW_SM_VERSION,"/",&version)||!version.uninstall_supported||!version.remove_supported||!version.settings_supported)goto done;
-    for(unsigned i=0;i<2;i++)if(bw_sm_observe(&p->remote.connection,BW_SM_OBSERVE_SETTINGS,docs+i)||bw_nrl_settings_exclude_retained(&p->remote.connection,&p->subject,docs[i].bytes,docs[i].size,&p->source))goto done;
+    for(unsigned i=0;i<2;i++){
+        if(bw_sm_observe(&p->remote.connection,BW_SM_OBSERVE_SETTINGS,docs+i)||bw_nrl_settings_exclude_retained(&p->remote.connection,&p->subject,docs[i].bytes,docs[i].size,&p->source))goto done;
+        if(p->preparation_only){struct bw_nrc_subject state=p->subject;strcpy(state.source,p->preparation_root);
+            if(bw_nrl_settings_exclude_retained(&p->remote.connection,&state,docs[i].bytes,docs[i].size,&p->preparation))goto done;}
+    }
     if(docs[0].size!=docs[1].size||memcmp(docs[0].bytes,docs[1].bytes,docs[0].size)||gur_current(p))goto done;rc=0;
 done:for(unsigned i=0;i<2;i++)bw_sm_document_clear(docs+i);return rc;
 }
@@ -273,7 +283,7 @@ static int gur_owner_complete(struct gur *p){
 static struct gur *gur_create(const struct bw_game_uninstall_request *q,const struct bw_game_uninstall_files_request *files,uint16_t port,struct bw_game_uninstall_result *out){
     if(!out)return NULL;*out=(struct bw_game_uninstall_result){.phase=BW_GAME_REMOVE_UNKNOWN,.reason="normal_adapter_request_unqualified"};
     if(!q||!q->ops.current)return NULL;struct gur *p=calloc(1,sizeof *p);if(!p)return NULL;
-    p->source.parent=p->source.root=p->apps=p->app=-1;p->accepted=q;p->files_accepted=files;p->request=*q;p->outer=q->ops;
+    p->source.parent=p->source.root=p->preparation.parent=p->preparation.root=p->apps=p->app=-1;p->accepted=q;p->files_accepted=files;p->request=*q;p->outer=q->ops;
     const char *paths[]={q->environment.data_root,q->environment.apps_root,q->environment.database};
     for(unsigned i=0;i<3;i++){if(!paths[i]||strnlen(paths[i],sizeof p->paths[i])>=sizeof p->paths[i]){free(p);return NULL;}strcpy(p->paths[i],paths[i]);}
     p->request.environment=(struct bw_nrc_environment){p->paths[0],p->paths[1],p->paths[2]};p->remote.connection=(struct bw_sm_connection){port,gur_current,p};
@@ -306,7 +316,7 @@ static int gur_finish(struct gur *p,int rc,struct bw_game_uninstall_result *out)
     if(rc&&p->reason)out->reason=p->reason;
     if(p->generation_release_unknown){p->release_unknown=1;if(!p->release_reason)p->release_reason="previous_generation_observation_release_unconfirmed";rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason="previous_generation_observation_release_unconfirmed";}
     if(!rc&&!p->preparation_only&&out->phase==BW_GAME_REMOVE_DONE&&gur_owner_complete(p)){rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason="removed_copy_registration_owner_completion_unconfirmed";}
-    {int fds[]={p->app,p->apps,p->source.root,p->source.parent};for(unsigned i=0;i<4;i++)if(fds[i]>=0&&gur_release(p,fds[i])){rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason="normal_adapter_descriptor_close_unconfirmed";}}
+    {int fds[]={p->app,p->apps,p->source.root,p->source.parent,p->preparation.root,p->preparation.parent};for(unsigned i=0;i<6;i++)if(fds[i]>=0&&gur_release(p,fds[i])){rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason="normal_adapter_descriptor_close_unconfirmed";}}
     if(p->remote.observation_release_unknown||p->release_unknown){out->release_unknown=1;rc=-1;out->phase=BW_GAME_REMOVE_UNKNOWN;out->reason=p->release_reason?p->release_reason:"normal_remote_observation_release_unconfirmed";}
     gur_finish_diag(p,rc,core_reason,out);
     free(p->source_param.body);free(p->app_param.body);free(p->mount.body);free(p->receipt.body);free(p);return rc;
@@ -328,26 +338,93 @@ int bw_native_game_uninstall_files_normal(const struct bw_game_uninstall_files_r
     memcpy(next.operation,p->request.operation,33);memcpy(next.confirmed_title,p->request.confirmed_title,10);memcpy(next.reader_sha256,p->request.reader_sha256,32);
     int rc=bw_native_game_uninstall_continue_files(&next,out);return gur_finish(p,rc,out);
 }
-static int gur_preparation_app_excluded(struct gur *p){
-    /* A foreign/staged installation is preserved, but a live mount link must
-     * never point at this copy. Missing app/link is accepted only by named
-     * canonical held-parent checks; unreadable/linked paths remain unknown. */
-    char app[BW_NRC_PATH_BYTES],link[BW_NRC_PATH_BYTES],real[PATH_MAX];struct stat named;
-    if(gur_current(p)||gur_dir_current(p->apps,p->paths[1],&p->apps_id)||gur_join(app,p->paths[1],p->subject.title))return -1;
-    if(cp_fstatat(p->apps,p->subject.title,&named,AT_SYMLINK_NOFOLLOW))return errno==ENOENT&&!gur_current(p)?0:-1;
-    if(!S_ISDIR(named.st_mode)||!realpath(app,real)||strcmp(real,app)||gur_join(link,app,"mount.lnk"))return -1;
-    if(lstat(link,&named))return errno==ENOENT&&!gur_current(p)?0:-1;
-    struct gur_blob body={0};if(gur_read(p,link,BW_NRC_PATH_BYTES+2u,&body))return -1;
-    size_t n=body.size;if(n&&body.body[n-1]=='\n')n--;if(n&&body.body[n-1]=='\r')n--;
-    int bad=!n||n>=BW_NRC_PATH_BYTES||memchr(body.body,0,n)||body.body[0]!='/';char target[BW_NRC_PATH_BYTES];
-    if(!bad){memcpy(target,body.body,n);target[n]=0;size_t a=strlen(p->root);
-        if(bw_manifest_validate_path(target+1,n-1))bad=1;
-        bad=bad||(!strncmp(target,p->root,a)&&(!target[a]||target[a]=='/'))||(!strncmp(p->root,target,n)&&(!p->root[n]||p->root[n]=='/'));
-        /* Existing aliases must be resolvable and disjoint too. */
-        if(!bad&&realpath(target,real)){struct stat destination;size_t z=strlen(real);bad=strcmp(target,real)||stat(real,&destination)||!S_ISDIR(destination.st_mode)||(destination.st_dev==p->source.root_identity.st_dev&&destination.st_ino==p->source.root_identity.st_ino)||(!strncmp(real,p->root,a)&&(!real[a]||real[a]=='/'))||(!strncmp(p->root,real,z)&&(!p->root[z]||p->root[z]=='/'));}
-        else if(!bad&&errno!=ENOENT)bad=1;
+static int gur_preparation_path_excluded(struct gur *p,const char *target){
+    const char *roots[]={p->root,p->preparation_root};
+    const struct stat *ids[]={&p->source.root_identity,&p->preparation.root_identity};
+    size_t n=strlen(target);if(!n||target[0]!='/'||bw_manifest_validate_path(target+1,n-1))return -1;
+    for(unsigned i=0;i<2;i++){size_t z=strlen(roots[i]);
+        if(!strncmp(target,roots[i],z)&&(!target[z]||target[z]=='/'))return -1;
+        if(!strncmp(roots[i],target,n)&&(!roots[i][n]||roots[i][n]=='/'))return -1;
     }
-    free(body.body);return bad||gur_current(p)?-1:0;
+    char path[BW_NRC_PATH_BYTES];strcpy(path,target);int held=-1,rc=-1;struct stat destination={0};unsigned present=0,depth=0;
+    /* Existing or missing descendants of a differently named bind mount must
+     * still be checked against BOTH held deletion roots. Symlink aliases and
+     * unreadable components are unknown, never lexical separation proof. */
+    for(;;){struct stat named,actual;if(++depth>48||gur_current(p))goto done;
+        if(lstat(path,&named)){if(errno!=ENOENT)goto done;}
+        else{int fd=gur_dir(p,path,&actual);if(fd<0)goto done;
+            if(!strcmp(path,target)){held=fd;destination=actual;present=1;fd=-1;}
+            int overlap=0;for(unsigned i=0;i<2;i++)if(actual.st_dev==ids[i]->st_dev&&actual.st_ino==ids[i]->st_ino)overlap=1;
+            if(fd>=0&&gur_release(p,fd))goto done;if(overlap)goto done;
+        }
+        char *slash=strrchr(path,'/');if(!slash||slash==path)break;*slash=0;
+    }
+    if(present)for(unsigned i=0;i<2;i++){
+        strcpy(path,roots[i]);char *slash=strrchr(path,'/');if(!slash||slash==path)goto done;*slash=0;depth=0;
+        for(;;){struct stat actual;if(++depth>48||gur_current(p))goto done;int fd=gur_dir(p,path,&actual);if(fd<0)goto done;
+            int overlap=actual.st_dev==destination.st_dev&&actual.st_ino==destination.st_ino;
+            if(gur_release(p,fd)||overlap)goto done;slash=strrchr(path,'/');if(!slash)goto done;
+            if(slash==path){if(!path[1])break;path[1]=0;}else *slash=0;
+        }
+    }
+    if(held>=0&&gur_dir_current(held,target,&destination))goto done;rc=gur_current(p);
+done:if(held>=0&&gur_release(p,held))rc=-1;return rc;
+}
+static void gur_preparation_stat_hash(struct cp_sha *sha,const struct stat *st){
+    uint64_t values[]={(uint64_t)st->st_dev,(uint64_t)st->st_ino,(uint64_t)st->st_mode,(uint64_t)st->st_uid,(uint64_t)st->st_gid,
+        (uint64_t)st->st_nlink,(uint64_t)st->st_size,(uint64_t)st->st_blocks,(uint64_t)st->st_mtim.tv_sec,
+        (uint64_t)st->st_mtim.tv_nsec,(uint64_t)st->st_ctim.tv_sec,(uint64_t)st->st_ctim.tv_nsec};
+    cp_sha_update(sha,values,sizeof values);
+}
+static int gur_preparation_app_row(struct gur *p,const char *name,unsigned char hash[32]){
+    char app[BW_NRC_PATH_BYTES],link[BW_NRC_PATH_BYTES];struct stat first,named,after,mount;int fd=-1,rc=-1;
+    struct gur_blob body={0};unsigned present=0;struct cp_sha sha;cp_sha_init(&sha);cp_sha_update(&sha,name,strlen(name)+1);
+    if(gur_current(p)||gur_join(app,p->paths[1],name)||gur_join(link,app,"mount.lnk")||
+       cp_fstatat(p->apps,name,&named,AT_SYMLINK_NOFOLLOW)||!S_ISDIR(named.st_mode))goto done;
+    fd=gur_dir(p,app,&first);if(fd<0||!gur_same(&first,&named))goto done;
+    if(cp_fstatat(fd,"mount.lnk",&mount,AT_SYMLINK_NOFOLLOW)){if(errno!=ENOENT)goto done;}
+    else{
+        present=1;if(gur_read(p,link,BW_NRC_PATH_BYTES+2u,&body)||!gur_same(&mount,&body.id))goto done;
+        size_t n=body.size;if(n&&body.body[n-1]=='\n')n--;if(n&&body.body[n-1]=='\r')n--;
+        if(!n||n>=BW_NRC_PATH_BYTES||memchr(body.body,0,n)||body.body[0]!='/')goto done;
+        char target[BW_NRC_PATH_BYTES];memcpy(target,body.body,n);target[n]=0;
+        if(gur_preparation_path_excluded(p,target)||gur_blob_current(p,link,&body))goto done;
+    }
+    if(gur_current(p)||gur_dir_current(fd,app,&first)||fstat(fd,&after)||!gur_same(&first,&after)||
+       cp_fstatat(p->apps,name,&named,AT_SYMLINK_NOFOLLOW)||!gur_same(&after,&named))goto done;
+    if(!present&&(!cp_fstatat(fd,"mount.lnk",&mount,AT_SYMLINK_NOFOLLOW)||errno!=ENOENT))goto done;
+    gur_preparation_stat_hash(&sha,&after);cp_sha_update(&sha,&present,sizeof present);
+    if(present){gur_preparation_stat_hash(&sha,&body.id);cp_sha_update(&sha,body.hash,32);}
+    cp_sha_final(&sha,hash);rc=gur_current(p);
+done:free(body.body);if(fd>=0&&gur_release(p,fd))rc=-1;return rc;
+}
+static int gur_preparation_hash_compare(const void *a,const void *b){return memcmp(a,b,32);}
+static int gur_preparation_app_inventory(struct gur *p,unsigned char hash[32]){
+    /* An orphan app can retain a mount link without appearing in SMP's cache.
+     * Enumerate every app, not just the selected title. Stable, bounded row
+     * hashes avoid depending on readdir order or allocating copied app paths. */
+    enum {LIMIT=4096};unsigned char (*rows)[32]=NULL;DIR *dir=NULL;int cursor=-1,rc=-1;unsigned count=0;
+    struct stat before,after,named;
+    if(gur_current(p)||gur_dir_current(p->apps,p->paths[1],&p->apps_id)||fstat(p->apps,&before))goto done;
+    rows=calloc(LIMIT,sizeof *rows);if(!rows)goto done;
+    cursor=v2_openat(p->apps,".",O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_NONBLOCK,0);if(cursor<0)goto done;
+    dir=fdopendir(cursor);if(!dir)goto done;cursor=-1;
+    for(;;){errno=0;struct dirent *entry=readdir(dir);if(!entry){if(errno)goto done;break;}
+        const char *name=entry->d_name;if(!strcmp(name,".")||!strcmp(name,".."))continue;
+        size_t n=strnlen(name,256);if(!n||n>=256||strchr(name,'/')||bw_manifest_validate_path(name,n)||count==LIMIT||
+           gur_preparation_app_row(p,name,rows[count]))goto done;count++;
+    }
+    if(gur_current(p)||gur_dir_current(p->apps,p->paths[1],&p->apps_id)||fstat(p->apps,&after)||
+       lstat(p->paths[1],&named)||!gur_same(&before,&after)||!gur_same(&after,&named))goto done;
+    qsort(rows,count,sizeof *rows,gur_preparation_hash_compare);struct cp_sha sha;cp_sha_init(&sha);
+    gur_preparation_stat_hash(&sha,&after);cp_sha_update(&sha,&count,sizeof count);cp_sha_update(&sha,rows,(size_t)count*sizeof *rows);cp_sha_final(&sha,hash);rc=0;
+done:
+    if(dir&&closedir(dir)){p->release_unknown=1;if(!p->release_reason)p->release_reason="normal_adapter_directory_close_unconfirmed";rc=-1;}
+    if(cursor>=0&&gur_release(p,cursor))rc=-1;free(rows);return rc;
+}
+static int gur_preparation_app_excluded(struct gur *p){
+    unsigned char before[32],after[32];return gur_preparation_app_inventory(p,before)||gur_preparation_app_inventory(p,after)||
+        memcmp(before,after,32)||gur_current(p)?-1:0;
 }
 static int gur_preparation_excluded(void *opaque,const struct bw_removed_source *s){
     struct gur *p=opaque;
