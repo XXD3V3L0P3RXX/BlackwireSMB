@@ -390,16 +390,16 @@
       "sha256": "031b53ac5a163204bd88af43023e2de3a45075b85dc0bd70671a049e9881d86e"
     },
     "src/blackwire/library/native_game_uninstall.c": {
-      "bytes": 72127,
-      "sha256": "bc5d8b344adc56a6a2ac460cd3d08e620737d7ca43231db574fe188698138344"
+      "bytes": 76983,
+      "sha256": "fe6867e3bdabfb3f108cbcf3df798307e7e6e85843d79ccac36992932c3f96cf"
     },
     "src/blackwire/library/native_game_uninstall.h": {
       "bytes": 8141,
       "sha256": "802922db12d2b5b583c1ee3617e33dbf3ee82372419a476369ec9efff72e701e"
     },
     "src/blackwire/library/native_game_uninstall_remote.c": {
-      "bytes": 47326,
-      "sha256": "15c0410dd7ca36a44dc7de95191bcfd25df8d08e12ad29f4e4ecc33774abe5d7"
+      "bytes": 52715,
+      "sha256": "df4d8b0df167491c8bfcd1400280fbab74be50b22a5ab7ea88011fa0b8954381"
     },
     "src/blackwire/library/native_game_uninstall_remote.h": {
       "bytes": 1433,
@@ -1600,8 +1600,8 @@
       "sha256": "dd8651a508f11a0b372cb3e7688771328cac386bdc4fefc28010c07ffa3a816f"
     },
     "tests/dashboard/lifecycle/check_projected_preparation_cleanup_remote.py": {
-      "bytes": 7782,
-      "sha256": "6cf4cf71482e4083c3892f66bb6d6d25b7dcbc0e7bfc89cc06ed72e50557fe77"
+      "bytes": 9452,
+      "sha256": "e8bb8d95551c43f32223a9785a1fa35207f18bd65f81e04df876f7eca6c103bb"
     },
     "tests/dashboard/lifecycle/check_projected_send.py": {
       "bytes": 5963,
@@ -1820,12 +1820,12 @@
       "sha256": "99cab30de6433c307954e74a5e98c1c0b59cf0291be315cd91011b52ea7cb4e5"
     },
     "tests/dashboard/lifecycle/test_projected_preparation_cleanup_e2e.c": {
-      "bytes": 14096,
-      "sha256": "259823b2fdfe1071b1a6234e3cddaaa0cb8935048f98e3ad88f7924bfe37262e"
+      "bytes": 14354,
+      "sha256": "b10cf38c2f336449cb913e531eb9f43181494dece90e826a63a88b4bcac6689a"
     },
     "tests/dashboard/lifecycle/test_projected_preparation_cleanup_remote.c": {
-      "bytes": 17434,
-      "sha256": "068a4b9947ad1ad743fbe42637657dff54e6c47006f1799f3208a61892f4b991"
+      "bytes": 28846,
+      "sha256": "e356defba9bf575136e5234681be317967b50e5d7be4b6f66252b04b59de4fb7"
     },
     "tests/dashboard/lifecycle/test_projected_registration.c": {
       "bytes": 9472,
@@ -2122,7 +2122,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Local standalone source-companion repair, truthful image-access and registration observations, bounded metadata read window and distinct owned-startup-only removal. Focused actual producer, registration, removal, normal-adapter, backend, service, UI, handoff, DATA and cache/error host paths pass; SMP transport and outer idle are modeled in removal host tests. A five-image signed PC SMB metadata A/B passes. The prior normal candidate connected both real shares and passed actual AW2 step7, then refused residual registration at step8; it was removed through normal platform/PM cleanup before this revision. Frozen integrated host/SDK, new targeted Fable review and exact-build fresh/retained/repeated PS5 preparation, launch, cleanup and speed qualification remain pending. Native Dashboard paused; no publication or console deployment implied.",
+  "developmentQualification": "Local standalone source-companion repair, truthful image-access and registration observations, bounded metadata read window and distinct owned-startup-only removal. Focused actual producer, registration, removal, normal-adapter, backend, service, UI, handoff, DATA and cache/error host paths pass; SMP transport and outer idle are modeled in removal host tests. Cross-purpose pending history and same/different-title app mount regressions pass 331 normal-adapter cases; targeted genuine Fable review findings were reproduced and repaired within the reviewed scope, with arbitrary descendant mount aliases and real-console inventories unqualified. A five-image signed PC SMB metadata A/B passes. The prior normal candidate connected both real shares and passed actual AW2 step7, then refused residual registration at step8; it was removed through normal platform/PM cleanup before this revision. Frozen integrated host/SDK and exact-build fresh/retained/repeated PS5 preparation, launch, cleanup and speed qualification remain pending. Native Dashboard paused; no publication or console deployment implied.",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -2132,5 +2132,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "ee8cb6d92abb2169699ea7f15b195723086e0add"
+  "runtimeSourceCommit": "a74575fc1a246c4382daf39a2ed2358df56f61fc"
 }
