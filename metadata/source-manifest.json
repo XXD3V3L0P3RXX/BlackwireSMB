@@ -1098,8 +1098,8 @@
       "sha256": "723ca3d36140407e668a1c6c7941aa5a52e8d9af1069e66ff7b1ae52fbf1b852"
     },
     "src/blackwire/streamreader/prepare_copy.c": {
-      "bytes": 53868,
-      "sha256": "bf85f5dfba6de151bcf512df21145f222781b85abf9fd27974069c65d7780e4d"
+      "bytes": 55159,
+      "sha256": "6e0c1175c22b645edcf9731bef59f7b91c18360e5dca3be1050bdd8b6a30ad54"
     },
     "src/blackwire/streamreader/protocol.h": {
       "bytes": 1419,
@@ -1552,8 +1552,8 @@
       "sha256": "bcde67cdf496644664a7d19755ab90df71a0b2d4e329b20604e3c76ebb89400d"
     },
     "tests/dashboard/lifecycle/check_native_local_copy.py": {
-      "bytes": 8893,
-      "sha256": "26e7e1838e59597d7d9975c5f95be6574a37bc7122111efa4a8c6bd05b6a8a99"
+      "bytes": 13252,
+      "sha256": "6afd6ab668ca99b0218c2ba3ab32c89cf67731c10144ab64f2f0b13fc967477f"
     },
     "tests/dashboard/lifecycle/check_play_preparation_failure.py": {
       "bytes": 7314,
@@ -1776,8 +1776,8 @@
       "sha256": "82df444cf2f844e7e381272ab1b35f64c1520da7cfb7eb7741110f81329319ec"
     },
     "tests/dashboard/lifecycle/test_native_local_copy.c": {
-      "bytes": 25555,
-      "sha256": "dd1d43b18d1a533749f2eb9d931d5e76566a9c371ade1273b5682e454bf7903e"
+      "bytes": 33757,
+      "sha256": "60c207e7dd04e548ef9ea2fcb383e60e89b29a2c4ac9f14fcce10b59f2c8f191"
     },
     "tests/dashboard/lifecycle/test_play_preparation_failure.c": {
       "bytes": 23727,
@@ -2148,5 +2148,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "7208d30ba9e571a8f1ed018e4bd57a4aca75514f"
+  "runtimeSourceCommit": "fa620d45c615b869b9a1a319910c757e9b462a0b"
 }
