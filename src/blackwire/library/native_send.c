@@ -105,20 +105,8 @@ static int ns_lock(int directory){
 static int ns_games_stopped(const char *path){
     if(cp_idle_guard)return cp_games_stopped(path);
     if(v2_games_stopped(path))return -1;
-    struct {char title[16];int pid,active;} rows[128]={0};unsigned count=0;FILE *file=fopen(path,"r");if(!file)return -1;char line[1024];int bad=0;
-    while(fgets(line,sizeof line,file)){
-        if(!strchr(line,'\n')&&!feof(file)){bad=1;break;}
-        char *at=NULL;int active=1;
-        if((at=strstr(line,"[GAME] started: PPSA")))at+=strlen("[GAME] started: ");
-        else if((at=strstr(line,"[GAME] process exited, awaiting same-app handoff: PPSA")))at+=strlen("[GAME] process exited, awaiting same-app handoff: ");
-        else if((at=strstr(line,"[GAME] finalizing stopped application: PPSA"))){at+=strlen("[GAME] finalizing stopped application: ");active=0;}else continue;
-        char title[16]={0};int pid=0;if(sscanf(at,"%15s pid=%d",title,&pid)!=2||strlen(title)!=9||strncmp(title,"PPSA",4)||pid<=0){bad=1;break;}
-        for(unsigned i=4;i<9;i++)if(title[i]<'0'||title[i]>'9')bad=1;
-        unsigned i=0;for(;i<count;i++)if(!strcmp(rows[i].title,title))break;
-        if(i==count){if(count==128){bad=1;break;}memcpy(rows[i].title,title,sizeof title);count++;}
-        if(active){rows[i].pid=pid;rows[i].active=1;}else if(rows[i].pid==pid)rows[i].active=0;
-    }
-    if(ferror(file)||fclose(file))bad=1;for(unsigned i=0;i<count;i++)if(rows[i].active)bad=1;return bad?-1:0;
+    /* Retain a second fresh observation; one quiet snapshot is insufficient. */
+    return v2_games_stopped(path);
 }
 static int ns_current(void *opaque){
     struct ns_operation *p=opaque;

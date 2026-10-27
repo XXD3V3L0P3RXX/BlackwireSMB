@@ -104,12 +104,50 @@ def main():
             'read-error':'','read-noerrno':'','close-error':'','close-noerrno':'','read-close-error':'',
             'second-unmatched':'','second-read-error':'','second-close-error':'',
             'unmatched-close-error':'','short-close-error':'','legacy-unmatched':start,'legacy-empty':''}
+        # Stock 1.7beta7 emits no later START after a successful process
+        # handoff. FINAL controls include the replacement's own awaiting event;
+        # they qualify only the inherited logical log endpoint, not cleanup.
+        stamp='[2026-10-27 00:00:00]   '
+        def started(title='PPSA99001',pid=24,app=0x41):
+            return stamp+'[GAME] started: %s pid=%d app_id=0x%08X\n'%(title,pid,app)
+        def awaiting(title='PPSA99001',pid=24,app=0x41):
+            return stamp+'[GAME] process exited, awaiting same-app handoff: %s pid=%d app_id=0x%08X\n'%(title,pid,app)
+        def handoff(title='PPSA99001',old=24,new=25,app=0x41):
+            return stamp+'[GAME] process handoff: %s app_id=0x%08X pid=%d -> pid=%d\n'%(title,app,old,new)
+        def final(title='PPSA99001',pid=24):
+            return stamp+'[GAME] finalizing stopped application: %s pid=%d\n'%(title,pid)
+        stock_start=started();stock_await=awaiting();stock_handoff=handoff()
+        handoff_cases={
+            'handoff-awaiting':stock_start+stock_await,
+            'handoff-active':stock_start+stock_await+stock_handoff,
+            'handoff-final-new':stock_start+stock_await+stock_handoff+awaiting(pid=25)+final(pid=25),
+            'handoff-stale-final-old':stock_start+stock_await+stock_handoff+final(),
+            'handoff-direct-active':stock_start+stock_handoff,
+            'handoff-direct-final-new':stock_start+stock_handoff+awaiting(pid=25)+final(pid=25),
+            'handoff-pending-same-pid-active':stock_start+stock_await+handoff(new=24),
+            'handoff-pending-same-pid-final':stock_start+stock_await+handoff(new=24)+stock_await+final(),
+            'handoff-direct-same-pid-invalid':stock_start+handoff(new=24),
+            'handoff-zero-app-active':started(app=0)+awaiting(app=0)+handoff(app=0),
+            'handoff-zero-known-final':started(app=0)+awaiting(app=0)+stock_handoff+awaiting(pid=25)+final(pid=25),
+            'handoff-known-app-mismatch':stock_start+stock_await+handoff(app=0x42),
+            'handoff-orphan':stock_handoff,
+            'handoff-wrong-old-pid':stock_start+stock_await+handoff(old=23),
+            'handoff-malformed':stock_start+stock_await+stock_handoff.replace(' -> ',' => '),
+            'handoff-trailing':stock_start+stock_await+stock_handoff[:-1]+' extra\n',
+            'cusa-start':started('CUSA99001'),
+            'lapy-start':started('LAPY99001'),
+            'fake-start':started('FAKE99001'),
+            'stock-families-final':''.join(started(title)+awaiting(title)+final(title)
+                for title in ('CUSA99001','LAPY99001','FAKE99001'))}
+        assert len(cases)==23 and len(handoff_cases)==20 and not cases.keys()&handoff_cases.keys()
+        cases.update(handoff_cases)
         results=[]
         for name,body in cases.items():
             with tempfile.TemporaryDirectory(prefix='blackwire-initial-admission-') as temporary:
                 base=Path(temporary);paths=fixture(base);log=base/'lifecycle.log'
                 if body is not None:log.write_text(body,encoding='utf-8')
                 result=json.loads(run(name,[binary,name,*paths,log]));results.append(result)
+                if name in handoff_cases:assert log.read_text(encoding='utf-8')==body,'Static stock-event fixture was changed'
         after={str(path.relative_to(ROOT)):pin(path) for path in sorted(inputs)}
         refused=[row for row in results if row['httpStatus']==409]
         proof.update(sourceAfter=after,sourceBeforeAfterMatch=before==after,cases=len(results),
@@ -118,6 +156,9 @@ def main():
                      sameCallFirstAndSecondFailure=True,legacyCallbackGenericPreserved=True,
                      partialEofAndCloseFailureRefuse=True,readAndCloseFirstFailurePreserved=True,
                      knownMissingErrnoAndStaleErrnoReset=True,noExtraIdleObservation=True,
+                     originalIdleIoAndLegacyCasesRetained=23,stockHandoffAndFamilyCases=20,
+                     stockHandoffPidAndAppChains=True,stockSupportedFamiliesExcludedWhenActive=True,
+                     finalizingEndpointLogicalOnly=True,
                      refusedBeforeReservationAndBackendDispatch=all(row['reserveCallsAtResponse']==0
                          and row['backendDispatchCallsAtResponse']==0 for row in refused),
                      sanitizers=['ASan','UBSan'],hostBinary=pin(binary),
@@ -131,9 +172,11 @@ def main():
         proof['limits']=[
             'No console, SMB, runtime firmware, gameplay, native frontend or payload compatibility qualification',
             'Historical lifecycle log is not a live process census',
+            'A matched finalizing record is only the inherited logical endpoint; it does not certify completed cleanup or runtime release',
+            'The old-PID finalization after handoff is a synthetic stale-completion guard case, not an asserted complete stock event ordering',
             'This establishes reason ownership and fail-closed admission, not the cause of the external Reddit report',
             'Resident creation/ticker is not executed; its callback wiring source is pinned']
-        proof['passed']=before==after and len(results)==23 and all(row['passed'] for row in results) and proof['refusedBeforeReservationAndBackendDispatch']
+        proof['passed']=before==after and len(results)==43 and all(row['passed'] for row in results) and proof['refusedBeforeReservationAndBackendDispatch']
     except Exception as error:
         proof['error']=str(error)
         if 'sourceBefore' in proof:

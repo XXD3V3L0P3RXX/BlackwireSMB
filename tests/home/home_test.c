@@ -86,13 +86,13 @@ static void idle_case(struct idle_fixture *f,const char *base,const char *log){
 }
 static void idle_tests(const char *base){
     struct idle_fixture f;struct bw_src_idle_ops ops={firmware,query,&f};struct bw_startup_idle_request r={.current=idle_current,.opaque=&f};
-    const char *game="[GAME] started: PPSA04734 pid=500 app=23\n";
+    const char *game="[GAME] started: PPSA04734 pid=500 app_id=0x00000017\n";
     idle_case(&f,base,game);r.game_log=f.log;r.deadline=stamp()+20;C(!bw_src_adopt_evaluate(&r,&ops,&f.allowed,"PPSA04734"));f.query_count=0;C(bw_src_idle_evaluate(&r,&ops));
     idle_case(&f,base,game);r.game_log=f.log;r.deadline=stamp()+20;f.other=1;C(bw_src_adopt_evaluate(&r,&ops,&f.allowed,"PPSA04734"));
     idle_case(&f,base,game);r.game_log=f.log;r.deadline=stamp()+20;f.missing=1;C(bw_src_adopt_evaluate(&r,&ops,&f.allowed,"PPSA04734"));
     idle_case(&f,base,game);r.game_log=f.log;r.deadline=stamp()+20;f.drift=1;C(bw_src_adopt_evaluate(&r,&ops,&f.allowed,"PPSA04734"));
-    idle_case(&f,base,"[GAME] started: PPSA99999 pid=500 app=23\n");r.game_log=f.log;r.deadline=stamp()+20;C(bw_src_adopt_evaluate(&r,&ops,&f.allowed,"PPSA04734"));
-    idle_case(&f,base,"[GAME] started: PPSA04734 pid=500 app=23\n[GAME] started: PPSA99999 pid=501 app=24\n");r.game_log=f.log;r.deadline=stamp()+20;C(bw_src_adopt_evaluate(&r,&ops,&f.allowed,"PPSA04734"));
+    idle_case(&f,base,"[GAME] started: PPSA99999 pid=500 app_id=0x00000017\n");r.game_log=f.log;r.deadline=stamp()+20;C(bw_src_adopt_evaluate(&r,&ops,&f.allowed,"PPSA04734"));
+    idle_case(&f,base,"[GAME] started: PPSA04734 pid=500 app_id=0x00000017\n[GAME] started: PPSA99999 pid=501 app_id=0x00000018\n");r.game_log=f.log;r.deadline=stamp()+20;C(bw_src_adopt_evaluate(&r,&ops,&f.allowed,"PPSA04734"));
     idle_case(&f,base,"no game log row yet\n");r.game_log=f.log;r.deadline=stamp()+20;C(!bw_src_adopt_evaluate(&r,&ops,&f.allowed,"PPSA04734"));f.cancel=1;C(bw_src_adopt_evaluate(&r,&ops,&f.allowed,"PPSA04734"));
 }
 int main(int argc,char **argv){C(argc==2);codec_tests();session_tests(argv[1]);idle_tests(argv[1]);printf("{\"passed\":true,\"cases\":%u,\"checks\":%u}\n",cases,checks);return 0;}

@@ -16,6 +16,7 @@
 #include <sys/syscall.h>
 #endif
 #include "manifest.h"
+#include "lifecycle.h"
 #ifndef BW_GAMES_ROOT
 #define BW_GAMES_ROOT "/data/blackwire/games"
 #endif
@@ -150,10 +151,17 @@ struct v2_idle_observation {
   int error;
   unsigned error_valid,close_failed;
 };
+static inline enum v2_idle_reason v2_idle_fold_failure(enum bw_lifecycle_idle_reason reason) {
+  switch(reason) {
+    case BW_LIFECYCLE_IDLE_INCOMPLETE:return V2_IDLE_LOG_INCOMPLETE;
+    case BW_LIFECYCLE_IDLE_CAPACITY:return V2_IDLE_LOG_CAPACITY;
+    case BW_LIFECYCLE_IDLE_RECORD:case BW_LIFECYCLE_IDLE_NONE:return V2_IDLE_LOG_RECORD;
+  }
+  return V2_IDLE_LOG_RECORD;
+}
 static inline int v2_games_stopped_observe(const char *path,struct v2_idle_observation *out) {
-  struct { char title[16]; int alive,pid; } games[128];
-  struct v2_idle_observation observed={V2_IDLE_UNOBSERVED,0,0,0};
-  size_t count=0; char line[1024];
+  struct bw_lifecycle_idle_fold fold;bw_lifecycle_idle_fold_init(&fold);
+  struct v2_idle_observation observed={V2_IDLE_UNOBSERVED,0,0,0};char line[1024];
   if (out) *out=observed;
   errno=0; FILE *fp=fopen(path,"r"); int io_error=errno;
   if (!fp) {
@@ -161,7 +169,6 @@ static inline int v2_games_stopped_observe(const char *path,struct v2_idle_obser
     if (out) *out=observed;
     return v2_fail("Cannot verify that games are stopped");
   }
-  memset(games,0,sizeof games);
   for (;;) {
     errno=0; char *got=fgets(line,sizeof line,fp);io_error=errno;
     if (ferror(fp)) {
@@ -169,30 +176,13 @@ static inline int v2_games_stopped_observe(const char *path,struct v2_idle_obser
     }
     if (!got) break;
     if (!strchr(line,'\n')) { observed.reason=V2_IDLE_LOG_INCOMPLETE;break; }
-    char *at=NULL; int alive=0,pid=0;
-    if ((at=strstr(line,"[GAME] started: PPSA"))) { at+=strlen("[GAME] started: "); alive=1; }
-    else if ((at=strstr(line,"[GAME] process exited, awaiting same-app handoff: PPSA")))
-      at+=strlen("[GAME] process exited, awaiting same-app handoff: ");
-    else if ((at=strstr(line,"[GAME] finalizing stopped application: PPSA")))
-      at+=strlen("[GAME] finalizing stopped application: ");
-    else continue;
-    char title[16]={0};
-    if (sscanf(at,"%15s pid=%d",title,&pid)!=2 || strlen(title)!=9 || strncmp(title,"PPSA",4) || pid<=0) {
-      observed.reason=V2_IDLE_LOG_RECORD;break;
+    if (bw_lifecycle_idle_fold_line(&fold,line,strlen(line))<0) {
+      observed.reason=v2_idle_fold_failure(fold.reason);break;
     }
-    for (size_t i=4;i<9;i++) if (title[i]<'0' || title[i]>'9') observed.reason=V2_IDLE_LOG_RECORD;
-    if (observed.reason!=V2_IDLE_UNOBSERVED) break;
-    size_t i=0; for (;i<count;i++) if (!strcmp(games[i].title,title)) break;
-    if (i==count) {
-      if (count==sizeof games/sizeof games[0]) { observed.reason=V2_IDLE_LOG_CAPACITY;break; }
-      memcpy(games[i].title,title,sizeof title);count++;
-    }
-    if (alive) { games[i].pid=pid;games[i].alive=1; }
-    else if (games[i].pid==pid) games[i].alive=0;
   }
   if (observed.reason==V2_IDLE_UNOBSERVED) {
-    observed.reason=V2_IDLE_STOPPED;
-    for (size_t i=0;i<count;i++) if (games[i].alive) { observed.reason=V2_IDLE_UNMATCHED_START;break; }
+    int state=bw_lifecycle_idle_fold_finish(&fold,1,NULL,0);
+    observed.reason=state<0?v2_idle_fold_failure(fold.reason):state?V2_IDLE_UNMATCHED_START:V2_IDLE_STOPPED;
   }
   errno=0; int close_result=fclose(fp);io_error=errno;
   if (close_result) {

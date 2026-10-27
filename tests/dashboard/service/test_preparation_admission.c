@@ -42,7 +42,27 @@ static const struct expected expectations[]={
     {"unmatched-close-error","unmatched-start",BW_SETUP_IDLE_UNMATCHED_START,1,0,0,1,0},
     {"short-close-error","log-incomplete",BW_SETUP_IDLE_LOG_INCOMPLETE,1,0,0,1,0},
     {"legacy-unmatched","unmatched-start",BW_SETUP_IDLE_UNMATCHED_START,1,0,1,0,0},
-    {"legacy-empty","stopped",BW_SETUP_IDLE_STOPPED,0,1,1,0,0}
+    {"legacy-empty","stopped",BW_SETUP_IDLE_STOPPED,0,1,1,0,0},
+    {"handoff-awaiting","unmatched-start",BW_SETUP_IDLE_UNMATCHED_START,1,0,0,0,0},
+    {"handoff-active","unmatched-start",BW_SETUP_IDLE_UNMATCHED_START,1,0,0,0,0},
+    {"handoff-final-new","stopped",BW_SETUP_IDLE_STOPPED,0,1,0,0,0},
+    {"handoff-stale-final-old","unmatched-start",BW_SETUP_IDLE_UNMATCHED_START,1,0,0,0,0},
+    {"handoff-direct-active","unmatched-start",BW_SETUP_IDLE_UNMATCHED_START,1,0,0,0,0},
+    {"handoff-direct-final-new","stopped",BW_SETUP_IDLE_STOPPED,0,1,0,0,0},
+    {"handoff-pending-same-pid-active","unmatched-start",BW_SETUP_IDLE_UNMATCHED_START,1,0,0,0,0},
+    {"handoff-pending-same-pid-final","stopped",BW_SETUP_IDLE_STOPPED,0,1,0,0,0},
+    {"handoff-direct-same-pid-invalid","log-record",BW_SETUP_IDLE_LOG_RECORD,1,0,0,0,0},
+    {"handoff-zero-app-active","unmatched-start",BW_SETUP_IDLE_UNMATCHED_START,1,0,0,0,0},
+    {"handoff-zero-known-final","stopped",BW_SETUP_IDLE_STOPPED,0,1,0,0,0},
+    {"handoff-known-app-mismatch","log-record",BW_SETUP_IDLE_LOG_RECORD,1,0,0,0,0},
+    {"handoff-orphan","log-record",BW_SETUP_IDLE_LOG_RECORD,1,0,0,0,0},
+    {"handoff-wrong-old-pid","log-record",BW_SETUP_IDLE_LOG_RECORD,1,0,0,0,0},
+    {"handoff-malformed","log-record",BW_SETUP_IDLE_LOG_RECORD,1,0,0,0,0},
+    {"handoff-trailing","log-record",BW_SETUP_IDLE_LOG_RECORD,1,0,0,0,0},
+    {"cusa-start","unmatched-start",BW_SETUP_IDLE_UNMATCHED_START,1,0,0,0,0},
+    {"lapy-start","unmatched-start",BW_SETUP_IDLE_UNMATCHED_START,1,0,0,0,0},
+    {"fake-start","unmatched-start",BW_SETUP_IDLE_UNMATCHED_START,1,0,0,0,0},
+    {"stock-families-final","stopped",BW_SETUP_IDLE_STOPPED,0,1,0,0,0}
 };
 static const struct expected *expectation;
 static const char *case_name,*redirected_log;

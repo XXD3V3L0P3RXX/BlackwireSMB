@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include "game_stop_identity.h"
 #include "copy_sha256.h"
+#include "../streamreader/lifecycle.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <float.h>
@@ -72,28 +73,17 @@ static int log_resume(const struct log_prefix *prefix,const struct stat *before)
     return same(&prefix->held,before)||(log_growth(&prefix->held,before));
 }
 static enum log_result log_observe(const struct bw_startup_idle_request *r,const char *path,int fd,FILE *file,const struct stat *before,struct log_prefix *prefix,struct stat *stable,const struct bw_stop_identity *allowed,const char *title){
-    struct {char title[10];int32_t pid;unsigned active;} rows[128]={0};
-    size_t count=0,total=0,prefix_bytes=0;char line[1024];int bad=0;struct stat after,named;
+    struct bw_lifecycle_idle_fold fold;bw_lifecycle_idle_fold_init(&fold);
+    size_t total=0,prefix_bytes=0;char line[1024];int bad=0;struct stat after,named;
     struct cp_sha whole,prior;cp_sha_init(&whole);cp_sha_init(&prior);
     while(fgets(line,sizeof line,file)){
         if(current(r)||!strchr(line,'\n')){bad=1;break;}size_t n=strlen(line);if(n>SNAPSHOT_LIMIT-total){bad=1;break;}
         if(total<(uint64_t)before->st_size&&(uint64_t)before->st_size-total<=n&&line[(size_t)before->st_size-total-1]!='\n'){bad=1;break;}total+=n;
         cp_sha_update(&whole,line,n);
         if(prefix->present&&prefix_bytes<prefix->bytes){size_t take=prefix->bytes-prefix_bytes;if(take>n)take=n;cp_sha_update(&prior,line,take);prefix_bytes+=take;}
-        char *at;unsigned active=1;
-        if((at=strstr(line,"[GAME] started:")))at+=strlen("[GAME] started:");
-        else if((at=strstr(line,"[GAME] process exited, awaiting same-app handoff:")))at+=strlen("[GAME] process exited, awaiting same-app handoff:");
-        else if((at=strstr(line,"[GAME] finalizing stopped application:"))){at+=strlen("[GAME] finalizing stopped application:");active=0;}else continue;
-        if(*at++!=' '||strlen(at)<15||(memcmp(at,"PPSA",4)&&memcmp(at,"CUSA",4))){bad=1;break;}
-        char title[10];memcpy(title,at,9);title[9]=0;for(size_t i=4;i<9;i++)if(title[i]<'0'||title[i]>'9')bad=1;
-        if(bad||memcmp(at+9," pid=",5)){bad=1;break;}char *end;errno=0;long pid=strtol(at+14,&end,10);
-        if(errno||end==at+14||pid<=0||pid>INT32_MAX||(*end!=' '&&*end!='\n')){bad=1;break;}
-        size_t i=0;for(;i<count;i++)if(!strcmp(rows[i].title,title))break;
-        if(i==count){if(count==128){bad=1;break;}strcpy(rows[i].title,title);count++;}
-        if(active){rows[i].pid=(int32_t)pid;rows[i].active=1;}else if(rows[i].pid==pid)rows[i].active=0;
+        if(bw_lifecycle_idle_fold_line(&fold,line,n)<0){bad=1;break;}
     }
-    for(size_t i=0;i<count;i++)if(rows[i].active&&(!allowed||!title||rows[i].pid!=allowed->pid||strcmp(rows[i].title,title)))bad=1;
-    if(bad||ferror(file)||total<(uint64_t)before->st_size)return LOG_REFUSED;
+    if(bad||bw_lifecycle_idle_fold_finish(&fold,!ferror(file)&&feof(file),title,allowed?allowed->pid:0)||total<(uint64_t)before->st_size)return LOG_REFUSED;
     if(prefix->present){unsigned char digest[32];cp_sha_final(&prior,digest);if(prefix_bytes!=prefix->bytes||memcmp(digest,prefix->sha256,32))return LOG_REFUSED;}
     if(current(r)||fstat(fd,&after)||lstat(path,&named))return LOG_REFUSED;
     if(total==(uint64_t)before->st_size&&same(before,&after)&&same(&after,&named)&&log_node(before,&after)&&log_node(&after,&named)){if(stable)*stable=after;return LOG_STABLE;}
