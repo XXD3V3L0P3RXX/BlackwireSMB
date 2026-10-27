@@ -298,8 +298,8 @@
       "sha256": "0f6c64dda1456217dd67226c84fcbaeac625c3d28db8244e9465399171e1a79f"
     },
     "src/blackwire/library/native_backend.c": {
-      "bytes": 163706,
-      "sha256": "3f84f2893aa2e2290c5179abbf78c32541f34f01b8e0539c53b9c386eebb4c3a"
+      "bytes": 167263,
+      "sha256": "cf3fa23fe0e7d4205ec2c505f566b600df3775c7a7f6a08d250b2028de496cd8"
     },
     "src/blackwire/library/native_backend.h": {
       "bytes": 10474,
@@ -486,8 +486,8 @@
       "sha256": "21d444375f5eff16b024b69d6106eb6d38d58aaf1ad180ad90ff44acd1fb9090"
     },
     "src/blackwire/library/native_registration_cleanup.c": {
-      "bytes": 59276,
-      "sha256": "e574233ea945a36074c00f09c47892b62884aa2bb7989f0978f71a1b7d83d239"
+      "bytes": 64467,
+      "sha256": "6accb0f8c3b4995c1308189a859d98b45e26f04dfba7d6789abe25859192536f"
     },
     "src/blackwire/library/native_registration_cleanup.h": {
       "bytes": 8502,
@@ -506,8 +506,8 @@
       "sha256": "8bc4675b70dd0a0fdfab901fdd0a6166e2a2a2c5d13c9b06747db29aec273af1"
     },
     "src/blackwire/library/native_registration_removed.h": {
-      "bytes": 2381,
-      "sha256": "c3496489e0f13d1b00414bce4790eaf1d3d16a2970922a9120f30b7a7906f555"
+      "bytes": 3600,
+      "sha256": "275d0ca1949fd151751747e89733eaac6a3afb54d417d79f4c307eba73081f27"
     },
     "src/blackwire/library/native_registration_retirement.h": {
       "bytes": 3701,
@@ -1350,8 +1350,8 @@
       "sha256": "4c9ee4a7eb3e46a2621fa27d389b6c06f8f3bbc8fe5ef8c9e561dafda472d96a"
     },
     "tools/build/reader.py": {
-      "bytes": 24421,
-      "sha256": "ddd74768fe018c497c660091c1f7172c05ec47f5a9334a47f031fecf1aa28ecb"
+      "bytes": 24647,
+      "sha256": "382b66b8a003e29292290f3eb77e34bee7936b641e69887b27ae5b16108828ae"
     },
     "tools/build/reader_patch.py": {
       "bytes": 12211,
@@ -1500,8 +1500,8 @@
       "sha256": "50b3495201098cb617b2f7c9dcda84f3c2a367b95050553fdc51fa876114242f"
     },
     "tests/dashboard/lifecycle/check_dashboard_removal_service.py": {
-      "bytes": 6600,
-      "sha256": "60114a267c92fddb95495685dfcfeeaff9a4c63f637a543ee677ce3242347410"
+      "bytes": 7123,
+      "sha256": "000d4303bce5b7509b5e9e3f45c174f738a544e69b2c882c867f96a6554320af"
     },
     "tests/dashboard/lifecycle/check_fast_ready_play.py": {
       "bytes": 12415,
@@ -1644,8 +1644,8 @@
       "sha256": "1d30211005a5f63e8c16b3520700b567c787375097411193b8a3fdc66bfe2ad7"
     },
     "tests/dashboard/lifecycle/check_registration_removed.py": {
-      "bytes": 8044,
-      "sha256": "6f007865cd11a7be02161eeefb89003d16d173e8392464ba532f93fa7b1ace8f"
+      "bytes": 8608,
+      "sha256": "60c9aa6423c482efc957b5e320e0d1bc446b2acd88696961e677bc3852eac43e"
     },
     "tests/dashboard/lifecycle/check_registration_retirement.py": {
       "bytes": 7857,
@@ -1712,8 +1712,8 @@
       "sha256": "6bfe37e40fe81153c42b0d307763be9189d2ae7789c727593c7c4ba530da62cf"
     },
     "tests/dashboard/lifecycle/test_dashboard_removal_service.c": {
-      "bytes": 13104,
-      "sha256": "2094e4e6211706b0d264a33f228c0370f80daf2b4b325a05f8d6cf6b0a5bd808"
+      "bytes": 14150,
+      "sha256": "bfa8296872c832c7a2874d0387b5d9a1ed443cd16d6e6b6339074295d22c1b22"
     },
     "tests/dashboard/lifecycle/test_fast_ready_backend.c": {
       "bytes": 5911,
@@ -1900,8 +1900,8 @@
       "sha256": "a01898ab3e3f3c931852b335ff14b47efebd0354be59726309cc67d9e792b4f8"
     },
     "tests/dashboard/lifecycle/test_registration_removed.c": {
-      "bytes": 12498,
-      "sha256": "d6cfd17286b088961a6d7a95269a387c955ddc9dfbf16298d2dfec75ab113d92"
+      "bytes": 22144,
+      "sha256": "bf57061d0528b5db1dc87fb8087625ca1e579fe7815025162933113f279f5ad1"
     },
     "tests/dashboard/lifecycle/test_registration_retirement.c": {
       "bytes": 15559,
@@ -2162,7 +2162,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Unreleased standalone shared lifecycle-history repair, retaining earlier source/reader/registration fixes. Pending and successful same-app handoffs remain busy; replacement PID stop and four stock title families are parsed consistently. Native Send/derived/batch retain two observations; startup and scoped frontend preserve native identity, process and file brackets. Focused actual service43-case and actual Send/legacy-guard/startup38-case sanitizer tests pass. Genuine source-only Claude/Fable core review and primary-source adjudication are separately recorded; the optional follow-up provider used Opus and is not reported as Fable approval. Selected-PID lifetime ownership API remains unchanged. New complete57-suite host run, normal SDK build, package checks and normal Payload Manager console qualification are pending. The previous8c38 normal build passed56 suites/146 SDK commands but is held because those tests missed the handoff defect. A finalizing log marker is only a logical endpoint, not completed ShadowMount cleanup or a live process census. No historical shutdown cause, reporter-specific root cause, universal compatibility or gameplay speed claim. Publication and Native Dashboard remain on hold.",
+  "developmentQualification": "Unreleased exact-removal recovery following an actual held normal console result. Prior e827 normal57-suite/65-command/146-SDK artifact reached folder Ready and refused a conflicting source without copy, then retained Unknown after files/registration were removed; it remains held. A real transient-current fault reproduces that failure class, not the original hardware trigger. New recovery discovers only the exact retained completed ownership generation, repeats existing absence/control/probe checks and publishes matching Done before ordinary typed service release. General pending candidates and platform Uninstall request counts remain unchanged. Genuine restricted Claude/Fable review and follow-up resolve the historical-marker, repeated-control cost and obsolete-error findings; focused actual recovery9 cases, maintained ownership125 cases/40754 assertions and service30 cases/5758 assertions pass with explicit host models. Default host now includes both maintained recovery checks,59 suites/67 outer commands. New complete host run, normal SDK build, packaged-byte/diagnostic-exclusion checks and clean normal Payload Manager console verification remain pending. No historical shutdown cause, original late-failure trigger, reporter-specific universal compatibility or new gameplay/preparation speed claim. Publication and Native Dashboard remain on hold.",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -2172,5 +2172,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "3958882a645611488ff49423c7b55a0f2d1d7647"
+  "runtimeSourceCommit": "1bd775fb9b7468a57991f31ddcbd5411f63597e1"
 }

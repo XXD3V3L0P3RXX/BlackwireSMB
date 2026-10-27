@@ -2,10 +2,12 @@
 
 Changes are grouped by published preview. A build pass, initial menu and controllable gameplay are recorded separately in [testing](docs/TESTING.md).
 
-## Unreleased — verification in progress
+## Unreleased â€” verification in progress
 
-The latest shared idle-parser follow-up has focused host coverage. Its new complete host run, normal SDK build, packaged-byte checks and console tests are pending. The preceding full-build artifact remains held because its tests missed the handoff case. The earlier `c47da742…` candidate and its preparation measurements below do not qualify these new changes.
+The shared idle-parser follow-up passed its 57-suite/65-command host run, 146-command normal SDK build and 60 packaged-input checks. Its subsequent console test exposed a final Uninstall confirmation failure, so that artifact remains held. The new exact-removal recovery below has focused host coverage; a new full run, normal build and console qualification are pending. Earlier c47 preparation measurements do not qualify this follow-up.
 
+- Recover a retained uncertain Uninstall from its exact, independently verified completed ownership event. A completed marker is a discovery input, never enough to declare removal: recheck the original owner, full Removed identity and operation, app/database/manual/source absence, current control and fresh removal capability before publishing Done. Never repeat the platform Uninstall.
+- Keep valid completed history from another generation from vetoing this recovery, bound expensive current-operation checks independently of ledger entry count, and clear the obsolete failure reason only after confirmed Done.
 - Check fresh registration ownership before creating a Send job or copying files. An already owned copy of the same title from another source must be uninstalled normally before switching sources. Same-source retained preparation and independently completed cleanup remain eligible for their normal checks. Early Send refusals distinguish pending cleanup from ownership that could not be verified; neither starts a copy or repeats registration.
 - Stop offering **Remove startup files only** when an existing Blackwire owner or unverified ownership inventory would make its action guard refuse. Details distinguishes an unconfirmed registration observation or release from ordinary unverified ownership and advises refreshing status. Keep the actual deletion guards unchanged and preserve existing copies.
 - Report the first failing preparation check and its same-call idle reason, including the first or second idle observation and a known error number. Missing, unreadable or unmatched lifecycle history is a refusal, not proof that a game is running.
@@ -36,13 +38,13 @@ The latest shared idle-parser follow-up has focused host coverage. Its new compl
 - Remove the top-right **Close browser** button. Preserve Circle and dialog Back controls.
 - Make startup tracing, launch timing and verbose setup logging explicit private diagnostic build options. Ordinary builds retain user-facing errors.
 
-An old/new/old normal-build Alan Wake 2 comparison using the earlier `c47da742…` candidate observed 26–28% less copy/verification time and 11–12% less total preparation time for one exact compressed source. Fresh setup, retained Refresh/Play, visible Continue, Close and Uninstall passed; all controlled console test data were then removed. Registration time, gameplay loading, the latest source changes and other environments are not qualified by this result.
+An old/new/old normal-build Alan Wake 2 comparison using the earlier `c47da742â€¦` candidate observed 26â€“28% less copy/verification time and 11â€“12% less total preparation time for one exact compressed source. Fresh setup, retained Refresh/Play, visible Continue, Close and Uninstall passed; all controlled console test data were then removed. Registration time, gameplay loading, the latest source changes and other environments are not qualified by this result.
 
-The earlier `c47da742…` publication-copy candidate passed all 54 host suites, 62 host commands and 146 SDK commands with matching frozen source snapshots and private diagnostics excluded from its packaged ELF. Its clean Payload Manager tests passed fresh compressed Alan Wake 2 preparation, Uninstall/Restore/new Send, retained readiness after a same-build resident restart, Refresh and repeat launch/Close. A fresh extracted-folder installation also passed preparation, four actual module-hash checks, initial launch, Close and Uninstall. Failed-share correction and nonfatal invalid-image rejection/recovery passed. Launches visibly reached Game Saving/Continue; controllable gameplay remains unverified. The PC-only collector update separately passes seven tests and genuine Claude/Fable review; it does not change that packaged ELF.
+The earlier `c47da742â€¦` publication-copy candidate passed all 54 host suites, 62 host commands and 146 SDK commands with matching frozen source snapshots and private diagnostics excluded from its packaged ELF. Its clean Payload Manager tests passed fresh compressed Alan Wake 2 preparation, Uninstall/Restore/new Send, retained readiness after a same-build resident restart, Refresh and repeat launch/Close. A fresh extracted-folder installation also passed preparation, four actual module-hash checks, initial launch, Close and Uninstall. Failed-share correction and nonfatal invalid-image rejection/recovery passed. Launches visibly reached Game Saving/Continue; controllable gameplay remains unverified. The PC-only collector update separately passes seven tests and genuine Claude/Fable review; it does not change that packaged ELF.
 
-Nothing in this section is a published release. The latest follow-up passes focused host checks for ownership, initial idle admission and the joined browser/backend refusal route; its new full-build and console qualification remains pending. The earlier loss of console access remains unexplained. The reporter's exact idle-authority refusal has no reproduced reporter-specific cause; the new diagnostics and conservative parser repairs do not establish that report fixed. See the [new host evidence and limits](docs/TESTING.md#unreleased-ownership-and-idle-admission-follow-up), [earlier candidate record](docs/TESTING.md#october-27-final-publication-candidate) and [qualification limits](docs/REQUIREMENTS.md).
+Nothing in this section is a published release. The new recovery is not yet hardware-qualified. The earlier console access loss and the original trigger of the late ownership-confirmation failure remain unexplained; the controlled transient-check reproduction does not establish either cause. See [exact-removal recovery evidence](docs/TESTING.md#unreleased-exact-removal-recovery), [ownership and idle-admission checks](docs/TESTING.md#unreleased-ownership-and-idle-admission-follow-up), and the [qualification limits](docs/REQUIREMENTS.md).
 
-## v0.3.0-beta.2 — connection settings recovery
+## v0.3.0-beta.2 â€” connection settings recovery
 
 - Read and publish saved connection settings before startup library discovery. A slow scan no longer leaves a valid saved connection unreported and opens a blank, disabled setup form.
 - Recover the browser's pending connection check when the resident restarts. Keep the draft, release the obsolete operation watch and offer **Reload settings status**. Require an explicit action before saving again; never replay the old request automatically.
@@ -50,7 +52,7 @@ Nothing in this section is a published release. The latest follow-up passes focu
 - Retain strict settings-file identity checks and the rule that a failed connection/library check does not replace saved settings. The file is `/data/blackwire/share.conf`; do not delete it to change residents.
 - Preserve beta.1's reader, exFAT scope and self-contained installer. This is not a loading-speed claim or a native Dashboard release. The reporter's exact remaining failure still needs their status/log capture.
 
-## v0.3.0-beta.1 — MkPFS exFAT and self-contained reader setup
+## v0.3.0-beta.1 â€” MkPFS exFAT and self-contained reader setup
 
 - Publish the standalone test beta with bounded Send/setup diagnostics and [one-attempt test instructions](docs/BETA-TESTING.md). Keep existing preview downloads and the normal Payload Manager catalog unchanged.
 
@@ -65,13 +67,13 @@ Nothing in this section is a published release. The latest follow-up passes focu
 - Add independent exFAT corruption fixtures and include PFS/exFAT streaming/cancellation regressions in ordinary host builds.
 - This is development work, not a change to the existing release downloads or firmware qualification. Format discovery and step-7 installation are separate faults with separate checks. See [exFAT development](docs/EXFAT-DEVELOPMENT.md).
 
-## Documentation update — October 24, 2026
+## Documentation update â€” October 24, 2026
 
 - Make the tested 13.00-family firmware profile, runtime payload versions, operator-reported jailbreak chain and optional helper tools visible in the README. Keep unrecorded build/entry-point details explicit.
 - Distinguish the latest ShadowMountPlus 1.7beta7 retest from the earlier 1.7-beta5fix1 baseline and state that 10.01 and other firmware profiles remain unverified.
 - Explain the external runtime-library prerequisite and the missing-directory step-7 failure before the Send-files instructions. This documentation update does not change either ELF or claim to fix the separate missing-image discovery report.
 
-## v0.2.0-preview.1-sendlog.1 — optional diagnostic
+## v0.2.0-preview.1-sendlog.1 â€” optional diagnostic
 
 - Offer the unchanged working ELF and optional logging ELF together on one download page; no pull request or merge is required to use either.
 - Add bounded Send/setup logs with setup stages, directory paths and error numbers.

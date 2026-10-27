@@ -66,6 +66,10 @@ Reader counters are unavailable in some resident status paths. An unavailable co
 
 ## Uninstall and Restore
 
+The current unreleased recovery addresses a specific post-deletion state: startup files and the registration are gone, but the final owner-completion check was uncertain. Keep the current status open rather than submitting Uninstall again. Recovery must find the original committed owner for the same full source binding, prepared generation and operation, then repeat independent absence and control checks. An existing completion marker alone cannot authorize Done, Restore, file deletion or another platform request.
+
+Valid completed history for another generation remains history. Pending operations, changed or foreign sources, conflicting ownership, unreadable evidence and uncertain descriptor release still block recovery. Confirmed recovery clears the old unconfirmed error only after fresh typed Done matches the held operation. This is a development behavior with host regression coverage; its normal-build console retest remains pending.
+
 Explicit streamed-copy **Uninstall** removes only the exact admitted console preparation and owned registration, and marks that source Removed in the library. PC originals, saved data, unrelated full console games and preexisting registrations are separate ownership domains.
 
 **Restore** returns the source to library visibility; it does not recover deleted console files. Send files prepares a new copy when allowed. For partial or unknown outcomes, inspect the current status instead of repeating a delete. Manually removing a folder is not equivalent to a completed Blackwire Uninstall, and may leave registration or ownership work unresolved.
