@@ -537,6 +537,15 @@ static int gu_preparation_owner_clear(struct gu_plan *p){
     for(size_t i=0;!status&&i<count;i++)if(!strcmp(rows[i].subject.title,p->r->identity.binding.title))status=-1;
     free(rows);return status||gu_current(p)?-1:0;
 }
+/* Presentation repeats the action's same-title ownership exclusion. It does
+ * not grant destructive authority or replace the action's fresh checks. */
+static int gu_preparation_advisory_owner(const struct bw_nrc_environment *environment,const char *title){
+    struct bw_nrc_candidate *rows=calloc(BW_NRC_CANDIDATE_LIMIT,sizeof *rows);size_t count=0;
+    int status=rows?bw_nrc_candidates(environment,rows,BW_NRC_CANDIDATE_LIMIT,&count):-1;
+    int result=status==BW_NRC_RELEASE_UNCONFIRMED?BW_NRC_RELEASE_UNCONFIRMED:status||count>BW_NRC_CANDIDATE_LIMIT?-1:0;
+    for(size_t i=0;!result&&i<count;i++)if(!strcmp(rows[i].subject.title,title))result=1;
+    free(rows);return result;
+}
 int bw_native_preparation_remove(const struct bw_preparation_remove_request *q,struct bw_game_uninstall_result *out){
     if(out)memset(out,0,sizeof *out);
     if(!q||!out||!q->ops.current||!q->ops.source_excluded)return -1;
@@ -698,9 +707,14 @@ visible:rc=0;goto done;
     struct bw_native_registration_observation observation={0};
     enum bw_registration_state registration=bw_native_registration_observe(environment->data_root,environment->apps_root,environment->database,&selected,&observation);
     if(registration!=BW_REG_ABSENT&&registration!=BW_REG_MATCH){
-        out->can_remove_startup=!observation.database.release_or_identity_unknown;
-        out->reason=out->can_remove_startup?"Console registration is conflicting or unconfirmed. Remove startup files only preserves that existing console installation.":
-            "Console registration could not be observed or released reliably. Refresh status before removing startup files.";
+        if(observation.database.release_or_identity_unknown)out->reason="Console registration could not be observed or released reliably. Refresh status before removing startup files.";
+        else {int ownership=gu_preparation_advisory_owner(environment,identity->binding.title);
+            out->can_remove_startup=ownership==0;
+            out->reason=ownership>0?"An existing Blackwire copy owns this title. Existing registration and startup files were preserved. Uninstall the owning copy before switching sources.":
+                ownership==BW_NRC_RELEASE_UNCONFIRMED?"Console registration could not be observed or released reliably. Refresh status before removing startup files.":
+                ownership<0?"Blackwire registration ownership could not be verified. Existing game metadata and startup files were preserved.":
+                "Console registration is conflicting or unconfirmed. Remove startup files only preserves that existing console installation.";
+        }
         rc=0;goto done;
     }
     if(registration==BW_REG_MATCH){int app=v2_openat(p.apps,identity->binding.title,O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_NONBLOCK,0);if(app<0)goto done;bad=gu_absent_at(app,"app.pkg");if(gu_release(&p,app))bad=1;if(bad){out->reason="installed_package_is_not_an_owned_prepared_folder";rc=0;goto done;}}

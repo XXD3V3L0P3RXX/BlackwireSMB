@@ -6,6 +6,7 @@
 #include "local_http.h"
 #include "native_backend.h"
 #include "native_game_uninstall.h"
+#include "native_setup.h"
 
 struct bd_dashboard_service;
 struct bd_service_ops {
@@ -63,6 +64,10 @@ struct bd_service_ops {
     /* Trusted host seam for the retained Send source witness. Production
      * leaves this NULL and uses unchanged native public identity captures. */
     const struct rc_game_identity_ops *preparation_identity_ops;
+    /* Optional same-call preparation diagnostic. Replaces one idle invocation,
+     * never adds a second observation or grants permission from the reason.
+     * Keep last so existing positional initializers retain their meaning. */
+    int (*idle_observe)(void *,struct bw_setup_idle_observation *);
 };
 struct bd_service_config {
     struct bw_native_backend *backend; /* Borrowed; outlives the service. */

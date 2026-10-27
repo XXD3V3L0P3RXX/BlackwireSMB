@@ -14,6 +14,20 @@ int bw_native_setup_generation_equal(const struct bw_setup_generation *,const st
  * Returns UNCONFIRMED after publication if verification cannot be completed;
  * callers must inspect/refresh, not automatically replay this mutation. */
 int bw_native_setup_store(const char *,const struct bw_share_config *,const struct bw_setup_generation *,const char *,int (*)(void *),void *,struct bw_setup_saved *);
+enum bw_setup_idle_reason {
+    BW_SETUP_IDLE_UNOBSERVED, BW_SETUP_IDLE_STOPPED, BW_SETUP_IDLE_LOG_OPEN,
+    BW_SETUP_IDLE_LOG_READ, BW_SETUP_IDLE_LOG_INCOMPLETE, BW_SETUP_IDLE_LOG_RECORD,
+    BW_SETUP_IDLE_LOG_CAPACITY, BW_SETUP_IDLE_LOG_CLOSE, BW_SETUP_IDLE_UNMATCHED_START
+};
+/* Same-call diagnostic only; unknown history never grants idle authority.
+ * error is meaningful only when error_valid. A secondary close failure does
+ * not overwrite the first observed refusal. No log contents are retained. */
+struct bw_setup_idle_observation {
+    enum bw_setup_idle_reason reason;
+    int error;
+    unsigned error_valid,close_failed;
+};
+int bw_native_setup_idle_observe(void *,struct bw_setup_idle_observation *);
 int bw_native_setup_idle(void *);
 int bw_native_setup_nonce(char[33]);
 #endif

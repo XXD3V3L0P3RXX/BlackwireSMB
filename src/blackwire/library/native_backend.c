@@ -53,6 +53,13 @@ void bw_native_backend_host_paths(const char *root,const char *log){backend_data
 #else
 static const char *const backend_data_root="/data/blackwire",*const backend_game_log="/data/shadowmount/debug.log";
 #endif
+#ifdef BW_NATIVE_PRELOAD
+#ifdef BW_NATIVE_BACKEND_HOST_TEST
+static struct bw_nrc_environment registration_environment={NULL,"/user/app","/system_data/priv/mms/app.db"};
+#else
+static const struct bw_nrc_environment registration_environment={NULL,"/user/app","/system_data/priv/mms/app.db"};
+#endif
+#endif
 struct bw_native_backend {
     pthread_mutex_t lock,dispatch_lock;char external_nonce[33];pthread_t worker;int active,joinable,phase,stale,worker_kind;uint64_t generation,play_epoch;
     struct {unsigned valid;uint64_t generation,play_epoch;uint32_t revision,setup_operation;int settings_status,settings_known;struct bw_setup_generation settings;char sending[33],playing[33];} external_expected;
@@ -355,11 +362,6 @@ struct play_context {
 #endif
 };
 #ifdef BW_NATIVE_PRELOAD
-#ifdef BW_NATIVE_BACKEND_HOST_TEST
-static struct bw_nrc_environment registration_environment={NULL,"/user/app","/system_data/priv/mms/app.db"};
-#else
-static const struct bw_nrc_environment registration_environment={NULL,"/user/app","/system_data/priv/mms/app.db"};
-#endif
 static int registration_pending_refresh(struct bw_native_backend *p){
     struct bw_nrc_environment env=registration_environment;env.data_root=backend_data_root;
     struct bw_nrc_candidate *list=calloc(BW_NRC_CANDIDATE_LIMIT,sizeof *list);size_t count=0;
@@ -1403,6 +1405,26 @@ static void *prepare_worker(void *opaque){
     }
     bw_native_sensitive_clear(&p->sending,sizeof p->sending);p->active=0;pthread_mutex_unlock(&p->lock);return NULL;
 }
+#ifdef BW_NATIVE_PRELOAD
+/* This fresh inventory can refuse a known ownership conflict before copying.
+ * It grants no registration authority: setup still performs its complete
+ * admission after the startup receipt and reader bundle are verified. */
+static const char *send_registration_preflight(struct bw_native_backend *p,const struct bw_provider_binding *selected){
+    struct bw_nrc_environment env=registration_environment;env.data_root=backend_data_root;
+    struct bw_nrc_candidate *rows=calloc(BW_NRC_CANDIDATE_LIMIT,sizeof *rows);size_t count=0;
+    int status=rows?bw_nrc_candidates(&env,rows,BW_NRC_CANDIDATE_LIMIT,&count):-1;
+    const char *reason=NULL;
+    if(status||count>BW_NRC_CANDIDATE_LIMIT){
+        if(status==BW_NRC_RELEASE_UNCONFIRMED){p->control_release_unknown=1;
+            reason="{\"error\":\"Registration ownership could not be released reliably. No startup files were sent; resolve the retained operation before retrying.\"}";}
+        else reason="{\"error\":\"Blackwire registration ownership could not be verified. No startup files were sent; keep existing copies and refresh status.\"}";
+    }else for(size_t i=0;i<count;i++)if(!strcmp(rows[i].subject.title,selected->binding.title)){
+        if(rows[i].pending||rows[i].retiring){reason="{\"error\":\"Registration cleanup is pending or needs attention; Send will not repeat it. No startup files were sent.\"}";break;}
+        if(strcmp(rows[i].subject.game,selected->binding.game))reason="{\"error\":\"Another Blackwire copy already owns this title. Uninstall that copy before switching sources. No startup files were sent.\"}";
+    }
+    free(rows);return reason;
+}
+#endif
 static int send_owned(struct bw_native_backend *p,const char *authority,const void *body,size_t size,const char *token,struct bw_native_response *out){
     if(!p->ops.prepare||!p->settings_enabled)return text(out,409,"{\"error\":\"Native preparation is unavailable in this build\"}");
     unsigned difference=0;if(!token||strlen(token)!=32)return text(out,403,"{\"error\":\"Refresh Blackwire before preparing a game\"}");
@@ -1415,7 +1437,7 @@ static int send_owned(struct bw_native_backend *p,const char *authority,const vo
     if(p->phase!=BACKEND_READY||p->stale||p->setup_blocked||p->preparation_blocked||p->settings_status!=BW_SETUP_VALID||request.library_generation!=p->generation||request.settings_revision!=p->settings_revision)goto done;
     size_t item=catalog_selected(p,&request);
     if(item==p->library.catalog.count||!bw_source_catalog_available(&p->library.catalog.items[item])){status=400;reply="{\"error\":\"Choose an available preserved source\"}";goto done;}
-    if(registration_waiting(p,p->library.catalog.items[item].title_id)){reply="{\"error\":\"Registration cleanup is pending or needs attention; Send will not repeat it\"}";goto done;}
+    if(registration_waiting(p,p->library.catalog.items[item].title_id)){reply=p->registration_ledger_unknown?"{\"error\":\"Blackwire registration ownership could not be verified. No startup files were sent; keep existing copies and refresh status.\"}":"{\"error\":\"Registration cleanup is pending or needs attention; Send will not repeat it. No startup files were sent.\"}";goto done;}
     if(removed_at(p,item)){reply="{\"error\":\"Restore this removed source before preparing it again\"}";goto done;}
     if(source_build_reason(&p->library.catalog.items[item])){reply="{\"error\":\"This compressed image format is unsupported or could not be verified.\"}";goto done;}
     if(p->library.prepared&&reader_update_reason(&p->library.prepared[item])){reply="{\"error\":\"The reader update is unresolved. Play and Send are blocked; startup files were kept.\"}";goto done;}
@@ -1433,7 +1455,11 @@ static int send_owned(struct bw_native_backend *p,const char *authority,const vo
     if(p->joinable){if(pthread_join(p->worker,NULL)){status=503;goto done;}p->joinable=0;}
     if(!p->library.prepared){p->library.prepared=calloc(p->library.catalog.count,sizeof *p->library.prepared);if(!p->library.prepared){status=503;goto done;}}
     struct bw_native_prepare_selection selection={0};const struct bw_catalog_item *selected=&p->library.catalog.items[item];
-    if(bw_source_catalog_binding(&selection.identity,&config,selected)||p->ops.nonce(p->opaque,selection.run)||!nonce_valid(selection.run)){status=503;goto done;}
+    if(bw_source_catalog_binding(&selection.identity,&config,selected)){status=503;goto done;}
+#ifdef BW_NATIVE_PRELOAD
+    const char *ownership=send_registration_preflight(p,&selection.identity);if(ownership){reply=ownership;goto done;}
+#endif
+    if(p->ops.nonce(p->opaque,selection.run)||!nonce_valid(selection.run)){status=503;goto done;}
     selection.boot=selected->boot;selection.param=selected->param;selection.image=selected->image;selection.logical_boot_size=selected->logical_boot_size;selection.container_kind=selected->container_kind;struct bw_native_job_token job={0};
     if(bw_native_job_begin(p->jobs,selection.run,selection.identity.binding.source,&job)||bw_native_job_start(&job)){status=503;reply="{\"error\":\"A private preparation operation could not start\"}";goto done;}
     p->sending.config=config;p->sending.expected=generation;p->sending.selection=selection;p->sending.token=job;p->sending.item=item;p->preparation_changed=0;p->worker_kind=WORK_PREPARE;p->active=1;

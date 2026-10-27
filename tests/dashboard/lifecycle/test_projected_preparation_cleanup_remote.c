@@ -24,6 +24,17 @@ static void make_app_named(const char *apps,const char *title,const char *conten
 static void make_app(const char *apps,const char *content,char app[1800],char param[2000]){make_app_named(apps,"PPSA99001",content,app,param);}
 static int unexpected_outer_exclusion(void *opaque,const struct bw_removed_source *removed){(void)opaque;(void)removed;C(0);return -1;}
 static unsigned descriptor_count(void){DIR *d=opendir("/proc/self/fd");C(d);unsigned n=0;for(struct dirent *e;(e=readdir(d));)if(e->d_name[0]!='.')n++;C(!closedir(d));return n;}
+static char owner_close_path[2200];static unsigned owner_close_armed,owner_close_injections,owner_close_observations;static int owner_close_result;
+int __real_close(int);
+int __wrap_close(int fd){
+    int inject=0;if(owner_close_armed){char link[64],path[2200];snprintf(link,sizeof link,"/proc/self/fd/%d",fd);ssize_t n=readlink(link,path,sizeof path-1);if(n>=0){path[n]=0;inject=!strcmp(path,owner_close_path);}}
+    int rc=__real_close(fd);if(inject){C(!rc);owner_close_armed=0;owner_close_injections++;errno=EIO;return -1;}return rc;
+}
+int __real_bw_nrc_candidates(const struct bw_nrc_environment *,struct bw_nrc_candidate *,size_t,size_t *);
+int __wrap_bw_nrc_candidates(const struct bw_nrc_environment *e,struct bw_nrc_candidate *rows,size_t capacity,size_t *count){
+    unsigned armed=owner_close_armed;int rc=__real_bw_nrc_candidates(e,rows,capacity,count);
+    if(armed){owner_close_observations++;owner_close_result=rc;C(!owner_close_armed&&rc==BW_NRC_RELEASE_UNCONFIRMED&&!*count);}return rc;
+}
 
 static struct {
     const char *mode;struct smb2_context *context;
@@ -81,6 +92,54 @@ int bw_sm_observe(const struct bw_sm_connection *c,enum bw_sm_observation kind,s
     C(n>0&&(size_t)n<sizeof text);document(out,text);return 0;
 }
 
+struct owner_advisory_fixture {struct smb2_context *context;const char *root;};
+static int owner_advisory_current(void *opaque){return current(((struct owner_advisory_fixture *)opaque)->context);}
+static int owner_advisory_sources(void *opaque,const struct bw_nrc_subject *subject){
+    struct owner_advisory_fixture *p=opaque;C(subject&&!strcmp(subject->title,"PPSA99001")&&!strcmp(subject->source,p->root));return owner_advisory_current(opaque);
+}
+static int owner_advisory_uninstall(void *opaque,const char title[10]){(void)opaque;(void)title;C(0);return -1;}
+/* The ownership record is created by the real NRC producer. Only normal
+ * registration's external app/SQLite effects and manual membership are models. */
+static int owner_advisory_case(struct smb2_context *context,struct bw_source_smb *source,
+    const struct bw_share_config *original,const char *data,const char *apps,const char *db,
+    const char *save,const char *log,const struct bw_provider_binding *selected,
+    const struct bw_native_prepared *prepared,const struct bw_preload_reader_pin *pin){
+    int same=scenario("owned-same-binding"),corrupt=scenario("owned-other-corrupt"),linked=scenario("owned-other-linked");
+    int close_unknown=scenario("owned-other-close-unknown")||scenario("owned-other-close-unknown-old"),expect_old=scenario("owned-other-close-unknown-old");
+    struct bw_share_config config=*original;struct bw_provider_binding owner_binding=*selected;struct bw_native_prepared owner_prepared=*prepared;
+    char owner_root[1800],owner_state[1800],path[2200],app[1800],param[2000],ledger[1800],manual[1800];strcpy(owner_root,remote.root);strcpy(owner_state,remote.state);
+    if(!same){
+        strcpy(config.share,"OtherFixtureShare");C(!bw_provider_binding_init(&owner_binding,&config,"fixture","PPSA99001",BW_PROVIDER_FOLDER)&&strcmp(owner_binding.binding.game,selected->binding.game));
+        struct bw_source_provider provider={0};C(!bw_source_provider_prepare_policy(&provider,&owner_binding,source,NULL,"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",32u*1024u*1024u,current,context,BW_SOURCE_PLAN_COMPANIONS_V1));
+        struct bw_native_send_files send={.data_root=data,.game_log=log,.provider=&provider,.current=current,.opaque=context};C(!bw_native_send_files(&send,&owner_prepared)&&owner_prepared.state==BW_PREPARED_VALID&&owner_prepared.bytes_verified&&owner_prepared.prepared_policy==3);bw_source_provider_destroy(&provider);C(!context->open);
+        C(snprintf(owner_root,sizeof owner_root,"%s/games/%s",data,owner_binding.binding.game)>0);C(snprintf(owner_state,sizeof owner_state,"%s/native-prepared/%s",data,owner_binding.binding.game)>0);
+        C(snprintf(path,sizeof path,"%s/fakelib2",owner_root)>0);C(!mkdir(path,0755)||errno==EEXIST);C(snprintf(path,sizeof path,"%s/fakelib2/libSceAmpr.sprx",owner_root)>0);file_write(path,bw_preload_embedded_image.bytes,bw_preload_embedded_image.size);C(!chmod(path,0755));
+    }
+    struct bw_nrc_environment env={data,apps,db};struct bw_native_launch_admission *admission=NULL;struct bw_reader_selection execution={0};
+    C(!bw_native_launch_admission_open(&admission,data,&owner_binding,&owner_prepared,"dddddddddddddddddddddddddddddddd",current,context,NULL));C(!bw_native_launch_admission_selection(admission,&execution));uint8_t map[32],generation[32];C(!bw_native_launch_admission_source(admission,&config,source,&execution,map,generation,NULL));
+    struct owner_advisory_fixture owner={context,owner_root};struct bw_nrc_ops ops={.opaque=&owner,.current=owner_advisory_current,.sources=owner_advisory_sources,.uninstall=owner_advisory_uninstall};struct bw_nrc_ticket *ticket=NULL;struct bw_nrc_result observed={0};
+    C(!bw_nrc_begin_projected(&env,&execution,admission,&ops,&ticket,&observed)&&ticket);make_app(apps,"UP0000-PPSA99001_00-BLACKWIREFIXTURE0",app,param);
+    C(snprintf(path,sizeof path,"%s/mount.lnk",app)>0);file_write(path,owner_root,strlen(owner_root));sql_execute(db,"INSERT INTO tbl_contentinfo VALUES('PPSA99001','UP0000-PPSA99001_00-BLACKWIREFIXTURE0')");
+    struct bw_register_result registered={.add_attempted=1,.add_confirmed=1,.registered=1};C(!bw_nrc_finish(ticket,0,&registered,&observed)&&observed.state==BW_NRC_OWNED);C(!bw_nrc_ticket_destroy(ticket));C(!bw_native_launch_admission_close(&admission));
+    struct bw_nrc_candidate candidates[4];size_t count=0;C(!bw_nrc_candidates(&env,candidates,4,&count)&&count==1&&!candidates[0].pending&&!candidates[0].retiring&&!strcmp(candidates[0].subject.game,owner_binding.binding.game));
+    C(snprintf(ledger,sizeof ledger,"%s/registration-owners",data)>0);C(snprintf(path,sizeof path,"%s/%s.%s.owner",ledger,candidates[0].subject.title,candidates[0].subject.run)>0);
+    if(corrupt)mutate(path);
+    if(linked){char held[2200];C(snprintf(held,sizeof held,"%s/held-original-owner",data)>0&&!rename(path,held)&&!symlink(held,path));}
+    C(snprintf(manual,sizeof manual,"%s/modeled-manual-membership",data)>0);file_write(manual,owner_root,strlen(owner_root));
+    const char *trees[]={owner_root,owner_state,remote.root,remote.state,app,ledger};uint8_t hashes[6][32],db_hash[32],save_hash[32],manual_hash[32];for(unsigned i=0;i<6;i++)tree_pin(trees[i],hashes[i]);fingerprint(db,db_hash);fingerprint(save,save_hash);fingerprint(manual,manual_hash);unsigned requests=context->requests;
+    if(close_unknown){C(snprintf(owner_close_path,sizeof owner_close_path,"%s/.blackwire-registration-owners",ledger)>0);owner_close_armed=1;}
+    struct bw_game_uninstall_capability cap={0};C(!bw_native_game_uninstall_probe(&env,selected,prepared,&cap)&&!cap.can_remove_startup);
+    if(close_unknown){C(!cap.can_uninstall&&owner_close_injections==1&&owner_close_observations==1&&owner_close_result==BW_NRC_RELEASE_UNCONFIRMED);
+        C(cap.reason&&!strcmp(cap.reason,expect_old?"Blackwire registration ownership could not be verified. Existing game metadata and startup files were preserved.":"Console registration could not be observed or released reliably. Refresh status before removing startup files."));
+        struct bw_game_uninstall_capability fresh={0};C(!bw_native_game_uninstall_probe(&env,selected,prepared,&fresh)&&!fresh.can_remove_startup&&!fresh.can_uninstall&&fresh.reason&&strstr(fresh.reason,"owns this title"));owner_close_armed=1;
+    }else if(same)C(cap.can_uninstall);else C(!cap.can_uninstall&&cap.reason&&strstr(cap.reason,corrupt||linked?"could not be verified":"owns this title"));
+    struct bw_preparation_remove_request request={.environment=env,.identity=*selected,.prepared=*prepared,.ops={.opaque=context,.current=current,.source_excluded=unexpected_outer_exclusion},.reader_size=pin->size};memcpy(request.reader_sha256,pin->sha256,32);strcpy(request.operation,"ffffffffffffffffffffffffffffffff");strcpy(request.confirmed_title,selected->binding.title);
+    unsigned descriptors=descriptor_count();struct bw_game_uninstall_result result={0};C(bw_native_preparation_remove_normal(&request,10101,&result)<0&&!result.files_removed&&!result.mutation_started&&!result.preparation_only);C(result.reason&&!strcmp(result.reason,"preparation_only_registration_owner_present_or_unknown"));C(descriptor_count()==descriptors&&!remote.reads&&!remote.mutations&&!registration_calls);
+    if(close_unknown)C(result.release_unknown&&owner_close_injections==2&&owner_close_observations==2&&owner_close_result==BW_NRC_RELEASE_UNCONFIRMED&&!owner_close_armed);
+    uint8_t after[32];for(unsigned i=0;i<6;i++){tree_pin(trees[i],after);C(!memcmp(hashes[i],after,32));}fingerprint(db,after);C(!memcmp(db_hash,after,32));fingerprint(save,after);C(!memcmp(save_hash,after,32));fingerprint(manual,after);C(!memcmp(manual_hash,after,32));C(context->requests==requests&&!context->open);
+    printf("{\"passed\":true,\"checks\":%u,\"mode\":\"%s\",\"removedPreparation\":false,\"actualNormalAdapter\":true,\"actualNrcOwnerProducer\":true,\"sameTitleOwnerAdvisoryRefused\":true,\"advisoryCanRemoveStartup\":false,\"ownerAndBothCopiesPreserved\":true,\"externalAppAndDbPreserved\":true,\"saveAndOriginalSourcePreserved\":true,\"manualMembershipModeled\":true,\"actualInventoryCloseUnconfirmed\":%s,\"advisoryCloseUnconfirmedDistinct\":%s,\"advisoryNoStickyLatch\":%s,\"closeFaultInjections\":%u,\"actualNrcResult\":%d,\"transportReads\":%u,\"mutationTransportCalls\":%u,\"postPreparationSourceRequests\":0,\"consoleActions\":0}\n",checks,remote.mode,close_unknown?"true":"false",close_unknown&&!expect_old?"true":"false",close_unknown?"true":"false",owner_close_injections,owner_close_result,remote.reads,remote.mutations);return 0;
+}
+
 int main(int argc,char **argv){C(argc==6||argc==7);int folder=!strcmp(argv[1],"folder");remote.mode=argv[5];
     struct smb2_context context={0};C(strlen(argv[2])<sizeof context.root);strcpy(context.root,argv[2]);for(unsigned i=0;i<64;i++)context.handles[i].fd=-1;remote.context=&context;
     struct bw_source_smb source={.smb=&context,.deadline=now()+600};struct bw_share_config config={0};strcpy(config.server,"192.0.2.1");strcpy(config.share,"FixtureShare");
@@ -98,6 +157,7 @@ int main(int argc,char **argv){C(argc==6||argc==7);int folder=!strcmp(argv[1],"f
     C(snprintf(path,sizeof path,"%s/fakelib2",remote.root)>0);C(!mkdir(path,0755)||errno==EEXIST);C(snprintf(path,sizeof path,"%s/fakelib2/libSceAmpr.sprx",remote.root)>0);file_write(path,bw_preload_embedded_image.bytes,bw_preload_embedded_image.size);C(!chmod(path,0755));
     struct bw_native_launch_admission *admission=NULL;C(!bw_native_launch_admission_open_for_removal(&admission,data,&binding,&prepared,"cccccccccccccccccccccccccccccccc",current,&context,NULL));const struct bw_preload_companions *companions=NULL;C(!bw_native_launch_admission_companions_for_removal(admission,&companions));
     struct bw_preload_bundle_upgrade_request selection={.bundle={remote.root,current,&context,now()+20},.data_root=data,.game=binding.binding.game,.prepared_run=prepared.run,.launch_run="cccccccccccccccccccccccccccccccc",.prepared_record_sha256=prepared.record_sha256};struct bw_preload_reader_pin pin={0};struct bw_preload_bundle_result diagnostic={0};C(!bw_preload_bundle_select_projection_for_removal(&selection,companions,&pin,&diagnostic));C(!bw_native_launch_admission_close(&admission));
+    if(!strncmp(remote.mode,"owned-",6)){C(folder);return owner_advisory_case(&context,&source,&config,data,apps,db,save,log,&binding,&prepared,&pin);}
     uint8_t ordinary_journal[32]={0},other_game_hash[32]={0},other_state_hash[32]={0};char ordinary_ledger[1800]={0},other_game[1800]={0},other_state[1800]={0};struct bw_game_uninstall_result ordinary={0};int ordinary_rc=0;
     int pending_ordinary=scenario("ordinary-consumed")||scenario("ordinary-other-binding")||scenario("ordinary-unrelated")||scenario("ordinary-intent-malformed")||scenario("ordinary-intent-linked")||scenario("ordinary-registration-missing")||scenario("ordinary-registration-modified");
     if(pending_ordinary||scenario("ordinary-completed")){

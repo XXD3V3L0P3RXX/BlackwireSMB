@@ -23,6 +23,7 @@ struct bd_resident {
     pthread_t ticker;
 };
 static int idle(void *opaque){(void)opaque;return bw_native_setup_idle(NULL);}
+static int idle_observe(void *opaque,struct bw_setup_idle_observation *out){(void)opaque;return bw_native_setup_idle_observe(NULL,out);}
 static int reserve(void *opaque,const char nonce[33],const char token[33]){
     struct bd_resident *r=opaque;return bw_native_backend_external_reserve(r->backend,nonce,token);
 }
@@ -71,7 +72,8 @@ struct bd_resident *bd_resident_create_with_feedback(struct bw_native_backend *b
     struct bd_service_config config={.backend=backend,.observe_bfp=0,.http_timeout_ms=2000,
         .ops={.opaque=r,.idle=idle,.reserve=reserve,.release=release,.backend_reserved=backend_reserved,
             .local_launch=local_launch,.local_state=local_state,.local_capable=local_capable,.feedback=notify?feedback:NULL,
-            .local_uninstall_capable=local_uninstall_capable,.local_uninstall=local_uninstall,.local_uninstall_state=local_uninstall_state}};
+            .local_uninstall_capable=local_uninstall_capable,.local_uninstall=local_uninstall,.local_uninstall_state=local_uninstall_state,
+            .idle_observe=idle_observe}};
 #ifdef BW_WEB_ONLY
     config.native_frontend_disabled=1;
 #else

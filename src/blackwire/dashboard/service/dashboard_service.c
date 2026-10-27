@@ -378,21 +378,112 @@ int bd_service_attach_preparation_guard(struct bd_dashboard_service *s){
     int rc=s->active||s->reserved||s->preparation_pin?1:bw_native_backend_set_preparation_idle(s->config.backend,preparation_idle,s);
     if(!rc)s->preparation_guard_attached=1;pthread_mutex_unlock(&s->lock);return rc;
 }
+enum preparation_failure_stage {
+    PREPARATION_UNOBSERVED,PREPARATION_GUARD_STATE,PREPARATION_FRONTEND_OPEN,
+    PREPARATION_FRONTEND_LOG,PREPARATION_ABSENT_FIRST,PREPARATION_IDLE_FIRST,
+    PREPARATION_ABSENT_SECOND,PREPARATION_IDLE_SECOND,PREPARATION_SOURCE_CHECK,
+    PREPARATION_OWNER_CHANGE
+};
+struct preparation_failure {
+    enum preparation_failure_stage stage;
+    struct bw_setup_idle_observation idle;
+};
+static void preparation_failure_set(struct preparation_failure *failure,enum preparation_failure_stage stage,
+                                    const struct bw_setup_idle_observation *idle){
+    if(!failure||failure->stage!=PREPARATION_UNOBSERVED)return;
+    failure->stage=stage;if(idle)failure->idle=*idle;
+}
+static int preparation_observe_idle(struct bd_dashboard_service *s,struct preparation_failure *failure,
+                                    enum preparation_failure_stage stage){
+    struct bw_setup_idle_observation idle={0};
+    int rc=s->config.ops.idle_observe?s->config.ops.idle_observe(s->config.ops.opaque,&idle):
+        s->config.ops.idle(s->config.ops.opaque);
+    if(rc)preparation_failure_set(failure,stage,&idle);return rc;
+}
+static const char *preparation_stage_name(enum preparation_failure_stage stage){
+    switch(stage){
+        case PREPARATION_GUARD_STATE:return "guard-state";
+        case PREPARATION_FRONTEND_OPEN:return "frontend-open";
+        case PREPARATION_FRONTEND_LOG:return "frontend-log";
+        case PREPARATION_ABSENT_FIRST:return "frontend-absent-first";
+        case PREPARATION_IDLE_FIRST:return "idle-first";
+        case PREPARATION_ABSENT_SECOND:return "frontend-absent-second";
+        case PREPARATION_IDLE_SECOND:return "idle-second";
+        case PREPARATION_SOURCE_CHECK:return "source-check";
+        case PREPARATION_OWNER_CHANGE:return "owner-change";
+        default:return "unobserved";
+    }
+}
+static const char *preparation_idle_reason(enum bw_setup_idle_reason reason,const char **detail){
+    switch(reason){
+        case BW_SETUP_IDLE_STOPPED:*detail="The idle check refused after reporting stopped history. Inspect status before retrying.";return "stopped";
+        case BW_SETUP_IDLE_LOG_OPEN:*detail="The lifecycle log could not be opened. Check Blackwire and ShadowMount status before retrying.";return "log-open";
+        case BW_SETUP_IDLE_LOG_READ:*detail="The lifecycle log could not be read reliably. Check status before retrying.";return "log-read";
+        case BW_SETUP_IDLE_LOG_INCOMPLETE:*detail="The lifecycle log contains an incomplete or overlong record. Inspect status before retrying.";return "log-incomplete";
+        case BW_SETUP_IDLE_LOG_RECORD:*detail="A lifecycle log record could not be interpreted. Inspect status before retrying.";return "log-record";
+        case BW_SETUP_IDLE_LOG_CAPACITY:*detail="The lifecycle log exceeds the supported title-record limit. Inspect status before retrying.";return "log-capacity";
+        case BW_SETUP_IDLE_LOG_CLOSE:*detail="The lifecycle log could not be closed reliably. Inspect status before retrying.";return "log-close";
+        case BW_SETUP_IDLE_UNMATCHED_START:*detail="The lifecycle log has an unmatched start record. Close any running game normally and inspect status before retrying.";return "unmatched-start";
+        default:*detail="The idle check did not supply a failure reason. Inspect status before retrying.";return "unobserved";
+    }
+}
+static int preparation_refused(struct bd_dashboard_service *s,const struct preparation_failure *failure,struct bw_native_response *out){
+    if(!s->config.ops.idle_observe||!failure)return text(out,409,"The exact frontend or preparation idle authority could not be retained.");
+    const char *detail="The preparation check could not be completed. Inspect status before retrying.";
+    const char *stage=preparation_stage_name(failure->stage),*reason=NULL;
+    if(failure->stage==PREPARATION_IDLE_FIRST||failure->stage==PREPARATION_IDLE_SECOND)
+        reason=preparation_idle_reason(failure->idle.reason,&detail);
+    else switch(failure->stage){
+        case PREPARATION_GUARD_STATE:detail="The preparation guard is already held or unavailable.";break;
+        case PREPARATION_FRONTEND_OPEN:detail="The exact dashboard preparation witness could not be opened.";break;
+        case PREPARATION_FRONTEND_LOG:detail="The dashboard lifecycle log could not qualify this preparation.";break;
+        case PREPARATION_ABSENT_FIRST:case PREPARATION_ABSENT_SECOND:detail="Frontend absence could not be confirmed.";break;
+        case PREPARATION_SOURCE_CHECK:detail="The source activity check refused or could not be completed.";break;
+        case PREPARATION_OWNER_CHANGE:detail="The frontend owner changed or could not be verified.";break;
+        default:break;
+    }
+    char code[128],body[768];
+    if(reason&&failure->idle.error_valid&&failure->idle.error>0)
+        snprintf(code,sizeof code,"%s/%s, errno=%d",stage,reason,failure->idle.error);
+    else snprintf(code,sizeof code,"%s%s%s",stage,reason?"/":"",reason?reason:"");
+    snprintf(body,sizeof body,"Preparation was refused [preparation/%s]. %s%s No preparation was accepted.",code,detail,
+        reason&&failure->idle.close_failed&&failure->idle.reason!=BW_SETUP_IDLE_LOG_CLOSE?" A log close failure was also reported.":"");
+    return text(out,409,body);
+}
 /* Initial Send control runs under the existing request lock, before a worker
  * can borrow the witness. Worker callbacks later take this lock only after the
- * backend has released its own; no synchronous request calls back into it. */
-static int preparation_begin(struct bd_dashboard_service *s,int present,const struct bd_frontend_identity *frontend){
-    if(s->preparation_pin||s->preparation_borrowed||!s->preparation_guard_attached)return -1;
+ * backend has released its own; no synchronous request calls back into it.
+ * The stack-owned failure records only the first failing call; cleanup cannot
+ * replace it and diagnostics never determine the authority decision. */
+static int preparation_begin(struct bd_dashboard_service *s,int present,const struct bd_frontend_identity *frontend,
+                            struct preparation_failure *failure){
+    if(failure)memset(failure,0,sizeof *failure);
+    if(s->preparation_pin||s->preparation_borrowed||!s->preparation_guard_attached){
+        preparation_failure_set(failure,PREPARATION_GUARD_STATE,NULL);return -1;
+    }
     s->preparation_owner=s->frontend;s->preparation_identity=*frontend;s->preparation_native=present==1;
     memset(&s->preparation_progress,0,sizeof s->preparation_progress);
     if(present==1){
         int rc=s->config.ops.preparation_identity_ops?
             bd_frontend_preparation_open_with_ops(&s->frontend,s->config.ops.preparation_identity_ops,&s->preparation_pin):
             bd_frontend_preparation_open(&s->frontend,&s->preparation_pin);
-        if(rc||bd_preparation_log_idle(s->settings_game_log,frontend))goto failed;
-    }else if(preparation_absent(s,&s->preparation_owner,frontend)||s->config.ops.idle(s->config.ops.opaque)||
-        preparation_absent(s,&s->preparation_owner,frontend)||s->config.ops.idle(s->config.ops.opaque))goto failed;
-    if(source_checks_allowed(s)||!settings_owner_same(s,frontend))goto failed;return 0;
+        if(rc){preparation_failure_set(failure,PREPARATION_FRONTEND_OPEN,NULL);goto failed;}
+        if(bd_preparation_log_idle(s->settings_game_log,frontend)){
+            preparation_failure_set(failure,PREPARATION_FRONTEND_LOG,NULL);goto failed;
+        }
+    }else{
+        if(preparation_absent(s,&s->preparation_owner,frontend)){
+            preparation_failure_set(failure,PREPARATION_ABSENT_FIRST,NULL);goto failed;
+        }
+        if(preparation_observe_idle(s,failure,PREPARATION_IDLE_FIRST))goto failed;
+        if(preparation_absent(s,&s->preparation_owner,frontend)){
+            preparation_failure_set(failure,PREPARATION_ABSENT_SECOND,NULL);goto failed;
+        }
+        if(preparation_observe_idle(s,failure,PREPARATION_IDLE_SECOND))goto failed;
+    }
+    if(source_checks_allowed(s)){preparation_failure_set(failure,PREPARATION_SOURCE_CHECK,NULL);goto failed;}
+    if(!settings_owner_same(s,frontend)){preparation_failure_set(failure,PREPARATION_OWNER_CHANGE,NULL);goto failed;}
+    return 0;
 failed:if(s->preparation_pin){struct bd_frontend_preparation *pin=s->preparation_pin;s->preparation_pin=NULL;(void)bd_frontend_preparation_close(pin);}return -1;
 }
 static int preparation_dispatch_idle(struct bd_dashboard_service *s){
@@ -418,8 +509,29 @@ static int accepted_field(void *opaque,const char *key,size_t kn,const void *raw
     if(p->seen&bit)return -1;p->seen|=bit;
     return bit==1u?boolean(raw,n,&p->ok):bw_document_string(raw,n,p->id,sizeof p->id);
 }
-static int dispatch(void *opaque,const struct bd_item *item,enum bd_action action,const char *nonce) {
-    struct bd_dashboard_service *s=opaque;
+struct send_refusal {char error[256];unsigned seen;};
+static int send_refusal_field(void *opaque,const char *key,size_t kn,const void *raw,size_t n){
+    struct send_refusal *p=opaque;
+    if(kn!=5||memcmp(key,"error",5)||p->seen||bw_document_string(raw,n,p->error,sizeof p->error))return -1;
+    p->seen=1;return 0;
+}
+/* Only these complete, static ownership refusals cross the normal dashboard
+ * route. Arbitrary backend text, paths and response storage never escape. */
+static const char *send_refusal_message(const struct bw_native_response *raw){
+    static const char *const allowed[]={
+        "Registration ownership could not be released reliably. No startup files were sent; resolve the retained operation before retrying.",
+        "Blackwire registration ownership could not be verified. No startup files were sent; keep existing copies and refresh status.",
+        "Registration cleanup is pending or needs attention; Send will not repeat it. No startup files were sent.",
+        "Another Blackwire copy already owns this title. Uninstall that copy before switching sources. No startup files were sent."
+    };
+    struct send_refusal parsed={0};
+    if(!raw||!raw->bytes||!raw->size||raw->size>512||
+       bw_document_fields(raw->bytes,raw->size,send_refusal_field,&parsed)||parsed.seen!=1)return NULL;
+    for(size_t i=0;i<sizeof allowed/sizeof allowed[0];i++)if(!strcmp(parsed.error,allowed[i]))return allowed[i];
+    return NULL;
+}
+static int dispatch_with_refusal(void *opaque,const struct bd_item *item,enum bd_action action,const char *nonce,const char **refusal) {
+    struct bd_dashboard_service *s=opaque;if(refusal)*refusal=NULL;
     if(!s->reserved||strcmp(nonce,s->intent.nonce)||
        (action==BD_SEND?(source_checks_allowed(s)||preparation_dispatch_idle(s)):full_idle(s))||selected_current(s,item)||
        (action==BD_SEND&&preparation_dispatch_idle(s)))return 0;
@@ -450,11 +562,15 @@ static int dispatch(void *opaque,const struct bd_item *item,enum bd_action actio
         raw.status>=400&&raw.status<500?0:-1;
     if(result==1&&removal_action(action)&&strcmp(accepted.id,nonce))result=-1;
     if(result==1)memcpy(s->backend_id,accepted.id,sizeof s->backend_id);
+    if(!rc&&result==0&&action==BD_SEND&&raw.status==409&&refusal)*refusal=send_refusal_message(&raw);
     bw_native_response_clear(&raw);
     /* Native202 transfers ownership to the unchanged retained worker. Release
      * this separate reservation only after that known acceptance. */
     if(result==1&&!removal_action(action)&&release(s))return -1;
     return result;
+}
+static int dispatch(void *opaque,const struct bd_item *item,enum bd_action action,const char *nonce){
+    return dispatch_with_refusal(opaque,item,action,nonce,NULL);
 }
 static struct bd_intent_ops intent_ops(struct bd_dashboard_service *s) {
     return (struct bd_intent_ops){s,intent_clock,expected_frontend,full_idle,selected_current,dispatch};
@@ -742,7 +858,8 @@ static int action(struct bd_dashboard_service *s,const void *raw,size_t size,con
     int present=bd_frontend_get(&s->frontend,&frontend)?0:frontend_current(s);
     if(present<0)return text(out,409,"The native frontend lifecycle is uncertain.");
     if(selected==BD_SEND){
-        if(preparation_begin(s,present,&frontend))return text(out,409,"The exact frontend or preparation idle authority could not be retained.");
+        struct preparation_failure failure={0};
+        if(preparation_begin(s,present,&frontend,&failure))return preparation_refused(s,&failure,out);
         candidate.phase=BD_INTENT_DISPATCHING;candidate.action=BD_SEND;candidate.selected=item;candidate.frontend=frontend;memcpy(candidate.nonce,nonce,33);
     }else if(present==1){
         struct bd_intent_request request={r.id,r.generation,(enum bd_source_kind)r.kind,selected};
@@ -768,11 +885,11 @@ static int action(struct bd_dashboard_service *s,const void *raw,size_t size,con
         s->intent.phase=BD_INTENT_REFUSED;message(s,"refused","The frontend state changed before dispatch.");
         if(!release(s))s->active=0;return text(out,409,s->message);
     }
-    s->intent.dispatch_calls=1;int result=dispatch(s,&item,selected,nonce);
+    const char *refusal=NULL;s->intent.dispatch_calls=1;int result=dispatch_with_refusal(s,&item,selected,nonce,&refusal);
     s->intent.phase=result==1?BD_INTENT_ACCEPTED:result==0?BD_INTENT_REFUSED:BD_INTENT_UNKNOWN;
     message(s,result==1?"accepted":result==0?"refused":"unknown",result==1?
         "The selected operation was accepted. Menu and gameplay are separate observations.":result==0?
-        "The selected operation was refused before a known acceptance.":"The operation outcome is uncertain. Ownership is retained; it will not be replayed.");
+        (refusal?refusal:"The selected operation was refused before a known acceptance."):"The operation outcome is uncertain. Ownership is retained; it will not be replayed.");
     if(result==0){if(!release(s)){
             struct bd_frontend_preparation *pin=s->preparation_pin;s->preparation_pin=NULL;
             if(bd_frontend_preparation_close(pin)){message(s,"unknown","The refused preparation witness close is uncertain.");s->intent.phase=BD_INTENT_UNKNOWN;}

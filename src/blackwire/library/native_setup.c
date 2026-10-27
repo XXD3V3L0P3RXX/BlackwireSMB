@@ -144,7 +144,28 @@ done:
     if(lock>=0)close(lock);if(root>=0&&close(root)&&saved->published)result=BW_SETUP_SAVE_UNCONFIRMED;
     if(result!=BW_SETUP_SAVE_OK)saved->verified=0;return result;
 }
-int bw_native_setup_idle(void *opaque){(void)opaque;return v2_games_stopped("/data/shadowmount/debug.log");}
+int bw_native_setup_idle_observe(void *opaque,struct bw_setup_idle_observation *out){
+    (void)opaque;struct v2_idle_observation observed={0};
+    int result=v2_games_stopped_observe("/data/shadowmount/debug.log",&observed);
+    if(out){
+        struct bw_setup_idle_observation mapped={.reason=BW_SETUP_IDLE_UNOBSERVED,
+            .error=observed.error,.error_valid=observed.error_valid,.close_failed=observed.close_failed};
+        switch(observed.reason){
+            case V2_IDLE_UNOBSERVED:mapped.reason=BW_SETUP_IDLE_UNOBSERVED;break;
+            case V2_IDLE_STOPPED:mapped.reason=BW_SETUP_IDLE_STOPPED;break;
+            case V2_IDLE_LOG_OPEN:mapped.reason=BW_SETUP_IDLE_LOG_OPEN;break;
+            case V2_IDLE_LOG_READ:mapped.reason=BW_SETUP_IDLE_LOG_READ;break;
+            case V2_IDLE_LOG_INCOMPLETE:mapped.reason=BW_SETUP_IDLE_LOG_INCOMPLETE;break;
+            case V2_IDLE_LOG_RECORD:mapped.reason=BW_SETUP_IDLE_LOG_RECORD;break;
+            case V2_IDLE_LOG_CAPACITY:mapped.reason=BW_SETUP_IDLE_LOG_CAPACITY;break;
+            case V2_IDLE_LOG_CLOSE:mapped.reason=BW_SETUP_IDLE_LOG_CLOSE;break;
+            case V2_IDLE_UNMATCHED_START:mapped.reason=BW_SETUP_IDLE_UNMATCHED_START;break;
+        }
+        *out=mapped;
+    }
+    return result;
+}
+int bw_native_setup_idle(void *opaque){return bw_native_setup_idle_observe(opaque,NULL);}
 int bw_native_setup_nonce(char out[33]){
     unsigned char bytes[16];arc4random_buf(bytes,sizeof bytes);unsigned nonzero=0;
     for(unsigned i=0;i<sizeof bytes;i++){nonzero|=bytes[i];snprintf(out+2*i,3,"%02x",bytes[i]);}bw_native_sensitive_clear(bytes,sizeof bytes);

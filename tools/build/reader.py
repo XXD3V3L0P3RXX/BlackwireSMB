@@ -188,6 +188,8 @@ def host_tests(root, out, source, runner):
                 "--output", checked], "host-projection-contract")
     results["projection_contract"] = json.loads((checked / "proof.json").read_text())
     for key, script, extra in (
+            ("preparation_admission", "dashboard/service/check_preparation_admission.py", []),
+            ("owner_refusal_service", "dashboard/lifecycle/check_owner_refusal_service.py", []),
             ("source_namespace", "compressed/check_namespace.py", []),
             ("source_companions", "dashboard/lifecycle/check_source_companions.py", ["--host-only"]),
             ("reader_projection", "reader/check_reader_projection.py", []),

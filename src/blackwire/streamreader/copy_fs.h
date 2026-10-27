@@ -140,13 +140,35 @@ static inline int v2_read_all(int fd,void *bytes,size_t length) {
 
 /* Unknown/unreadable lifecycle state is an error. An old PID exit must not
  * clear a newer same-title process. No process or game memory is inspected. */
-static inline int v2_games_stopped(const char *path) {
+enum v2_idle_reason {
+  V2_IDLE_UNOBSERVED, V2_IDLE_STOPPED, V2_IDLE_LOG_OPEN, V2_IDLE_LOG_READ,
+  V2_IDLE_LOG_INCOMPLETE, V2_IDLE_LOG_RECORD, V2_IDLE_LOG_CAPACITY,
+  V2_IDLE_LOG_CLOSE, V2_IDLE_UNMATCHED_START
+};
+struct v2_idle_observation {
+  enum v2_idle_reason reason;
+  int error;
+  unsigned error_valid,close_failed;
+};
+static inline int v2_games_stopped_observe(const char *path,struct v2_idle_observation *out) {
   struct { char title[16]; int alive,pid; } games[128];
-  size_t count=0; FILE *fp=fopen(path,"r"); char line[1024]; int bad=0;
-  if (!fp) return v2_fail("Cannot verify that games are stopped");
+  struct v2_idle_observation observed={V2_IDLE_UNOBSERVED,0,0,0};
+  size_t count=0; char line[1024];
+  if (out) *out=observed;
+  errno=0; FILE *fp=fopen(path,"r"); int io_error=errno;
+  if (!fp) {
+    observed.reason=V2_IDLE_LOG_OPEN;observed.error=io_error;observed.error_valid=io_error!=0;
+    if (out) *out=observed;
+    return v2_fail("Cannot verify that games are stopped");
+  }
   memset(games,0,sizeof games);
-  while (fgets(line,sizeof line,fp)) {
-    if (!strchr(line,'\n') && !feof(fp)) { bad=1; break; }
+  for (;;) {
+    errno=0; char *got=fgets(line,sizeof line,fp);io_error=errno;
+    if (ferror(fp)) {
+      observed.reason=V2_IDLE_LOG_READ;observed.error=io_error;observed.error_valid=io_error!=0;break;
+    }
+    if (!got) break;
+    if (!strchr(line,'\n')) { observed.reason=V2_IDLE_LOG_INCOMPLETE;break; }
     char *at=NULL; int alive=0,pid=0;
     if ((at=strstr(line,"[GAME] started: PPSA"))) { at+=strlen("[GAME] started: "); alive=1; }
     else if ((at=strstr(line,"[GAME] process exited, awaiting same-app handoff: PPSA")))
@@ -155,22 +177,36 @@ static inline int v2_games_stopped(const char *path) {
       at+=strlen("[GAME] finalizing stopped application: ");
     else continue;
     char title[16]={0};
-    if (sscanf(at,"%15s pid=%d",title,&pid)!=2 || strlen(title)!=9 || strncmp(title,"PPSA",4) || pid<=0) { bad=1; break; }
-    for (size_t i=4;i<9;i++) if (title[i]<'0' || title[i]>'9') bad=1;
+    if (sscanf(at,"%15s pid=%d",title,&pid)!=2 || strlen(title)!=9 || strncmp(title,"PPSA",4) || pid<=0) {
+      observed.reason=V2_IDLE_LOG_RECORD;break;
+    }
+    for (size_t i=4;i<9;i++) if (title[i]<'0' || title[i]>'9') observed.reason=V2_IDLE_LOG_RECORD;
+    if (observed.reason!=V2_IDLE_UNOBSERVED) break;
     size_t i=0; for (;i<count;i++) if (!strcmp(games[i].title,title)) break;
     if (i==count) {
-      if (count==sizeof games/sizeof games[0]) { bad=1; break; }
-      memcpy(games[i].title,title,sizeof title); count++;
+      if (count==sizeof games/sizeof games[0]) { observed.reason=V2_IDLE_LOG_CAPACITY;break; }
+      memcpy(games[i].title,title,sizeof title);count++;
     }
-    if (alive) { games[i].pid=pid; games[i].alive=1; }
+    if (alive) { games[i].pid=pid;games[i].alive=1; }
     else if (games[i].pid==pid) games[i].alive=0;
   }
-  if (ferror(fp)) bad=1;
-  fclose(fp);
-  if (bad) return v2_fail("Game state log is incomplete or unsupported");
-  for (size_t i=0;i<count;i++) if (games[i].alive) return v2_fail("Close running games before preparing files");
-  return 0;
+  if (observed.reason==V2_IDLE_UNOBSERVED) {
+    observed.reason=V2_IDLE_STOPPED;
+    for (size_t i=0;i<count;i++) if (games[i].alive) { observed.reason=V2_IDLE_UNMATCHED_START;break; }
+  }
+  errno=0; int close_result=fclose(fp);io_error=errno;
+  if (close_result) {
+    observed.close_failed=1;
+    if (observed.reason==V2_IDLE_STOPPED) {
+      observed.reason=V2_IDLE_LOG_CLOSE;observed.error=io_error;observed.error_valid=io_error!=0;
+    }
+  }
+  if (out) *out=observed;
+  if (observed.reason==V2_IDLE_STOPPED) return 0;
+  if (observed.reason==V2_IDLE_UNMATCHED_START) return v2_fail("Close running games before preparing files");
+  return v2_fail("Game state log is incomplete or unsupported");
 }
+static inline int v2_games_stopped(const char *path) { return v2_games_stopped_observe(path,NULL); }
 static inline int v2_root_current(const struct prepare_v2 *cfg,int rootfd) {
   char resolved[PATH_MAX]; struct stat path_st,fd_st;
   return realpath(cfg->root,resolved) && !strcmp(resolved,cfg->root) &&
