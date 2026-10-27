@@ -118,8 +118,8 @@
       "sha256": "1cfb44add29f594b5058642357d7595381014f696bcacc3cca4c00b85f215b99"
     },
     "src/blackwire/desk/index.html": {
-      "bytes": 153074,
-      "sha256": "dacabfd845099612e1db376715ba1424895731f286defdfa6246ca3df3a69fe6"
+      "bytes": 153906,
+      "sha256": "91e4a0bfdcbe46e88326bee74571f0883e45525666b7e70010ce2a1935aa7fd0"
     },
     "src/blackwire/desk/tests/browser_handoff_harness.js": {
       "bytes": 12691,
@@ -134,8 +134,8 @@
       "sha256": "e4a8b01878be6e05ea861e44d2cead34afe57c4c8528273444531045846e86a0"
     },
     "src/blackwire/desk/tests/preparation_dom_harness.js": {
-      "bytes": 14179,
-      "sha256": "071cac2e072a6496e71a71f7e716e69662653c99df6fbc682163e2e923de54c7"
+      "bytes": 18734,
+      "sha256": "8e588a7120223070da20fb55de1f268c78c47017549bfac9a692e1296df42f58"
     },
     "src/blackwire/desk/tests/preview_fixture.py": {
       "bytes": 16071,
@@ -1980,8 +1980,8 @@
       "sha256": "6682384779acedcef9301f7873944a2daa5089f0ba1f3db0f99cb865e627e946"
     },
     "tests/diagnostics/test_settings_check_failure.js": {
-      "bytes": 1226,
-      "sha256": "986c0cc2ceda743dea89ab509b241a0019bd2512f2c3185289f9e381f79e30d2"
+      "bytes": 4826,
+      "sha256": "778db2ad77ca45efa9fb584b15314f979bbfa0e53c87035c3ac7c2e2b1d56d71"
     },
     "tests/diagnostics/test_settings_restart.js": {
       "bytes": 1855,
