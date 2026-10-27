@@ -6,7 +6,7 @@ The current published beta fixes saved settings appearing blank during startup a
 
 ## Unreleased verification
 
-The latest local source adds image-access errors, source-companion preservation, strict preparation-only removal, retained-library reload repairs and reduced duplicate preparation checks. Its normal build passed 54 host suites, 62 host commands and 146 SDK commands, with private diagnostics excluded. Its first normal Payload Manager launch did not yield an available Blackwire page; the console state and cause are unconfirmed. No game was prepared with that candidate. It remains held for console verification and a measured speed comparison; see the [exact record](TESTING.md#unreleased-image-access-and-metadata-reads). Published downloads have not changed.
+The current local exact-removal repair passed 59 host suites, 67 host commands, 146 normal SDK commands and 61 packaged-input checks, with private diagnostics excluded. Clean Payload Manager tests passed extracted and compressed Alan Wake 2 preparation, safe duplicate-source refusal, three complete normal uninstalls, Restore and a repeat Send. Normal Play/Close produced the expected game process, but the visible screen and gameplay were not verified. The test resident, canonical payload, preparations and Blackwire data root are removed. Preparation took longer than the earlier measured candidate, so the build remains held while that cost is investigated. Recovery from an actual hardware Unknown and gameplay are still unqualified. See the [exact record and limitations](TESTING.md#unreleased-exact-removal-recovery). Published downloads have not changed.
 
 ## Previous preview baseline
 
