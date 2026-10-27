@@ -710,8 +710,8 @@
       "sha256": "e781a7f7740576a6102ab2c15dc70dc29e9191e6c4d403da934dbf578c3a1f7d"
     },
     "src/blackwire/library/registration_db.c": {
-      "bytes": 12357,
-      "sha256": "83d907bdd7566e5357bf092b9118d2e31fe9994e43f4afba10dec15e75027b89"
+      "bytes": 12598,
+      "sha256": "7ddedfa4465f39c1034545902497d25aa6f57d78ad73e3463de2f030d5e65acb"
     },
     "src/blackwire/library/registration_param_compat.h": {
       "bytes": 758,
@@ -1620,8 +1620,8 @@
       "sha256": "8208f53044258b1cb31ff81a13ea8869ac12cd06e089328e66b12ee3b5c1202c"
     },
     "tests/dashboard/lifecycle/check_registration_observation.py": {
-      "bytes": 8259,
-      "sha256": "d280cf5460db01fe8778922f3e9c341c80f92e6adb516b2cf69b9c7de9e72255"
+      "bytes": 8767,
+      "sha256": "1526bfc8bc6461f5e562914ffba8a92efcc6adb690677eaba6b9b5487a395947"
     },
     "tests/dashboard/lifecycle/check_registration_observer.py": {
       "bytes": 4045,
@@ -1860,8 +1860,8 @@
       "sha256": "7f0fee1b0102e9db64cdafd2a6ded71a20d4115804c2c148eba9285f1825272e"
     },
     "tests/dashboard/lifecycle/test_registration_observation.c": {
-      "bytes": 10630,
-      "sha256": "57cf814cbef1c2129032613b7d2b153334dd06cc4324147822b8341444215f96"
+      "bytes": 12248,
+      "sha256": "9ea887f40c9ad928527edbff0e664f11e6527860bf7edc63de8c00747cdd5b6a"
     },
     "tests/dashboard/lifecycle/test_registration_observer.c": {
       "bytes": 5550,
@@ -2132,5 +2132,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "efe3f6b62473b31469c61278f6860262c00161e1"
+  "runtimeSourceCommit": "ee8cb6d92abb2169699ea7f15b195723086e0add"
 }
