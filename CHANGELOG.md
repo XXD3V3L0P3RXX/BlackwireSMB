@@ -4,6 +4,8 @@ Changes are grouped by published preview. A build pass, initial menu and control
 
 ## Unreleased — verification in progress
 
+- Keep the username draft during an accepted connection check. Correcting a failed secondary-share check can reuse the saved sign-in for the same PC and account; passwords still clear, and changing the PC or account still prevents reuse.
+- Keep inactive, completed Send history from blocking Play after a library refresh when the exact current catalog entry allows launch. Historical byte-verification flags remain unchanged; startup files are checked again before launch.
 - Reduce duplicate preparation checks inside each native LOCAL write attempt. Every write and retry still refreshes the full current-operation authority and checks its held parent after callbacks; staged copying, source checks, hashes, readback and synchronization remain. Host callback counts are lower; a PS5 elapsed-time improvement is not yet established.
 - Preserve a validated compressed preparation when reloading or refreshing the library. Keep the sealed projection on its current inspection path instead of sending it through a legacy-only hint; reloading metadata still does not grant verified startup bytes or launch authority.
 - Preserve an independently detected upgrade requirement on an older compressed preparation when the legacy hint reports no additional change.

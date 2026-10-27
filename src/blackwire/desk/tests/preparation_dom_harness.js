@@ -125,6 +125,59 @@ async function check() {
   const blockedSend=button(waiting,'Preserved Game','Preparing…');assert(blockedSend.disabled);blockedSend.click();
   waiting.get('preparationRefresh').click();await settle();assert.strictEqual(waiting.postCount(),0);
   assert.strictEqual(waiting.get('preparationStatus').getAttribute('data-state'),'unknown');assert(waiting.get('saveSetup').disabled);
+  // Refresh may clear the completed job's byte-verification bit without
+  // revoking the fresh exact catalog item's Play capability. That terminal
+  // history must not become a second global preparation lock.
+  const refreshed=fixture('done');refreshed.operation.preparation.ready=false;
+  const refreshedPage=createPage([rawState(),rawState()],'5918','',[refreshed,clone(refreshed)]);await settle();choose(refreshedPage,'Preserved Game');
+  assert.strictEqual(refreshedPage.get('preparationStatus').getAttribute('data-state'),'ready');
+  assert(!refreshedPage.get('heroPrimary').disabled);assert(!refreshedPage.get('saveSetup').disabled);
+  assert(refreshedPage.get('preparationDetail').textContent.includes('checked again before launch'));
+  assert(!refreshedPage.get('preparationDetail').textContent.includes('files are verified'));
+  assert.strictEqual(refreshed.operation.preparation.ready,false,'UI must not promote the historical verification bit');
+  assert.strictEqual(refreshedPage.postCount(),0,'Fresh capability must not start or repeat an action');
+  refreshedPage.replies.push({status:202,body:{ok:true,accepted:true,id:'2'.repeat(32),phase:'accepted',message:'Starting.',action:'play',exitRequested:false}});
+  refreshedPage.get('heroPrimary').click();await settle();assert.strictEqual(refreshedPage.postCount(),1);
+  const refreshedRequest=JSON.parse(refreshedPage.calls.find(call=>call.url==='/api/dashboard/action').options.body);
+  assert.deepStrictEqual(refreshedRequest,{id:pcId,kind:1,action:'play',catalogGeneration:refreshed.catalogGeneration});
+  // Only this complete, stopped and exact case is reconciled. Pending,
+  // unknown, malformed or differently bound history remains guarded.
+  const blockedCases=[
+    c=>{c.operation.active=true;c.operation.phase='running';},
+    c=>{c.operation.phase='unknown';},
+    c=>{c.operation.phase='accepted';},
+    c=>{c.operation.preparation.jobId='';},
+    c=>{c.operation.preparation.phase=7;},
+    c=>{c.operation.preparation.files--;},
+    c=>{c.operation.preparation.bytes--;},
+    c=>{c.operation.preparation.files=c.operation.preparation.filesTotal=0;},
+    c=>{c.operation.preparation.bytes=c.operation.preparation.bytesTotal=0;},
+    c=>{Object.assign(c.operation.preparation,{files:0,filesTotal:0,bytes:0,bytesTotal:0});},
+    c=>{c.operation.itemId=otherId;},
+    c=>{c.items[0].canPlay=false;},
+    c=>{Object.assign(c.items[0],{startupReady:false,canPlay:false,canSend:true});}
+  ];
+  for(const [index,change]of blockedCases.entries()){
+    const guarded=clone(refreshed);change(guarded);
+    const guardedPage=createPage([rawState()],'5918','',[guarded]);await settle();choose(guardedPage,'Preserved Game');
+    assert(guardedPage.get('heroPrimary').disabled,'Terminal catalog reconciliation escaped guard '+index);
+    guardedPage.get('heroPrimary').click();assert.strictEqual(guardedPage.postCount(),0);
+  }
+  const failedHistory=clone(refreshed);failedHistory.operation.preparation.jobState='error';
+  const failedHistoryPage=createPage([rawState()],'5918','',[failedHistory]);await settle();
+  assert.strictEqual(failedHistoryPage.get('preparationStatus').getAttribute('data-state'),'error');
+  assert.strictEqual(failedHistoryPage.postCount(),0,'Existing failure display must not retry an action');
+  const removedHistory=clone(refreshed);Object.assign(removedHistory.items[0],{startupReady:false,canPlay:false,canSend:false,removed:true,canUninstall:false,canRestore:true});
+  const removedHistoryPage=createPage([rawState()],'5918','',[removedHistory]);await settle();removedHistoryPage.get('filter-removed').click();choose(removedHistoryPage,'Preserved Game');
+  assert(removedHistoryPage.get('heroPrimary').disabled);assert.strictEqual(removedHistoryPage.postCount(),0);
+  const malformedHistory=clone(refreshed);malformedHistory.operation.preparation.ready='false';
+  const malformedHistoryPage=createPage([rawState()],'5918','',[malformedHistory]);await settle();
+  assert(malformedHistoryPage.get('heroPrimary').disabled);assert(malformedHistoryPage.get('saveSetup').disabled);
+  assert.strictEqual(malformedHistoryPage.postCount(),0);
+  const revoked=createPage([rawState(),rawState()],'5918','',[clone(refreshed),clone(unresolved)]);await settle();choose(revoked,'Preserved Game');
+  assert(!revoked.get('heroPrimary').disabled);await revoked.poll();
+  assert(revoked.get('heroPrimary').disabled,'A later capability revocation must immediately remove Play');
+  assert.strictEqual(revoked.postCount(),0);
   // A terminal Play failure supersedes old completed Send history. Dismissing
   // its compact notice survives polling, but never hides uncertain active work.
   const launchFailed=fixture('done');

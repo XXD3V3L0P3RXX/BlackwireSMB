@@ -428,7 +428,16 @@
           }
           uncertain=!!state.dashboardUnavailable;
         }
-        var observed=progress && progress.observed, ready=observed && progress.ready && !!item && item.startupReady === true;
+        var observed=progress && progress.observed;
+        // A refresh can retire byte verification in historical job progress.
+        // The current exact catalog still owns whether a new Play is offered.
+        var currentCatalogReady=!!(op && op.action === "send" && op.phase === "stopped" && op.active === false
+          && observed && progress.jobState === "done" && nonce(progress.jobId) && progress.phase === 12
+          && progress.filesTotal > 0 && progress.bytesTotal > 0
+          && progress.files === progress.filesTotal && progress.bytes === progress.bytesTotal
+          && item && item.id === op.itemId && item.kind === 1 && item.removed !== true
+          && item.startupReady === true && item.canPlay === true);
+        var ready=!!item && item.startupReady === true && (observed && progress.ready || currentCatalogReady);
         var homeSetupNeeded=ready && libraryGames(state).some(function (game) {return game.dashboardId === itemId && game.dashboardLaunchReady === false;});
         failed=failed || observed && progress.jobState === "error";
         var status=uncertain ? "unknown" : failed ? "error" : homeSetupNeeded ? "setup-needed" : ready ? "ready" : !busy && observed && progress.jobState === "done" ? "unknown" : "preparing";
@@ -445,7 +454,8 @@
         }
         if(status === "ready") {
           var dashboardReady=libraryGames(state).some(function (game) {return game.dashboardId === itemId && game.dashboardLaunchReady === true;});
-          message=dashboardReady ? "Startup files are verified. Choose Play here or the game’s PS5 dashboard icon." : "Startup files are verified. Choose Play when you’re ready.";percent=100;
+          message=currentCatalogReady && !progress.ready ? "The current library allows Play. Startup files will be checked again before launch."
+            : dashboardReady ? "Startup files are verified. Choose Play here or the game’s PS5 dashboard icon." : "Startup files are verified. Choose Play when you’re ready.";percent=100;
         }
         else if(status === "setup-needed") {message="Startup files are kept. Choose Finish setup and play for this game; no files need to be sent again.";percent=100;}
         else if(status === "unknown") {message=state.dashboardUnavailable || message || "The existing operation needs a fresh status check. No request was repeated.";percent=null;}
@@ -1814,7 +1824,6 @@
           if(result.pending) {nativeSaveOperation=result.operation;settingsDirty=true;}
           else settingsDirty = false;
           smbPassword.value = "";
-          smbUser.value = "";
           notice = { text:result.message || "Settings saved. Connection checks updated." };
         }).catch(function (error) {
           nativeSaveOperation=0;
