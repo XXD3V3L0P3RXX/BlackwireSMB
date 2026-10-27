@@ -1,6 +1,6 @@
 # Blackwire roadmap
 
-`v0.2.0-preview.1` adds supported PFS/PFSC compressed sources, two shares, compressed artwork, library refresh and PS5 control repairs. Earlier compressed testing reached GTA and RE7 gameplay; current combined-reader tests reached both initial menus. Circle is confirmed for the library and Details. See [testing](TESTING.md) and the [changelog](../CHANGELOG.md) for version-specific scope. Work below remains planned unless those records mark it verified.
+The published `v0.3.0-beta.2` adds settings recovery to beta.1's supported exFAT reader and self-contained installer. The earlier `v0.2.0-preview.1` introduced supported PFS/PFSC sources, two shares, compressed artwork, refresh and PS5 controls. Earlier gameplay and Circle checks remain attributed to their exact binaries. See [testing](TESTING.md) and the [changelog](../CHANGELOG.md) for version-specific scope. The current local candidate has passing full builds but no completed console preparation test; work below remains planned unless those records mark it verified.
 
 ## Standalone setup and reliability
 
@@ -8,7 +8,7 @@
 - Broaden fresh-install, missing-resident, normal-exit, Uninstall and crash/restart qualification.
 - Extend hardware checks for deleted-copy status and the updated ordinary Uninstall recovery.
 - Keep incomplete operations actionable without blind retries.
-- Remove the redundant Close browser button; retain the confirmed native Circle exit. Complete physical Settings/Help controller checks and add an interaction guard to initial history-event handling.
+- Qualify the unreleased Close browser button removal while retaining Circle and dialog Back controls. Complete physical Settings/Help controller checks and investigate initial history-event interactions against actual failures.
 - Publish reproducible source/build records, checksums, notices and relinking material alongside each preview.
 
 ## Loading and performance
@@ -24,7 +24,7 @@ The indexed 64 MiB payload cache, bounded PFSC batching and reduced unchanged-so
 - Record startup, menu and gameplay results for more owned extracted backups.
 - Investigate failures using actual source/read evidence and preserve unknown outcomes.
 - Extend the current combined-library reader's qualification through full gameplay, repeat Blackwire Play and Games-tab launches, missing-share handling and hardware Uninstall. Earlier-reader gameplay is recorded separately.
-- Add and independently test exFAT-based compressor output after the PFS/PFSC console path is qualified.
+- Broaden the already supported contiguous exFAT layout's format and console coverage; preserve explicit refusals for unsupported or changing images.
 
 ## Blackwire Dashboard
 

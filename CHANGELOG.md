@@ -24,7 +24,7 @@ Changes are grouped by published preview. A build pass, initial menu and control
 - Remove the top-right **Close browser** button. Preserve Circle and dialog Back controls.
 - Make startup tracing, launch timing and verbose setup logging explicit private diagnostic build options. Ordinary builds retain user-facing errors.
 
-These changes are not a published release. The source-companion preparation, bundle, reader handoff and DATA-read paths pass focused host tests. Final integrated validation and PS5 preparation, gameplay and loading-speed checks remain pending for this revision. Ordinary release builds keep private diagnostics disabled. These results do not establish firmware or title compatibility; see the [current qualification limits](docs/REQUIREMENTS.md).
+These changes are not a published release. The current normal candidate passed all 54 host suites, 62 host commands and 146 SDK commands with matching frozen source snapshots and private diagnostics excluded from the packaged ELF. Its first normal Payload Manager launch did not yield an available Blackwire page; the cause and console power state are unconfirmed, and no game preparation was submitted. Console preparation, retained refresh, gameplay and speed qualification remain pending. These results do not establish firmware or title compatibility; see [testing](docs/TESTING.md#unreleased-image-access-and-metadata-reads) and the [qualification limits](docs/REQUIREMENTS.md).
 
 ## v0.3.0-beta.2 — connection settings recovery
 

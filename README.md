@@ -18,7 +18,7 @@ This is a test beta. Earlier versions remain under **Previous releases and rollb
 
 **Verified firmware scope: the 13.00 family, process-layout profile `0x13000040`.** This is the only firmware profile covered by our console testing. Firmware 10.01 and other profiles are currently unverified. A matching ShadowMountPlus version alone does not establish firmware compatibility.
 
-Our latest recorded console setup is from **October 24, 2026**:
+The recorded reference environment is below; individual test dates and exact binaries are listed in [testing](docs/TESTING.md).
 
 | Component | Recorded setup |
 | --- | --- |
@@ -28,7 +28,7 @@ Our latest recorded console setup is from **October 24, 2026**:
 | ShadowMountPlus | Stock `1.7beta7`, used in the latest diagnostic retest |
 | ELF loader | elfldr `v0.27` in the latest captured payload inventory |
 | ShadowMount library scan depth | `scan_depth=2` |
-| Legacy external runtime files | The released preview was tested with the [five-file global pack](docs/REQUIREMENTS.md#external-shadowmount-libraries); the development installer removes that dependency. |
+| Legacy external runtime files | The current beta installs its embedded reader. The older v0.2.0 preview required the optional [five-file global pack](docs/REQUIREMENTS.md#external-shadowmount-libraries). |
 | Network | Wired Ethernet with an SMB share on an awake PC |
 
 Byepervisor Reborn is the hypervisor-exploit stage of a jailbreak chain; the reported name does not identify the initial entry point or its version. Blackwire requires a working jailbreak with Kstuff active before it is loaded.

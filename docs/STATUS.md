@@ -1,8 +1,12 @@
 # Preview status
 
-## v0.3.0-beta.1
+## Current published test beta — v0.3.0-beta.2
 
-The standalone test beta adds supported MkPFS exFAT images, removes the optional global-pack dependency at setup step 7, and includes bounded Send/setup logging. Use the [beta download and instructions](BETA-TESTING.md); the normal Payload Manager catalog stays on the older preview. Exact beta identities and observations are recorded in [testing](TESTING.md#v030-beta1). Native Dashboard remains a separate product.
+The current published beta fixes saved settings appearing blank during startup and a browser settings check left locked by a previous resident. It retains beta.1's supported MkPFS exFAT reader and self-contained step-7 installer, plus bounded diagnostics. The direct download and Payload Manager custom source offer the same beta.2 runtime. Use the [beta download and instructions](BETA-TESTING.md); exact identities and observations are recorded in [testing](TESTING.md#v030-beta2). Native Dashboard remains a separate product.
+
+## Unreleased verification
+
+The latest local source adds image-access errors, source-companion preservation, strict preparation-only removal, retained-library reload repairs and reduced duplicate preparation checks. Its normal build passed 54 host suites, 62 host commands and 146 SDK commands, with private diagnostics excluded. Its first normal Payload Manager launch did not yield an available Blackwire page; the console state and cause are unconfirmed. No game was prepared with that candidate. It remains held for console verification and a measured speed comparison; see the [exact record](TESTING.md#unreleased-image-access-and-metadata-reads). Published downloads have not changed.
 
 ## Previous preview baseline
 
@@ -21,7 +25,7 @@ The release preserves the exact tested `blackwire-two-sources-dev.11` runtime. T
 
 ## Known issues and next work
 
-- The extra Close browser button still stayed open on PS5. Use Circle. Removing the redundant button is the next UI change; it is not removed from this binary.
+- The published preview's extra Close browser button stayed open on PS5. Use Circle. The unreleased source removes that button; current-candidate hardware qualification is pending.
 - Circle in Settings/Help has offline coverage; the physical checks recorded here cover the library and Details.
 - `.ffpfsc` is not a universal format guarantee. Unsupported layouts are listed in [format scope](COMPRESSED-DEVELOPMENT.md#formats).
 - Both shares must use the same server and account. Moving a source changes its identity; Blackwire does not reconnect a different copy by title alone.

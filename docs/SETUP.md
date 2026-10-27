@@ -57,7 +57,7 @@ Use **Refresh library** beside the filters after adding, moving or removing PC s
 
 If Send files or Refresh is blocked by a running game, the page names that game, for example **Close Resident Evil 4 to send files**. Close it normally and allow session status to settle. A disabled action is not permission to resend or remove its preparation manually.
 
-The PS5 page shows controller hints; the PC page keeps keyboard hints. Circle was confirmed to close Details and, at the main library, return to the PS5 dashboard. The extra Close browser button does not work in the tested console browser; use Circle. It is scheduled for removal in the next build. A browser that retained development-9/10 history must be fully closed and reopened once; reloading the page alone does not clear those entries.
+The PS5 page shows controller hints; the PC page keeps keyboard hints. Circle was confirmed to close Details and, at the main library, return to the PS5 dashboard. The published build's extra Close browser button does not work in the tested console browser; use Circle. The unreleased source removes that button, with current-candidate hardware qualification still pending. A browser that retained development-9/10 history must be fully closed and reopened once; reloading the page alone does not clear those entries.
 
 ## Background payloads during testing
 
