@@ -286,8 +286,8 @@
       "sha256": "5b78f0592be110d2d3b451a245658f0de277b76a88ba5d745e026d7447703341"
     },
     "src/blackwire/library/main.c": {
-      "bytes": 41899,
-      "sha256": "f9f5a44fbe21184ff811a376c21add641632c9789c7f9cb6a5ad5d2514b125b7"
+      "bytes": 45569,
+      "sha256": "63ed8fd92a66af58c4f048a06a98d5fc918a4afa2a494cfd95ab91e7cf2dfcd9"
     },
     "src/blackwire/library/media_public_trial.c": {
       "bytes": 11482,
@@ -297,13 +297,17 @@
       "bytes": 2782,
       "sha256": "0f6c64dda1456217dd67226c84fcbaeac625c3d28db8244e9465399171e1a79f"
     },
+    "src/blackwire/library/media_startup.h": {
+      "bytes": 2620,
+      "sha256": "ac7f0a2027c4ebe51d40ebb91d4fe4e614035c58bc7a7e87808e2fd8516920a8"
+    },
     "src/blackwire/library/native_backend.c": {
-      "bytes": 167263,
-      "sha256": "cf3fa23fe0e7d4205ec2c505f566b600df3775c7a7f6a08d250b2028de496cd8"
+      "bytes": 167722,
+      "sha256": "2a2e44ce3a6c0ea5d1e7fa5b2c6b112da4f9bcfe2f9d554f24473060e0db2544"
     },
     "src/blackwire/library/native_backend.h": {
-      "bytes": 10474,
-      "sha256": "d52a0daf2da6e85a344345496d386724553ac023e64650375431d0aaee61b158"
+      "bytes": 10938,
+      "sha256": "d0b3c4dda1d94f76611b1743e1a8c4307df1aa4814af1f0a648a2f10f7aaf969"
     },
     "src/blackwire/library/native_backend_home.h": {
       "bytes": 36909,
@@ -1508,8 +1512,8 @@
       "sha256": "9278ef959714ee2f76d3bd5b0b324d1f4136dc62e0b673c8538f7eef7d4386d5"
     },
     "tests/dashboard/lifecycle/check_game_removal_backend.py": {
-      "bytes": 7590,
-      "sha256": "212624347d6cc75a9a57995cd567c9c9dae025306975517ba1f54738cec4bb03"
+      "bytes": 8426,
+      "sha256": "cd276959697f43995d8a35d9921f88db2b78e5030f347a29504256022a2de062"
     },
     "tests/dashboard/lifecycle/check_game_uninstall.py": {
       "bytes": 11885,
@@ -1554,6 +1558,14 @@
     "tests/dashboard/lifecycle/check_media_launcher.py": {
       "bytes": 4065,
       "sha256": "bcde67cdf496644664a7d19755ab90df71a0b2d4e329b20604e3c76ebb89400d"
+    },
+    "tests/dashboard/lifecycle/check_media_public_runtime.py": {
+      "bytes": 3425,
+      "sha256": "f1efbaf938ceb6d1e5b72047a5fd3297a254cce83c0513790e61cb24481d04ef"
+    },
+    "tests/dashboard/lifecycle/check_media_startup.py": {
+      "bytes": 3829,
+      "sha256": "9ccb1dfe416d75afb9cbd40cfa16ee61d229f7fa588e5a3943c56f49e1571892"
     },
     "tests/dashboard/lifecycle/check_native_local_copy.py": {
       "bytes": 13252,
@@ -1786,6 +1798,22 @@
     "tests/dashboard/lifecycle/test_media_launcher.c": {
       "bytes": 10058,
       "sha256": "82df444cf2f844e7e381272ab1b35f64c1520da7cfb7eb7741110f81329319ec"
+    },
+    "tests/dashboard/lifecycle/test_media_public_runtime.c": {
+      "bytes": 10276,
+      "sha256": "15992ab7fc6cd639c3cab42533ce1b0d2f05c5382c160344f0f3f28cc8a2a894"
+    },
+    "tests/dashboard/lifecycle/test_media_startup.c": {
+      "bytes": 3861,
+      "sha256": "6661d39f35c0647c16404e909120a21bd8d2062709a812728b14a3f8de317ad2"
+    },
+    "tests/dashboard/lifecycle/test_media_startup_backend.c": {
+      "bytes": 4228,
+      "sha256": "e659ac67f82a4d99ac6f93ae6b0c0f38f6168a3071e5e2d3eb92924a1d10eba3"
+    },
+    "tests/dashboard/lifecycle/test_media_startup_worker.c": {
+      "bytes": 7986,
+      "sha256": "794407630ccc92e902e39e3fefde19fed732b4e80ccf444d15f93a2d72443f8f"
     },
     "tests/dashboard/lifecycle/test_native_local_copy.c": {
       "bytes": 33757,
@@ -2166,7 +2194,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Unreleased startup ordering and callback-owner lifetime repair, retaining the bounded lifecycle tag search and exact-removal guards. Focused actual-C host checks passed 31 cases/411 checks plus 8 startup cases/318 checks; four unmount-refusal scenarios passed 12 cases/7184 checks. The startup discovery request now follows both guard attachments and precedes observer reservations; refused construction retains any callback owner whose release is unconfirmed. Post-unmount refusals distinguish registration-before-sources, source checks and registration-after-sources without skipping checks or repeating mutations. New full normal host/SDK, packaged-input and console qualification remain pending. Earlier private parser-only PS5 comparisons observed approximately 73% less copy-phase time on one compressed Alan Wake 2 workload; they do not qualify this new normal runtime, wire throughput or gameplay loading. A prior normal startup poweroff and an intermittent pre-platform-Uninstall confirmation failure remain unexplained; these repairs are not claimed as their cause or fix. The rejected unlocked-stdio shortcut and private instrumentation are excluded from this production change. Published downloads and version are unchanged; publication and Native Dashboard remain on hold.",
+  "developmentQualification": "Unreleased automatic Media shortcut startup using one detached worker after the existing browser-open call returns. Bounded preflight idle waiting preserves the existing reservation, application inventory, public SDK single-call and readback guards; no SMB configuration or manual setup action is required. Current-source ASan/UBSan host checks passed: coordinator16/416, actual main worker11/1697 with modeled backend/SDK effects, actual backend accessor8/476, and unchanged public registration core17/3156 with real POSIX/parser and modeled DB/SDK/clock; retained removal31/411 and resident startup8/318 also passed. A fresh normal packaged candidate is required before hardware testing. Actual automatic registration/Media visibility remain unverified. Previous startup-ordering, owner-lifetime and bounded-tag repairs are retained. Earlier reported shutdowns and intermittent Uninstall failure remain unexplained and are not claimed fixed by Media registration. Private tracing/timing/verbose setup instrumentation is excluded from normal builds. Public downloads/version and Native Dashboard publication remain on hold.",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -2176,5 +2204,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "96e0b5dce549f1cae7826e95946335ae007aa8b1"
+  "runtimeSourceCommit": "fb1e22973c4ef4dfd0fa857ab832fd45621a24ad"
 }

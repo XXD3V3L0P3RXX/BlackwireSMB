@@ -4,9 +4,11 @@ Stream PS5 games from an ordinary PC SMB share, with a smaller startup copy on t
 
 ## Development candidate — verification in progress
 
-The current unreleased source changes the initial library-discovery request to run after both service guards are attached and before the background observer reserves work. Failed startup construction also preserves callback owners whose release cannot be confirmed. Uninstall refusals now identify which registration or source check failed after unmount, while keeping all checks and the no-retry rule.
+The current unreleased source adds automatic Media shortcut setup after the normal ELF startup. The intended fresh-install flow is **load the stored `Blackwire.elf` in Payload Manager → automatic Media setup → configure SMB**. It does not require a PC command or previously saved SMB settings. Focused current-source host checks passed for this new automatic startup path. Actual automatic Media registration and visibility still require console verification; the earlier explicit Media setup result does not qualify them.
 
-Focused host checks passed; a new full normal build and console validation are still pending. Earlier private diagnostics observed approximately **73% less copy-phase time** for one compressed Alan Wake 2 source on the recorded 13.00-family console. That result does not qualify this startup repair, network throughput or gameplay loading. A prior normal-build poweroff and an intermittent Uninstall refusal remain unexplained; these changes are not claimed to fix either event.
+The source also changes initial library discovery to run after both service guards are attached and before the background observer reserves work. Failed startup construction preserves callback owners whose release cannot be confirmed. Uninstall refusals identify which registration or source check failed after unmount, while keeping all checks and the no-retry rule.
+
+Focused host checks passed; normal-candidate qualification and console validation remain in progress. Earlier private diagnostics observed approximately **73% less copy-phase time** for one compressed Alan Wake 2 source on the recorded 13.00-family console. That result does not qualify this startup repair, network throughput or gameplay loading. A prior normal-build poweroff and an intermittent Uninstall refusal remain unexplained; these changes are not claimed to fix either event.
 
 Publication remains on hold, and the download below is unchanged. The canonical runtime filename is `Blackwire.elf`; private startup, timing and verbose Send instrumentation must be excluded from a future release. See the [current checks and limits](docs/TESTING.md#unreleased-startup-ordering-and-owner-lifetime).
 
@@ -127,7 +129,7 @@ Load the ELF again after a console reboot. Fresh settings start blank. Previousl
 
 If Send files is blocked, read the message beside the selected game and close the named running game normally. Use **Refresh library** after changing the contents of a share. On PS5, press Circle to leave Details, then Circle at the main library to exit the browser. When upgrading from an older UI test build, fully close and reopen the browser once so its old navigation history is discarded; no console restart is required for that UI reset.
 
-The optional blue **Media** shortcut opens the running Blackwire page. Its authenticated, same-ELF setup action is qualified on the tested console, but automatic creation on a fresh startup is not integrated in this preview. See [optional Media shortcut setup](docs/SETUP.md#optional-media-shortcut-setup).
+In the development candidate, loading the stored ELF automatically checks and sets up the blue **Blackwire** Media shortcut before SMB configuration is needed. If setup is waiting for an idle console, close the running game normally and wait; do not reload another resident to force registration. The shortcut opens the running page and does not load an absent ELF. This new automatic flow is not yet console-qualified or included in the unchanged published beta. See [automatic Media setup](docs/SETUP.md#automatic-media-shortcut-setup).
 
 ## Preparation and storage
 

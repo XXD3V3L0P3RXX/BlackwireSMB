@@ -4,7 +4,7 @@ The published `v0.3.0-beta.2` adds settings recovery to beta.1's supported exFAT
 
 ## Standalone setup and reliability
 
-- Add automatic fresh-install Media setup using the qualified public SDK path, without requiring a PC connection or opening a browser. It is not integrated in this preview.
+- Qualify the development candidate's automatic fresh-install Media setup after a normal Payload Manager load, including missing SMB settings, an existing shortcut and busy/refused startup. Its guarded public-SDK path has earlier explicit-action evidence; the new automatic ordering has focused host checks and still needs normal-candidate and console qualification. No PC command is required by the intended installation flow.
 - Broaden fresh-install, missing-resident, normal-exit, Uninstall and crash/restart qualification.
 - Extend hardware checks for deleted-copy status and the updated ordinary Uninstall recovery.
 - Keep incomplete operations actionable without blind retries.

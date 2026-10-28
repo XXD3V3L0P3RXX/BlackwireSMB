@@ -4,6 +4,7 @@ Changes are grouped by published preview. A build pass, initial menu and control
 
 ## Unreleased â€” verification in progress
 
+- Schedule automatic Media shortcut setup once after the ordinary ELF startup, without requiring SMB configuration, a PC command or a separate helper. One worker waits for confirmed idle status within a bounded startup window, then reuses the guarded public-SDK setup and readback; an existing registered shortcut skips installation. Focused current-source host regressions passed; automatic registration and Media visibility await console verification. The earlier explicit setup proof is separate.
 - Request initial discovery only after both service guards are attached and before background registration observations. Retain the generic constructor behavior and make no automatic retry of a refused startup request.
 - Preserve a failed constructor's callback owner and remaining dependencies when their release cannot be confirmed, instead of freeing storage that installed callbacks may still use.
 - Distinguish the three post-unmount refusal domains: registration before source checks, source checks, and registration after source checks. Keep the same checks, ordering and platform-mutation limits; no automatic Uninstall retry is added.

@@ -4,6 +4,12 @@ This record distinguishes copied files, a running game process, a visible menu, 
 
 No title-specific compatibility blocker has been identified in testing so far. The limited coverage below does not establish that every title or every stage of a title will work.
 
+## Unreleased automatic Media startup
+
+The newest development candidate schedules one automatic Media setup worker after the ordinary browser-open step returns. It can start without saved SMB settings, waits for confirmed idle status within a 90-second window and reuses the existing asset, application-inventory, public-SDK and registration-readback checks. An existing registered Blackwire shortcut skips installation; an uncertain result is not automatically replayed. This makes **Payload Manager load → automatic Media setup → SMB configuration** the intended fresh-install flow, without a PC command or separate helper.
+
+Focused current-source host checks passed with ASan/UBSan: coordinator 16 cases/416 checks; actual main worker 11/1,697 with backend/SDK effects modeled; actual backend token accessor 8/476; and unchanged public registration core 17/3,156 with real POSIX inventory and JSON parsing but modeled database rows, SDK calls and clock. Existing actual removal authority checks (31/411) and resident startup checks (8/318) also passed. These are host results. A normal packaged build must pass before console testing, and actual automatic registration and Media visibility remain unverified. Required console observations include fresh setup without SMB credentials, an existing shortcut without another SDK installation, busy startup waiting/refusal and reported terminal status. The earlier authenticated manual-action success below qualifies only that older explicit path. Published downloads are unchanged, publication remains on hold, and no earlier shutdown or Uninstall failure is claimed repaired by automatic registration.
+
 ## Unreleased startup ordering and owner lifetime
 
 The latest source requests initial library discovery from the startup resident after both service guards are attached and before its background registration observer can reserve work. Generic constructors retain their previous behavior, and a refused startup request is not automatically retried. Failed construction now retains the callback owner and remaining dependencies if any release cannot be confirmed. These changes address the reproduced startup-ordering and lifetime contracts without relaxing preparation or ownership checks.
@@ -255,7 +261,7 @@ The environment used profile `0x13000040`, stock ShadowMountPlus `1.7-beta5fix1`
 | RE7 direct Games-icon launch | The resident adopted the session and delivered startup inputs. A visible menu or gameplay result for this run is not yet confirmed. |
 | Blackwire blue Media entry | The explicit same-ELF public SDK action returned status 0, its row was observed repeatedly, and its reservation was released. The user confirmed the blue entry opened the Blackwire page. |
 | Media SDK scope | The verified mode was `public_batch`. It added Blackwire's title row and refreshed time/JSON metadata on 20 existing content rows. This was not a title-only SDK call. |
-| Automatic fresh Media setup | Not integrated. The preview provides an [explicit authenticated action](SETUP.md#optional-media-shortcut-setup). |
+| Automatic fresh Media setup | Not integrated in this tested preview. Its explicit-action result does not qualify the newer [automatic startup candidate](#unreleased-automatic-media-startup). |
 
 Routine resident status does not expose a game-to-controller data witness for every reader path. Its unavailable counters must not be reported as zero; the independent Hot Wheels observation above is separate evidence.
 
@@ -273,7 +279,7 @@ There is no universal speed claim. This preview does not establish compatibility
 
 ## Release verification
 
-Keep exact source, build, dependency, binary and reader identities with each release. Offline host checks and compiler checks are separate from hardware observations. Before extending qualification, exercise fresh settings, Send, Ready, direct game-icon launch, normal exit, repeat launch, optional Media setup, and exact streamed-copy Uninstall while confirming originals and saves remain intact. Missing-resident behavior and crash recovery still need broader qualification.
+Keep exact source, build, dependency, binary and reader identities with each release. Offline host checks and compiler checks are separate from hardware observations. Before extending qualification, exercise automatic Media setup after a normal Payload Manager load, fresh settings, Send, Ready, direct game-icon launch, normal exit, repeat launch and exact streamed-copy Uninstall while confirming originals and saves remain intact. Missing-resident behavior and crash recovery still need broader qualification.
 
 Public reports should contain redacted summaries and synthetic reproductions, not game assets, raw captures, credentials or personal console/PC details. See [contributing](../CONTRIBUTING.md) and [security reporting](../SECURITY.md).
 

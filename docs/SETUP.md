@@ -2,7 +2,7 @@
 
 The ordinary flow is **Send files → Ready → PS5 Games icon**. Keep the Blackwire resident running and the PC share online throughout play. Use the [tested runtime](REQUIREMENTS.md), and check the [preview's results and limits](TESTING.md).
 
-The current test build is **v0.3.0-beta.2**. Both the direct download and the Payload Manager custom source offer that same runtime. It accepts extracted folders, the supported PFS/PFSC layouts and the documented contiguous exFAT images. Read the [PFS/PFSC limits](COMPRESSED-DEVELOPMENT.md#formats) and [exFAT scope](EXFAT-DEVELOPMENT.md#admitted-layout); a `.ffpfsc` suffix alone is insufficient.
+The current published test build is **v0.3.0-beta.2**. Both the direct download and the Payload Manager custom source offer that same runtime. The unreleased development candidate adds **Payload Manager load → automatic Media setup → SMB configuration** for a fresh install. Focused current-source host checks passed for that automatic path; it remains unverified on the console and is not included in the published download. Supported sources remain extracted folders, the documented PFS/PFSC layouts and contiguous exFAT images. Read the [PFS/PFSC limits](COMPRESSED-DEVELOPMENT.md#formats) and [exFAT scope](EXFAT-DEVELOPMENT.md#admitted-layout); a `.ffpfsc` suffix alone is insufficient.
 
 ## Windows shared folder
 
@@ -41,9 +41,10 @@ Each copy retains its own share, path and preparation identity. Equal titles in 
 
 1. Check the [tested firmware and runtime versions](../README.md#tested-environment) and whether your ELF has the [released-preview dependency or development repair](REQUIREMENTS.md#external-shadowmount-libraries), before preparing a game. Start the working jailbreak chain with Kstuff and compatible stock ShadowMountPlus active. Only the 13.00-family profile `0x13000040` is console-qualified; 10.01 and other firmware profiles are unverified.
 2. Stop the old resident first and load only one. Upload the chosen verified ELF through Payload Manager, using the canonical stored name **`Blackwire.elf`**, then launch that stored card. The published beta direct download is named `Blackwire-Beta.elf`; save it as `Blackwire.elf` before uploading. Confirm `http://<PS5-address>:5918/health` matches the selected build; the published beta reports `blackwire-v0.3.0-beta.2`. The unpublished development candidate is identified separately in [testing](TESTING.md#october-27-final-publication-candidate). Repeat the normal Payload Manager load after reboot.
-3. Open `http://<PS5-address>:5918/` in a LAN browser. The console page is `http://127.0.0.1:5918/`.
-4. Configure the share and let library discovery finish. Choose a game, select **Send files**, and wait for that named job to finish with Ready status.
-5. Open the game's ordinary icon in the PS5 **Games** area, or use web **Play**. Blackwire handles that game's startup handoff and tracks the session.
+3. In the development candidate, let automatic Media setup finish. It checks the existing shortcut or registers the blue **Blackwire** entry without requiring saved SMB settings. If it is waiting for an idle console, close any running game normally and wait; do not reload the ELF to force another attempt. See [status and limits](#automatic-media-shortcut-setup).
+4. Open **Blackwire** from PS5 **Media**, or open `http://<PS5-address>:5918/` in a LAN browser. The console page is `http://127.0.0.1:5918/`.
+5. Configure the share and let library discovery finish. Choose a game, select **Send files**, and wait for that named job to finish with Ready status.
+6. Open the game's ordinary icon in the PS5 **Games** area, or use web **Play**. Blackwire handles that game's startup handoff and tracks the session.
 
 A completed Send includes the per-game reader and registration checks. If files are retained but setup is incomplete, the page can offer **Finish setup** or **Finish setup and play**. Follow the selected game's status; retained files do not automatically grant Ready. An unchanged, valid Ready game uses bounded startup checks rather than a complete new source-tree scan.
 
@@ -59,7 +60,7 @@ These steps reset Blackwire, rather than merely replacing a running resident. Ke
 2. Verify that the selected owned preparation and its game registration are gone. Do not delete a different installation with the same title, a saved-game directory, or the console database. **Remove startup files only** deliberately preserves an existing installation and is not equivalent to full Uninstall.
 3. Stop the old resident through Payload Manager's **Active processes**. Remove the Blackwire stored payload entry through Payload Manager; preserve unrelated payloads. For the development candidate, use one canonical stored **`Blackwire.elf`**, not a growing set of differently named test ELFs.
 4. After owned game removal is confirmed and Blackwire is stopped, remove its own `/data/blackwire` test directory through the file manager if a complete settings/history reset is intended. Keep any requested diagnostics on the PC first. This clears the SMB setup and Blackwire history; it does not repair an unrelated platform registration or a refusal whose outcome is unresolved.
-5. Upload the chosen verified `Blackwire.elf` in Payload Manager and launch its stored card once. Reopen the browser, check the exact build/artifact identity, enter the existing SMB settings and use normal **Send files → Ready → Play**. Do not create replacement libraries, mount links or registration receipts by hand.
+5. Upload the chosen verified `Blackwire.elf` in Payload Manager and launch its stored card once. For the development candidate, wait for automatic Media setup, then open the shortcut or browser and check the exact build/artifact identity. Enter the existing SMB settings and use normal **Send files → Ready → Play**. Do not create replacement libraries, mount links or registration receipts by hand.
 
 When the resident is deliberately stopped, its port 5918 page is expected to be offline. Check Payload Manager or the file manager independently before treating that as a console failure. Private startup traces, launch timers and verbose Send logs are test-build options; the October 27 normal candidate excludes them.
 
@@ -75,33 +76,21 @@ The PS5 page shows controller hints; the PC page keeps keyboard hints. Circle wa
 
 Keep unnecessary background payloads closed while comparing behavior. In the recorded test, the separately running Game Compressor used about 96% of one CPU core while idle. After it was stopped, unchanged-reader comparison launches completed without the earlier common-dialog watchdog error. This supports CPU contention as a contributor; it does not establish RAM exhaustion or a universal fix. See the [comparison record](COMPRESSED-DEVELOPMENT.md#background-compressor-comparison).
 
-## Optional Media shortcut setup
+<a id="optional-media-shortcut-setup"></a>
 
-The blue **Blackwire** entry in the PS5 **Media** area opens the resident's page. It does not load `Blackwire.elf`; load the resident first. Creation through the explicit action below was verified with the single Blackwire ELF and stock ShadowMountPlus. Automatic creation during fresh resident startup is not included in this preview.
+## Automatic Media shortcut setup
 
-Finish ordinary configuration and game verification first, then close the game and wait for all copy, setup and registration work to finish. From PowerShell on the trusted LAN, run this **once**. It reads the current resident action token into memory; no token or SMB password needs to be pasted into a command or saved in a file.
+The development candidate schedules one automatic setup worker after the ordinary browser-open step returns. Load the single stored **`Blackwire.elf`** through Payload Manager, let Media setup finish, then open the blue **Blackwire** entry and configure SMB. Fresh missing SMB settings do not prevent this setup. No PowerShell command, helper ELF or manually created file is required. Focused current-source host checks passed for this new automatic flow. Actual automatic registration and Media visibility remain unverified on the console; the earlier explicit-action result below does not qualify them.
 
-```powershell
-$consoleAddress = Read-Host 'PS5 address'
-$blackwireUrl = "http://${consoleAddress}:5918"
-$state = Invoke-RestMethod -Uri "$blackwireUrl/api/state"
-if ($state.setup.token -notmatch '^[0-9a-f]{32}$') {
-    throw 'The resident has not supplied a current action token.'
-}
-$headers = @{ 'X-Blackwire-Token' = $state.setup.token }
-Invoke-RestMethod -Method Post -Uri "$blackwireUrl/api/media/register-public-sdk" `
-    -ContentType 'application/json' -Headers $headers -Body '{}'
-```
+The worker checks for a safely idle console every 250 ms within a 90-second startup window. While it waits, `/health` reports `mediaSetupStatus: automatic_setup_waiting`; after it obtains the reservation, it reports `automatic_setup_running`. Close a running game normally and wait for status to settle. Do not repeatedly reload Blackwire or submit another registration request. If the bounded wait refuses, or the outcome is unconfirmed or ownership is held, preserve the reason and resolve that state before another attempt. A timeout does not prove that registration failed or make an uncertain platform call safe to repeat.
 
-Read the result without submitting another action:
+`GET /api/media/public-sdk-status` observes the same worker without starting another action. Success is `phase: verified`, `registered: true`, `running: false` and `reservationHeld: false`; confirm the shortcut is visible in PS5 **Media** as a separate console check. An accepted worker or a pending status is not successful registration. The shortcut opens the running resident's page; it does not load an absent `Blackwire.elf`. Load the resident through Payload Manager again after reboot.
 
-```powershell
-Invoke-RestMethod -Uri "$blackwireUrl/api/media/public-sdk-status"
-```
+The existing public-SDK setup first requires a stable application-directory inventory, positive registration coverage for every other application and confirmed idle status. It refuses incomplete or changing observations. An existing Blackwire row skips installation. Otherwise it chooses the per-title export if available, or `sceAppInstUtilAppInstallAll(NULL)`. This fallback is a **batch scan**, not a targeted install: the earlier explicit-action test used `mode: public_batch` and refreshed other registered applications' time/JSON metadata. Setup makes one registration call, then observes its own row for up to 30 seconds after the call returns. The platform call itself has no cancellable timeout. Blackwire does not edit the metadata database directly or replace ShadowMountPlus.
 
-The first response only acknowledges the worker. Look for `phase: verified`, `registered: true`, `running: false` and `reservationHeld: false` in subsequent status reads. A busy or refused response is not success. If the outcome is unconfirmed or a reservation is still held, inspect status and report the reason; do not reload or repeat the action to force another install.
+### Maintenance action for earlier builds
 
-This uses the normal public SDK. It chooses the per-title export if available, otherwise `sceAppInstUtilAppInstallAll(NULL)`. The fallback is a **batch scan**, not a targeted install: it can refresh metadata for existing registered applications. The verified run used `mode: public_batch` and updated other rows' time/JSON metadata. Blackwire first requires a stable application-directory inventory, positive registration coverage for every other application, and an idle console. It refuses incomplete or changing observations. It makes one registration call, then observes its own row for up to 30 seconds after the call returns. The platform call itself has no cancellable timeout. An existing Blackwire row skips SDK installation. Blackwire does not edit the metadata database directly. No custom ShadowMount binary, helper ELF or new hook is used.
+The authenticated `POST /api/media/register-public-sdk` action remains available for deliberate maintenance on builds that provide it. It is not a required installation step for the automatic startup candidate. It requires an idle resident and the current action token; do not submit it while automatic setup is pending or running, or replay it after an uncertain result. Its earlier same-ELF console proof establishes the public-SDK path, not the new automatic startup ordering.
 
 ## Existing full console games
 
