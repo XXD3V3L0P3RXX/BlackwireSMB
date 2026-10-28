@@ -4,6 +4,16 @@ This record distinguishes copied files, a running game process, a visible menu, 
 
 No title-specific compatibility blocker has been identified in testing so far. The limited coverage below does not establish that every title or every stage of a title will work.
 
+## Unreleased startup ordering and owner lifetime
+
+The latest source requests initial library discovery from the startup resident after both service guards are attached and before its background registration observer can reserve work. Generic constructors retain their previous behavior, and a refused startup request is not automatically retried. Failed construction now retains the callback owner and remaining dependencies if any release cannot be confirmed. These changes address the reproduced startup-ordering and lifetime contracts without relaxing preparation or ownership checks.
+
+The actual-C host fixtures pass **31 cases / 411 checks**, with **8 startup cases / 318 checks** covering the initial request and constructor-failure paths. Four unmount-refusal scenarios pass **12 cases / 7,184 checks**. These scenarios cover busy, uncertain, unchanged-mount and unsupported-release refusals while distinguishing the three post-unmount confirmation domains: registration before source checks, source checks, and registration after source checks. No platform Uninstall is submitted when those confirmations fail, and no retry is added. The fixtures model platform and worker effects; these counts are not PS5 results.
+
+New full normal host/SDK builds, packaged-input checks and a clean console run of this source remain pending. A previous normal artifact passed its PC checks, then the console unexpectedly powered off during its launch test; the saved records did not establish the cause. The later startup-trace experiment and prior private diagnostic preparation/removal passes belong to their own artifacts. This ordering/lifetime repair is not claimed to fix that poweroff or explain the earlier intermittent Uninstall Unknown.
+
+The approximately 73% copy-phase improvement below remains a private one-workload measurement; it does not qualify this new runtime, sustained Ethernet throughput or gameplay loading. The baseline file reader and strict destructive guards remain in place. Public downloads are unchanged, and publication remains on hold.
+
 ## Unreleased parser-only preparation profile
 
 A controlled private diagnostic comparison on the recorded 13.00-family console isolated the lifecycle tag scan from the file-reader implementation. Both builds used the same profiler, compressed Alan Wake 2 source, embedded game reader and unchanged baseline `copy_fs` reader. Only the bounded lifecycle tag search changed; fresh observations, strict event folding, errno handling, file checks and authority rules were retained.

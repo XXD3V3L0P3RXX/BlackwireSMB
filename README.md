@@ -4,9 +4,11 @@ Stream PS5 games from an ordinary PC SMB share, with a smaller startup copy on t
 
 ## Development candidate — verification in progress
 
-The unpublished October 27 normal candidate passed clean Payload Manager installation, fresh compressed Alan Wake 2 setup, retained Refresh/Play, visible Game Saving/Continue, normal Close and Uninstall. An old/new/old preparation comparison observed 65–66 seconds versus 58 seconds total, with copy/verification down from 31–32 to 23 seconds. This is one title/source on the recorded 13.00-family console, not a gameplay-loading or universal speed claim.
+The current unreleased source changes the initial library-discovery request to run after both service guards are attached and before the background observer reserves work. Failed startup construction also preserves callback owners whose release cannot be confirmed. Uninstall refusals now identify which registration or source check failed after unmount, while keeping all checks and the no-retry rule.
 
-Its canonical stored filename is `Blackwire.elf`; private startup tracing, launch timing and verbose Send logging are excluded. It has not replaced the published download below. The earlier shutdown cause, an intermittent input stall in reused browser-automation tabs and gameplay on this exact candidate remain unverified. See [the exact candidate record](docs/TESTING.md#october-27-final-publication-candidate).
+Focused host checks passed; a new full normal build and console validation are still pending. Earlier private diagnostics observed approximately **73% less copy-phase time** for one compressed Alan Wake 2 source on the recorded 13.00-family console. That result does not qualify this startup repair, network throughput or gameplay loading. A prior normal-build poweroff and an intermittent Uninstall refusal remain unexplained; these changes are not claimed to fix either event.
+
+Publication remains on hold, and the download below is unchanged. The canonical runtime filename is `Blackwire.elf`; private startup, timing and verbose Send instrumentation must be excluded from a future release. See the [current checks and limits](docs/TESTING.md#unreleased-startup-ordering-and-owner-lifetime).
 
 ## Current download — v0.3.0-beta.2
 

@@ -4,6 +4,12 @@ Changes are grouped by published preview. A build pass, initial menu and control
 
 ## Unreleased â€” verification in progress
 
+- Request initial discovery only after both service guards are attached and before background registration observations. Retain the generic constructor behavior and make no automatic retry of a refused startup request.
+- Preserve a failed constructor's callback owner and remaining dependencies when their release cannot be confirmed, instead of freeing storage that installed callbacks may still use.
+- Distinguish the three post-unmount refusal domains: registration before source checks, source checks, and registration after source checks. Keep the same checks, ordering and platform-mutation limits; no automatic Uninstall retry is added.
+
+Focused host checks pass; new full normal-build and console qualification are pending. These are reproduced ordering/lifetime repairs and clearer refusals, not an established repair for the earlier poweroff or intermittent Uninstall Unknown. See [current evidence](docs/TESTING.md#unreleased-startup-ordering-and-owner-lifetime).
+
 A later private parser-only profile on the recorded 13.00-family console reduced the same compressed Alan Wake 2 copy phase from **151.772 to 40.328 seconds** (73.4% less time), with identical observation and I/O counts. Fresh two-share setup, Ready and four module-hash/permission checks passed. The exact baseline file reader was retained after a separate unlocked-stdio experiment failed setup and was rejected. This is a diagnostic phase comparison, not network throughput, whole-Send speed or gameplay qualification. That private test later retained an Uninstall Unknown. A diagnostic follow-up then completed two normal removals, Restore and a second Send; its copy phases took 41.006 and 41.600 seconds, approximately 73% less than the private baseline. Each removal deleted all 259 entries with exactly one unmount, manual-source removal and platform Uninstall, without a new leaf failure event. The earlier failure was not reproduced or repaired. Full qualification of a normal build remains pending, so publication stays on hold. See the [profile record](docs/TESTING.md#unreleased-parser-only-preparation-profile).
 
 - Speed up bounded lifecycle tag discovery while preserving tag priority, strict handoff/event folding and every fresh idle observation. Do not cache idle authority or use the rejected unlocked-stdio shortcut.

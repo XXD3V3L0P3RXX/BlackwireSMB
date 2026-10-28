@@ -90,12 +90,12 @@
       "sha256": "6d67e64b06efe0e3ead83a7d295774a2849fbd7089a9cc3b9f64fc68f913a4d3"
     },
     "src/blackwire/dashboard/service/resident.c": {
-      "bytes": 6221,
-      "sha256": "0c074090327886dda406d8993b0ae7d30c5fc023ef0153ff820ca8058b435a89"
+      "bytes": 6710,
+      "sha256": "c4ff707226a86a65828e21a589f9fadd85ea1db3b41248e8450ffba440108b68"
     },
     "src/blackwire/dashboard/service/resident.h": {
-      "bytes": 473,
-      "sha256": "5db3af16c2dff5266937ecd666f9725ea0dee7e113d6c56b2cabd5764d35a6a6"
+      "bytes": 745,
+      "sha256": "ba2002dfee79f806f1182858ccdd5d262f42b138c41d50b6b30686ef4e722859"
     },
     "src/blackwire/dashboard/service/settings_guard.h": {
       "bytes": 1764,
@@ -286,8 +286,8 @@
       "sha256": "5b78f0592be110d2d3b451a245658f0de277b76a88ba5d745e026d7447703341"
     },
     "src/blackwire/library/main.c": {
-      "bytes": 41658,
-      "sha256": "425a9692aad446796f8d8862c4999f454882aafb17b324530c263c2924a4072e"
+      "bytes": 41899,
+      "sha256": "f9f5a44fbe21184ff811a376c21add641632c9789c7f9cb6a5ad5d2514b125b7"
     },
     "src/blackwire/library/media_public_trial.c": {
       "bytes": 11482,
@@ -354,8 +354,8 @@
       "sha256": "d4c11f6e06164c01c7dd95bce743e56ab388e576d2f99bb57268166278c9840c"
     },
     "src/blackwire/library/native_cleanup_remote.c": {
-      "bytes": 44723,
-      "sha256": "bcadde39b1076347d74d343c6528d1a608cf15b6ef0610af91327b2acd907613"
+      "bytes": 45553,
+      "sha256": "b808d1110cd5b0d80aad456e78ddf40c39a9b8171a37a3c7b62f7ed9f4eb6d1e"
     },
     "src/blackwire/library/native_cleanup_remote.h": {
       "bytes": 5154,
@@ -1508,8 +1508,8 @@
       "sha256": "9278ef959714ee2f76d3bd5b0b324d1f4136dc62e0b673c8538f7eef7d4386d5"
     },
     "tests/dashboard/lifecycle/check_game_removal_backend.py": {
-      "bytes": 6596,
-      "sha256": "1533847ee1a4ca92a8a167e357a8eba04a5b5b944490ec6ddddfd59bcd8c1552"
+      "bytes": 7590,
+      "sha256": "212624347d6cc75a9a57995cd567c9c9dae025306975517ba1f54738cec4bb03"
     },
     "tests/dashboard/lifecycle/check_game_uninstall.py": {
       "bytes": 11885,
@@ -1919,6 +1919,10 @@
       "bytes": 491,
       "sha256": "c0c1782ca2ae2c9f9f10c4d197a3e722134c7e6c26b4082a353f9a056871e5b7"
     },
+    "tests/dashboard/lifecycle/test_resident_startup.c": {
+      "bytes": 11886,
+      "sha256": "ad27e4ad99595d043ab8c79e556e5b37258b1beebc56b646e19e500785143cc8"
+    },
     "tests/dashboard/lifecycle/test_source_ampr_witness.c": {
       "bytes": 9512,
       "sha256": "8c339cf48ef95ebda74938da045534cefbdbb03f154b683db596ae65411f6906"
@@ -2162,7 +2166,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Unreleased bounded lifecycle tag search layered on the exact-removal repair. The earlier normal exact-removal artifact passed 59 host suites / 67 commands, 146 SDK commands, 61 packaged-input checks and three normal console removals. Parser-only private PS5 comparisons on the same compressed Alan Wake 2 image reduced copy and verification from 151.772 to 40.328 and 41.006 seconds with identical file, byte and check counts; these are preparation measurements. The original file-status API remains unchanged. The rejected unlocked-stdio shortcut and private timing/failure markers are excluded from this production change. A pre-platform-Uninstall confirmation failure occurred in one private run. Two later diagnostic-build normal removals, including Restore and fresh Send, passed but do not establish its cause or a repair. New normal full host/SDK, packaged-input and clean Payload Manager verification remain pending. Publication and Native Dashboard remain on hold. No universal compatibility, historic shutdown cause or unexplained-failure repair is claimed.",
+  "developmentQualification": "Unreleased startup ordering and callback-owner lifetime repair, retaining the bounded lifecycle tag search and exact-removal guards. Focused actual-C host checks passed 31 cases/411 checks plus 8 startup cases/318 checks; four unmount-refusal scenarios passed 12 cases/7184 checks. The startup discovery request now follows both guard attachments and precedes observer reservations; refused construction retains any callback owner whose release is unconfirmed. Post-unmount refusals distinguish registration-before-sources, source checks and registration-after-sources without skipping checks or repeating mutations. New full normal host/SDK, packaged-input and console qualification remain pending. Earlier private parser-only PS5 comparisons observed approximately 73% less copy-phase time on one compressed Alan Wake 2 workload; they do not qualify this new normal runtime, wire throughput or gameplay loading. A prior normal startup poweroff and an intermittent pre-platform-Uninstall confirmation failure remain unexplained; these repairs are not claimed as their cause or fix. The rejected unlocked-stdio shortcut and private instrumentation are excluded from this production change. Published downloads and version are unchanged; publication and Native Dashboard remain on hold.",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -2172,5 +2176,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "c0b3e313c4a05d9d27bc71fbdb0e7dcd06eaddf6"
+  "runtimeSourceCommit": "96e0b5dce549f1cae7826e95946335ae007aa8b1"
 }
