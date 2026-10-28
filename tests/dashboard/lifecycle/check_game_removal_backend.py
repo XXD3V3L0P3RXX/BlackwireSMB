@@ -12,8 +12,8 @@ def main():
  if not out.is_relative_to(ROOT/'build/native-dashboard'):raise ValueError('Use a new scoped output')
  out.mkdir(parents=True,exist_ok=False);commands=[];deps=[]
  sources=[HERE/'test_game_removal_backend.c']+[LIB/n for n in ['native_removal_request.c','native_request.c','native_job.c','native_setup.c','source_binding.c','source_identity.c','source_profile.c','source_param.c','source_catalog.c']]+[STREAM/'manifest.c',STREAM/'share_config.c']
- startup=HERE/'test_resident_startup.c'
- own=[LIB/n for n in ['native_backend.c','native_backend.h','native_backend_removal.h','native_removal_request.c','native_removal_request.h']]+[sources[0],startup,Path(__file__).resolve()]
+ startup=HERE/'test_resident_startup.c';media_startup=HERE/'test_media_startup_backend.c'
+ own=[LIB/n for n in ['native_backend.c','native_backend.h','native_backend_removal.h','native_removal_request.c','native_removal_request.h']]+[sources[0],startup,media_startup,Path(__file__).resolve()]
  possible=set(own+sources)|set((ROOT/'src/blackwire/dashboard').rglob('*.h'))|{ROOT/'src/blackwire/dashboard/service/resident.c'}|set(LIB.glob('*.h'))|set(LIB.glob('*.c'))|set(STREAM.rglob('*.h'))|set((ROOT/'vendor/libsmb2/include').rglob('*.h'))|set((ROOT/'vendor/sqlite').glob('*.h'))|set((ROOT/'src/blackwire/tools/compressed_stream_candidate').glob('*.h'))
  before={p.resolve():pin(p) for p in possible}
  def run(label,argv):
@@ -26,10 +26,11 @@ def main():
  for i,p in enumerate(sources):
   obj=out/f'host-{i}.o';dep=obj.with_suffix('.d');deps.append(dep);run('host-'+p.stem,[*host,'-MD','-MF',dep,'-c',p,'-o',obj]);objects.append(obj)
  startup_obj=out/'host-resident-startup.o';startup_dep=startup_obj.with_suffix('.d');deps.append(startup_dep);run('host-resident-startup', [*host,'-MD','-MF',startup_dep,'-c',startup,'-o',startup_obj])
+ media_startup_obj=out/'host-media-startup-backend.o';media_startup_dep=media_startup_obj.with_suffix('.d');deps.append(media_startup_dep);run('host-media-startup-backend', [*host,'-MD','-MF',media_startup_dep,'-c',media_startup,'-o',media_startup_obj])
  # Only unreachable standalone preparation/source/SMB branches may abort. The
  # worker, parser, settings equality, catalogue, jobs and all state code are real.
  defined=set();needed=set()
- for obj in [*objects,startup_obj]:
+ for obj in [*objects,startup_obj,media_startup_obj]:
   for line in run('symbols-'+obj.stem,['nm','-g',obj]).splitlines():
    f=line.split()
    if len(f)>=2:(needed if f[-2]=='U' else defined).add(f[-1])
@@ -50,6 +51,7 @@ def main():
  p=out/'unsupported.c';p.write_text('\n'.join(stub)+'\n');obj=out/'unsupported.o';run('unsupported-abort-stubs',[*host,'-Wno-unused-parameter','-Wno-c2x-extensions','-c',p,'-o',obj]);objects.append(obj)
  binary=out/'host-game-removal-backend';run('host-link',['clang-18','-fsanitize=address,undefined','-fno-sanitize-recover=all',*objects,'-Wl,--gc-sections','-pthread','-lm','-o',binary]);observed=json.loads(run('actual-async-routes',[binary]))
  startup_binary=out/'host-resident-startup';run('host-startup-link',['clang-18','-fsanitize=address,undefined','-fno-sanitize-recover=all',startup_obj,*objects[1:],'-Wl,--gc-sections','-pthread','-lm','-o',startup_binary]);startup_observed=json.loads(run('actual-resident-startup',[startup_binary]))
+ media_startup_binary=out/'host-media-startup-backend';run('host-media-startup-link',['clang-18','-fsanitize=address,undefined','-fno-sanitize-recover=all',media_startup_obj,*objects[1:],'-Wl,--gc-sections','-pthread','-lm','-o',media_startup_binary]);media_startup_observed=json.loads(run('actual-media-startup-backend',[media_startup_binary]))
  native=[]
  if not a.host_only:
   historical=production_rows(ROOT,out/'sdk-template');template=next(r['argv'] for r in historical if '-c' in r['argv'] and Path(r['argv'][r['argv'].index('-c')+1]).name=='native_backend.c');native=[]
@@ -57,7 +59,7 @@ def main():
    argv=template.copy();src=LIB/name;obj=out/(src.stem+'.sdk.o');dep=obj.with_suffix('.d');deps.append(dep);argv[argv.index('-c')+1]=str(src);argv[argv.index('-o')+1]=str(obj)
    if '-MF' in argv:argv[argv.index('-MF')+1]=str(dep)
    run('sdk-'+src.stem,argv);native.append(obj)
- actual=set(own+sources+[startup])
+ actual=set(own+sources+[startup,media_startup])
  for dep in deps:
   for name in shlex.split(dep.read_text().replace('\\\n',' ').split(':',1)[1]):actual.add((ROOT/name).resolve())
  local={p for p in actual if p.is_relative_to(ROOT) and not p.is_relative_to(out)}
@@ -65,6 +67,6 @@ def main():
   if p not in before or pin(p)!=before[p]:raise RuntimeError('Actual source changed during check: '+str(p))
  for p in local:
   dest=out/'frozen-source'/p.relative_to(ROOT);dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(p.read_bytes())
- proof=dict(passed=True,host=observed,residentStartup=startup_observed,hostOnly=a.host_only,residentStartupBinary=pin(startup_binary),source={str(p.relative_to(ROOT)):before[p] for p in sorted(local)},sourceBeforeAfterMatch=True,hostBinary=pin(binary),sdkObjects={p.name:pin(p) for p in native},commands=commands,unsupportedAbortStubs=names,normalTransportQualification='Separate real filesystem/SMP adapter suite required; this suite injects effects only.',consoleActions=0,fullBuilds=0)
- (out/'proof.json').write_text(json.dumps(proof,indent=2)+'\n');print(json.dumps(dict(passed=True,host=observed,residentStartup=startup_observed,proof=pin(out/'proof.json'))))
+ proof=dict(passed=True,host=observed,residentStartup=startup_observed,mediaStartupBackend=media_startup_observed,hostOnly=a.host_only,residentStartupBinary=pin(startup_binary),mediaStartupBackendBinary=pin(media_startup_binary),source={str(p.relative_to(ROOT)):before[p] for p in sorted(local)},sourceBeforeAfterMatch=True,hostBinary=pin(binary),sdkObjects={p.name:pin(p) for p in native},commands=commands,unsupportedAbortStubs=names,normalTransportQualification='Separate real filesystem/SMP adapter suite required; this suite injects effects only.',consoleActions=0,fullBuilds=0)
+ (out/'proof.json').write_text(json.dumps(proof,indent=2)+'\n');print(json.dumps(dict(passed=True,host=observed,residentStartup=startup_observed,mediaStartupBackend=media_startup_observed,proof=pin(out/'proof.json'))))
 if __name__=='__main__':main()

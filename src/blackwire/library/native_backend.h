@@ -111,6 +111,12 @@ int bw_native_backend_handle_authenticated(struct bw_native_backend *,const char
  * explicit matched release; unknown/local-active ownership must be retained.
  * Every ordinary POST and direct refresh shares the same admission gate. */
 int bw_native_backend_external_reserve(struct bw_native_backend *,const char[33],const char[33]);
+/* Trusted in-process startup only; no HTTP action or ownership is created.
+ * Copies the existing action token under the backend lock after the initial
+ * local settings observation, including an ordinary missing SMB config.
+ * 1=busy/unknown, -1=unavailable. Output is cleared on every failure. Callers
+ * still need the unchanged external reservation and independent full idle. */
+int bw_native_backend_startup_token(struct bw_native_backend *,char[33]);
 int bw_native_backend_external_release(struct bw_native_backend *,const char[33]);
 /* Background-only release: the exact retained owner must be known, inactive
  * and free of control-release uncertainty. Does not release an active action. */

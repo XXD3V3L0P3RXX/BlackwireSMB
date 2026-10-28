@@ -1738,6 +1738,14 @@ static int handle_core(struct bw_native_backend *p,const char *owner,const char 
 /* Dashboard reservation and ordinary POST dispatch share this short gate.
  * No mutex is retained across threads or the game lifetime; only the nonce is.
  * Existing handlers/worker guards remain the authority for every BW action. */
+int bw_native_backend_startup_token(struct bw_native_backend *p,char out[33]){
+    if(!out)return -1;memset(out,0,33);
+    if(!p||pthread_mutex_lock(&p->lock))return -1;
+    int result=!p->settings_enabled||!nonce_valid(p->setup_token)?-1:
+        p->active||*p->external_nonce||p->control_release_unknown||!p->settings_known||p->settings_status<0?1:0;
+    if(!result)memcpy(out,p->setup_token,33);
+    pthread_mutex_unlock(&p->lock);return result;
+}
 int bw_native_backend_external_reserve(struct bw_native_backend *p,const char nonce[33],const char token[33]){
     if(!p||!nonce_valid(nonce)||pthread_mutex_lock(&p->dispatch_lock))return -1;
     pthread_mutex_lock(&p->lock);int result=-1;

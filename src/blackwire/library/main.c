@@ -45,6 +45,7 @@ static struct bd_resident *dashboard;
 #include "native_setup.h"
 #include "startup_runtime_idle.h"
 #include "media_public_trial.h"
+#include "media_startup.h"
 #include <pthread.h>
 #endif
 #ifndef BW_MEDIA_APP_PARENT
@@ -427,19 +428,21 @@ finish:
   return result;
 }
 
-/* The listener is live before this one bounded startup reservation worker is
- * scheduled. Only idle observations may repeat; registration never repeats. */
-/* Private explicit-action prototype. No startup SDK load or scheduling. */
+/* One automatic startup worker uses the same guarded publication path as the
+ * explicit maintenance action. Only preflight idle observations may repeat;
+ * assets and SDK registration are never automatically replayed. */
 int sceKernelLoadStartModule(const char *,size_t,const void *,uint32_t,void *,int *);
 struct media_public_resident {
-  pthread_mutex_t lock;pthread_t thread;unsigned running,reserved,release_unknown;
+  pthread_mutex_t lock;pthread_t thread;unsigned running,reserved,release_unknown,automatic,automatic_requested;
   char nonce[33];double deadline;struct bw_media_public_record record;
 };
 static struct media_public_resident media_trial={.lock=PTHREAD_MUTEX_INITIALIZER};
 static double media_now(void){struct timespec t;return clock_gettime(CLOCK_MONOTONIC,&t)?-1:(double)t.tv_sec+(double)t.tv_nsec/1e9;}
 static const char *media_setup_status(void){
   pthread_mutex_lock(&media_trial.lock);
-  const char *status=media_trial.release_unknown?"ownership_held":media_trial.running?"explicit_trial_running":bw_media_public_phase_name(media_trial.record.phase);
+  const char *status=media_trial.release_unknown?"ownership_held":media_trial.running?
+    (media_trial.automatic?(media_trial.reserved?"automatic_setup_running":"automatic_setup_waiting"):"explicit_trial_running"):
+    bw_media_public_phase_name(media_trial.record.phase);
   pthread_mutex_unlock(&media_trial.lock);return status;
 }
 static int media_trial_current(void *opaque){
@@ -489,22 +492,84 @@ static int media_trial_wait(void *opaque,unsigned milliseconds){
 static void media_trial_report(void *opaque,const struct bw_media_public_record *record){
   struct media_public_resident *s=opaque;pthread_mutex_lock(&s->lock);s->record=*record;pthread_mutex_unlock(&s->lock);
 }
+static int media_automatic_attempt(void *opaque){
+  struct media_public_resident *s=opaque;char token[33]={0},nonce[33]={0};
+  int available=bw_native_backend_startup_token(native_backend,token);
+  if(available)return available>0?1:-1;
+  if(bw_native_setup_nonce(nonce)){bw_native_sensitive_clear(token,sizeof token);return -1;}
+  int accepted=bw_native_backend_external_reserve(native_backend,nonce,token);
+  bw_native_sensitive_clear(token,sizeof token);
+  if(accepted)return accepted>0?1:-1;
+  pthread_mutex_lock(&s->lock);memcpy(s->nonce,nonce,sizeof nonce);s->reserved=1;pthread_mutex_unlock(&s->lock);
+  if(!media_trial_idle(s))return 0;
+  /* No assets or SDK call has run. Only a confirmed release permits another
+   * preflight observation; uncertainty retains the owner and ends startup. */
+  int released=bw_native_backend_external_release_idle(native_backend,nonce);
+  pthread_mutex_lock(&s->lock);
+  if(released)s->release_unknown=1;else{s->reserved=0;bw_native_sensitive_clear(s->nonce,sizeof s->nonce);}
+  pthread_mutex_unlock(&s->lock);return released?-2:1;
+}
+static int media_automatic_wait(void *opaque,unsigned milliseconds){
+  struct media_public_resident *s=opaque;
+  struct timespec delay={(time_t)(milliseconds/1000u),(long)(milliseconds%1000u)*1000000L};
+  while(nanosleep(&delay,&delay)){
+    int wait_error=errno;double at=media_now();if(wait_error!=EINTR||at<0||at>=s->deadline)return -1;
+  }
+  return 0;
+}
 static void *media_public_worker(void *opaque){
-  struct media_public_resident *s=opaque;pthread_mutex_lock(&s->lock);struct bw_media_public_record record=s->record;pthread_mutex_unlock(&s->lock);
+  struct media_public_resident *s=opaque;pthread_mutex_lock(&s->lock);struct bw_media_public_record record=s->record;
+  unsigned automatic=s->automatic;pthread_mutex_unlock(&s->lock);
   struct bw_media_public_request request={.apps=BW_MEDIA_APP_PARENT,.database="/system_data/priv/mms/app.db",.opaque=s,
     .current=media_trial_idle,.title_idle=media_trial_title_idle,.assets=media_trial_assets,.sdk_open=media_trial_sdk,
     .now=media_trial_now,.wait=media_trial_wait,.report=media_trial_report};
-  (void)bw_media_public_run(&request,&record);
+  const char *reason=NULL;int admitted=0;
+  if(automatic){
+    struct bw_media_startup_ops ops={.attempt=media_automatic_attempt,.now=media_trial_now,.wait=media_automatic_wait,.opaque=s};
+    admitted=bw_media_startup_acquire(&ops,s->deadline,&reason);
+    if(admitted){record.phase=BW_MEDIA_PUBLIC_REFUSED;record.reason=reason;}
+    else{record.reason=reason;media_trial_report(s,&record);}
+  }
+  if(!admitted)(void)bw_media_public_run(&request,&record);
   /* A platform return and failed row observation are not an active game/copy.
    * Release only this known inactive reservation; never clear backend unknown
    * controls, a different nonce, or any registration ownership ledger. */
-  int released=bw_native_backend_external_release_idle(native_backend,s->nonce);
+  pthread_mutex_lock(&s->lock);unsigned reserved=s->reserved,unknown=s->release_unknown;pthread_mutex_unlock(&s->lock);
+  int released=unknown?1:reserved?bw_native_backend_external_release_idle(native_backend,s->nonce):0;
   pthread_mutex_lock(&s->lock);s->record=record;s->running=0;
   if(released)s->release_unknown=1;else{s->reserved=0;bw_native_sensitive_clear(s->nonce,sizeof s->nonce);}
   pthread_mutex_unlock(&s->lock);
-  notify(released?"Blackwire Media trial reservation needs status; no repeat was submitted.":
-    record.registered?"Blackwire Media registration was observed.":"Blackwire Media registration is unconfirmed. No repeat was submitted; game actions remain available.");
+  notify(released?"Blackwire Media setup ownership needs attention. Check its status before trying again.":
+    record.registered?"Blackwire Media shortcut registration was verified.":"Blackwire Media shortcut setup needs attention. Check its status before trying again.");
   return NULL;
+}
+/* Caller holds the resident mutex. Both entry points use exactly this one
+ * stack; automatic idle waiting does not allocate a second worker. */
+static int media_start_worker_locked(struct media_public_resident *s){
+  s->running=1;pthread_attr_t attr;int initialized=!pthread_attr_init(&attr),started=-1;
+  if(initialized){started=pthread_attr_setstacksize(&attr,4u*1024u*1024u);if(!started)started=pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
+    if(!started)started=pthread_create(&s->thread,&attr,media_public_worker,s);pthread_attr_destroy(&attr);}
+  if(started){
+    s->running=0;int released=s->reserved?bw_native_backend_external_release_idle(native_backend,s->nonce):0;
+    if(released)s->release_unknown=1;else{s->reserved=0;bw_native_sensitive_clear(s->nonce,sizeof s->nonce);}
+  }
+  return started?-1:0;
+}
+static int media_automatic_launch_locked(void *opaque){
+  struct media_public_resident *s=opaque;
+  if(s->running||s->reserved||s->release_unknown)return -1;
+  s->automatic=1;s->record.phase=BW_MEDIA_PUBLIC_CHECKING;s->record.reason="startup_waiting_for_idle";
+  double began=media_now();
+  if(began<0){s->record.phase=BW_MEDIA_PUBLIC_REFUSED;s->record.reason="startup_clock_unavailable";return -1;}
+  s->deadline=began+BW_MEDIA_STARTUP_SECONDS;
+  if(media_start_worker_locked(s)){s->record.phase=BW_MEDIA_PUBLIC_REFUSED;s->record.reason="startup_worker_start_failed";return -1;}
+  return 0;
+}
+static void media_automatic_schedule(void){
+  pthread_mutex_lock(&media_trial.lock);
+  int started=bw_media_startup_once(&media_trial.automatic_requested,media_automatic_launch_locked,&media_trial);
+  pthread_mutex_unlock(&media_trial.lock);
+  if(started<0)notify("Blackwire Media shortcut setup could not start. Check its status.");
 }
 static int media_public_reply(struct bw_native_response *out,int status,const char *bytes){
   out->bytes=strdup(bytes);if(!out->bytes)return -1;out->status=status;out->type="application/json";out->size=strlen(bytes);return 0;
@@ -538,11 +603,7 @@ static int media_public_handle(const char *method,const char *url,const void *bo
     if(released)media_trial.release_unknown=1;else{media_trial.reserved=0;bw_native_sensitive_clear(media_trial.nonce,sizeof media_trial.nonce);}
     pthread_mutex_unlock(&media_trial.lock);return media_public_reply(out,409,"{\"error\":\"Existing control ownership is unconfirmed; Media was not started\"}");
   }
-  media_trial.running=1;pthread_attr_t attr;int initialized=!pthread_attr_init(&attr),started=-1;
-  if(initialized){started=pthread_attr_setstacksize(&attr,4u*1024u*1024u);if(!started)started=pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
-    if(!started)started=pthread_create(&media_trial.thread,&attr,media_public_worker,&media_trial);pthread_attr_destroy(&attr);}
-  if(started){media_trial.running=0;int released=bw_native_backend_external_release_idle(native_backend,nonce);
-    if(released)media_trial.release_unknown=1;else{media_trial.reserved=0;bw_native_sensitive_clear(media_trial.nonce,sizeof media_trial.nonce);}}
+  media_trial.automatic=0;int started=media_start_worker_locked(&media_trial);
   pthread_mutex_unlock(&media_trial.lock);
   return media_public_reply(out,started?503:202,started?"{\"error\":\"Media trial worker did not start; no API call was submitted\"}":"{\"ok\":true,\"message\":\"Explicit Media trial accepted. Public batch fallback may register every pending staged application. No automatic replay.\"}");
 }
@@ -909,6 +970,11 @@ int main(void) {
   snprintf(browser_message,sizeof browser_message,"Blackwire browser-open returned %d",browser_result);
   log_line(browser_message);
   if(browser_result)notify("Blackwire is ready at this PS5 address on port 5918. Browser opening needs attention.");
+#endif
+#ifdef BW_MEDIA_WEB_LAUNCHER
+  /* Schedule after the ordinary browser-open call has returned. The one
+   * worker waits for initial scan/full idle; the listener never waits on it. */
+  media_automatic_schedule();
 #endif
   startup_mark("accept.loop");
   startup_trace_finish();
