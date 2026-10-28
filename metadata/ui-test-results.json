@@ -1,12 +1,12 @@
 {
-  "kind": "blackwire-ui-test-summary/1",
+  "kind": "blackwire-current-ui-checks/1",
   "passed": true,
-  "tests": 91,
-  "browserHandoffCases": 19,
-  "actualEmbeddedPage": true,
-  "restartRecoveryNoAutomaticReplay": true,
+  "tests": 92,
   "page": {
-    "bytes": 151232,
-    "sha256": "38611c5f20ecd9fafa7610a4c361479117862cb2bdaa20f8d96df68f4cd0d29b"
-  }
+    "bytes": 153906,
+    "sha256": "91e4a0bfdcbe46e88326bee74571f0883e45525666b7e70010ce2a1935aa7fd0"
+  },
+  "actualEmbeddedPage": true,
+  "browserActions": 0,
+  "consoleContacted": false
 }

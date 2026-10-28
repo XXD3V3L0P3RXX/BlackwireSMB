@@ -1,58 +1,41 @@
-# Blackwire v0.3.0-beta.2 — test instructions
+# Blackwire v0.3.0-beta.3 — upgrade and test instructions
 
-This standalone browser beta repairs startup settings reporting and recovery after a resident replacement. It also retains the repairs for the two original faults reported in issue #2: MkPFS images containing exFAT were rejected, and setup step 7 incorrectly required an optional global library pack. The beta reads supported exFAT layouts and installs its embedded streaming reader without opening or changing `/data/shadowmount/fakelib`. This is not a native Dashboard release.
+[Current release](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.3) · [Setup](SETUP.md) · [Exact results and limits](TESTING.md#v030-beta3)
 
-[GitHub download](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.2) · [Project mirror](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB)
+Use the single **Blackwire.elf** download. Its SHA-256 is `8cebe80fa2510b581df5fa2602ce42bacdccc61cae82a21b3e699954248352a7` (6,015,888 bytes); `/health` must report **`blackwire-v0.3.0-beta.3`**. This is the standalone browser resident, not native Dashboard. Private startup tracing, launch timing and verbose Send logging are disabled.
 
-## Install and test once
+## Upgrade through Payload Manager
 
-1. Download **Blackwire-Beta.elf**, **BETA-TESTING.md** and, optionally, **collect-diagnostics.py**. Keep your previous ELF available. Leave your original images, matching `.vhash` files, share permissions and folder layout in place. Do not erase existing preparations or repack the library for this test.
-2. Close any running game normally and wait for pending operations to finish. Stop the old Blackwire resident through Payload Manager's Active processes before loading the beta. Run only one Blackwire resident. Use your existing jailbreak, Kstuff and ShadowMountPlus setup; no firmware change or manually copied global library pack is requested.
-3. Load **Blackwire-Beta.elf** through your normal ELF loader. Open `http://<PS5-address>:5918/health` and confirm `buildId` is **blackwire-v0.3.0-beta.2**. The process can still appear as `blackwire.elf`; identify the version using this health check.
-4. Reopen or reload the browser page after replacing the resident. Existing settings should appear while discovery runs. If the page reports that Blackwire restarted during a connection check, choose **Reload settings status** once; review the preserved draft before explicitly submitting it. Do not remove `share.conf` or delete preparations. Choose **Refresh library** once with the original flat share layout, for example `PS5Games/Game A.ffpfsc`, `PS5Games/Game B.ffpfsc`, and other completed images together. Record how many images are present and how many candidates are accepted. Supported compressed exFAT images are labeled `pfsc_exfat`; PFS images remain supported.
-5. Select one affected game. If its startup files were retained, use **Finish setup**; otherwise choose **Send files**. Wait for Ready or one clear failure. The previous missing-global-folder step-7 failure should no longer require any external pack. Unknown/altered game companions still refuse safely rather than being overwritten.
-6. If it becomes Ready, try launching from the regular PS5 Games tile or web Play. Report whether it reaches a menu and then controllable gameplay. If it fails, collect the evidence below before uninstalling, resetting records or repeatedly trying the same operation.
+1. Preserve original PC games, matching image companions and any unresolved failure evidence. Close the game normally and wait for pending operations to finish.
+2. Stop the old Blackwire resident in Payload Manager's **Active processes**. Removing a stored file does not stop a running process. Keep only one Blackwire resident and one stored **`Blackwire.elf`** entry.
+3. Refresh the Blackwire custom source, select **v0.3.0-beta.3**, and install/upload the verified `Blackwire.elf`. Start the normal compatible jailbreak, Kstuff and ShadowMountPlus environment, then load that stored card once. No direct-memory test sender, separate helper or manually copied global library pack is required.
+4. Check `http://<PS5-address>:5918/health`. If its build ID differs, stop and resolve the stale resident rather than testing the wrong file. Fully close/reopen an older browser page.
+5. Allow automatic Media setup to finish. It can run before SMB settings exist. If waiting, close the running game normally; do not reload another resident to force registration. Check the [Media status guidance](SETUP.md#automatic-media-shortcut-setup) if refused or uncertain.
+6. Open Blackwire from Media or `http://<PS5-address>:5918/`. Review saved settings, use the actual Windows share names and check both share-level and file/NTFS Read access. A failed connection/catalog check preserves the previous settings. See the [folder diagrams](../README.md#pc-folder-structure).
 
-An `.ffpfsc` extension alone does not establish format support. The [supported exFAT layouts and checks](EXFAT-DEVELOPMENT.md#admitted-layout) remain bounded; rejected layouts should be reported with their diagnostic reason. Keep games and images unchanged while scanning, preparing or playing.
+An ordinary upgrade need not erase every preparation. For a deliberate fresh test, use the [clean-reinstall procedure](SETUP.md#deliberate-clean-reinstall-for-a-controlled-test): uninstall each owned streamed copy normally, verify removal, stop Blackwire, remove only its stored payload/data, then install the canonical ELF. Preserve saves, original PC files and unrelated apps. Do not erase an uncertain operation's records to bypass its refusal.
 
-## Collect the result
+## Test one affected title
 
-The beta includes the bounded Send/setup logger. Download these files with your usual console file manager:
+1. Keep the original share layout and source images unchanged. A flat folder of completed images is supported by discovery; separate folders are not a required workaround. Choose **Refresh library** once and record total/accepted/rejected image counts.
+2. Select one affected game. Use **Finish setup** if valid startup files were retained, or **Send files** for a fresh copy. Wait for Ready or one clear failure. Record the exact setup step, stage and reason; do not keep resubmitting an uncertain action.
+3. If Ready, launch its ordinary PS5 Games icon or web Play. Distinguish **Ready**, **menu/setup screen** and **controllable gameplay** in the result.
+4. Close normally. If performing another clean test, uninstall the selected Blackwire-owned preparation through Details and verify its terminal result before switching sources/builds.
+
+Known repairs include the old optional-global-pack step-7 dependency, supported contiguous MkPFS exFAT admission, original game-companion handling, startup ordering, retained compressed state and clearer registration/removal checks. They do not establish universal compatibility or a repair for every reported step-7/8/9 error. Only the recorded 13.00-family environment is console-qualified; firmware 10.01 remains unverified.
+
+## Collect a small read-only result
+
+The release includes **collect-diagnostics.py** as an optional PC tool; Python is needed only to run this collector, not to play games:
 
 ```text
-/data/blackwire/send-diagnostic.log
-/data/blackwire/library.log
+python collect-diagnostics.py --ps5 <PS5-address> --output blackwire-beta3-summary.json
 ```
 
-The dedicated log records preparation progress, setup steps 2–13, directory checks and the first failing operation/path/error. Beta.2 also records settings-file refusal categories, connection-check start/end and failures during SMB connection, catalog parsing or artwork. The optional summary includes `settingsFile` and `storageStatus` without exposing credentials. It appends across restarts and is capped at about 1 MiB. If an older log has filled the cap, save it first, stop Blackwire while idle and rename only that log to an archive filename before a new capture. An unavailable logger must not grant retry or setup authority.
+It reads `/health` and `/api/state`, summarizes build/reader identity, settings status, image admission counts/reasons and per-title preparation reasons, and excludes credentials, tokens and source bindings. Review game names and messages before sharing. Attach that summary plus the exact visible error and firmware/Kstuff/ShadowMountPlus versions to the issue. A screenshot or copied message is useful if the collector cannot run.
 
-The optional collector uses Python on the PC and makes read-only GET requests:
+This **normal ELF does not create the private verbose `send-diagnostic.log`** used by earlier diagnostic builds. Do not delete settings or expect a nonexistent log. Never post `share.conf`, raw state dumps, passwords, tokens, game files, saves, console databases or proprietary libraries. If the summary cannot explain a failure, a separately identified diagnostic build may be needed; do not confuse it with this release.
 
-```text
-python collect-diagnostics.py --ps5 <PS5-address> --output blackwire-beta-summary.json
-```
+## Rollback and limits
 
-It selects diagnostic fields and excludes SMB settings, credentials, the browser token and source bindings. Python is needed only for this optional helper; normal Blackwire use still requires no PC service. Use a new output name for each capture.
-
-Attach the summary and the two logs, after reviewing titles and paths, together with:
-
-- The beta build ID, firmware, Kstuff and ShadowMountPlus versions.
-- Packing tool/version/command, image count and the exact share layout.
-- Which images appeared, whether Finish setup or Send files was used, and the exact final message.
-- If Ready: menu/gameplay result. If it failed: the failing stage and approximate time.
-
-Do not attach passwords, configuration files, raw `/api/state` dumps, game images or console library binaries. Existing [diagnostic collector details](DIAGNOSTICS.md#collect-the-evidence) also apply. The reporter's exact library and payload combination still need their own test; [recorded results](TESTING.md) distinguish fresh setup, initial menus and gameplay.
-
-## If Save and Check fails
-
-The connection is committed only after the library check succeeds. Image discovery or artwork failures can therefore prevent a new configuration file from being written. Keep existing settings and the failing evidence; do not repeatedly delete files or force a save. Report the exact message, whether fields remain disabled, whether you used a PC or PS5 browser, the build ID and the collector's `setup` fields with the logs above. This distinguishes a file-read refusal from a failed connection or image scan.
-
-Game data is decompressed on the PS5. The PC serves SMB reads, so low PC CPU use does not by itself show that extraction failed. Measured traffic during metadata discovery or startup-file copying is not a raw link-speed test. This beta does not add a PC cache/service or claim a measured loading-speed improvement.
-
-A separate message saying **“The exact frontend or preparation idle authority could not be retained”** is a refusal before preparation is accepted. It does not identify a corrupt game or establish that a game is actually running. Close any running game normally and check the payload inventory and build ID. If it repeats once, retain the reviewed Blackwire logs and ShadowMountPlus lifecycle evidence (`/data/shadowmount/debug.log`), with firmware/payload versions and whether the browser was on PC or PS5. Do not erase logs or preparations to force the idle check to pass. This exact refusal is still under investigation.
-
-## Scope and rollback
-
-Our recorded console environment is the 13.00 family with Kstuff-lite and stock ShadowMountPlus. The beta is intended to test the repaired faults on other existing setups, not to require that they copy our optional global pack. Keep ShadowMount's per-game overlay enabled and the configured library scan depth appropriate for the prepared-game layout; our setup uses `scan_depth=2`.
-
-Close the game and stop the beta before switching residents. The previous preview downloads are preserved, but an older reader does not gain exFAT support and may not recognize preparations made with a newer reader. Keep the matching beta available and preserve preparation records; do not manually downgrade reader files or assume arbitrary interrupted operations are safe to repeat.
+Previous immutable releases remain available. Stop the running resident before switching, retain its matching source/reader provenance, and do not manually downgrade owned reader files. A Media shortcut needs the resident running. The batch public-SDK fallback can refresh other registered apps' metadata; see [Media setup](SETUP.md#automatic-media-shortcut-setup). Unexpected shutdowns and intermittent removal uncertainty remain under investigation. Current exact-artifact tests reached menus/setup screens; gameplay and controlled speed comparisons remain separate checks.

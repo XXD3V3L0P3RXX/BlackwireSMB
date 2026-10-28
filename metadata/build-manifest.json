@@ -1,31 +1,31 @@
 {
-  "kind": "blackwire-standalone-beta-build/1",
+  "kind": "blackwire-standalone-beta-build/2",
   "product": "Blackwire",
-  "version": "v0.3.0-beta.2",
-  "artifact": "Blackwire-Beta.elf",
-  "runtimeBuildId": "blackwire-v0.3.0-beta.2",
-  "runtimeSourceCommit": "9db35d2084412c738ab11628728c4f7013d0e88e",
-  "frozenBuildSourceCommit": "974ac247b1461e7a116e13c556192dec055f3e7a",
+  "version": "v0.3.0-beta.3",
+  "artifact": "Blackwire.elf",
+  "runtimeBuildId": "blackwire-v0.3.0-beta.3",
+  "runtimeSourceCommit": "fb1e22973c4ef4dfd0fa857ab832fd45621a24ad",
+  "frozenBuildSourceCommit": "6f67792bf7045136abdc8d0510a080b2dff1ae17",
   "package": {
-    "bytes": 5772600,
-    "sha256": "ad3505cca3c6b409152e8c12024d81582a351aee473d7fecee4d82bc4e1e252c"
+    "bytes": 6015888,
+    "sha256": "8cebe80fa2510b581df5fa2602ce42bacdccc61cae82a21b3e699954248352a7"
   },
   "reader": {
-    "bytes": 843696,
-    "sha256": "39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441"
+    "bytes": 875296,
+    "sha256": "0873276751a10ad5eed00a59104597798d9256703fd8e0ab20b742b3c02d87fc"
   },
   "page": {
-    "bytes": 151232,
-    "sha256": "38611c5f20ecd9fafa7610a4c361479117862cb2bdaa20f8d96df68f4cd0d29b"
+    "bytes": 153906,
+    "sha256": "91e4a0bfdcbe46e88326bee74571f0883e45525666b7e70010ce2a1935aa7fd0"
   },
-  "sourceManifest": {
-    "bytes": 74123,
-    "sha256": "8b945ecde010223cf7e462cc399ad480d237f1cef67a6bcb925ec0b903ee3911"
+  "frozenBuildSourceManifest": {
+    "bytes": 93652,
+    "sha256": "b5849cc3c10caaaa797554083ca5045bdfe7ed53347f8ff7c66d6a6f84cbfc0d"
   },
-  "runtimeRebuiltForRelease": true,
-  "buildPassed": true,
+  "runtimeRebuiltForReleasePackaging": false,
+  "normalSdkBuildPassed": true,
   "sourceBeforeAfterMatch": true,
-  "commands": 167,
+  "commands": 146,
   "standaloneWeb": true,
   "nativeFrontendIncluded": false,
   "compressedFormats": [
@@ -38,6 +38,9 @@
   "payloadCacheBytes": 67108864,
   "hardwareRecord": "metadata/beta-qualification.json",
   "byteIdenticalRelinkVerified": true,
+  "privateStartupTraceIncluded": false,
+  "privateLaunchTimingIncluded": false,
+  "verboseSendDiagnosticsIncluded": false,
   "privateBuildLogsIncluded": false,
   "externalConsoleLibrariesIncluded": false,
   "gameContentIncluded": false

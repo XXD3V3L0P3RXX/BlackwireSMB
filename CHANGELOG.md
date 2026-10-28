@@ -2,6 +2,24 @@
 
 Changes are grouped by published preview. A build pass, initial menu and controllable gameplay are recorded separately in [testing](docs/TESTING.md).
 
+## v0.3.0-beta.3 — automatic Media setup and preparation repairs
+
+- Publish the exact manually loaded normal **Blackwire.elf**, build ID `blackwire-v0.3.0-beta.3`; use the same filename for the direct download and single Payload Manager entry.
+- Automatically set up/verify the Media shortcut after resident startup without saved SMB settings, a helper ELF or a PC command. Retain confirmed-idle, app-inventory and registration readback checks; no automatic replay after an uncertain platform result.
+- Repair initial discovery ordering and failed-constructor callback-owner retention. Check source/registration ownership before copying and preserve valid retained compressed preparations during refresh/reload.
+- Preserve source Ampr and supported `fakelib`/`fakelib2` companions separately from the embedded reader. Recognize supported PlayGo modules; refuse unknown or changed files.
+- Improve setup step-7/8 registration and directory error reporting. Recover independently confirmed completed removals without repeating platform Uninstall; protect conflicting existing installations and uncertain outcomes.
+- Add a bounded 128 KiB compressed metadata read window, reduce redundant preparation checks and use the existing 256 KiB final-copy buffer. Bound lifecycle-tag lookup without caching idle authority; keep the 64 MiB payload-cache budget.
+- Distinguish missing SMB shares, unreadable catalog directories and unreadable individual images; report the failing share/stage/operation while preserving saved settings on failure.
+- Remove the broken top-right Close browser button; retain Circle, dialog Back controls, Refresh and running-game warnings.
+- Disable private startup tracing, launch timers and verbose Send diagnostics in the normal release. Keep on-screen errors and the optional read-only PC summary collector.
+- Document separate and flat compressed-share layouts, matching companion files, both Windows permission layers and the normal Payload Manager upgrade/clean-reset workflow.
+
+The exact ELF passed the 146-command normal SDK build, focused host checks and 92 UI tests. The user manually prepared two extracted games and reached menus/setup screens, and uninstalled one. Automatic Media registration reported verified, with physical tile visibility/opening and controllable gameplay still unconfirmed for this exact artifact. Earlier private Alan Wake 2 copy-phase timing improved by about 73%; it is not a current-artifact, whole-Send or gameplay benchmark. Earlier poweroffs and the reporter's 10.01 failures remain unqualified. See [current results](docs/TESTING.md#v030-beta3).
+
+<details>
+<summary>Earlier development measurements and per-artifact checks</summary>
+
 ## Unreleased â€” verification in progress
 
 - Schedule automatic Media shortcut setup once after the ordinary ELF startup, without requiring SMB configuration, a PC command or a separate helper. One worker waits for confirmed idle status within a bounded startup window, then reuses the guarded public-SDK setup and readback; an existing registered shortcut skips installation. Focused current-source host regressions and the normal SDK build passed; automatic registration and Media visibility await console verification. The earlier explicit setup proof is separate.
@@ -53,7 +71,9 @@ An old/new/old normal-build Alan Wake 2 comparison using the earlier `c47da742â
 
 The earlier `c47da742â€¦` publication-copy candidate passed all 54 host suites, 62 host commands and 146 SDK commands with matching frozen source snapshots and private diagnostics excluded from its packaged ELF. Its clean Payload Manager tests passed fresh compressed Alan Wake 2 preparation, Uninstall/Restore/new Send, retained readiness after a same-build resident restart, Refresh and repeat launch/Close. A fresh extracted-folder installation also passed preparation, four actual module-hash checks, initial launch, Close and Uninstall. Failed-share correction and nonfatal invalid-image rejection/recovery passed. Launches visibly reached Game Saving/Continue; controllable gameplay remains unverified. The PC-only collector update separately passes seven tests and genuine Claude/Fable review; it does not change that packaged ELF.
 
-Nothing in this section is a published release. Normal removal and source switching passed the recorded console sequence; recovery from an actual hardware Unknown, gameplay and preparation speed on a newly qualified normal build remain unqualified. The earlier console access loss and the original trigger of the late ownership-confirmation failure remain unexplained; the controlled transient-check reproduction does not establish either cause. See [exact-removal recovery evidence](docs/TESTING.md#unreleased-exact-removal-recovery), [ownership and idle-admission checks](docs/TESTING.md#unreleased-ownership-and-idle-admission-follow-up), and the [qualification limits](docs/REQUIREMENTS.md).
+These are historical development records; their earlier publication holds and hardware limits apply to the named artifacts, not to the availability of beta.3. Normal removal and source switching passed the recorded console sequence; recovery from an actual hardware Unknown, gameplay and preparation speed on a newly qualified normal build remain unqualified. The earlier console access loss and the original trigger of the late ownership-confirmation failure remain unexplained; the controlled transient-check reproduction does not establish either cause. See [exact-removal recovery evidence](docs/TESTING.md#unreleased-exact-removal-recovery), [ownership and idle-admission checks](docs/TESTING.md#unreleased-ownership-and-idle-admission-follow-up), and the [qualification limits](docs/REQUIREMENTS.md).
+
+</details>
 
 ## v0.3.0-beta.2 â€” connection settings recovery
 

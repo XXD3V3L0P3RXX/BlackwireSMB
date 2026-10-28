@@ -1,30 +1,32 @@
 {
-  "kind": "blackwire-beta-delivery/1",
+  "kind": "blackwire-beta-delivery/2",
   "product": "Blackwire",
-  "version": "v0.3.0-beta.2",
+  "version": "v0.3.0-beta.3",
   "readyToPublish": true,
   "application": {
-    "bytes": 5772600,
-    "sha256": "ad3505cca3c6b409152e8c12024d81582a351aee473d7fecee4d82bc4e1e252c"
+    "bytes": 6015888,
+    "sha256": "8cebe80fa2510b581df5fa2602ce42bacdccc61cae82a21b3e699954248352a7"
   },
   "reader": {
-    "bytes": 843696,
-    "sha256": "39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441"
+    "bytes": 875296,
+    "sha256": "0873276751a10ad5eed00a59104597798d9256703fd8e0ab20b742b3c02d87fc"
   },
   "sourceBuildPassed": true,
   "nativeFrontendIncluded": false,
-  "catalogChanged": false,
-  "previousReleasesChanged": false,
+  "catalogUpdateAfterDownloadLive": true,
+  "previousReleaseTagsAndAssetsPreserved": true,
+  "qualificationRecord": "metadata/beta-qualification.json",
   "knownLimits": [
-    "Reporter exact remaining connection/discovery failure needs status and logs.",
-    "Hardware settings tests cover the recorded 13.00-family environment.",
-    "Gameplay was not repeated for this resident; no controlled loading-speed improvement is claimed."
+    "Current exact-artifact hardware tests cover manual loading, two extracted preparations, menus/setup screens and one removal.",
+    "Physical Media tile visibility/opening, controllable gameplay and current-artifact controlled performance are unconfirmed.",
+    "Reporter firmware 10.01 and earlier unexplained shutdown/removal uncertainty are not claimed resolved."
   ],
   "excluded": [
     "credentials and settings",
-    "private logs and captures",
+    "private console evidence",
     "game content and saves",
     "external console libraries and keys",
-    "native Dashboard application"
+    "native Dashboard application",
+    "private startup/timing/verbose Send instrumentation"
   ]
 }

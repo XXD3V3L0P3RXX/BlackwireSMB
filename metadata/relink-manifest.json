@@ -1,19 +1,19 @@
 {
   "kind": "blackwire-public-relink-summary/1",
   "passed": true,
-  "stripObjectCopies": 163,
-  "files": 175,
+  "stripObjectCopies": 167,
+  "files": 179,
   "archive": {
-    "bytes": 7847571,
-    "sha256": "e1b9ed257f0ff9b9ab81bb786248e9cffe3f8617c3fcf3bd492def84ccc18b41"
+    "bytes": 8069686,
+    "sha256": "edc63b7ee75c6c5d0db1b09269f9bc65b0ce30031ee23d0703a5088ec95503f0"
   },
   "originalPackage": {
-    "bytes": 5772600,
-    "sha256": "ad3505cca3c6b409152e8c12024d81582a351aee473d7fecee4d82bc4e1e252c"
+    "bytes": 6015888,
+    "sha256": "8cebe80fa2510b581df5fa2602ce42bacdccc61cae82a21b3e699954248352a7"
   },
   "cleanMaterialRelinkPackage": {
-    "bytes": 5772600,
-    "sha256": "ad3505cca3c6b409152e8c12024d81582a351aee473d7fecee4d82bc4e1e252c"
+    "bytes": 6015888,
+    "sha256": "8cebe80fa2510b581df5fa2602ce42bacdccc61cae82a21b3e699954248352a7"
   },
   "allocatedExecutableBytesIdentical": true,
   "runtimeRelocationSemanticsUnchanged": true,

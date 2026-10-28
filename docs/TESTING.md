@@ -4,6 +4,37 @@ This record distinguishes copied files, a running game process, a visible menu, 
 
 No title-specific compatibility blocker has been identified in testing so far. The limited coverage below does not establish that every title or every stage of a title will work.
 
+## v0.3.0-beta.3
+
+Released normal resident: **6,015,888 bytes**, SHA-256 `8cebe80fa2510b581df5fa2602ce42bacdccc61cae82a21b3e699954248352a7`, build ID `blackwire-v0.3.0-beta.3`. Embedded reader: **875,296 bytes**, SHA-256 `0873276751a10ad5eed00a59104597798d9256703fd8e0ab20b742b3c02d87fc`. Runtime source is `fb1e22973c4ef4dfd0fa857ab832fd45621a24ad`; the frozen build-source commit is `6f67792bf7045136abdc8d0510a080b2dff1ae17`. Subsequent release documentation/provenance changes do not rebuild the tested ELF.
+
+### Current artifact checks
+
+- All **146 normal SDK/build commands** passed, with matching source snapshots and the reader embedded byte for byte. Private startup traces, launch timers and verbose Send logs are disabled. The normal recipe leaves automatic browser opening disabled; Media setup is scheduled independently.
+- Focused current-source ASan/UBSan checks passed: Media coordinator **16 cases/416 checks**; actual main worker **11/1,697** with SDK/backend effects modeled; actual backend token accessor **8/476**; unchanged public registration core **17/3,156** with real POSIX inventory/JSON parsing and modeled SDK/database/clock. Existing actual removal checks **31/411** and resident startup **8/318** passed. These are host results, not firmware qualification.
+- The actual embedded-page suite passed **92 UI tests**. Independent relinking from privacy-clean retained materials reproduces this exact ELF. Earlier full host-suite counts below belong to their own source revisions and are not relabeled as fresh runs of this runtime.
+
+### Manual Payload Manager observations, October 28
+
+The operator uploaded and loaded this exact normal `Blackwire.elf` using Payload Manager. Automatic Media setup reported **verified**, one public batch registration attempt, platform status 0, its own row present and the reservation released. No separate manual registration endpoint or helper was used. Physical Media-tile visibility/opening has not yet been separately confirmed.
+
+| Game | Exact-artifact result |
+| --- | --- |
+| Dead Island 2 (`PPSA03098`) | Send completed 175 startup files / 341,681,824 bytes. User reported reaching its menu and uninstalling it; catalog subsequently reported Removed. |
+| The Last of Us Part II Remastered (`PPSA15508`) | Send completed 174 startup files / 151,899,430 bytes; game process observed. User reported a long load followed by the play-area setup screen. |
+
+The user reported no error during those manual loads. Controllable gameplay and a controlled speed comparison are **not confirmed for this exact ELF**. GTA V's earlier successful manual test used the preceding 5,999,104-byte beta.3 candidate and must not be attributed to this 6,015,888-byte automatic-Media artifact.
+
+The initial wrong-share and access-denied settings failures were distinguishable: a nonexistent share name failed SMB connection; a valid share with insufficient NTFS access connected but refused catalog reads. The user then configured the intended `Compressed` share and file access before the successful game preparations. This is an environment correction, not evidence that Blackwire can bypass Windows access rules.
+
+### Remaining limits
+
+These observations cover the recorded 13.00-family setup. The issue #2 reporter's firmware 10.01, full 27-image set and remaining step-8/9 failures have not been reproduced on that environment. Earlier unexpected poweroffs and intermittent Uninstall Unknown results remain unexplained; successful later manual loads do not establish their cause or a universal fix. Busy/existing-shortcut automatic setup and broader hardware recovery remain to be checked.
+
+The private Alan Wake 2 parser-only result below (**151.772 → 40.328 seconds**, 73.4% less copy-phase time) belongs to its named diagnostic artifact. It does not establish current normal-ELF throughput, whole-preparation time or gameplay loading speed.
+
+The following development sections preserve their original per-artifact observations. References there to an unreleased candidate or publication hold describe that historical test stage; the release above is the current availability and qualification record.
+
 ## Unreleased automatic Media startup
 
 The newest development candidate schedules one automatic Media setup worker after resident/listener startup and the optional browser-open section. The normal recipe keeps automatic browser opening disabled, as before. It can start without saved SMB settings, waits for confirmed idle status within a 90-second window and reuses the existing asset, application-inventory, public-SDK and registration-readback checks. An existing registered Blackwire shortcut skips installation; an uncertain result is not automatically replayed. This makes **Payload Manager load → automatic Media setup → SMB configuration** the intended fresh-install flow, without a PC command or separate helper.

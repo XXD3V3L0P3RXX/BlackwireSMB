@@ -2,7 +2,7 @@
 
 The ordinary flow is **Send files → Ready → PS5 Games icon**. Keep the Blackwire resident running and the PC share online throughout play. Use the [tested runtime](REQUIREMENTS.md), and check the [preview's results and limits](TESTING.md).
 
-The current published test build is **v0.3.0-beta.2**. Both the direct download and the Payload Manager custom source offer that same runtime. The unreleased development candidate adds **Payload Manager load → automatic Media setup → SMB configuration** for a fresh install. Focused current-source host checks passed for that automatic path; it remains unverified on the console and is not included in the published download. Supported sources remain extracted folders, the documented PFS/PFSC layouts and contiguous exFAT images. Read the [PFS/PFSC limits](COMPRESSED-DEVELOPMENT.md#formats) and [exFAT scope](EXFAT-DEVELOPMENT.md#admitted-layout); a `.ffpfsc` suffix alone is insufficient.
+The current published build is **v0.3.0-beta.3**, delivered as the same **Blackwire.elf** through the direct download and Payload Manager source. The fresh-install flow is **Payload Manager load → automatic Media setup → SMB configuration**. Automatic registration reported verified in the current normal-ELF manual test; physical shortcut visibility/opening is a separate check. Supported sources remain extracted folders and the documented PFS/PFSC and contiguous exFAT images. See the [folder layouts](../README.md#pc-folder-structure), [format scope](EXFAT-DEVELOPMENT.md#admitted-layout) and [current test record](TESTING.md#v030-beta3).
 
 ## Windows shared folder
 
@@ -22,7 +22,7 @@ Windows applies two permission layers to the same SMB account: the shared folder
 
 In that file's **Properties → Security → Advanced → Effective Access**, check the account entered in Blackwire. It needs Read access to the image and access through its parent folders; Blackwire does not need Full control or PC write access. Review any denied or missing access with the folder owner before making a narrowly scoped change. Blackwire does not automatically change Windows permissions.
 
-The unreleased diagnostics distinguish SMB sign-in/share access from a connected share whose image open, metadata or read operation fails. Keep the displayed share, file, stage, operation and transport result. An access refusal is not proof that the image needs repacking or that console libraries need deleting. After resolving the exact file access, explicitly check or refresh once and inspect the result. A failed connection/library check keeps the previously saved settings.
+The current release distinguishes SMB sign-in/share access from a connected share whose image open, metadata or read operation fails. Keep the displayed share, file, stage, operation and transport result. An access refusal is not proof that the image needs repacking or that console libraries need deleting. After resolving the exact file access, explicitly check or refresh once and inspect the result. A failed connection/library check keeps the previously saved settings.
 
 ## Optional second share
 
@@ -31,7 +31,7 @@ Share both parent folders on the same PC and give the same account read access t
 | Blackwire setting | Share name | Example PC folder |
 | --- | --- | --- |
 | Shared folder name | `PS5Games` | `D:\PS5Games` |
-| Second shared folder | `PS5Compressed` | `D:\Compressed` |
+| Second shared folder | `Compressed` | `D:\Compressed` |
 
 Enter share names, not drive paths. Save and check connection reads both shares before saving; a failed check keeps the previous configuration. Leave the second field blank to use one share. Existing single-share settings still work. Separate servers or separate credentials per share are not supported.
 
@@ -40,15 +40,15 @@ Each copy retains its own share, path and preparation identity. Equal titles in 
 ## Load the console resident
 
 1. Check the [tested firmware and runtime versions](../README.md#tested-environment) and whether your ELF has the [released-preview dependency or development repair](REQUIREMENTS.md#external-shadowmount-libraries), before preparing a game. Start the working jailbreak chain with Kstuff and compatible stock ShadowMountPlus active. Only the 13.00-family profile `0x13000040` is console-qualified; 10.01 and other firmware profiles are unverified.
-2. Stop the old resident first and load only one. Upload the chosen verified ELF through Payload Manager, using the canonical stored name **`Blackwire.elf`**, then launch that stored card. The published beta direct download is named `Blackwire-Beta.elf`; save it as `Blackwire.elf` before uploading. Confirm `http://<PS5-address>:5918/health` matches the selected build; the published beta reports `blackwire-v0.3.0-beta.2`. The unpublished development candidate is identified separately in [testing](TESTING.md#october-27-final-publication-candidate). Repeat the normal Payload Manager load after reboot.
-3. In the development candidate, let automatic Media setup finish. It checks the existing shortcut or registers the blue **Blackwire** entry without requiring saved SMB settings. If it is waiting for an idle console, close any running game normally and wait; do not reload the ELF to force another attempt. See [status and limits](#automatic-media-shortcut-setup).
+2. Stop the old resident first and load only one. Upload the chosen verified ELF through Payload Manager, using the canonical stored name **`Blackwire.elf`**, then launch that stored card. Confirm `http://<PS5-address>:5918/health` matches the selected build; the current release reports `blackwire-v0.3.0-beta.3`. The exact ELF is identified in [testing](TESTING.md#v030-beta3). Repeat the normal Payload Manager load after reboot.
+3. In the current release, let automatic Media setup finish. It checks the existing shortcut or registers the blue **Blackwire** entry without requiring saved SMB settings. If it is waiting for an idle console, close any running game normally and wait; do not reload the ELF to force another attempt. See [status and limits](#automatic-media-shortcut-setup).
 4. Open **Blackwire** from PS5 **Media**, or open `http://<PS5-address>:5918/` in a LAN browser. The console page is `http://127.0.0.1:5918/`.
 5. Configure the share and let library discovery finish. Choose a game, select **Send files**, and wait for that named job to finish with Ready status.
 6. Open the game's ordinary icon in the PS5 **Games** area, or use web **Play**. Blackwire handles that game's startup handoff and tracks the session.
 
 A completed Send includes the per-game reader and registration checks. If files are retained but setup is incomplete, the page can offer **Finish setup** or **Finish setup and play**. Follow the selected game's status; retained files do not automatically grant Ready. An unchanged, valid Ready game uses bounded startup checks rather than a complete new source-tree scan.
 
-An existing title can retain console app metadata even after its source folder disappears from ShadowMount. That state must be resolved through normal uninstall before a fresh registration; it is not fixed by adding replacement files. The unreleased revision keeps its refusal visible and can separately remove a verified Blackwire startup copy without touching the existing installation. See [incomplete setup and removal](PREPARATION.md#existing-console-metadata-and-incomplete-setup).
+An existing title can retain console app metadata even after its source folder disappears from ShadowMount. That state must be resolved through normal uninstall before a fresh registration; it is not fixed by adding replacement files. The current revision keeps its refusal visible and can separately remove a verified Blackwire startup copy without touching the existing installation. See [incomplete setup and removal](PREPARATION.md#existing-console-metadata-and-incomplete-setup).
 
 The selected game card shows its preparation progress, current session and any error. Game-operation notices stay with that card rather than appearing as floating notifications across the page.
 
@@ -58,11 +58,11 @@ These steps reset Blackwire, rather than merely replacing a running resident. Ke
 
 1. Close the running game normally and let pending operations finish. In Blackwire, use each selected streamed copy's **Details → Uninstall**, then wait for its terminal result. An empty ShadowMount list alone does not prove removal. If Uninstall refuses or its outcome is unknown, retain that result and diagnose it before deleting Blackwire's records.
 2. Verify that the selected owned preparation and its game registration are gone. Do not delete a different installation with the same title, a saved-game directory, or the console database. **Remove startup files only** deliberately preserves an existing installation and is not equivalent to full Uninstall.
-3. Stop the old resident through Payload Manager's **Active processes**. Remove the Blackwire stored payload entry through Payload Manager; preserve unrelated payloads. For the development candidate, use one canonical stored **`Blackwire.elf`**, not a growing set of differently named test ELFs.
+3. Stop the old resident through Payload Manager's **Active processes**. Remove the Blackwire stored payload entry through Payload Manager; preserve unrelated payloads. For the current release, use one canonical stored **`Blackwire.elf`**, not a growing set of differently named test ELFs.
 4. After owned game removal is confirmed and Blackwire is stopped, remove its own `/data/blackwire` test directory through the file manager if a complete settings/history reset is intended. Keep any requested diagnostics on the PC first. This clears the SMB setup and Blackwire history; it does not repair an unrelated platform registration or a refusal whose outcome is unresolved.
-5. Upload the chosen verified `Blackwire.elf` in Payload Manager and launch its stored card once. For the development candidate, wait for automatic Media setup, then open the shortcut or browser and check the exact build/artifact identity. Enter the existing SMB settings and use normal **Send files → Ready → Play**. Do not create replacement libraries, mount links or registration receipts by hand.
+5. Upload the chosen verified `Blackwire.elf` in Payload Manager and launch its stored card once. For the current release, wait for automatic Media setup, then open the shortcut or browser and check the exact build/artifact identity. Enter the existing SMB settings and use normal **Send files → Ready → Play**. Do not create replacement libraries, mount links or registration receipts by hand.
 
-When the resident is deliberately stopped, its port 5918 page is expected to be offline. Check Payload Manager or the file manager independently before treating that as a console failure. Private startup traces, launch timers and verbose Send logs are test-build options; the October 27 normal candidate excludes them.
+When the resident is deliberately stopped, its port 5918 page is expected to be offline. Check Payload Manager or the file manager independently before treating that as a console failure. Private startup traces, launch timers and verbose Send logs are test-build options; the current normal release excludes them.
 
 ## Refresh and console controls
 
@@ -70,7 +70,7 @@ Use **Refresh library** beside the filters after adding, moving or removing PC s
 
 If Send files or Refresh is blocked by a running game, the page names that game, for example **Close Resident Evil 4 to send files**. Close it normally and allow session status to settle. A disabled action is not permission to resend or remove its preparation manually.
 
-The PS5 page shows controller hints; the PC page keeps keyboard hints. Circle was confirmed to close Details and, at the main library, return to the PS5 dashboard. The published build's extra Close browser button does not work in the tested console browser; use Circle. The unreleased source removes that button, with current-candidate hardware qualification still pending. A browser that retained development-9/10 history must be fully closed and reopened once; reloading the page alone does not clear those entries.
+The PS5 page shows controller hints; the PC page keeps keyboard hints. Circle was confirmed to close Details and, at the main library, return to the PS5 dashboard. The broken top-right Close browser button is removed in beta.3; use Circle. The embedded-page regressions pass; current-artifact physical controller checks remain separate from the earlier confirmed Circle checks. A browser that retained development-9/10 history must be fully closed and reopened once; reloading the page alone does not clear those entries.
 
 ## Background payloads during testing
 
@@ -80,7 +80,7 @@ Keep unnecessary background payloads closed while comparing behavior. In the rec
 
 ## Automatic Media shortcut setup
 
-The development candidate schedules one automatic setup worker after resident/listener startup and the optional browser-open section. Load the single stored **`Blackwire.elf`** through Payload Manager, let Media setup finish, then open the blue **Blackwire** entry and configure SMB. Fresh missing SMB settings do not prevent this setup. No PowerShell command, helper ELF or manually created file is required. Focused current-source host checks passed for this new automatic flow. Actual automatic registration and Media visibility remain unverified on the console; the earlier explicit-action result below does not qualify them.
+The current release schedules one automatic setup worker after resident/listener startup and the optional browser-open section. Load the single stored **`Blackwire.elf`** through Payload Manager, let Media setup finish, then open the blue **Blackwire** entry and configure SMB. Fresh missing SMB settings do not prevent this setup. No PowerShell command, helper ELF or manually created file is required. Focused current-source host checks passed. In the October 28 manual load, automatic setup reported verified after one public batch registration call and released its reservation. Physical tile visibility/opening still needs separate confirmation; see the exact-artifact test record.
 
 The worker checks for a safely idle console every 250 ms within a 90-second startup window. While it waits, `/health` reports `mediaSetupStatus: automatic_setup_waiting`; after it obtains the reservation, it reports `automatic_setup_running`. Close a running game normally and wait for status to settle. Do not repeatedly reload Blackwire or submit another registration request. If the bounded wait refuses, or the outcome is unconfirmed or ownership is held, preserve the reason and resolve that state before another attempt. A timeout does not prove that registration failed or make an uncertain platform call safe to repeat.
 
@@ -110,4 +110,4 @@ Refresh can rediscover files and observe a known preparation; it cannot turn mis
 
 ## Diagnostic preparation failures
 
-The optional `v0.2.0-preview.1-sendlog.1` release has [separate diagnostic instructions](DIAGNOSTICS.md), including the exact artifact identity, build command, log collection and rollback. The normal preview remains unchanged.
+The optional `v0.2.0-preview.1-sendlog.1` release has [separate diagnostic instructions](DIAGNOSTICS.md), including the exact artifact identity, build command, log collection and rollback. Those historical instructions apply to that diagnostic artifact; the current normal release does not include its verbose Send logger.

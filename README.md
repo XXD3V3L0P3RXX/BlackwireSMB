@@ -1,28 +1,30 @@
 # Blackwire
 
-Stream PS5 games from an ordinary PC SMB share, with a smaller startup copy on the console. Supports extracted folders and the tested PFS/PFSC compressed layouts, including supported `.ffpfsc` images.
+Run supported PS5 games stored on an ordinary PC SMB share, with essential startup files kept on the console. The game runs on the PS5; bulk data stays on the PC. Supports extracted folders and the documented PFS/PFSC and contiguous exFAT layouts, including supported `.ffpfsc` images. No Blackwire PC server, Python or Node service is needed.
 
-## Development candidate — verification in progress
+## Current release — v0.3.0-beta.3
 
-The current unreleased source adds automatic Media shortcut setup after the normal ELF startup. The intended fresh-install flow is **load the stored `Blackwire.elf` in Payload Manager → automatic Media setup → configure SMB**. It does not require a PC command or previously saved SMB settings. Focused current-source host checks passed for this new automatic startup path. Actual automatic Media registration and visibility still require console verification; the earlier explicit Media setup result does not qualify them.
+**[Download Blackwire.elf](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/download/v0.3.0-beta.3/Blackwire.elf)** · [Release notes and checksums](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.3)
 
-The source also changes initial library discovery to run after both service guards are attached and before the background observer reserves work. Failed startup construction preserves callback owners whose release cannot be confirmed. Uninstall refusals identify which registration or source check failed after unmount, while keeping all checks and the no-retry rule.
+This is the exact normal ELF tested through Payload Manager: **6,015,888 bytes**, SHA-256 **`8cebe80fa2510b581df5fa2602ce42bacdccc61cae82a21b3e699954248352a7`**, build ID **`blackwire-v0.3.0-beta.3`**. There is one current runtime download, named **`Blackwire.elf`**. Source, relinking materials and the optional read-only PC summary collector are supporting files.
 
-The focused host and UI suites and full normal SDK build passed. Automatic registration and Media visibility still await fresh console validation. Earlier private diagnostics observed approximately **73% less copy-phase time** for one compressed Alan Wake 2 source on the recorded 13.00-family console. That result does not qualify this startup repair, network throughput or gameplay loading. A prior normal-build poweroff and an intermittent Uninstall refusal remain unexplained; these changes are not claimed to fix either event.
+This update adds automatic **Blackwire Media shortcut setup** after loading the ELF, startup/preparation and removal repairs, clearer SMB access errors, and preparation/read optimizations. The broken top-right **Close browser** button is removed; use Circle on the console. Private startup tracing, launch timers and verbose Send logging are **disabled** in this release; useful on-screen errors remain.
 
-Publication remains on hold, and the download below is unchanged. The canonical runtime filename is `Blackwire.elf`; private startup, timing and verbose Send instrumentation must be excluded from a future release. See the [current checks and limits](docs/TESTING.md#unreleased-startup-ordering-and-owner-lifetime).
+On the recorded 13.00-family setup, the user loaded this exact ELF normally, prepared two extracted games, reached their menus/setup screens and uninstalled one. Automatic Media registration reported verified; the physical shortcut's visibility/opening still needs separate confirmation. Controllable gameplay has not been confirmed for this exact artifact. Earlier unexpected shutdowns remain unexplained and are not claimed fixed. This is a beta, with [precise results and limits](docs/TESTING.md#v030-beta3).
 
-## Current download — v0.3.0-beta.2
+[Setup](docs/SETUP.md) · [Upgrade/test instructions](docs/BETA-TESTING.md) · [Requirements](docs/REQUIREMENTS.md) · [Changelog](CHANGELOG.md) · [Build from source](docs/BUILD.md) · [Project mirror](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB)
 
-**[Download Blackwire-Beta.elf](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/download/v0.3.0-beta.2/Blackwire-Beta.elf)**
+## What changed since beta.2
 
-Use this single ELF for the current test beta. It already includes setup and connection diagnostics; there is no separate current logging ELF to choose. The source ZIP, relinking archive and verification files on the release page are supporting developer/test files.
+- Set up or verify the Media shortcut automatically after a normal Payload Manager load, even before SMB settings exist. Busy or uncertain registration stays visible instead of being blindly retried.
+- Repair startup discovery ordering and callback-owner lifetime handling. Keep preparation ownership checks before copying, and preserve valid retained compressed preparations during refresh/reload.
+- Keep original game companions separate from the embedded reader; verify source Ampr and supported `fakelib`/`fakelib2` layouts rather than replacing them. Preserve strict refusal of unknown or changed files.
+- Improve registration/removal error reporting and recover an independently verified completed removal without repeating platform Uninstall. Conflicting installations remain protected.
+- Reduce compressed metadata requests with a bounded read window, reduce repeated preparation work and use the existing larger copy buffer. Payload cache size remains **64 MiB**.
+- Name the failing SMB share, operation and stage. A missing share and a connected share with unreadable game files now give different guidance; failed checks keep saved settings.
+- Retain supported MkPFS exFAT discovery, two shares, compressed artwork, library refresh, running-game warnings and the self-contained step-7 reader installer.
 
-This beta fixes saved settings appearing blank during startup and a settings form that could stay locked after replacing the resident. It retains the supported MkPFS exFAT reader and self-contained step-7 installer. Keep only one Blackwire resident running, and confirm `/health` reports **`blackwire-v0.3.0-beta.2`** after loading it. Other reported failures still need their own verification.
-
-[Release notes and checksums](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.2) · [Beta test instructions](docs/BETA-TESTING.md) · [Setup](docs/SETUP.md) · [Requirements](docs/REQUIREMENTS.md) · [Changelog](CHANGELOG.md) · [Test results](docs/TESTING.md) · [Build from source](docs/BUILD.md) · [Project mirror](https://git.etawen.dev/XD3V3LOP3RX/BlackwireSMB)
-
-This is a test beta. Earlier versions remain under **Previous releases and rollback** below and are labeled as previous versions on their release pages.
+An earlier private same-source Alan Wake 2 comparison observed **151.772 → 40.328 seconds** for its copy phase (about **73% less time**). That is a diagnostic workload result, not a measured improvement for this exact normal ELF, whole preparation, Ethernet throughput or gameplay loading. See [performance evidence](docs/TESTING.md#unreleased-parser-only-preparation-profile).
 
 ## Tested environment
 
@@ -47,109 +49,121 @@ Earlier baseline tests used ShadowMountPlus `1.7-beta5fix1` and elfldr `v0.26`; 
 
 The older v0.2.0 preview has a setup bug: it requires a particular optional global pack at `/data/shadowmount/fakelib`, even though Blackwire already embeds its reader. A missing pack can cause setup step 7 to fail after startup files transfer. This does **not** mean PS5 system files are missing. The current beta installer writes and verifies its embedded reader directly, preserves recognized existing per-game companions, and does not read or modify that global directory. See [repair scope](docs/RUNTIME-BUNDLE-DEVELOPMENT.md), [requirements](docs/REQUIREMENTS.md) and [test results](docs/TESTING.md).
 
-## Install the current beta
 
-Use **Blackwire-Beta.elf** from [v0.3.0-beta.2](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.2) to test the reported missing-image and step-7 failures. Keep your original game images and share layout; there is no need to repack the whole library or create `/data/shadowmount/fakelib`. Stop the old resident before loading the beta. Follow the [one-attempt test and logging instructions](docs/BETA-TESTING.md), including the build ID check.
+## PC folder structure
 
-The [exFAT format scope](docs/EXFAT-DEVELOPMENT.md), [installer repair](docs/RUNTIME-BUNDLE-DEVELOPMENT.md) and [exact test records](docs/TESTING.md) describe what has been verified. Test results on our 13.00-family console do not establish universal firmware or title compatibility.
+The reference layout keeps extracted games and completed compressed images in two separate shared folders on the **same PC**, with the same SMB account:
 
-<details>
-<summary>Previous releases and rollback</summary>
+```text
+D:\
+├── PS5Games\                    Windows share name: PS5Games
+│   ├── Game A\
+│   │   ├── eboot.bin
+│   │   ├── sce_sys\param.json
+│   │   └── ...complete extracted game files...
+│   └── Game B\
+│       └── ...complete extracted game files...
+└── Compressed\                  Windows share name: Compressed
+    ├── Grand Theft Auto V\
+    │   ├── PPSA04263.ffpfsc
+    │   └── PPSA04263.ffpfsc.vhash       keep the matching companion, if produced
+    └── Resident Evil 7\
+        ├── PPSA04405.ffpfsc
+        └── PPSA04405.ffpfsc.vhash
+```
 
-### Older preview downloads
+The title IDs and filenames above illustrate the tested folder arrangement; preserve the actual filenames produced for your own images. Keep each matching `.vhash` beside its image when your compressor supplies it. Blackwire streams a completed supported image; do not point it at temporary compression outputs or move/change a source while it is being scanned, prepared or played.
 
-These older files are retained for rollback and comparisons. For the current beta, use the single download above. Load only one Blackwire resident at a time.
+| Blackwire Settings field | Value for this example |
+| --- | --- |
+| PC address | Your PC's LAN IPv4 address |
+| Shared folder name | `PS5Games` |
+| Second shared folder | `Compressed` |
+| Username / password | The same Windows SMB account for both shares |
 
-| Build | Download | Use |
-| --- | --- | --- |
-| Previous preview | [Blackwire.elf](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/download/v0.2.0-preview.1-sendlog.1/Blackwire.elf) | The earlier v0.2.0-preview.1 runtime, retained for rollback. |
-| Previous logging build | [Blackwire-SendLog.elf](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/download/v0.2.0-preview.1-sendlog.1/Blackwire-SendLog.elf) | The same reader with extra Send/setup logging for investigating failures. |
+**Enter the Windows share name**, not `D:\Compressed`, a UNC path or the name of an unshared sibling folder. `Compressed` is the share name in this example; it is not a mandatory hard-coded name. A share called `PS5Compressed` must be entered as `PS5Compressed`. Sharing `PS5Games` alone does not expose its sibling `Compressed`.
 
-Both ELFs are together on the [download page](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.2.0-preview.1-sendlog.1). See [diagnostic instructions](docs/DIAGNOSTICS.md) for collecting logs and returning to the normal build. Sources, relinking materials and checksums are provided alongside the downloads or linked in the release notes.
+A flat compressed share is also accepted by discovery; separate game folders are not a format requirement:
 
-Blackwire runs as a single resident ELF on a compatible jailbroken PS5. Its web interface works in the PS5 browser and a LAN browser. The game runs on the PS5; bulk game files stay on the PC. An ordinary Windows shared folder is enough—there is no Blackwire PC service to install.
+```text
+Compressed\                      share this folder itself
+├── Game A.ffpfsc
+├── Game A.ffpfsc.vhash
+├── Game B.ffpfsc
+└── Game B.ffpfsc.vhash
+```
 
-### Earlier Send-files diagnostic
+An image's internal filesystem must still match the [supported formats](docs/EXFAT-DEVELOPMENT.md#admitted-layout). An `.ffpfsc` extension alone does not prove support. Discovery is read-only; Blackwire does not need PC write access. The SMB account needs **Read** under Sharing permissions and **Read/List/Read & execute** under Security/NTFS permissions, including the individual images and their parent folders. A directory can be listed while its images remain unreadable. See [Windows setup and access errors](docs/SETUP.md#windows-shared-folder).
 
-The older **v0.2.0-preview.1-sendlog.1** build is retained for comparisons with its original reader. [Historical diagnostic and rollback instructions](docs/DIAGNOSTICS.md) apply to those older files. The current beta already includes diagnostics.
+## Console folder structure
 
-## v0.2.0-preview.1
+Blackwire creates its own startup preparations; do not copy reader libraries or make replacement files by hand:
 
-- Stream supported PFS/PFSC compressed images without a PC decompression service.
-- Scan **two SMB shares on the same PC** with the same sign-in details, keeping extracted and compressed games in separate folders.
-- Read game artwork directly from supported compressed images.
-- Finish setup with known earlier Blackwire readers while retaining valid startup files. Unknown reader binaries remain refused.
-- Use **Refresh library** to rescan the shares after adding or moving games.
-- See which running game must be closed when Send files or Refresh is blocked.
-- Use PS5 controller hints on the console. Circle was confirmed to close Details and return from the main library to the PS5 dashboard.
+```text
+/data/blackwire/
+├── share.conf                   private SMB settings; never share publicly
+├── games/                       Blackwire-owned startup copies and sparse files
+└── ...owned indexes, operation records and state...
 
-GTA V and Resident Evil 7 reached controllable gameplay from compressed sources in earlier tests. GTA V also passed a direct Games-icon driving test. The current combined-library reader reached both initial menus; its later gameplay has not been repeated for this exact package. These are separate observations, recorded in [testing](docs/TESTING.md#compressed-and-two-share-preview).
+/data/homebrew/Games/            separate full local games, when configured in ShadowMount
+└── <Game>/
+    └── ...complete local game files...
+```
 
-The update reduces unchanged-source launch verification work, indexes the existing 64 MiB payload cache and batches adjacent PFSC reads. Controlled PS5 loading-time benchmarks are still pending. Background Game Compressor CPU contention contributed to earlier failures; it has not been established as the sole cause. See [compressed-source results](docs/COMPRESSED-DEVELOPMENT.md).
-
-**This is an early preview.** The extra Close browser button still stayed open in the console test; use Circle instead. That redundant button is scheduled for removal in the next build. Broader compatibility, interrupted-operation recovery and hardware Uninstall qualification remain open.
-
-</details>
-
-## Video
-
-[Watch the Blackwire demonstration on YouTube](https://youtu.be/xIPHo9kespo).
-
-## Blackwire Dashboard — in development
-
-We are already working on a full native **Blackwire Dashboard**: a cover browser with controller navigation and a shared library for streamed PC games and existing local console games. Planned settings, preparation progress and launch controls will bring those workflows into the native interface.
-
-Dashboard is a separate product under development. This standalone preview uses the web interface; it does not include the native Dashboard installer or interface. Follow the [roadmap](docs/ROADMAP.md#blackwire-dashboard) for the planned work. No release date is announced.
+The Payload Manager entry stores one **`Blackwire.elf`**; use its normal upload/install workflow and keep only one running Blackwire resident. Its storage location is managed by Payload Manager. `/data/homebrew/Games` is a separate local-game scan location, not the destination to manually fill Blackwire's streaming preparations. ShadowMount's depth is relative to its configured root: the recorded `scan_depth=2` reaches `Games/<Game>` from `/data/homebrew`; a root already pointing at `/data/homebrew/Games` differs. Preserve your unrelated roots and games.
 
 ## Install with PS5 Payload Manager
 
-The custom source offers the same current **v0.3.0-beta.2 test beta** as the direct download above, in one **Blackwire** entry. Payload Manager keeps the installed filename `Blackwire.elf`; its bytes and build ID match the manually downloaded `Blackwire-Beta.elf`. Refresh the source catalog to see the current version. Add the source once in [PS5 Payload Manager](https://github.com/itsPLK/ps5-payload-manager):
-
-1. Open **Settings → Manage Sources → Add Source**.
-2. Paste this direct catalog URL and choose **Add**:
+1. In Payload Manager, open **Settings → Manage Sources → Add Source**, then add:
 
    ```text
    https://raw.githubusercontent.com/XXD3V3L0P3RXX/BlackwireSMB/main/payloads.json
    ```
 
-3. Select **Blackwire**, confirm version **v0.3.0-beta.2**, install it, then load `Blackwire.elf` after starting the required jailbreak, Kstuff and ShadowMountPlus environment. Stop the previous resident before loading the update.
-4. Open `http://<PS5-address>:5918/` and follow the [quick start](#quick-start) to connect your SMB share and prepare games.
+2. Refresh the source and select the single **Blackwire** entry, version **v0.3.0-beta.3**. Install/upload it as **`Blackwire.elf`**.
+3. Close the running game normally, let pending operations finish, and stop the previous Blackwire resident in **Active processes** before loading the replacement. Deleting a stored ELF does not stop an already running resident. Keep one resident and one canonical payload entry.
+4. Start your working jailbreak/Kstuff/ShadowMountPlus environment, then load the stored **`Blackwire.elf`** card once. Confirm `http://<PS5-address>:5918/health` reports **`blackwire-v0.3.0-beta.3`**.
+5. Allow automatic Media setup to finish. Open **Blackwire** from PS5 Media, or use `http://<PS5-address>:5918/` in a LAN browser. The Media shortcut opens the running resident; it cannot load a missing ELF. Load the ELF again after reboot.
 
-The catalog points to the published preview ELF and supplies its SHA-256 checksum for Payload Manager to verify. This is an optional custom source, separate from Payload Manager's default catalog. It installs Blackwire; the [required dependencies](docs/REQUIREMENTS.md) must be supplied separately. The [release download](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.2.0-preview.1) remains available for manual loading.
+The direct [release download](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.3) contains the same ELF and SHA-256 as the custom catalog. Dependencies are supplied separately. [Clean-reinstall instructions](docs/SETUP.md#deliberate-clean-reinstall-for-a-controlled-test) explain how to remove owned preparations without deleting original PC games, saves or unrelated applications. A clean reset is optional, not a required workaround for every error.
 
 ## Quick start
 
-1. Share a parent folder containing complete extracted game folders or supported compressed images on your PC. You can share a separate compressed folder and enter it as the optional second SMB share. Give the same SMB account read access to both and keep the PC awake. Follow the [share guide](docs/SETUP.md#windows-shared-folder).
-2. Start the [recorded compatible jailbreak/runtime environment](#tested-environment), including Kstuff and stock ShadowMountPlus (`1.7beta7` in the latest retest). Set ShadowMount's **Library scan depth to 2** (`scan_depth=2`) for the layout in this guide, then load `Blackwire.elf`. See the [scan-root explanation](docs/SETUP.md#shadowmount-discovery) and [requirements](docs/REQUIREMENTS.md).
-3. Open `http://<PS5-address>:5918/` in a LAN browser, or `http://127.0.0.1:5918/` in the PS5 browser. In Settings, enter the PC address, share name, optional second share and SMB account, then choose **Save and check connection**. Both shares must pass the check before a two-share configuration is saved.
-4. Select a game and choose **Send files**. Wait for its preparation and registration to finish and show **Ready**.
-5. **Recommended:** return to the regular PS5 **Games** dashboard and start the prepared game from its icon. Web **Play** is also available. **Blackwire must remain running, and the PC share must stay online.**
+1. Share the complete extracted library and/or completed supported images using the [folder structure](#pc-folder-structure) above. Give the configured SMB account read access and keep the PC awake.
+2. Load `Blackwire.elf` normally through Payload Manager. Let automatic Media setup finish; see its [waiting/refusal behavior](docs/SETUP.md#automatic-media-shortcut-setup).
+3. Open Blackwire in Media or a LAN browser. Enter the **PC** address, share name, optional second share and SMB account in Settings. Choose **Save and check connection**. Both shares must pass before a two-share configuration replaces saved settings.
+4. Select one game and choose **Send files**. Wait until startup preparation, reader verification and registration finish with **Ready**.
+5. Return to the regular **PS5 Games dashboard** and launch the game's icon. Web **Play** is also available. Keep Blackwire running and the PC/share online throughout play.
 
-Load the ELF again after a console reboot. Fresh settings start blank. Previously saved address, share and username can be shown; a fixed marker indicates a saved password without returning its bytes to the page.
-
-If Send files is blocked, read the message beside the selected game and close the named running game normally. Use **Refresh library** after changing the contents of a share. On PS5, press Circle to leave Details, then Circle at the main library to exit the browser. When upgrading from an older UI test build, fully close and reopen the browser once so its old navigation history is discarded; no console restart is required for that UI reset.
-
-In the development candidate, loading the stored ELF automatically checks and sets up the blue **Blackwire** Media shortcut before SMB configuration is needed. If setup is waiting for an idle console, close the running game normally and wait; do not reload another resident to force registration. The shortcut opens the running page and does not load an absent ELF. This new automatic flow is not yet console-qualified or included in the unchanged published beta. See [automatic Media setup](docs/SETUP.md#automatic-media-shortcut-setup).
+Use **Refresh library** after adding, moving or removing source files. If Send or Refresh is blocked, read the named running-game warning and close that game normally. On PS5, Circle closes Details and returns from the main library to the dashboard; LAN browsers show keyboard hints. Fully close and reopen an old cached page after an upgrade.
 
 ## Preparation and storage
 
-The first Send copies real executables and required startup data, builds an index, and prepares the reader and game registration. Size, file count, PC storage and network conditions determine the wait; a large title can take several minutes or longer. The game's own loading time is a separate wait.
+Send copies real executables and required startup data, builds the index and installs/verifies the embedded reader. Larger streamed files use sparse placeholders with their original logical lengths. Their apparent size is not allocated console storage; inspect allocated space/free space. Downloading a placeholder through a normal file manager can materialize zeros and is not a replacement for the PC original. See [preparation and removal](docs/PREPARATION.md).
 
-Bulk files are represented by sparse placeholders with their original logical lengths. A console folder can appear very large while using far fewer allocated blocks. Check allocated storage or free space, rather than adding logical file sizes. Downloading a placeholder through a normal file manager can materialize a full-sized file of zeros; it is not a replacement for the PC original. Read [how preparation works](docs/PREPARATION.md).
+No manually created `/data/shadowmount/fakelib` pack is required by the current installer. The old preview's missing-global-pack step-7 bug did not mean Sony system files were missing. Do not create empty libraries or overwrite game modules to bypass setup checks.
 
 ## Current limits
 
-No title-specific compatibility blocker has been identified in testing so far. Coverage remains limited; individual startup, menu and gameplay observations are recorded separately.
+- Only the recorded **13.00-family** environment is console-qualified. The issue reporter's **10.01** environment remains unverified; no claim is made that every step-7/8/9 failure is repaired.
+- The documented contiguous exFAT and unsigned D32 PFS/PFSC layouts are supported. Signed/encrypted PFS, fragmented/scattered allocations, wide PFS inodes and individually compressed inner files remain unsupported. Report an image's admission reason rather than assuming all `.ffpfsc` files share one format.
+- Both shares use the same server and account. Share names and file access must match Windows configuration.
+- Ready, a menu and controllable gameplay are different results. Earlier GTA V/RE7 gameplay applies to those earlier artifacts; current exact-artifact observations are recorded separately.
+- Unknown/interrupted operations require their actual state to be resolved. Do not delete journals, registration records or unrelated installations to force a retry.
+- Earlier unexpected poweroffs and intermittent removal refusals are not universally explained or fixed. No universal speed, stability or all-title guarantee is made.
 
-- Extracted folders and supported unsigned contiguous D32 PFS/PFSC layouts are accepted. v0.3.0-beta.1 also accepts the [supported contiguous exFAT layouts](docs/EXFAT-DEVELOPMENT.md#admitted-layout). An `.ffpfsc` extension alone does not establish support. Signed/encrypted PFS, fragmented/scattered allocations, wide PFS inode layouts and individually compressed inner files remain unsupported.
-- The two shares must use the same PC/server and credentials. A folder outside either shared root is not exposed automatically.
-- Wired Ethernet is the tested network path. No minimum speed guarantees or universal loading-time improvement are claimed.
-- Some tested games have slow menu or scene loading even when gameplay is normal. No universal speed improvement or all-game compatibility is claimed.
-- Ready confirms the selected startup preparation and registration checks; it does not prove that every stage of a game works.
-- The resident and SMB share are required for game-icon launches. A Media shortcut cannot load an absent resident.
-- Unknown or interrupted operations need their actual status checked. Refresh does not grant permission to discard ownership records or repeat an uncertain action.
+<details>
+<summary>Previous releases and rollback</summary>
 
-[Current status](docs/STATUS.md), [recorded results](docs/TESTING.md) and the [roadmap](docs/ROADMAP.md) distinguish observed behavior from planned work.
+[v0.3.0-beta.2](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases/tag/v0.3.0-beta.2) remains available for rollback with its original `Blackwire-Beta.elf`, source and diagnostics. Older immutable releases remain on the [release history](https://github.com/XXD3V3L0P3RXX/BlackwireSMB/releases). Stop the current resident before switching and do not manually downgrade an owned game's reader. Preserve original PC games and any unresolved operation evidence.
+
+</details>
+
+## Video and native Dashboard
+
+[Watch the earlier Blackwire demonstration](https://youtu.be/xIPHo9kespo).
+
+**Blackwire Dashboard** is a separate native interface under development. This release is the standalone browser resident; it does not install the native Dashboard or emulators. See the [roadmap](docs/ROADMAP.md#blackwire-dashboard).
 
 ## Source and contributions
 

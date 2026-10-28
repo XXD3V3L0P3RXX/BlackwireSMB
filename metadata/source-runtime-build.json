@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "version": "v0.3.0-beta.2",
+  "version": "v0.3.0-beta.3",
   "sourceBuiltRuntime": {
     "passed": true,
     "sourceCommit": "f5d40f02770e9b0001dd9e18056eca70b3da8b40",
@@ -9,12 +9,12 @@
     "externalHeaders": 0,
     "sourceBeforeAfterMatch": true,
     "sourceManifest": {
-      "bytes": 74123,
-      "sha256": "8b945ecde010223cf7e462cc399ad480d237f1cef67a6bcb925ec0b903ee3911"
+      "bytes": 93652,
+      "sha256": "b5849cc3c10caaaa797554083ca5045bdfe7ed53347f8ff7c66d6a6f84cbfc0d"
     },
     "dependencies": {
-      "bytes": 71090,
-      "sha256": "35e608bc3a3bd8374e31ba63611697c7d3eef58e0fbcdd1f6d5b19490fc08945"
+      "bytes": 73442,
+      "sha256": "1fe17c4fb4bcd391eb5fb1c557df412dbae68862f69c65bff23387878b540376"
     },
     "runtimeManifest": {
       "bytes": 19995,
@@ -509,5 +509,7 @@
     "installedStaticRuntimeUsed": false,
     "nativeRuntimeProved": false
   },
-  "sourceBeforeAfterMatch": true
+  "usedSourceInputs": 112,
+  "sourceBeforeAfterMatch": true,
+  "sdkRuntimeCommitIsNotApplicationCommit": true
 }

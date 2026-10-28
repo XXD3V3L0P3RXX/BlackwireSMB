@@ -24,6 +24,14 @@ python3 tools/test_ui.py
 
 These commands describe the public recipe; they do not assert that every listed check was rerun for a particular release. Read its attached build manifest and the [hardware test record](TESTING.md).
 
+## v0.3.0-beta.3 build record
+
+Runtime source `fb1e22973c4ef4dfd0fa857ab832fd45621a24ad`, frozen build source `6f67792bf7045136abdc8d0510a080b2dff1ae17`, passed all **146** normal SDK/build commands with source snapshots unchanged. The app was not rebuilt for release packaging. `Blackwire.elf` is **6,015,888 bytes**, SHA-256 `8cebe80fa2510b581df5fa2602ce42bacdccc61cae82a21b3e699954248352a7`; reader **875,296 bytes**, SHA-256 `0873276751a10ad5eed00a59104597798d9256703fd8e0ab20b742b3c02d87fc`.
+
+Focused current-source host checks and **92 UI tests** passed; prior full-suite counts retain their own revision scope. The exact public link recipe and 179 retained material files independently relink to the same packaged ELF byte for byte. Normal builds exclude private startup tracing, launch timing and verbose Send diagnostics. User-facing errors and the optional PC summary collector remain. Automatic browser opening is disabled in this recipe; automatic Media setup is independent of it. See [current qualification](TESTING.md#v030-beta3) and `metadata/build-manifest.json`.
+
+`metadata/beta-build-source-manifest.json` preserves the manifest embedded in the tested build (SHA-256 `b5849cc3c10caaaa797554083ca5045bdfe7ed53347f8ff7c66d6a6f84cbfc0d`). Release documentation/provenance may follow that frozen source without changing the ELF. The selected source-built SDK CRT/libc commit is a dependency identity, separate from the app runtime commit.
+
 ## v0.3.0-beta.2 build record
 
 Clean frozen source `974ac247b1461e7a116e13c556192dec055f3e7a` (runtime source `9db35d2084412c738ab11628728c4f7013d0e88e`) passed all 167 SDK/build commands and fifteen host suites without a source-change override. Inputs matched before and after the build. The source-built settings startup, filesystem persistence/refusal and two-share suites are now part of the ordinary host build. The actual embedded-page suite passed 91 tests plus 19 browser-handoff cases.
@@ -68,4 +76,4 @@ Vendored AMPR Git attributes disable text conversion so clones and source archiv
 
 The optional `v0.2.0-preview.1-sendlog.1` release has [separate diagnostic instructions](DIAGNOSTICS.md), including the exact artifact identity, build command, log collection and rollback. The normal preview remains unchanged.
 
-In the unreleased development recipe, normal builds leave verbose Send logging, launch timing and startup tracing disabled. User-facing errors remain available. Private diagnostics must be selected explicitly with `--diagnostic`; bounded startup trace files additionally require `--startup-trace-file`. Those flags identify a separate test artifact and are not release defaults. The builder checks the actual packaged ELF and compile flags before accepting its diagnostic classification.
+In the current recipe, normal builds leave verbose Send logging, launch timing and startup tracing disabled. User-facing errors remain available. Private diagnostics must be selected explicitly with `--diagnostic`; bounded startup trace files additionally require `--startup-trace-file`. Those flags identify a separate test artifact and are not release defaults. The builder checks the actual packaged ELF and compile flags before accepting its diagnostic classification.

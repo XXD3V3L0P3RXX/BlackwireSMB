@@ -1,168 +1,98 @@
 {
-  "kind": "blackwire-beta-qualification/1",
-  "version": "v0.3.0-beta.2",
-  "buildId": "blackwire-v0.3.0-beta.2",
+  "kind": "blackwire-beta-qualification/2",
+  "version": "v0.3.0-beta.3",
+  "buildId": "blackwire-v0.3.0-beta.3",
   "application": {
-    "bytes": 5772600,
-    "sha256": "ad3505cca3c6b409152e8c12024d81582a351aee473d7fecee4d82bc4e1e252c"
+    "bytes": 6015888,
+    "sha256": "8cebe80fa2510b581df5fa2602ce42bacdccc61cae82a21b3e699954248352a7"
   },
   "reader": {
-    "bytes": 843696,
-    "sha256": "39cc8ff48a8b53886be0f7c5f1d43bc504fb989c00a9adc050dcade72865c441"
+    "bytes": 875296,
+    "sha256": "0873276751a10ad5eed00a59104597798d9256703fd8e0ab20b742b3c02d87fc"
   },
-  "cleanSdkBuild": {
+  "runtimeSourceCommit": "fb1e22973c4ef4dfd0fa857ab832fd45621a24ad",
+  "frozenBuildSourceCommit": "6f67792bf7045136abdc8d0510a080b2dff1ae17",
+  "normalSdkBuild": {
     "passed": true,
-    "commands": 167,
-    "hostSuites": [
-      "source",
-      "adapter",
-      "prehook",
-      "input_diagnostic",
-      "first_read",
-      "connect",
-      "cache",
-      "home_startup",
-      "exfat_metadata",
-      "compressed_stream",
-      "self_contained_bundle",
-      "send_logging",
-      "settings_startup",
-      "settings_storage",
-      "two_shares"
-    ],
-    "allHostSuitesPassed": true,
-    "sourceBeforeAfterMatch": true
+    "commands": 146,
+    "sourceBeforeAfterMatch": true,
+    "privateStartupTrace": false,
+    "privateLaunchTiming": false,
+    "verboseSendDiagnostics": false,
+    "automaticBrowserOpen": false
   },
-  "settingsHostTests": {
-    "startupActualFunctions": {
-      "passed": true,
-      "cases": 7,
-      "actualStartupFunctions": true,
-      "scanWorkerHeld": true,
-      "credentialsPrinted": false,
-      "consoleContacted": false
+  "focusedHostChecks": {
+    "asanUbsanPassed": true,
+    "mediaCoordinator": {
+      "cases": 16,
+      "checks": 416
     },
-    "privateFilePersistenceAndRefusals": {
-      "passed": true,
-      "cases": 7,
-      "freshSaveAndReadBack": true,
-      "unsafeFilesStillRefused": true,
-      "diagnosticsExcludeCredentials": true,
-      "originalSettingsPreserved": true
+    "mainWorkerModeledEffects": {
+      "cases": 11,
+      "checks": 1697
     },
-    "twoShareRegression": {
-      "passed": true,
-      "observed": {
-        "cases": 40,
-        "checks": 7770,
-        "sourceIsolation": true,
-        "legacyBindingsPreserved": true
-      },
-      "sanitizers": [
-        "address",
-        "undefined"
-      ],
-      "actualBackendFunctionsExtracted": [
-        "static int source_compare(",
-        "static int catalog_order(",
-        "static size_t catalog_selected(",
-        "static int valid_library(",
-        "static int library_merge(",
-        "void bw_native_library_destroy("
-      ],
-      "inputPins": {
-        "tests/sources/two_shares_test.c": {
-          "bytes": 11917,
-          "sha256": "466acd2be8d64905cb224ec1bb7ff6eb20d68427e8ec3866ceea414a288ff700"
-        },
-        "src/blackwire/library/source_catalog.c": {
-          "bytes": 18775,
-          "sha256": "aff241b02aa23db174b4d9b8cb28abe58e5daba1372e68053e8b2d93be4a365c"
-        },
-        "src/blackwire/library/source_identity.c": {
-          "bytes": 3004,
-          "sha256": "cc558fb7f1c746b3c9ad5ece8daf6027b8c52909b5f8c6109b8273bbb6727420"
-        },
-        "src/blackwire/library/source_binding.c": {
-          "bytes": 1735,
-          "sha256": "4631408df5d80285eb2dbb89aab8e7c98270b79b314d927fc6eb7344893ba3ba"
-        },
-        "src/blackwire/library/source_profile.c": {
-          "bytes": 7687,
-          "sha256": "37119feeadc1dc2dfd8bb509eff59870ea51f9eecba031c8870b6476e704c5a0"
-        },
-        "src/blackwire/library/native_request.c": {
-          "bytes": 6942,
-          "sha256": "1b0f2b551e53c75dacc0ab7b046906c4ff9c20107cef1f1ee3c84e0a523546ab"
-        },
-        "src/blackwire/library/native_removal_request.c": {
-          "bytes": 2543,
-          "sha256": "06a18d9a0473e50f71cb915d5af46c0c60365eeceed271878846c4bbfe18f8a1"
-        },
-        "src/blackwire/library/source_param.c": {
-          "bytes": 16358,
-          "sha256": "833b471592da2e9f3e27dabb279663785b82dacbe8ba00ad97ace27a98b485ae"
-        },
-        "src/blackwire/library/native_setup.c": {
-          "bytes": 12195,
-          "sha256": "2599f0f9289bd3d570e764229398958e79fa9e8f330c0e26f99613d91e0278c6"
-        },
-        "src/blackwire/streamreader/share_config.c": {
-          "bytes": 5717,
-          "sha256": "c458ab1ff548591bc7ac06b3e775fa53c35fc93638032b924203bc946abbc8de"
-        },
-        "src/blackwire/streamreader/manifest.c": {
-          "bytes": 9785,
-          "sha256": "8f9a2c7229c860587ee9bb641d574f7185c799b1ab0b0e53346b060845e1db3e"
-        },
-        "build/beta03-2-sdk-01/two_shares/source-selection-under-test.h": {
-          "bytes": 10134,
-          "sha256": "6aa6cd6eda150aed1515a5d85ec7ca87ae9a82c6fc0dac35d3d7129564509f05"
-        },
-        "src/blackwire/library/native_backend.c": {
-          "bytes": 149027,
-          "sha256": "d7835b07557157de7002708f839c2d588f66809055a23c9995163d0b35af24c3"
-        },
-        "src/blackwire/library/native_backend.h": {
-          "bytes": 9720,
-          "sha256": "744da4fd68a2da76bbfa02740820ba94383f12c1dbf7be67889faff1c69f2c11"
-        },
-        "src/blackwire/library/source_catalog.h": {
-          "bytes": 3032,
-          "sha256": "51c61533b680adffbf4c3cbfc9fe4b6ec829bd98e873f3639c3e0d565bf722ad"
-        },
-        "src/blackwire/library/source_identity.h": {
-          "bytes": 1221,
-          "sha256": "3c713e78b1734e3502d53019bbb1348a80c0b839d42ba8ef6263e29af9603d40"
-        },
-        "src/blackwire/streamreader/share_config.h": {
-          "bytes": 821,
-          "sha256": "91a5e7b9ad66ba2066fc95c459b5dcdf539d55b445324cd5b7a9b5144b1b1b89"
-        }
-      },
-      "consoleContacted": false,
-      "smbConnectionsMade": false,
-      "fixtureFilesystem": "Linux",
-      "retainedScratch": "/tmp/blackwire-two-shares-i9sju0ju",
-      "scope": "Actual C selection, binding, parser, settings filesystem and merged metadata; SMB/PS5 runtime needs separate qualification"
+    "actualBackendToken": {
+      "cases": 8,
+      "checks": 476
     },
-    "uiTestsPassed": 91,
-    "browserHandoffCases": 19,
-    "residentRestartNoReplay": true
+    "registrationCoreModeledSdkAndDb": {
+      "cases": 17,
+      "checks": 3156
+    },
+    "existingRemoval": {
+      "cases": 31,
+      "checks": 411
+    },
+    "residentStartup": {
+      "cases": 8,
+      "checks": 318
+    },
+    "notFullHostRerunForThisRuntime": true
   },
+  "uiTests": {
+    "passed": true,
+    "tests": 92,
+    "page": {
+      "bytes": 153906,
+      "sha256": "91e4a0bfdcbe46e88326bee74571f0883e45525666b7e70010ce2a1935aa7fd0"
+    }
+  },
+  "byteIdenticalRelinkVerified": true,
   "hardware": {
     "firmwareProfile": "0x13000040",
-    "savedSettingsObservedBeforeStartupScan": true,
-    "failedSmbCheckRetainsSettingsBytesAndMetadata": true,
-    "validUnchangedConnectionCheckPassed": true,
-    "settingsEditableAfterChecks": true,
-    "existingLibraryCount": 7,
-    "servedPageMatches": true,
-    "preservedPreparationAndGlobalControlFiles": 35,
-    "collectorExcludesCredentials": true,
-    "gameplayRepeated": false
+    "manualPayloadManagerLoad": true,
+    "automaticMediaRegistrationStatus": "verified",
+    "mediaRegistrationCalls": 1,
+    "mediaRegistrationMode": "public_batch",
+    "mediaReservationReleased": true,
+    "physicalMediaTileOpenConfirmed": false,
+    "games": [
+      {
+        "titleId": "PPSA03098",
+        "game": "Dead Island 2",
+        "source": "extracted",
+        "startupFiles": 175,
+        "startupBytes": 341681824,
+        "userReportedMenu": true,
+        "userReportedUninstall": true,
+        "catalogRemovedObserved": true
+      },
+      {
+        "titleId": "PPSA15508",
+        "game": "The Last of Us Part II Remastered",
+        "source": "extracted",
+        "startupFiles": 174,
+        "startupBytes": 151899430,
+        "processObserved": true,
+        "userReportedPlayAreaSetup": true
+      }
+    ],
+    "controllableGameplayConfirmed": false,
+    "controlledCurrentArtifactSpeedupEstablished": false,
+    "reporterFirmware1001Confirmed": false,
+    "earlierShutdownCauseEstablished": false
   },
-  "reporterEnvironmentConfirmed": false,
   "privateLogsIncluded": false,
-  "controlledSpeedupEstablished": false
+  "externalConsoleLibrariesIncluded": false,
+  "gameContentIncluded": false
 }
