@@ -1022,8 +1022,8 @@
       "sha256": "463e27a8b06d7be5662cf0e375c98ee6a6a250c3e133e54cc92cc2f07911418f"
     },
     "src/blackwire/streamreader/lifecycle.h": {
-      "bytes": 11574,
-      "sha256": "ef94696ad8ba0caa7fc5c73165ade7a6c148f1202c173c58d102ba56a0a2eca4"
+      "bytes": 12303,
+      "sha256": "575330be5b14f615e14bdf223e34efb6690df4fea4a5c95f3797ed971f1053cb"
     },
     "src/blackwire/streamreader/manifest.c": {
       "bytes": 9785,
@@ -1744,8 +1744,8 @@
       "sha256": "5fb16bfe5b021e0dac540430b91d9ef194160a70d6844ec5bf05446065cf32ef"
     },
     "tests/dashboard/lifecycle/test_handoff_idle_paths.c": {
-      "bytes": 10811,
-      "sha256": "a5336e842684b6ef64e7c35246a872de43b37ccb64a966e54e0b95c00bfcd838"
+      "bytes": 11907,
+      "sha256": "d4c2b5aac9a6f28cebc34c352bc9220bf36f279c1b0b0e6e2a36778ad27bccc6"
     },
     "tests/dashboard/lifecycle/test_idle_cache_begin.c": {
       "bytes": 1731,
@@ -2162,7 +2162,7 @@
   },
   "publicPreview": true,
   "developmentBaseCommit": "55e78764fd87291eb421d6456d83e4912f5d8371",
-  "developmentQualification": "Unreleased exact-removal recovery following an actual held normal console result. Prior e827 normal57-suite/65-command/146-SDK artifact reached folder Ready and refused a conflicting source without copy, then retained Unknown after files/registration were removed; it remains held. A real transient-current fault reproduces that failure class, not the original hardware trigger. New recovery discovers only the exact retained completed ownership generation, repeats existing absence/control/probe checks and publishes matching Done before ordinary typed service release. General pending candidates and platform Uninstall request counts remain unchanged. Genuine restricted Claude/Fable review and follow-up resolve the historical-marker, repeated-control cost and obsolete-error findings; focused actual recovery9 cases, maintained ownership125 cases/40754 assertions and service30 cases/5758 assertions pass with explicit host models. Default host now includes both maintained recovery checks,59 suites/67 outer commands. New complete host run, normal SDK build, packaged-byte/diagnostic-exclusion checks and clean normal Payload Manager console verification remain pending. No historical shutdown cause, original late-failure trigger, reporter-specific universal compatibility or new gameplay/preparation speed claim. Publication and Native Dashboard remain on hold.",
+  "developmentQualification": "Unreleased bounded lifecycle tag search layered on the exact-removal repair. The earlier normal exact-removal artifact passed 59 host suites / 67 commands, 146 SDK commands, 61 packaged-input checks and three normal console removals. Parser-only private PS5 comparisons on the same compressed Alan Wake 2 image reduced copy and verification from 151.772 to 40.328 and 41.006 seconds with identical file, byte and check counts; these are preparation measurements. The original file-status API remains unchanged. The rejected unlocked-stdio shortcut and private timing/failure markers are excluded from this production change. A pre-platform-Uninstall confirmation failure occurred in one private run. Two later diagnostic-build normal removals, including Restore and fresh Send, passed but do not establish its cause or a repair. New normal full host/SDK, packaged-input and clean Payload Manager verification remain pending. Publication and Native Dashboard remain on hold. No universal compatibility, historic shutdown cause or unexplained-failure repair is claimed.",
   "removedSourceIdentityRegression": {
     "passed": true,
     "routingCases": 66,
@@ -2172,5 +2172,5 @@
     "consoleQualificationPending": true
   },
   "releaseVersion": "v0.3.0-beta.3",
-  "runtimeSourceCommit": "1bd775fb9b7468a57991f31ddcbd5411f63597e1"
+  "runtimeSourceCommit": "c0b3e313c4a05d9d27bc71fbdb0e7dcd06eaddf6"
 }
