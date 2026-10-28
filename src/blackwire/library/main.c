@@ -876,11 +876,16 @@ int main(void) {
   if(bd_native_publish(native_backend,log_line))notify("Blackwire browser is available; native Dashboard installation needs attention.");
 #endif
   startup_mark("resident.create.before");
-  dashboard=bd_resident_create_with_feedback(native_backend,notify);
+  dashboard=bd_resident_create_with_startup_refresh(native_backend,notify);
   startup_mark(dashboard ? "resident.create.after.ok" : "resident.create.after.failed");
   if(!dashboard)log_line("Blackwire library service could not start; native backend controls remain available");
 #endif
   startup_mark("refresh.before");
+#if defined(BW_NATIVE_DASHBOARD) || defined(BW_WEB_ONLY)
+  /* A successful startup resident owns the one initial request. These marks
+   * bracket fallback selection, not acceptance or scan completion. */
+  if(!dashboard)
+#endif
   (void)bw_native_backend_refresh(native_backend);
   startup_mark("refresh.after");
 #endif

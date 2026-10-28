@@ -15,6 +15,7 @@
 
 struct bd_resident {
     struct bw_native_backend *backend;
+    unsigned startup_refresh;
     struct bd_local_launcher *local;
     struct bd_local_removal_runtime *removal;
     struct bd_registration_observer *observer;
@@ -56,19 +57,38 @@ static void feedback(void *opaque,const char nonce[33],const char *text){
 }
 static void *tick(void *opaque){
     struct bd_resident *r=opaque;
+    /* The startup-only request follows both guard attachments and precedes
+     * any background observer reservation. Refusal is never retried here. */
+    if(r->startup_refresh)(void)bw_native_backend_refresh(r->backend);
     for(;;){(void)bd_service_tick(r->service);(void)bd_registration_observer_tick(r->observer);struct timespec delay={0,250000000};nanosleep(&delay,NULL);}
     return NULL;
 }
 struct bd_resident *bd_resident_create(struct bw_native_backend *backend){
     return bd_resident_create_with_feedback(backend,NULL);
 }
+static struct bd_resident *resident_create(struct bw_native_backend *,void (*)(const char *),unsigned);
 struct bd_resident *bd_resident_create_with_feedback(struct bw_native_backend *backend,void (*notify)(const char *)){
-    if(!backend)return NULL;struct bd_resident *r=calloc(1,sizeof *r);if(!r)return NULL;r->backend=backend;r->feedback=notify;
-    struct bd_local_launch_config local={0};r->local=bd_local_launcher_create(&local);if(!r->local){free(r);return NULL;}
+    return resident_create(backend,notify,0);
+}
+struct bd_resident *bd_resident_create_with_startup_refresh(struct bw_native_backend *backend,void (*notify)(const char *)){
+    return resident_create(backend,notify,1);
+}
+/* A failed constructor may still own installed callbacks or a live worker.
+ * Keep their parent and remaining dependencies alive when release is refused. */
+static void release_failed_resident(struct bd_resident *r){
+    if(r->service){if(bd_service_destroy(r->service))return;r->service=NULL;}
+    if(r->observer){if(bd_registration_observer_destroy(r->observer))return;r->observer=NULL;}
+    if(r->removal){if(bd_local_removal_runtime_destroy(r->removal))return;r->removal=NULL;}
+    if(r->local){if(bd_local_launcher_destroy(r->local))return;r->local=NULL;}
+    free(r);
+}
+static struct bd_resident *resident_create(struct bw_native_backend *backend,void (*notify)(const char *),unsigned startup_refresh){
+    if(!backend)return NULL;struct bd_resident *r=calloc(1,sizeof *r);if(!r)return NULL;r->backend=backend;r->feedback=notify;r->startup_refresh=startup_refresh;
+    struct bd_local_launch_config local={0};r->local=bd_local_launcher_create(&local);if(!r->local){release_failed_resident(r);return NULL;}
     struct bd_local_removal_runtime_config removal={.backend=backend};r->removal=bd_local_removal_runtime_create(&removal);
-    if(!r->removal){(void)bd_local_launcher_destroy(r->local);free(r);return NULL;}
+    if(!r->removal){release_failed_resident(r);return NULL;}
     r->observer=bd_registration_observer_create(backend,NULL);
-    if(!r->observer){(void)bd_local_removal_runtime_destroy(r->removal);(void)bd_local_launcher_destroy(r->local);free(r);return NULL;}
+    if(!r->observer){release_failed_resident(r);return NULL;}
     struct bd_service_config config={.backend=backend,.observe_bfp=0,.http_timeout_ms=2000,
         .ops={.opaque=r,.idle=idle,.reserve=reserve,.release=release,.backend_reserved=backend_reserved,
             .local_launch=local_launch,.local_state=local_state,.local_capable=local_capable,.feedback=notify?feedback:NULL,
@@ -79,12 +99,12 @@ struct bd_resident *bd_resident_create_with_feedback(struct bw_native_backend *b
 #else
     config.frontend_package=bd_embedded_frontend_package;
 #endif
-    r->service=bd_service_create(&config);if(!r->service){(void)bd_registration_observer_destroy(r->observer);(void)bd_local_removal_runtime_destroy(r->removal);(void)bd_local_launcher_destroy(r->local);free(r);return NULL;}
-    if(bd_service_attach_settings_guard(r->service)){(void)bd_service_destroy(r->service);(void)bd_registration_observer_destroy(r->observer);(void)bd_local_removal_runtime_destroy(r->removal);(void)bd_local_launcher_destroy(r->local);free(r);return NULL;}
-    if(bd_service_attach_preparation_guard(r->service)){(void)bd_service_destroy(r->service);(void)bd_registration_observer_destroy(r->observer);(void)bd_local_removal_runtime_destroy(r->removal);(void)bd_local_launcher_destroy(r->local);free(r);return NULL;}
-    pthread_attr_t attr;if(pthread_attr_init(&attr)){(void)bd_service_destroy(r->service);(void)bd_registration_observer_destroy(r->observer);(void)bd_local_removal_runtime_destroy(r->removal);(void)bd_local_launcher_destroy(r->local);free(r);return NULL;}
+    r->service=bd_service_create(&config);if(!r->service){release_failed_resident(r);return NULL;}
+    if(bd_service_attach_settings_guard(r->service)){release_failed_resident(r);return NULL;}
+    if(bd_service_attach_preparation_guard(r->service)){release_failed_resident(r);return NULL;}
+    pthread_attr_t attr;if(pthread_attr_init(&attr)){release_failed_resident(r);return NULL;}
     int rc=pthread_attr_setstacksize(&attr,4u*1024u*1024u);if(!rc)rc=pthread_create(&r->ticker,&attr,tick,r);pthread_attr_destroy(&attr);
-    if(rc){(void)bd_service_destroy(r->service);(void)bd_registration_observer_destroy(r->observer);(void)bd_local_removal_runtime_destroy(r->removal);(void)bd_local_launcher_destroy(r->local);free(r);return NULL;}return r;
+    if(rc){release_failed_resident(r);return NULL;}return r;
 }
 int bd_resident_handle(struct bd_resident *r,const char *method,const char *url,const void *body,size_t size,const char *token,struct bw_native_response *out){
     if(!r)return !strncmp(url,"/api/dashboard/",15)?-1:1;

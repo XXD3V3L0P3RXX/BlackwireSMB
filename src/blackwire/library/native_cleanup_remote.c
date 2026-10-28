@@ -586,15 +586,21 @@ int bw_nrc_remote_release_runtime(struct bw_nrc_remote *r,const struct bw_nrc_su
     if(bw_sm_unmount(&r->connection,s->title,&reply))
         return fail(r,reply.response_complete&&reply.api_status==16?"cleanup_runtime_release_busy_no_retry":"cleanup_runtime_release_outcome_unknown_no_retry");
     /* Release does not remove the registration or grant a new baseline. */
-    if(confirmed_twice(r,s,registered,proof,&state)||state!=1||bw_nrc_remote_sources(r,s)||
-       confirmed_twice(r,s,registered,proof,&state)||state!=1)
-        return fail(r,"cleanup_runtime_release_fresh_unmounted_binding_unconfirmed");
+    if(confirmed_twice(r,s,registered,proof,&state)||state!=1)
+        return fail(r,"cleanup_runtime_release_registration_before_sources_unconfirmed");
+    if(bw_nrc_remote_sources(r,s))
+        return fail(r,"cleanup_runtime_release_sources_unconfirmed");
+    if(confirmed_twice(r,s,registered,proof,&state)||state!=1)
+        return fail(r,"cleanup_runtime_release_registration_after_sources_unconfirmed");
     r->reason="cleanup_runtime_released_same_registration_reconfirmed";return 0;
 }
 const char *bw_nrc_remote_status_message(const struct bw_nrc_remote *r){
     if(!r||!r->reason)return "The game removal result is unknown. Refresh status without retrying.";
     if(!strcmp(r->reason,"cleanup_runtime_release_busy_no_retry"))return "Could not release the game mount because it is busy. No uninstall was submitted.";
     if(!strcmp(r->reason,"cleanup_runtime_release_authority_or_capability_unknown"))return "Could not confirm permission or support to release the game mount. No uninstall was submitted.";
+    if(!strcmp(r->reason,"cleanup_runtime_release_registration_before_sources_unconfirmed"))return "Could not confirm the registration after releasing the game mount [release-registration-before-sources]. No uninstall was submitted.";
+    if(!strcmp(r->reason,"cleanup_runtime_release_sources_unconfirmed"))return "Could not confirm fresh source checks after releasing the game mount [release-sources]. No uninstall was submitted.";
+    if(!strcmp(r->reason,"cleanup_runtime_release_registration_after_sources_unconfirmed"))return "Could not reconfirm the registration after the source checks [release-registration-after-sources]. No uninstall was submitted.";
     if(!strcmp(r->reason,"cleanup_runtime_release_fresh_unmounted_binding_unconfirmed"))return "Could not confirm the released game mount. No uninstall was submitted.";
     if(!strcmp(r->reason,"cleanup_runtime_release_outcome_unknown_no_retry"))return "Could not confirm release of the game mount. No uninstall was submitted; refresh status without retrying.";
     if(!strcmp(r->reason,"cleanup_uninstall_refused_title_unmount_busy_before_platform"))return "ShadowMount could not release the game mount and refused uninstall before removing the registration.";
