@@ -4,6 +4,26 @@ This record distinguishes copied files, a running game process, a visible menu, 
 
 No title-specific compatibility blocker has been identified in testing so far. The limited coverage below does not establish that every title or every stage of a title will work.
 
+## Unreleased parser-only preparation profile
+
+A controlled private diagnostic comparison on the recorded 13.00-family console isolated the lifecycle tag scan from the file-reader implementation. Both builds used the same profiler, compressed Alan Wake 2 source, embedded game reader and unchanged baseline `copy_fs` reader. Only the bounded lifecycle tag search changed; fresh observations, strict event folding, errno handling, file checks and authority rules were retained.
+
+| Measured copy phase | Baseline | Parser-only candidate |
+| --- | --- | --- |
+| Total phase wall time | 151.772 s | 40.328 s |
+| Time inside idle observations | 126.867 s | 16.558 s |
+| Idle / current-operation / source-read / local-I/O counts | 23,866 / 5,926 / 27 / 6,059 | Identical |
+
+The measured copy phase took **73.4% less time** (3.76 times the baseline rate for this phase). These are exclusive diagnostic wall-time measurements, not wire throughput, a whole-Send multiplier or gameplay loading times. PC cache conditions were not independently controlled, and the result is limited to this one workload and console.
+
+The parser-only build passed both-share setup, discovered 17 sources and prepared the compressed source to Ready with 246 entries and 188,211,299 startup bytes. All four actual module hashes and permissions matched; ShadowMountPlus settings were unchanged. No gameplay was tested in this comparison.
+
+An earlier two-change experiment combined the tag search with a public-SDK unlocked stdio flag shortcut. It refused fresh setup with `SETUP_IDLE_ERROR` on the console despite passing host and SDK checks. That experiment was rejected. The parser-only candidate restores the exact baseline reader, including its original stdio and errno behavior; the shortcut is not part of the proposed repair. The underlying runtime mismatch has not been independently established.
+
+A subsequent normal Uninstall retained Unknown before file deletion because `cleanup_runtime_release_fresh_unmounted_binding_unconfirmed` could not be resolved. No platform Uninstall was submitted. Removal investigation and cleanup verification remain pending; this is a release blocker, not a successful Uninstall result.
+
+This remains **private, unreleased diagnostic evidence**. Full normal-build qualification, exclusion of private instrumentation and testing of the resulting normal artifact remain pending. Existing public downloads are unchanged, and publication remains on hold. The historical normal-artifact results below retain their original scope.
+
 ## Unreleased exact-removal recovery
 
 The preceding normal artifact `e827e8ca0df180b7889b23fdac9baa9ebb45ac508887c03f139a8060aae54b55` passed all 57 host suites, 65 outer host commands, 146 SDK commands and 60 packaged-input checks. A clean normal Payload Manager installation connected both shares and discovered 17 sources, including five validated compressed candidates. Folder Alan Wake 2 reached Ready with 246 entries and 188,211,299 verified startup bytes; all four actual library/reader hashes matched. A normal Send for the alternative compressed source was refused before creating a job or copying files, with the owning folder copy preserved.
