@@ -86,7 +86,24 @@ int main(int argc,char **argv){
 #endif
 static unsigned checks;
 #define C(x) do{checks++;if(!(x)){fprintf(stderr,"line %u: %s\n",__LINE__,#x);exit(2);}}while(0)
-int main(int argc,char **argv){C(argc==3);C(strlen(argv[1])<sizeof observed_log);strcpy(observed_log,argv[1]);int expected=hf_history(argv[2]);int rc=hf_guard(observed_log);C((rc==0)==expected);C(log_opens==(expected||!strcmp(argv[2],"second-pending")?2u:1u));if(!strcmp(argv[2],"second-pending"))C(append_fired);printf("{\"passed\":true,\"checks\":%u,\"kind\":\"%s\",\"mode\":\"%s\",\"accepted\":%s,\"logOpens\":%u}\n",checks,hf_kind,argv[2],expected?"true":"false",log_opens);return 0;}
+/* Directed tag contract checks: priority precedes byte position; within the
+ * winning kind, the first occurrence wins. Run once in derived/quiet only. */
+static void hf_tag_edges(void){
+    static const char bracket[]="[x] [GAME] started";
+    enum bw_lifecycle_idle_event_kind kind=BW_LIFECYCLE_IDLE_FINAL;
+    const char *at=bw_lifecycle_idle_tag(bracket,sizeof bracket-1,&kind);
+    C(kind==BW_LIFECYCLE_IDLE_START);C(at==bracket+sizeof bracket-1);
+    static const char priority[]="[GAME] finalizing stopped application [GAME] started [GAME] started";
+    kind=BW_LIFECYCLE_IDLE_FINAL;
+    at=bw_lifecycle_idle_tag(priority,sizeof priority-1,&kind);
+    C(kind==BW_LIFECYCLE_IDLE_START);
+    C(at==priority+sizeof "[GAME] finalizing stopped application [GAME] started"-1);
+    static const char boundary[]="[GAME] process handoff";
+    kind=BW_LIFECYCLE_IDLE_FINAL;
+    at=bw_lifecycle_idle_tag(boundary,sizeof boundary-1,&kind);
+    C(kind==BW_LIFECYCLE_IDLE_HANDOFF);C(at==boundary+sizeof boundary-1);
+}
+int main(int argc,char **argv){C(argc==3);if(!strcmp(hf_kind,"actual-derived-guard")&&!strcmp(argv[2],"quiet"))hf_tag_edges();C(strlen(argv[1])<sizeof observed_log);strcpy(observed_log,argv[1]);int expected=hf_history(argv[2]);int rc=hf_guard(observed_log);C((rc==0)==expected);C(log_opens==(expected||!strcmp(argv[2],"second-pending")?2u:1u));if(!strcmp(argv[2],"second-pending"))C(append_fired);printf("{\"passed\":true,\"checks\":%u,\"kind\":\"%s\",\"mode\":\"%s\",\"accepted\":%s,\"logOpens\":%u}\n",checks,hf_kind,argv[2],expected?"true":"false",log_opens);return 0;}
 #elif defined(HANDOFF_STARTUP)
 #include "idle_log_cache_helpers.inc"
 static void hf_replace(const char *text){enabled=0;hf_store(path,text,0);enabled=1;}

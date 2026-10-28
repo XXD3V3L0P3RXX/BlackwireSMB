@@ -109,15 +109,26 @@ static inline int bw_lifecycle_idle_app(const char **p,const char *end,uint32_t 
     *p+=8;*out=value;return 0;
 }
 static inline const char *bw_lifecycle_idle_tag(const char *line,size_t n,enum bw_lifecycle_idle_event_kind *kind){
-    static const char *const tags[]={"[GAME] started","[GAME] process exited, awaiting same-app handoff",
-        "[GAME] process handoff","[GAME] finalizing stopped application"};
-    for(unsigned k=0;k<sizeof tags/sizeof tags[0];k++){
-        size_t length=strlen(tags[k]);if(n<length)continue;
-        for(size_t i=0;i<=n-length;i++)if(!memcmp(line+i,tags[k],length)){
-            *kind=(enum bw_lifecycle_idle_event_kind)k;return line+i+length;
+    static const struct {const char *text;size_t length;} tags[]={
+        {"[GAME] started",sizeof "[GAME] started"-1},
+        {"[GAME] process exited, awaiting same-app handoff",sizeof "[GAME] process exited, awaiting same-app handoff"-1},
+        {"[GAME] process handoff",sizeof "[GAME] process handoff"-1},
+        {"[GAME] finalizing stopped application",sizeof "[GAME] finalizing stopped application"-1}
+    };
+    /* Retain tag priority, then the earliest occurrence within that tag, even
+     * when a complete line contains more than one recognizable tag. Only '['
+     * positions can match; memchr remains bounded by the caller's exact line. */
+    unsigned best=(unsigned)(sizeof tags/sizeof tags[0]);const char *found=NULL,*cursor=line;size_t left=n;
+    while(left){
+        const char *at=memchr(cursor,'[',left);if(!at)break;
+        size_t remaining=n-(size_t)(at-line);
+        for(unsigned k=0;k<best;k++)if(remaining>=tags[k].length&&!memcmp(at,tags[k].text,tags[k].length)){
+            best=k;found=at+tags[k].length;break;
         }
+        if(!best)break;
+        cursor=at+1;left=n-(size_t)(cursor-line);
     }
-    return NULL;
+    if(found)*kind=(enum bw_lifecycle_idle_event_kind)best;return found;
 }
 static inline int bw_lifecycle_idle_decode(const char *p,const char *end,enum bw_lifecycle_idle_event_kind kind,struct bw_lifecycle_idle_event *event){
     if(bw_lifecycle_idle_take(&p,end,": ")||(size_t)(end-p)<10u||p[9]!=' '||!bw_lifecycle_idle_title_valid(p,9))return -1;
