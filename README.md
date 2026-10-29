@@ -35,7 +35,6 @@ The recorded reference environment is below; individual test dates and exact bin
 | Component | Recorded setup |
 | --- | --- |
 | PS5 firmware | 13.00 family (`0x13000040`) |
-| Jailbreak / hypervisor chain | [Byepervisor Reborn](https://github.com/PS5Dev/Byepervisor-Reborn), reported by the operator; exact deployed build and initial jailbreak entry point have not been recorded. |
 | Kstuff | Kstuff-lite `v1.11` |
 | ShadowMountPlus | Stock `1.7beta7`, used in the latest diagnostic retest |
 | ELF loader | elfldr `v0.27` in the latest captured payload inventory |
@@ -43,7 +42,7 @@ The recorded reference environment is below; individual test dates and exact bin
 | Legacy external runtime files | The current beta installs its embedded reader. The older v0.2.0 preview required the optional [five-file global pack](docs/REQUIREMENTS.md#external-shadowmount-libraries). |
 | Network | Wired Ethernet with an SMB share on an awake PC |
 
-Byepervisor Reborn is the hypervisor-exploit stage of a jailbreak chain; the reported name does not identify the initial entry point or its version. Blackwire requires a working jailbreak with Kstuff active before it is loaded.
+Blackwire requires a working jailbreak with Kstuff active before it is loaded.
 
 Earlier baseline tests used ShadowMountPlus `1.7-beta5fix1` and elfldr `v0.26`; their results remain attributed to that earlier environment. The latest test inventory also records PS5 Payload Manager `0.6.3`, BFpilot `v0.4.4` and shsrv `v0.20`. Those are loading, file-management and development helpers, not additional game-streaming requirements.
 
